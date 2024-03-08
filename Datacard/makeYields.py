@@ -30,6 +30,7 @@ def get_options():
   parser.add_option('--ext', dest='ext', default='', help='Extension for saving') 
   parser.add_option('--mass', dest='mass', default='125', help='Input workspace mass')
   parser.add_option('--mergeYears', dest='mergeYears', default=False, action="store_true", help="Merge category across years")
+  parser.add_option('--mergeProcs', dest='mergeProcs', default=False, action="store_true", help="Merge processes across years")
   parser.add_option('--skipBkg', dest='skipBkg', default=False, action="store_true", help="Only add signal processes to datacard")
   parser.add_option('--bkgScaler', dest='bkgScaler', default=1., type="float", help="Add overall scale factor for background")
   parser.add_option('--sigModelWSDir', dest='sigModelWSDir', default='./Models/signal', help='Input signal model WS directory') 
@@ -82,6 +83,23 @@ print " ........................................................................
 
 # Signal processes
 for year in years:
+
+  # if opt.mergeProcs:
+  #   _modelWSFile = "%s/CMS-HGG_sigfit_%s_%s.root"%(opt.sigModelWSDir,opt.sigModelExt,opt.cat)
+  #   # Extract rate from lumi
+  #   _rate = float(lumiMap[year])*1000
+  #   for bins_inout in ["in", "out"]: #TODO: Create a file for in_out / differentials analog STXS_tools.py
+  #     # Form: SM_{bins}_{in/out}
+      
+  #     _id = "%s_%s_%s_%s"%(bins_inout,year,opt.cat,sqrts__) 
+  #     _model = "%s_%s:%s_%s"%(outputWSName__,sqrts__,'SM',_id) #wsig_13TeV:SM_blabla
+  #     _nominalDataName = "%s_%s_%s_%s"%(procToData("SM_"+bins_inout.split("_")[-1]),opt.mass,sqrts__,opt.cat)
+  #     print " --> Adding to dataFrame: (proc,cat) = (%s,%s)"%("%s_%s_%s"%(procToDatacardName("SM_"+bins_inout),year,decayMode),opt.cat)
+  #     #_inputWSFile = glob.glob("%s/*M%s*_%s.root"%(inputWSDirMap[year],opt.mass,"GG2H_"+bins_inout))[0]
+  #     _inputWSFile = glob.glob("%s/CMS-HGG_sigfit_packaged_%s.root"%(inputWSDirMap[year],opt.cat))[0]
+  #     data.loc[len(data)] = [year,'sig',"SM_"+bins_inout,"%s_%s_%s"%(procToDatacardName("SM_"+bins_inout),year,decayMode),"SM",opt.cat,_inputWSFile,_nominalDataName,_modelWSFile,_model,_rate] # no inputWSFile?
+  #   print(data)
+    
   for proc in procs:
 
     # Identifier
