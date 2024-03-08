@@ -109,6 +109,9 @@ procToDataMap['THW'] = 'thw'
 procToDataMap['GG2HQQ'] = 'ggzh'
 procToDataMap['GG2HLL'] = 'ggzh'
 procToDataMap['GG2HNUNU'] = 'ggzh'
+procToDataMap['SM'] = 'sm'
+procToDataMap['SM_in'] = 'sm_in'
+procToDataMap['SM_out'] = 'sm_out'
 def procToData( _proc ):
   k = _proc.split("_")[0]
   if k in procToDataMap: _proc = re.sub( k, procToDataMap[k], _proc )
@@ -141,6 +144,9 @@ procToDatacardNameMap["TH"] = "tHq"
 procToDatacardNameMap["GG2HQQ"] = "ggZH_had"
 procToDatacardNameMap["GG2HLL"] = "ggZH_ll"
 procToDatacardNameMap["GG2HNUNU"] = "ggZH_nunu"
+procToDatacardNameMap["SM"] = "sm"
+procToDatacardNameMap["SM_in"] = "sm_in"
+procToDatacardNameMap["SM_out"] = "sm_out"
 
 def procToDatacardName( _proc ):
   k = _proc.split("_")[0]
