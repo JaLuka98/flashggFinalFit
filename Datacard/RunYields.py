@@ -18,6 +18,7 @@ def get_options():
   parser.add_option('--ext', dest='ext', default='test', help='Extension for saving')
   parser.add_option('--mass', dest='mass', default='125', help='Input workspace mass')
   parser.add_option('--mergeYears', dest='mergeYears', default=False, action="store_true", help="Merge category across years")
+  parser.add_option('--mergeProcs', dest='mergeProcs', default=False, action="store_true", help="Merge processes across years")
   parser.add_option('--skipBkg', dest='skipBkg', default=False, action="store_true", help="Only add signal processes to datacard")
   parser.add_option('--bkgScaler', dest='bkgScaler', default=1., type="float", help="Add overall scale factor for background")
   parser.add_option('--sigModelWSDir', dest='sigModelWSDir', default='./Models/signal', help='Input signal model WS directory')
@@ -57,6 +58,7 @@ options['bkgModelWSDir'] = opt.bkgModelWSDir
 options['bkgModelExt'] = opt.bkgModelExt
 options['modeOpts'] = ''
 if opt.mergeYears:  options['modeOpts'] += ' --mergeYears'
+if opt.mergeProcs:  options['modeOpts'] += ' --mergeProcs'
 if opt.skipBkg: options['modeOpts'] += ' --skipBkg'
 if opt.bkgScaler != 1.: options['modeOpts'] += ' --bkgScaler %.4f'%opt.bkgScaler
 if opt.skipZeroes: options['modeOpts'] += ' --skipZeroes'
