@@ -16,7 +16,7 @@ def rooiter(x):
 
 def extractWSFileNames( _inputWSDir ): 
   if not os.path.isdir(_inputWSDir):
-    print " --> [ERROR] No such directory (%s)"
+    print(" --> [ERROR] No such directory (%s)")
     return False
   return glob.glob("%s/output_*.root"%_inputWSDir)
 
@@ -81,7 +81,7 @@ def signalFromFileName(_fileName):
   elif "THW" in _fileName: p = "thw"
   elif "bbH" in _fileName: p = "bbh"
   else:
-    print " --> [ERROR]: cannot extract production mode from input file name. Please update tools.commonTools.signalFromFileName"
+    print(" --> [ERROR]: cannot extract production mode from input file name. Please update tools.commonTools.signalFromFileName")
     exit(1)
   return p,d
 

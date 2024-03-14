@@ -9,6 +9,9 @@ models = {
 --PO \"map=.*/VH_in.*:r[1,0,2]\" \
 --PO \"map=.*/ttH_in.*:r[1,0,2]\"",
 
+  "mu_fiducial_sm":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/sm_in.*:r[1,0,2]\"",
+
   "mu":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggH.*:r_ggH[1,0,2]\" \
 --PO \"map=.*/bbH.*:r_ggH[1,0,2]\" \

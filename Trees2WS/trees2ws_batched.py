@@ -112,127 +112,96 @@ else:
   print ("[ERROR] Please specify config file to run from. Leaving..."%opt.inputConfig)
   leave()
 
+def create_workspace_batched(df, sdf, outputWSFile, productionMode_string):
+    # Open file and initiate workspace
+    fout = ROOT.TFile(outputWSFile, "RECREATE")
+    foutdir = fout.mkdir(inputWSName__.split("/")[0])
+    foutdir.cd()
+    ws = ROOT.RooWorkspace(inputWSName__.split("/")[1], inputWSName__.split("/")[1])
 
-def create_workspace(df, sdf, outputWSFile, productionMode_string):
-  # Open file and initiate workspace
-  fout = ROOT.TFile(outputWSFile,"RECREATE")
-  foutdir = fout.mkdir(inputWSName__.split("/")[0])
-  foutdir.cd()
-  ws = ROOT.RooWorkspace(inputWSName__.split("/")[1],inputWSName__.split("/")[1])
-  
-  # Add variables to workspace
-  varNames = add_vars_to_workspace(ws,df,stxsVar)
+    # Add variables to workspace
+    varNames = add_vars_to_workspace(ws, df, stxsVar)
 
-  # Loop over cats
-  for cat in cats:
+    # Loop over cats
+    for cat in cats:
 
-    # a) make RooDataSets: type = nominal/notag
-    mask = (df['cat']==cat)
-    # Convert dataframe to structured array, then to ROOT tree
-    sa = df[mask].to_records()
-    t = array2tree(sa)
+        # a) make RooDataSets: type = nominal/notag
+        mask = (df['cat'] == cat)
+        # Convert dataframe to structured array, then to ROOT tree
+        sa = df[mask].to_records()
 
-    # Define RooDataSet
-    dName = "%s_%s_%s_%s"%(productionMode_string,opt.inputMass,sqrts__,cat)
-    
-    # Make argset
-    aset = make_argset(ws,varNames)
+        # Define RooDataSet
+        dName = "%s_%s_%s_%s"%(productionMode_string, opt.inputMass, sqrts__, cat)
 
-    # Convert tree to RooDataset and add to workspace
-    d = ROOT.RooDataSet(dName,dName,t,aset,'','weight')
-    getattr(ws,'import')(d)
+        # Make argset
+        aset = make_argset(ws, varNames)
 
+        # Create an empty merged dataset
+        merged_dataset = ROOT.RooDataSet(dName, dName, aset, 'weight')
 
-    # def makeRooList(itm):
-    #   'calls itm.createIterator() and loops it into a list'
-    #   retlist = []
-    #   itritm = itm.createIterator()
-    #   v = itritm.Next()
-    #   while v:
-    #       retlist.append(v)
-    #       v = itritm.Next()
-    #   return retlist
+        # Loop through batches
+        batch_size = 5000
+        for start in range(0, len(sa), batch_size):
+            end = min(start + batch_size, len(sa))
+            batch_sa = sa[start:end]
+            t = array2tree(batch_sa)
 
-    # ndatasets = 10
-    # print('will save as', ndatasets, 'separate workspaces and datasets')
-    # chunk_size = d.numEntries() // ndatasets
-    # assert chunk_size
+            # Convert tree to RooDataset and append to the merged dataset
+            d = ROOT.RooDataSet(dName, dName, t, aset, '', 'weight')
+            merged_dataset.append(d)
 
-    # # persistify
-    # datasetlist = []
-    # wslist = []
-    # for ids in range(ndatasets):
-    #     # declare ws and dataset
-    #     wslist.append(ROOT.RooWorkspace(inputWSName__.split("/")[1] + str(ids)))
-    #     datasetlist.append(d.emptyClone(d.GetName() + str(ids)))
-        
-    #     # decide what range of entries to look at
-    #     startrange = ids * chunk_size
-    #     endrange = (startrange + chunk_size) if (ids + 1 < ndatasets) else d.numEntries()
-    #     obs = datasetlist[-1].get()
-        
-    #     # loop entries in range
-    #     for i in range(startrange, endrange):
-    #         for o, oo in zip(makeRooList(d.get(i)), makeRooList(obs)):
-    #             oo.setVal(o.getVal())
-    #         datasetlist[-1].add(obs, d.weight(), d.weightError())
-        
-    #     # save
-    #     getattr(wslist[-1], 'import')(datasetlist[-1])
-    #     fout.cd()
-    #     wslist[-1].Write()
+            # Delete trees and RooDataSet from heap
+            t.Delete()
+            d.Delete()
+            del batch_sa
+        # Import the merged dataset into the workspace
+        getattr(ws, 'import')(merged_dataset)
 
-    # print("Hi")
+        if opt.doSystematics:
+          # b) make RooDataHists for systematic variations
+          if cat == "NOTAG": continue
+          for s in systematics:
+            for direction in ['Up','Down']:
+              # Create mask for systematic variation
+              mask = (sdf['type']=='%s%s'%(s,direction))&(sdf['cat']==cat)
+              # Convert dataframe to structured array, then to ROOT tree
+              sa = sdf[mask].to_records()
+              t = array2tree(sa)
+              
+              # Define RooDataHist
+              hName = "%s_%s_%s_%s_%s%s01sigma"%(productionMode_string,opt.inputMass,sqrts__,cat,s,direction)
 
-    # Delete trees and RooDataSet from heap
-    t.Delete()
-    d.Delete()
-    del sa
+              # Make argset 
+              systematicsVarsDropWeight = []
+              for var in systematicsVars:
+                if 'fiducial' and 'Tagger' in var: continue
+                if var != "weight": systematicsVarsDropWeight.append(var)
+              aset = make_argset(ws,systematicsVarsDropWeight)
+              
+              h = ROOT.RooDataHist(hName,hName,aset)
+              for ev in t:
+                for v in systematicsVars:
+                  if (v == "weight") or ('fiducial' and 'Tagger' in v): continue
+                  else: ws.var(v).setVal(getattr(ev,v))
+                h.add(aset,getattr(ev,'weight'))
+              
+              # Add to workspace
+              getattr(ws,'import')(h)
 
-    if opt.doSystematics:
-      # b) make RooDataHists for systematic variations
-      if cat == "NOTAG": continue
-      for s in systematics:
-        for direction in ['Up','Down']:
-          # Create mask for systematic variation
-          mask = (sdf['type']=='%s%s'%(s,direction))&(sdf['cat']==cat)
-          # Convert dataframe to structured array, then to ROOT tree
-          sa = sdf[mask].to_records()
-          t = array2tree(sa)
-          
-          # Define RooDataHist
-          hName = "%s_%s_%s_%s_%s%s01sigma"%(productionMode_string,opt.inputMass,sqrts__,cat,s,direction)
+              # Delete trees and RooDataHist
+              t.Delete()
+              h.Delete()
+              del sa
 
-          # Make argset 
-          systematicsVarsDropWeight = []
-          for var in systematicsVars:
-            if 'fiducial' and 'Tagger' in var: continue
-            if var != "weight": systematicsVarsDropWeight.append(var)
-          aset = make_argset(ws,systematicsVarsDropWeight)
-          
-          h = ROOT.RooDataHist(hName,hName,aset)
-          for ev in t:
-            for v in systematicsVars:
-              if (v == "weight") or ('fiducial' and 'Tagger' in v): continue
-              else: ws.var(v).setVal(getattr(ev,v))
-            h.add(aset,getattr(ev,'weight'))
-          
-          # Add to workspace
-          getattr(ws,'import')(h)
+    sdf = sdf.drop(columns=['fiducialGeometricTagger_20'])
 
-          # Delete trees and RooDataHist
-          t.Delete()
-          h.Delete()
-          del sa
-  sdf = sdf.drop(columns=['fiducialGeometricTagger_20'])
+    # Write WS to file
+    ws.Write()
 
-  # Write WS to file
-  ws.Write()
-
-  # Close file and delete workspace from heap
-  fout.Close()
-  ws.Delete()
-  fout.Delete()
+    # Close file and delete workspace from heap
+    fout.Close()
+    ws.Delete()
+    fout.Delete()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # For theory weights: create vars for each weight
@@ -399,7 +368,7 @@ for fiducialId in fiducialIds:
   
   productionMode_string = opt.productionMode + "_" + fidTag # This is, for example, "ggh_in"
 
-  create_workspace(df, sdf, outputWSFile, productionMode_string)
+  create_workspace_batched(df, sdf, outputWSFile, productionMode_string)
 
 if opt.doSTXSSplitting:
 
@@ -429,4 +398,4 @@ if opt.doSTXSSplitting:
 
     productionMode_string = opt.productionMode
 
-    create_workspace(df, sdf, outputWSFile, productionMode_string)
+    create_workspace_batched(df, sdf, outputWSFile, productionMode_string)

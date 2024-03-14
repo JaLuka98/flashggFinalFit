@@ -9,7 +9,7 @@ inputMasses=(120 125 130)
 eras=("preEE" "postEE")
 
 # Define an array of production modes and corresponding process strings
-productionModes=("ggh:GluGluHtoGG" "vbf:VBFHtoGG" "vh:VHtoGG" "tth:ttHtoGG")
+productionModes=("sm:SM")
 
 # Check if path argument is provided
 if [ $# -ne 1 ]; then
@@ -44,7 +44,7 @@ for modeString in "${productionModes[@]}"; do
         fi
         
         for mass in "${inputMasses[@]}"; do
-            echo python trees2ws.py --inputMass "$mass" --productionMode "$mode" --year 2022"$era" --doSystematics --doInOutSplitting --inputConfig config_2022.py --inputTreeFile "$path_to_root_files"/"$process"_M-"$mass"_"$era"/*.root --outputWSDir "$outputDir"
+            echo python trees2ws_merged.py --inputMass "$mass" --productionMode "$mode" --year 2022"$era" --doSystematics --doInOutSplitting --inputConfig config_2022.py --inputTreeFile "$path_to_root_files"/"$process"_M-"$mass"_"$era"/*.root --outputWSDir "$outputDir"
         done
     done
 done

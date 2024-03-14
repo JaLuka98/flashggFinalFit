@@ -48,6 +48,12 @@ globalXSBRMap['earlyAnalysisInOut']['VBF_out'] = {'mode':'constant','factor':4.0
 globalXSBRMap['earlyAnalysisInOut']['VH_out'] = {'mode':'constant','factor':2.3781}
 globalXSBRMap['earlyAnalysisInOut']['TTH_out'] = {'mode':'constant','factor':0.5638}
 
+
+globalXSBRMap['earlyAnalysisInOutMerged'] = od()
+globalXSBRMap['earlyAnalysisInOutMerged']['decay'] = {'mode':'hgg'}
+globalXSBRMap['earlyAnalysisInOutMerged']['sm_in'] = {'mode':'constant','factor':58.9689}
+globalXSBRMap['earlyAnalysisInOutMerged']['sm_out'] = {'mode':'constant','factor':58.9689}
+
 # STXS analysis: add factor for bin composition
 globalXSBRMap['STXS'] = od()
 globalXSBRMap['STXS']['decay'] = {'mode':'hgg'}

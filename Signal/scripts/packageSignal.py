@@ -11,7 +11,7 @@ def get_options():
   parser.add_option("--cat", dest='cat', default='RECO_0J_PTH_0_10_Tag0', help="RECO category to package")
   parser.add_option("--exts", dest='exts', default='', help="Comma separate list of extensions")
   parser.add_option("--outputExt", dest='outputExt', default='packaged', help="Output extension")
-  parser.add_option("--massPoints", dest='massPoints', default='120,125,130', help="Comma separated list of mass points")
+  parser.add_option("--massPoints", dest='massPoints', default='125', help="Comma separated list of mass points")
   parser.add_option("--mergeYears", dest='mergeYears', default=False, action="store_true", help="Merge specified categories across years")
   parser.add_option("--year", dest="year", default="2016", help="If not merging, then specify year for output file name")
   return parser.parse_args()
@@ -27,7 +27,6 @@ def rooiter(x):
 # Extract all files to be merged
 fNames = {}
 for ext in opt.exts.split(","): fNames[ext] = glob.glob("outdir_%s/signalFit/output/CMS-HGG_sigfit_%s_*_%s.root"%(ext,ext,opt.cat))
-
 # Define ouput packaged workspace
 print " --> Packaging output workspaces"
 packagedWS = ROOT.RooWorkspace("wsig_13TeV","wsig_13TeV")
