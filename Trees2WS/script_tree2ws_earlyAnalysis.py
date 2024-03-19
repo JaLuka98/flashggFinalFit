@@ -32,15 +32,6 @@ def run_process(args):
     output_dir = "../input_output_2022{}".format(era)
     safe_mkdir(output_dir)  # Create output directory if it doesn't exist
     
-    """
-    input_tree_file = "{}/{}_M-{}_{}/".format(path_to_root_files, process, mass, era)
-    output_ws_dir = output_dir
-    
-    # Use glob to expand the wildcard in file paths
-    file_pattern = os.path.join(path_to_root_files, "{}_M-{}_{}/*.root".format(process, mass, era))
-    input_tree_files = glob.glob(file_pattern)
-    """
-    
     # Construct the command as a single string
     cmd = "python trees2ws.py --inputMass {mass} --productionMode {mode} --year 2022{era} --doSystematics --doInOutSplitting --inputConfig config_2022.py --inputTreeFile '{path_to_root_files}/{process}_M-{mass}_{era}/'*.root --outputWSDir {output_dir}".format(
         mass=mass, mode=mode, era=era, path_to_root_files=path_to_root_files, process=process, output_dir=output_dir)
@@ -52,7 +43,6 @@ def run_process(args):
 # Main function to parallelize tasks
 def main(path_to_root_files):
     
-    path_to_root_files = "../data_2022_in_out_split/root/"
     num_workers = 24 # masses x 2 eras x 4 production modes = 24
     pool = Pool(processes=num_workers)
     tasks = [
@@ -82,4 +72,3 @@ if __name__ == "__main__":
     
     path_to_root_files = sys.argv[1]
     main(path_to_root_files)
-    #main()
