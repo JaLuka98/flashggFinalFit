@@ -54,7 +54,7 @@ def add_vars_to_workspace(_ws=None,_data=None,_stxsVar=None):
   _vars = od()
   for var in _data.columns:
     if var in ['type','cat',_stxsVar]: continue
-    if 'fiducial' and 'Tagger' in var: continue
+    if 'fiducial' and 'Flag' in var: continue
     if var == "CMS_hgg_mass": 
       _vars[var] = ROOT.RooRealVar(var,var,125.,100.,180.)
       _vars[var].setBins(160)
@@ -164,14 +164,14 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
           # Make argset 
           systematicsVarsDropWeight = []
           for var in systematicsVars:
-            if 'fiducial' and 'Tagger' in var: continue
+            if 'fiducial' and 'Flag' in var: continue
             if var != "weight": systematicsVarsDropWeight.append(var)
           aset = make_argset(ws,systematicsVarsDropWeight)
           
           h = ROOT.RooDataHist(hName,hName,aset)
           for ev in t:
             for v in systematicsVars:
-              if (v == "weight") or ('fiducial' and 'Tagger' in v): continue
+              if (v == "weight") or ('fiducial' and 'Flag' in v): continue
               else: ws.var(v).setVal(getattr(ev,v))
             h.add(aset,getattr(ev,'weight'))
           
@@ -183,7 +183,7 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
           t.Delete()
           h.Delete()
           del sa
-  sdf = sdf.drop(columns=['fiducialGeometricTagger_20'])
+  sdf = sdf.drop(columns=['fiducialGeometricFlag'])
 
   # Write WS to file
   ws.Write()
@@ -324,7 +324,7 @@ if not opt.doSTXSSplitting:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 2) Convert pandas dataframe to RooWorkspace
 
-if opt.doInOutSplitting: fiducialIds = data['fiducialGeometricTagger_20'].unique()
+if opt.doInOutSplitting: fiducialIds = data['fiducialGeometricFlag'].unique()
 else: fiducialIds = [0] # If we do not perform in/out splitting, we want to have one inclusive (for particle-level) process definition, our code int for that is zero
 
 for fiducialId in fiducialIds:
@@ -332,13 +332,13 @@ for fiducialId in fiducialIds:
   # In the end, the STXS and fiducial in/out splitting should maybe be harmonised, this looks a bit ugly
   if (stxsVar != '') or (opt.doSTXSSplitting): continue
 
-  if int(fiducialId) == 21: fidTag = "in"
-  elif int(fiducialId) == 20: fidTag = "out"
+  if int(fiducialId) == True: fidTag = "in"
+  elif int(fiducialId) == False: fidTag = "out"
   else: fidTag = "incl"
 
   if opt.doInOutSplitting:
-    fiducial_mask = data['fiducialGeometricTagger_20'] == fiducialId
-    fiducial_mask_syst = sdata['fiducialGeometricTagger_20'] == fiducialId
+    fiducial_mask = data['fiducialGeometricFlag'] == fiducialId
+    fiducial_mask_syst = sdata['fiducialGeometricFlag'] == fiducialId
   else:
     fiducial_mask = data['CMS_hgg_mass'] > 0 # Basically a true mask because we are all inclusive
     fiducial_mask_syst = sdata['CMS_hgg_mass'] > 0
