@@ -181,8 +181,6 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
             h.add(aset, getattr(ev,'weight'))
           
           # Add to workspace
-          print("RooDataHist Name:", h.GetName())
-          print("Entries in RooDataHist:", h.sumEntries())
           ws.Import(h)
           #getattr(ws,'import')(h)
 
@@ -254,12 +252,17 @@ for cat in cats:
 
   # Theory weights
   for ts, tsColumns in theoryWeightColumns.iteritems():
-    if opt.productionMode in modesToSkipTheoryWeights: 
-      dfs[ts] = pandas.DataFrame(np.ones(shape=(len(t),theoryWeightContainers[ts])))
-    else:
-      #dfs[ts] = t.pandas.df(ts)
-      dfs[ts] = pandas.DataFrame(np.reshape(np.array(t[ts].array()),(len(t),len(tsColumns))))
-    dfs[ts].columns = tsColumns
+      if opt.productionMode in modesToSkipTheoryWeights:
+          dfs[ts] = pandas.DataFrame(np.ones(shape=(len(t), theoryWeightContainers[ts])))
+      else:
+          array_data = t[ts].array()
+          flat_array = np.ravel(array_data)  # Flatten the array to ensure it's one-dimensional
+          if flat_array.size != len(t) * len(tsColumns):
+              print("Data size mismatch: expected {}, got {}".format(len(t) * len(tsColumns), flat_array.size))
+              continue  # Skip this iteration or handle the error differently
+
+          reshaped_array = np.reshape(flat_array, (len(t), len(tsColumns)))  # Reshape the flat array
+          dfs[ts] = pandas.DataFrame(reshaped_array, columns=tsColumns)
 
   # Main variables to add to nominal RooDataSets
   dfs['main'] = t.pandas.df(mainVars) if cat!='NOTAG' else t.pandas.df(notagVars)
@@ -340,8 +343,8 @@ for fiducialId in fiducialIds:
   # In the end, the STXS and fiducial in/out splitting should maybe be harmonised, this looks a bit ugly
   if (stxsVar != '') or (opt.doSTXSSplitting): continue
 
-  if int(fiducialId) == 21: fidTag = "in"
-  elif int(fiducialId) == 20: fidTag = "out"
+  if int(fiducialId) == True: fidTag = "in"
+  elif int(fiducialId) == False: fidTag = "out"
   else: fidTag = "incl"
 
   if opt.doInOutSplitting:
