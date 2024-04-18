@@ -5,7 +5,7 @@ models = {
 
   "mu_fiducial":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggH_in.*:r[1,0,2]\" \
---PO \"map=.*/VBF_in.*:r[1,0,2]\" \
+--PO \"map=.*/qqH_in.*:r[1,0,2]\" \
 --PO \"map=.*/VH_in.*:r[1,0,2]\" \
 --PO \"map=.*/ttH_in.*:r[1,0,2]\"",
 
