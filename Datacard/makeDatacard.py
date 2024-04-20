@@ -90,7 +90,7 @@ if opt.doSystematics:
   data = theorySystFactory(data, theory_systematics, theoryFactoryType, opt, stxsMergeScheme=STXSMergingScheme)
   #data, theory_systematics = groupSystematics(data, theory_systematics, opt, prefix="scaleWeight", groupings=[[1,2],[3,6],[4,8]], stxsMergeScheme=STXSMergingScheme)
   # Changed to nanoAOD conventions based on advice by Jon, 22nd of Feb 2024
-  data, theory_systematics = groupSystematics(data, theory_systematics, opt, prefix="scaleWeight", groupings=[[0,8],[1,7],[3,5]], stxsMergeScheme=STXSMergingScheme)
+  data, theory_systematics = groupSystematics(data, theory_systematics, opt, prefix="weight_LHEScal", groupings=[[0,8],[1,7],[3,5]], stxsMergeScheme=STXSMergingScheme)
   data, theory_systematics = groupSystematics(data, theory_systematics, opt, prefix="alphaSWeight", groupings=[[0,1]], stxsMergeScheme=STXSMergingScheme)
 
   # Rename systematics
@@ -168,6 +168,7 @@ if not writeProcesses(fdata,data,opt):
   print " --> [ERROR] in writing processes. Leaving..."
   leave()
 if opt.doSystematics:
+  print " --> Systematics for bins x processes with less than 100 events will be deactivated!"
   for syst in experimental_systematics:
     if not writeSystematic(fdata,data,syst,opt):
       print " --> [ERROR] in writing systematic %s (experiment). Leaving"%syst['name']

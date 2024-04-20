@@ -4,10 +4,10 @@ models = {
   "mu_inclusive_wsyst":"",
 
   "mu_fiducial":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
---PO \"map=.*/ggH_in.*:r[1,0,2]\" \
---PO \"map=.*/qqH_in.*:r[1,0,2]\" \
---PO \"map=.*/VH_in.*:r[1,0,2]\" \
---PO \"map=.*/ttH_in.*:r[1,0,2]\"",
+--PO \"map=.*/ggh_in.*:r[1,0,2]\" \
+--PO \"map=.*/vbf_in.*:r[1,0,2]\" \
+--PO \"map=.*/vh_in.*:r[1,0,2]\" \
+--PO \"map=.*/tth_in.*:r[1,0,2]\"",
 
   "mu":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggH.*:r_ggH[1,0,2]\" \
@@ -246,6 +246,63 @@ models = {
 --PO \"map=.*/ttH_PTH_GT300.*hgg:r_ttH_high[1,0,5]\" \
 --PO \"map=.*/tHq.*hgg:r_tH[1,0,15]\" \
 --PO \"map=.*/tHW.*hgg:r_tH[1,0,15]\"",
+
+
+  "differential_pt":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/ggH_PTH_0p0_15p0.*:r_PTH_0p0_15p0[1,0,3]\" \
+--PO \"map=.*/ttH_PTH_0p0_15p0.*:r_PTH_0p0_15p0[1,0,3]\" \
+--PO \"map=.*/VH_PTH_0p0_15p0.*:r_PTH_0p0_15p0[1,0,3]\" \
+--PO \"map=.*/qqH_PTH_0p0_15p0.*:r_PTH_0p0_15p0[1,0,3]\" \
+--PO \"map=.*/ggH_PTH_15p0_30p0.*:r_PTH_15p0_30p0[1,0,3]\" \
+--PO \"map=.*/ttH_PTH_15p0_30p0.*:r_PTH_15p0_30p0[1,0,3]\" \
+--PO \"map=.*/VH_PTH_15p0_30p0.*:r_PTH_15p0_30p0[1,0,3]\" \
+--PO \"map=.*/qqH_PTH_15p0_30p0.*:r_PTH_15p0_30p0[1,0,3]\" \
+--PO \"map=.*/ggH_PTH_30p0_45p0.*:r_PTH_30p0_45p0[1,0,3]\" \
+--PO \"map=.*/ttH_PTH_30p0_45p0.*:r_PTH_30p0_45p0[1,0,3]\" \
+--PO \"map=.*/VH_PTH_30p0_45p0.*:r_PTH_30p0_45p0[1,0,3]\" \
+--PO \"map=.*/qqH_PTH_30p0_45p0.*:r_PTH_30p0_45p0[1,0,3]\" \
+--PO \"map=.*/ggH_PTH_45p0_80p0.*:r_PTH_45p0_80p0[1,0,3]\" \
+--PO \"map=.*/ttH_PTH_45p0_80p0.*:r_PTH_45p0_80p0[1,0,3]\" \
+--PO \"map=.*/VH_PTH_45p0_80p0.*:r_PTH_45p0_80p0[1,0,3]\" \
+--PO \"map=.*/qqH_PTH_45p0_80p0.*:r_PTH_45p0_80p0[1,0,3]\" \
+--PO \"map=.*/ggH_PTH_80p0_120p0.*:r_PTH_80p0_120p0[1,0,3]\" \
+--PO \"map=.*/ttH_PTH_80p0_120p0.*:r_PTH_80p0_120p0[1,0,3]\" \
+--PO \"map=.*/VH_PTH_80p0_120p0.*:r_PTH_80p0_120p0[1,0,3]\" \
+--PO \"map=.*/qqH_PTH_80p0_120p0.*:r_PTH_80p0_120p0[1,0,3]\" \
+--PO \"map=.*/ggH_PTH_120p0_200p0.*:r_PTH_120p0_200p0[1,0,3]\" \
+--PO \"map=.*/ttH_PTH_120p0_200p0.*:r_PTH_120p0_200p0[1,0,3]\" \
+--PO \"map=.*/VH_PTH_120p0_200p0.*:r_PTH_120p0_200p0[1,0,3]\" \
+--PO \"map=.*/qqH_PTH_120p0_200p0.*:r_PTH_120p0_200p0[1,0,3]\" \
+--PO \"map=.*/ggH_PTH_200p0_350p0.*:r_PTH_200p0_350p0[1,0,3]\" \
+--PO \"map=.*/ttH_PTH_200p0_350p0.*:r_PTH_200p0_350p0[1,0,3]\" \
+--PO \"map=.*/VH_PTH_200p0_350p0.*:r_PTH_200p0_350p0[1,0,3]\" \
+--PO \"map=.*/qqH_PTH_200p0_350p0.*:r_PTH_200p0_350p0[1,0,3]\" \
+--PO \"map=.*/ggH_PTH_350p0_10000p0.*:r_PTH_350p0_10000p0[1,0,3]\" \
+--PO \"map=.*/ttH_PTH_350p0_10000p0.*:r_PTH_350p0_10000p0[1,0,3]\" \
+--PO \"map=.*/VH_PTH_350p0_10000p0.*:r_PTH_350p0_10000p0[1,0,3]\" \
+--PO \"map=.*/qqH_PTH_350p0_10000p0.*:r_PTH_350p0_10000p0[1,0,3]\"",
+
+"differential_y":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/ggH_YH_0p0_0p15.*:r_YH_0p0_0p15[1,0,3]\" \
+--PO \"map=.*/ttH_YH_0p0_0p15.*:r_YH_0p0_0p15[1,0,3]\" \
+--PO \"map=.*/VH_YH_0p0_0p15.*:r_YH_0p0_0p15[1,0,3]\" \
+--PO \"map=.*/qqH_YH_0p0_0p15.*:r_YH_0p0_0p15[1,0,3]\" \
+--PO \"map=.*/ggH_YH_0p15_0p3.*:r_YH_0p15_0p3[1,0,3]\" \
+--PO \"map=.*/ttH_YH_0p15_0p3.*:r_YH_0p15_0p3[1,0,3]\" \
+--PO \"map=.*/VH_YH_0p15_0p3.*:r_YH_0p15_0p3[1,0,3]\" \
+--PO \"map=.*/qqH_YH_0p15_0p3.*:r_YH_0p15_0p3[1,0,3]\" \
+--PO \"map=.*/ggH_YH_0p3_0p6.*:r_YH_0p3_0p6[1,0,3]\" \
+--PO \"map=.*/ttH_YH_0p3_0p6.*:r_YH_0p3_0p6[1,0,3]\" \
+--PO \"map=.*/VH_YH_0p3_0p6.*:r_YH_0p3_0p6[1,0,3]\" \
+--PO \"map=.*/qqH_YH_0p3_0p6.*:r_YH_0p3_0p6[1,0,3]\" \
+--PO \"map=.*/ggH_YH_0p6_0p9.*:r_YH_0p6_0p9[1,0,3]\" \
+--PO \"map=.*/ttH_YH_0p6_0p9.*:r_YH_0p6_0p9[1,0,3]\" \
+--PO \"map=.*/VH_YH_0p6_0p9.*:r_YH_0p6_0p9[1,0,3]\" \
+--PO \"map=.*/qqH_YH_0p6_0p9.*:r_YH_0p6_0p9[1,0,3]\" \
+--PO \"map=.*/ggH_YH_0p9_2p5.*:r_YH_0p9_2p5[1,0,3]\" \
+--PO \"map=.*/ttH_YH_0p9_2p5.*:r_YH_0p9_2p5[1,0,3]\" \
+--PO \"map=.*/VH_YH_0p9_2p5.*:r_YH_0p9_2p5[1,0,3]\" \
+--PO \"map=.*/qqH_YH_0p9_2p5.*:r_YH_0p9_2p5[1,0,3]\"",
 
 
   "kappas_resolved":"-P HiggsAnalysis.CombinedLimit.LHCHCGModels:K1 --PO BRU=0",

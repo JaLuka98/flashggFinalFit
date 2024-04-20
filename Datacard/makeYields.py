@@ -98,7 +98,7 @@ for year in years:
 
     # Input flashgg ws 
     _inputWSFile = glob.glob("%s/*M%s*_%s.root"%(inputWSDirMap[year],opt.mass,proc))[0]
-    if proc.split("_")[-1] in ["in", "out"]:
+    if (len(proc.split("_")) <= 2) and (proc.split("_")[-1] in ["in", "out"]):
       _nominalDataName = "%s_%s_%s_%s_%s"%(_proc_s0,procToData(proc.split("_")[-1]),opt.mass,sqrts__,opt.cat)  
     else:
       _nominalDataName = "%s_%s_%s_%s"%(_proc_s0,opt.mass,sqrts__,opt.cat)
@@ -244,6 +244,7 @@ for ir,r in data[data['type']=='sig'].iterrows():
       # Skip centralObjectWeight correction as concerns events in acceptance
       experimentalSystYields = calcSystYields(r['nominalDataName'],contents,inputWS,experimentalFactoryType,skipCOWCorr=True,proc=r['proc'],year=r['year'],ignoreWarnings=opt.ignore_warnings)
       for s,f in experimentalFactoryType.iteritems():
+        data.at[ir, 'numEvents'] = experimentalSystYields["numEvents"]
 	if f in ['a_w','a_h']: 
 	  for direction in ['up','down']: 
 	    data.at[ir,"%s_%s_yield"%(s,direction)] = experimentalSystYields["%s_%s"%(s,direction)]
@@ -253,6 +254,7 @@ for ir,r in data[data['type']=='sig'].iterrows():
     # For theoretical systematics:
     theorySystYields = calcSystYields(r['nominalDataName'],contents,inputWS,theoryFactoryType,skipCOWCorr=opt.skipCOWCorr,proc=r['proc'],year=r['year'],ignoreWarnings=opt.ignore_warnings)
     for s,f in theoryFactoryType.iteritems():
+      data.at[ir, 'numEvents'] = theorySystYields["numEvents"]
       if f in ['a_w','a_h']: 
 	for direction in ['up','down']: 
 	  data.at[ir,"%s_%s_yield"%(s,direction)] = theorySystYields["%s_%s"%(s,direction)]

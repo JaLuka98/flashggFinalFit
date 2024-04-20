@@ -46,9 +46,11 @@ Background/outdir_*
 .old
 .old/*
 
-runFits_mu_fiducial/*
-runFits_mu_fiducial/
+# Datacard directory
+Datacard/yields_*
+
+# Combine directory
+runFits_*
+runFits_*
 
 t2w_jobs/
-
-yields_earlyAnalysis/
