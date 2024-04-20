@@ -16,7 +16,11 @@ for file in Models/signal/*_2022.root; do
         echo "Renamed $file to $new_name"
     fi
 done
-cp ../Datacard/Datacard.txt .
+if [ -e ../Datacard/Datacard_cleaned.txt ]; then
+    cp ../Datacard/Datacard_cleaned.txt Datacard.txt
+else
+    cp ../Datacard/Datacard.txt Datacard.txt
+fi
 
 # Note that you might need to manually rename some paths in the datacard depending on the settings of the year 2022
 # Currently: Add 2022 to the background shapes, should be: 2022_13TeV_bkgshape
