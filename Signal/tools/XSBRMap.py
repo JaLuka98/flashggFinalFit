@@ -163,14 +163,23 @@ globalXSBRMap['earlyAnalysis']['TTH'] = {'mode':'constant','factor':0.5638}
 # Early Run 3 Hgg analysis WITH in/out splitting TBD
 globalXSBRMap['earlyAnalysisInOut'] = od()
 globalXSBRMap['earlyAnalysisInOut']['decay'] = {'mode':'hgg'}
-globalXSBRMap['earlyAnalysisInOut']['GG2H_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['earlyAnalysisInOut']['VBF_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['earlyAnalysisInOut']['VH_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['earlyAnalysisInOut']['TTH_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['earlyAnalysisInOut']['GG2H_out'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['earlyAnalysisInOut']['VBF_out'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['earlyAnalysisInOut']['VH_out'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['earlyAnalysisInOut']['TTH_out'] = {'mode':'constant','factor':0.5638}
+#globalXSBRMap['earlyAnalysisInOut']['GG2H_in'] = {'mode':'constant','factor':51.96}
+#globalXSBRMap['earlyAnalysisInOut']['VBF_in'] = {'mode':'constant','factor':4.067}
+#globalXSBRMap['earlyAnalysisInOut']['VH_in'] = {'mode':'constant','factor':2.3781}
+#globalXSBRMap['earlyAnalysisInOut']['TTH_in'] = {'mode':'constant','factor':0.5638}
+#globalXSBRMap['earlyAnalysisInOut']['GG2H_out'] = {'mode':'constant','factor':51.96}
+#globalXSBRMap['earlyAnalysisInOut']['VBF_out'] = {'mode':'constant','factor':4.067}
+#globalXSBRMap['earlyAnalysisInOut']['VH_out'] = {'mode':'constant','factor':2.3781}
+#globalXSBRMap['earlyAnalysisInOut']['TTH_out'] = {'mode':'constant','factor':0.5638}
+# Also adding the lower-case strings (Nico convention)
+globalXSBRMap['earlyAnalysisInOut']['ggh_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['earlyAnalysisInOut']['vbf_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['earlyAnalysisInOut']['vh_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['earlyAnalysisInOut']['tth_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['earlyAnalysisInOut']['ggh_out'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['earlyAnalysisInOut']['vbf_out'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['earlyAnalysisInOut']['vh_out'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['earlyAnalysisInOut']['tth_out'] = {'mode':'constant','factor':0.5638}
 
 # Early Run 3 Hgg analysis with differentials in pt
 globalXSBRMap['earlyAnalysisDiffPt'] = od()
