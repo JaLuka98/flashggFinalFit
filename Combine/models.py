@@ -4,10 +4,10 @@ models = {
   "mu_inclusive_wsyst":"",
 
   "mu_fiducial":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
---PO \"map=.*/ggH_in.*:r[1,0,2]\" \
---PO \"map=.*/VBF_in.*:r[1,0,2]\" \
---PO \"map=.*/VH_in.*:r[1,0,2]\" \
---PO \"map=.*/ttH_in.*:r[1,0,2]\"",
+--PO \"map=.*/ggh_in.*:r[1,0,2]\" \
+--PO \"map=.*/vbf_in.*:r[1,0,2]\" \
+--PO \"map=.*/vh_in.*:r[1,0,2]\" \
+--PO \"map=.*/tth_in.*:r[1,0,2]\"",
 
   "mu":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggH.*:r_ggH[1,0,2]\" \
