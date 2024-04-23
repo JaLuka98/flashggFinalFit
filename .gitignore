@@ -54,3 +54,10 @@ runFits_*
 runFits_*
 
 t2w_jobs/
+
+# Asimov stuff
+
+validation.json
+condor_*
+hadd_plot.sh
+impacts*
