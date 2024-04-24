@@ -200,7 +200,8 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # For theory weights: create vars for each weight
 theoryWeightColumns = {}
-for ts, nWeights in theoryWeightContainers.iteritems(): theoryWeightColumns[ts] = ["%s_%g"%(ts[:-1],i) for i in range(0,nWeights)] # drop final s from container name
+for ts, nWeights in theoryWeightContainers.iteritems():
+  theoryWeightColumns[ts] = ["%s_%g"%(ts[:-1],i) for i in range(0,nWeights)] # drop final s from container name
 
 # If year == 2018, add HET
 if opt.year == '2018': systematics.append("JetHEM")
@@ -245,17 +246,24 @@ for cat in cats:
   t = f[treeName]
   if len(t) == 0: continue
   
-  # Convert tree to pandas dataframe
   dfs = {}
-
-  # Theory weights
+  # Process theory weights
   for ts, tsColumns in theoryWeightColumns.iteritems():
-    if opt.productionMode in modesToSkipTheoryWeights: 
-      dfs[ts] = pandas.DataFrame(np.ones(shape=(len(t),theoryWeightContainers[ts])))
+    if opt.productionMode in modesToSkipTheoryWeights:
+      dfs[ts] = pandas.DataFrame(np.ones((len(t), len(tsColumns))), columns=tsColumns)
     else:
-      #dfs[ts] = t.pandas.df(ts)
-      dfs[ts] = pandas.DataFrame(np.reshape(np.array(t[ts].array()),(len(t),len(tsColumns))))
-    dfs[ts].columns = tsColumns
+      array_data = t[ts].array()
+      data_list = []
+      for event_array in array_data:
+        if len(event_array) != len(tsColumns):
+          print "Warning: Event array size mismatch: expected %d, got %d" % (len(tsColumns), len(event_array))
+          continue
+        data_list.append(event_array)
+      if data_list:
+        dfs[ts] = pandas.DataFrame(data_list, columns=tsColumns)
+      else:
+        dfs[ts] = pandas.DataFrame(columns=tsColumns)
+      print "INFO: Successfully added theory weight %s to the output file."%(ts)
 
   # Main variables to add to nominal RooDataSets
   dfs['main'] = t.pandas.df(mainVars) if cat!='NOTAG' else t.pandas.df(notagVars)
