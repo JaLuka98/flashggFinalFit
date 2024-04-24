@@ -31,6 +31,8 @@ from collections import OrderedDict as od
 import imp
 
 import ROOT
+# For debugging purposes
+#ROOT.gDebug = 3
 import pandas
 import numpy as np
 import uproot
@@ -51,7 +53,8 @@ def add_vars_to_workspace(_ws=None,_data=None,_stxsVar=None):
   # Add intLumi var
   intLumi = ROOT.RooRealVar("intLumi","intLumi",1000.,0.,999999999.)
   intLumi.setConstant(True)
-  getattr(_ws,'import')(intLumi)
+  #getattr(_ws,'import')(intLumi)
+  _ws.Import(intLumi)
   # Add vars specified by dataframe columns: skipping cat, stxsvar and type
   _vars = od()
   for var in _data.columns:
@@ -69,7 +72,8 @@ def add_vars_to_workspace(_ws=None,_data=None,_stxsVar=None):
     else:
       _vars[var] = ROOT.RooRealVar(var,var,1.,-999999,999999)
       _vars[var].setBins(1)
-    getattr(_ws,'import')(_vars[var],ROOT.RooFit.Silence())
+    #getattr(_ws,'import')(_vars[var],ROOT.RooFit.Silence())
+    _ws.Import(_vars[var], ROOT.RooFit.Silence(True))
   return _vars.keys()
 
 # Function to make RooArgSet
@@ -144,11 +148,12 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
 
     # Convert tree to RooDataset and add to workspace
     d = ROOT.RooDataSet(dName,dName,t,aset,'','weight')
-    getattr(ws,'import')(d)
+    #getattr(ws,'import')(d)
+    ws.Import(d)
 
     # Delete trees and RooDataSet from heap
     t.Delete()
-    d.Delete()
+    #d.Delete()
     del sa
 
     if opt.doSystematics:
@@ -177,25 +182,26 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
             for v in systematicsVars:
               if (v == "weight") or ('fiducial' in v) or ("diff" in v): continue
               else: ws.var(v).setVal(getattr(ev,v))
-            h.add(aset,getattr(ev,'weight'))
+            h.add(aset, getattr(ev,'weight'))
           
           # Add to workspace
-          getattr(ws,'import')(h)
+          ws.Import(h)
+          #getattr(ws,'import')(h)
 
 
           # Delete trees and RooDataHist
           t.Delete()
-          h.Delete()
+          #h.Delete()
           del sa
   # sdf = sdf.drop(columns=['fiducialGeometricTagger_20', 'diffVariable_pt'])
 
   # Write WS to file
   ws.Write()
 
-  # Close file and delete workspace from heap
+  # Close file
   fout.Close()
-  ws.Delete()
-  fout.Delete()
+  #ws.Delete()
+  #fout.Delete()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # For theory weights: create vars for each weight
@@ -250,12 +256,17 @@ for cat in cats:
 
   # Theory weights
   for ts, tsColumns in theoryWeightColumns.iteritems():
-    if opt.productionMode in modesToSkipTheoryWeights: 
-      dfs[ts] = pandas.DataFrame(np.ones(shape=(len(t),theoryWeightContainers[ts])))
-    else:
-      #dfs[ts] = t.pandas.df(ts)
-      dfs[ts] = pandas.DataFrame(np.reshape(np.array(t[ts].array()),(len(t),len(tsColumns))))
-    dfs[ts].columns = tsColumns
+      if opt.productionMode in modesToSkipTheoryWeights:
+          dfs[ts] = pandas.DataFrame(np.ones(shape=(len(t), theoryWeightContainers[ts])))
+      else:
+          array_data = t[ts].array()
+          flat_array = np.ravel(array_data)  # Flatten the array to ensure it's one-dimensional
+          if flat_array.size != len(t) * len(tsColumns):
+              print("Data size mismatch: expected {}, got {}".format(len(t) * len(tsColumns), flat_array.size))
+              continue  # Skip this iteration or handle the error differently
+
+          reshaped_array = np.reshape(flat_array, (len(t), len(tsColumns)))  # Reshape the flat array
+          dfs[ts] = pandas.DataFrame(reshaped_array, columns=tsColumns)
 
   # Main variables to add to nominal RooDataSets
   dfs['main'] = t.pandas.df(mainVars) if cat!='NOTAG' else t.pandas.df(notagVars)
@@ -347,7 +358,8 @@ for fiducialId in fiducialIds:
     fiducial_mask_syst = sdata['fiducialGeometricFlag'] == fiducialId
   else:
     fiducial_mask = data['CMS_hgg_mass'] > 0 # Basically a true mask because we are all inclusive
-    fiducial_mask_syst = sdata['CMS_hgg_mass'] > 0
+    if opt.doSystematics:
+      fiducial_mask_syst = sdata['CMS_hgg_mass'] > 0
 
   df = data[fiducial_mask]
   if opt.doSystematics: 
