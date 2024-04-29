@@ -50,8 +50,7 @@ Background/outdir_*
 Datacard/yields_*
 
 # Combine directory
-runFits_*
-runFits_*
+runFit*
 
 t2w_jobs/
 
@@ -61,3 +60,6 @@ validation.json
 condor_*
 hadd_plot.sh
 impacts*
+
+# Helper scripts
+transfer_held_jobs.sh
