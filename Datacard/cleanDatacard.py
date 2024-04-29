@@ -22,8 +22,14 @@ procs = []
 cats  = []
 
 def isDiag( proc, cat):
-  if 'ggH_hgg' in proc:
-    return 'J_PTH' in cat
+  if 'ggh_' in proc:
+    return "_".join(proc.split("_")[2:4]) in cat
+  elif 'vbf_' in proc:
+    return "_".join(proc.split("_")[2:4]) in cat
+  elif 'vh_' in proc:
+    return "_".join(proc.split("_")[2:4]) in cat
+  elif 'tth_' in proc:
+    return "_".join(proc.split("_")[2:4]) in cat
   elif 'qqH_hgg' in proc:
     return 'RECO_VBFTOPO' in cat
   elif 'ttH_hgg' in proc:
@@ -36,14 +42,19 @@ def isDiag( proc, cat):
 
 with open(opts.outfilename,'w') as outFile:
   with open(opts.datacard) as inFile:
+    procs_read = False
     for line in inFile.readlines():
       vals = line.split()
       if len(vals) < 2:
         outFile.write('%s'%line)
         continue
       if vals[0] == 'process':
+        if procs_read: 
+          outFile.write('%s'%line)
+          continue
         procs = vals[1:]
         outFile.write('%s'%line)
+        procs_read = True
         continue
       if vals[0] == 'bin':
         cats  = vals[1:]
@@ -55,6 +66,12 @@ with open(opts.outfilename,'w') as outFile:
         #if line.count('pdfindex') and not line.count('_13TeV_2016'): line = line.replace('_13TeV','_13TeV_2016')
         outFile.write('%s'%line)
         continue
+      line_name = vals[0]
+      # if ("lumi" in line_name) or ("scale" in line_name):
+      #   print("Skipping %s"%vals[0])
+      #   outFile.write('%s\n'%line)
+      #   continue
+      
       print
       print 'Processing line %s'%vals[0]
       line = line.split('lnN')[0] + 'lnN   '
@@ -63,46 +80,77 @@ with open(opts.outfilename,'w') as outFile:
         cat =  cats[i]
         #print 'proc = %s'%proc
         #print 'cat  = %s'%cat
-        if opts.removeNonDiagonal and not isDiag(proc,cat):
-          line += '- '
-          continue
         vals = effect.split('/')
-        if len(vals) == 1:
-          if vals[0] == '-':
-            line += '- '
+        if opts.removeNonDiagonal and not isDiag(proc,cat):
+          # if 'bkg_mass' in proc: continue
+          # print(proc, cat)
+          # if ("lumi" in line_name) or ("scale" in line_name):
+          #   pass
+          # else:
+          
+          if len(vals) == 1:
+            if ("lumi" in line_name) or ("scale" in line_name) or ("bkg_mass" in proc):
+              if vals[0] == '-':
+                line += '- '
+              else:
+                line += '%1.3f '%float(vals[0])
+            else: line += '- '
+          elif len(vals) == 2:
+            valLo = float(vals[0])
+            valHi = float(vals[1])
+            if ("lumi" in line_name) or ("scale" in line_name) or ("bkg_mass" in proc):
+              line += '%1.3f/%1.3f '%(valLo,valHi)
+            else: line += '- '
           else:
-            val = float(vals[0])
-            if val < factorLo or val > factorHi:
+            exit('should only be of length one or two!!!')
+          
+          continue
+        
+        if len(vals) == 1:
+          if ("lumi" in line_name) or ("scale" in line_name):
+            if vals[0] == '-':
               line += '- '
-              if opts.verbose:
-                print 'Symmetric: replacing value of %1.3f with -'%val
             else:
-              line += '%1.3f '%val
+              line += '%1.3f '%float(vals[0])
+          else:
+            if vals[0] == '-':
+              line += '- '
+            else:
+              val = float(vals[0])
+              if val < factorLo or val > factorHi:
+                line += '- '
+                if opts.verbose:
+                  print 'Symmetric: replacing value of %1.3f with -'%val
+              else:
+                line += '%1.3f '%val
         elif len(vals) == 2:
           valLo = float(vals[0])
           valHi = float(vals[1])
-          if valLo < factorLo or valLo > factorHi:
-            if opts.verbose:
-              print 'Asymmetric: replacing low value of %1.3f with 1'%valLo
-            valLo = 1
-          if valHi <= factorLo or valHi > factorHi:
-            if opts.verbose:
-              print 'Asymmetric: replacing high value of %1.3f with 1'%valHi
-            valHi = 1
-          if opts.removeDoubleSided and valHi > 1.000001 and valLo > 1.000001:
-            #line += '%1.3f '%(0.5*(valHi+valLo))
-            line += '%1.3f '%(max(valHi,valLo))
-            if opts.verbose:
-              #print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, 0.5*(valHi+valLo))
-              print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, max(valHi,valLo))
-          elif opts.removeDoubleSided and valHi < 0.999999 and valLo < 0.999999:
-            #line += '%1.3f '%(0.5*(valHi+valLo))
-            line += '%1.3f '%(min(valHi,valLo))
-            if opts.verbose:
-              #print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, 0.5*(valHi+valLo))
-              print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, min(valHi,valLo))
-          else:
+          if ("lumi" in line_name) or ("scale" in line_name):
             line += '%1.3f/%1.3f '%(valLo,valHi)
+          else:
+            if valLo < factorLo or valLo > factorHi:
+              if opts.verbose:
+                print 'Asymmetric: replacing low value of %1.3f with 1'%valLo
+              valLo = 1
+            if valHi <= factorLo or valHi > factorHi:
+              if opts.verbose:
+                print 'Asymmetric: replacing high value of %1.3f with 1'%valHi
+              valHi = 1
+            if opts.removeDoubleSided and valHi > 1.000001 and valLo > 1.000001:
+              #line += '%1.3f '%(0.5*(valHi+valLo))
+              line += '%1.3f '%(max(valHi,valLo))
+              if opts.verbose:
+                #print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, 0.5*(valHi+valLo))
+                print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, max(valHi,valLo))
+            elif opts.removeDoubleSided and valHi < 0.999999 and valLo < 0.999999:
+              #line += '%1.3f '%(0.5*(valHi+valLo))
+              line += '%1.3f '%(min(valHi,valLo))
+              if opts.verbose:
+                #print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, 0.5*(valHi+valLo))
+                print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, min(valHi,valLo))
+            else:
+              line += '%1.3f/%1.3f '%(valLo,valHi)
         else:
           exit('should only be of length one or two!!!')
       outFile.write('%s\n'%line)
