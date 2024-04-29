@@ -51,6 +51,7 @@ Datacard/yields_*
 
 # Combine directory
 runFit*
+!*.sh
 
 t2w_jobs/
 
