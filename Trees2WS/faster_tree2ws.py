@@ -28,25 +28,25 @@ def safe_mkdir(path):
 
 # Function to run the command
 def run_process(args):
-    mass, era, mode, process, path_to_root_files = args
-    output_dir = "../input_output_2022{}".format(era)
+    mass, era, mode, process, variable, path_to_root_files = args
+    output_dir = "../input_output_{}_2022{}".format(variable, era)
     safe_mkdir(output_dir)  # Create output directory if it doesn't exist
     
     # Construct the command as a single string
-    cmd = "python trees2ws.py --inputMass {mass} --productionMode {mode} --year 2022{era} --doSystematics --doInOutSplitting --inputConfig config_2022.py --inputTreeFile '{path_to_root_files}/{process}_M-{mass}_{era}/'*.root --outputWSDir {output_dir}".format(
-        mass=mass, mode=mode, era=era, path_to_root_files=path_to_root_files, process=process, output_dir=output_dir)
+    cmd = "python trees2ws.py --inputMass {mass} --productionMode {mode} --year 2022{era} --doSystematics --doDiffSplitting --inputConfig config_2022_{variable}.py --inputTreeFile '{path_to_root_files}/{process}_M-{mass}_{era}/'*.root --outputWSDir {output_dir}".format(
+        mass=mass, mode=mode, era=era, variable=variable, path_to_root_files=path_to_root_files, process=process, output_dir=output_dir)
 
     with open(os.devnull, 'wb') as devnull:
         subprocess.call(cmd, shell=True, stdout=devnull, stderr=devnull)
-    print("Process for mass {}, era {}, and mode {} completed.".format(mass, era, mode))
+    print("Process for variable {}, mass {}, era {}, and mode {} completed.".format(variable, mass, era, mode))
 
 # Main function to parallelize tasks
-def main(path_to_root_files):
+def main(variable, path_to_root_files):
     
     num_workers = 24 # masses x 2 eras x 4 production modes = 24
     pool = Pool(processes=num_workers)
     tasks = [
-        (mass, era, mode, process, path_to_root_files)
+        (mass, era, mode, process, variable, path_to_root_files)
         for mode, process in production_modes
         for era in eras
         for mass in input_masses
@@ -66,9 +66,10 @@ def main(path_to_root_files):
 if __name__ == "__main__":
     import sys
     
-    if len(sys.argv) != 2:
-        print("Usage: <script.py> <path_to_root_files>")
+    if len(sys.argv) != 3:
+        print("Usage: <script.py> <variable> <path_to_root_files>")
         sys.exit(1)
     
-    path_to_root_files = sys.argv[1]
-    main(path_to_root_files)
+    variable = sys.argv[1]
+    path_to_root_files = sys.argv[2]
+    main(variable, path_to_root_files)
