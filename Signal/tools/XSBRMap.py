@@ -255,3 +255,35 @@ globalXSBRMap['earlyAnalysisDiffYH']['tth_YH_0p3_0p6_in'] = {'mode':'constant','
 globalXSBRMap['earlyAnalysisDiffYH']['tth_YH_0p6_0p9_in'] = {'mode':'constant','factor':0.5638}
 globalXSBRMap['earlyAnalysisDiffYH']['tth_YH_0p9_2p5_in'] = {'mode':'constant','factor':0.5638}
 globalXSBRMap['earlyAnalysisDiffYH']['tth_YH_0p0_2p5_out'] = {'mode':'constant','factor':0.5638}
+
+
+# Early Run 3 Hgg analysis with differentials in NJ
+globalXSBRMap['earlyAnalysisDiffNJ'] = od()
+globalXSBRMap['earlyAnalysisDiffNJ']['decay'] = {'mode':'hgg'}
+globalXSBRMap['earlyAnalysisDiffNJ']['ggh_NJ_0p0_1p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['earlyAnalysisDiffNJ']['ggh_NJ_1p0_2p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['earlyAnalysisDiffNJ']['ggh_NJ_2p0_3p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['earlyAnalysisDiffNJ']['ggh_NJ_3p0_4p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['earlyAnalysisDiffNJ']['ggh_NJ_4p0_100p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['earlyAnalysisDiffNJ']['ggh_NJ_0p0_100p0_out'] = {'mode':'constant','factor':51.96}
+
+globalXSBRMap['earlyAnalysisDiffNJ']['vbf_NJ_0p0_1p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['earlyAnalysisDiffNJ']['vbf_NJ_1p0_2p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['earlyAnalysisDiffNJ']['vbf_NJ_2p0_3p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['earlyAnalysisDiffNJ']['vbf_NJ_3p0_4p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['earlyAnalysisDiffNJ']['vbf_NJ_4p0_100p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['earlyAnalysisDiffNJ']['vbf_NJ_0p0_100p0_out'] = {'mode':'constant','factor':4.067}
+
+globalXSBRMap['earlyAnalysisDiffNJ']['vh_NJ_0p0_1p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['earlyAnalysisDiffNJ']['vh_NJ_1p0_2p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['earlyAnalysisDiffNJ']['vh_NJ_2p0_3p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['earlyAnalysisDiffNJ']['vh_NJ_3p0_4p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['earlyAnalysisDiffNJ']['vh_NJ_4p0_100p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['earlyAnalysisDiffNJ']['vh_NJ_0p0_100p0_out'] = {'mode':'constant','factor':2.3781}
+
+globalXSBRMap['earlyAnalysisDiffNJ']['tth_NJ_0p0_1p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['earlyAnalysisDiffNJ']['tth_NJ_1p0_2p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['earlyAnalysisDiffNJ']['tth_NJ_2p0_3p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['earlyAnalysisDiffNJ']['tth_NJ_3p0_4p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['earlyAnalysisDiffNJ']['tth_NJ_4p0_100p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['earlyAnalysisDiffNJ']['tth_NJ_0p0_100p0_out'] = {'mode':'constant','factor':0.5638}
