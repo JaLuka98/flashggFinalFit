@@ -17,7 +17,14 @@
         "pois":"r",
         "fits":"profile1D:syst:all+profile1D:statonly:all",
         "points":"40:1+40:1",
-        "fit_opts":"--setParameterRanges r=0,2 --saveSpecifiedNuis all+--setParameterRanges r=0,2 --saveSpecifiedNuis all"
+        "fit_opts":"-m 125.38 --setParameterRanges r=0,2 --saveSpecifiedNuis all+--setParameterRanges r=0,2 --saveSpecifiedNuis all"
+    },
+
+    "mu_fiducial_observed":{
+        "pois":"r",
+        "fits":"profile1D:syst:all",
+        "points":"80:1",
+        "fit_opts":"-m 125.38 --setParameterRanges r=0,2 --saveSpecifiedNuis all"
     },
 
     "differential_pt":{
