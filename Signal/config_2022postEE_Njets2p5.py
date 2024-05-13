@@ -2,12 +2,12 @@
 signalScriptCfg = {
   
   # Setup
-  'inputWSDir':'../input_output_n_jet_2022postEE/ws_signal/', # dir storing flashgg workspaces
+  'inputWSDir':'../input_output_Njets2p5_2022postEE/ws_signal/', # dir storing flashgg workspaces
   #'inputWSDir':'/net/scratch_cms3a/spaeh/private/PhD/analyses/early_Run3_Hgg/fitting/CMSSW_10_2_13/src/flashggFinalFit/input_output_freeze/ws_signal/',
   'procs':'auto', # if auto: inferred automatically from filenames (requires names to be of from *pythia8_{PROC}.root)
   'cats':'auto', # if auto: inferred automatically from (0) workspace
   #'ext':'earlyAnalysis_freeze_include', # output directory extension
-  'ext':'earlyAnalysis_n_jet_2022postEE', # output directory extension
+  'ext':'earlyAnalysis_Njets2p5_2022postEE', # output directory extension
   'analysis':'earlyAnalysisDiffNJ', # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
   'year':'2022postEE', # Use 'combined' if merging all years: not recommended
   'massPoints':'120,125,130', # You can now run with a single mass point if necessary
