@@ -326,6 +326,46 @@ models = {
 --PO \"map=.*/vh_NJ_4p0_100p0.*:r_NJ_4p0_100p0[1,0,3]\" \
 --PO \"map=.*/vbf_NJ_4p0_100p0.*:r_NJ_4p0_100p0[1,0,3]\"",
 
+"differential_nj_4bin":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/ggh_NJ_0p0_1p0.*:r_NJ_0p0_1p0[1,0,3]\" \
+--PO \"map=.*/tth_NJ_0p0_1p0.*:r_NJ_0p0_1p0[1,0,3]\" \
+--PO \"map=.*/vh_NJ_0p0_1p0.*:r_NJ_0p0_1p0[1,0,3]\" \
+--PO \"map=.*/vbf_NJ_0p0_1p0.*:r_NJ_0p0_1p0[1,0,3]\" \
+--PO \"map=.*/ggh_NJ_1p0_2p0.*:r_NJ_1p0_2p0[1,0,3]\" \
+--PO \"map=.*/tth_NJ_1p0_2p0.*:r_NJ_1p0_2p0[1,0,3]\" \
+--PO \"map=.*/vh_NJ_1p0_2p0.*:r_NJ_1p0_2p0[1,0,3]\" \
+--PO \"map=.*/vbf_NJ_1p0_2p0.*:r_NJ_1p0_2p0[1,0,3]\" \
+--PO \"map=.*/ggh_NJ_2p0_3p0.*:r_NJ_2p0_3p0[1,0,3]\" \
+--PO \"map=.*/tth_NJ_2p0_3p0.*:r_NJ_2p0_3p0[1,0,3]\" \
+--PO \"map=.*/vh_NJ_2p0_3p0.*:r_NJ_2p0_3p0[1,0,3]\" \
+--PO \"map=.*/vbf_NJ_2p0_3p0.*:r_NJ_2p0_3p0[1,0,3]\" \
+--PO \"map=.*/ggh_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,0,3]\" \
+--PO \"map=.*/tth_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,0,3]\" \
+--PO \"map=.*/vh_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,0,3]\" \
+--PO \"map=.*/vbf_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,0,3]\"",
+
+"differential_ptj0":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/ggh_PTJ0_0p0_45p0.*:r_PTJ0_0p0_45p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_0p0_45p0.*:r_PTJ0_0p0_45p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_0p0_45p0.*:r_PTJ0_0p0_45p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_0p0_45p0.*:r_PTJ0_0p0_45p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_45p0_70p0.*:r_PTJ0_45p0_70p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_45p0_70p0.*:r_PTJ0_45p0_70p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_45p0_70p0.*:r_PTJ0_45p0_70p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_45p0_70p0.*:r_PTJ0_45p0_70p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_70p0_110p0.*:r_PTJ0_70p0_110p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_70p0_110p0.*:r_PTJ0_70p0_110p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_70p0_110p0.*:r_PTJ0_70p0_110p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_70p0_110p0.*:r_PTJ0_70p0_110p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_110p0_200p0.*:r_PTJ0_110p0_200p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_110p0_200p0.*:r_PTJ0_110p0_200p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_110p0_200p0.*:r_PTJ0_110p0_200p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_110p0_200p0.*:r_PTJ0_110p0_200p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,0,3]\"",
+
 
   "kappas_resolved":"-P HiggsAnalysis.CombinedLimit.LHCHCGModels:K1 --PO BRU=0",
 
