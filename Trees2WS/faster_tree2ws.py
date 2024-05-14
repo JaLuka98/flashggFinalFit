@@ -33,7 +33,7 @@ def run_process(args):
     safe_mkdir(output_dir)  # Create output directory if it doesn't exist
     
     # Construct the command as a single string
-    cmd = "python trees2ws.py --inputMass {mass} --productionMode {mode} --year 2022{era} --doSystematics --doDiffSplitting --inputConfig config_2022_{variable}.py --inputTreeFile '{path_to_root_files}/{process}_M-{mass}_{era}/'*.root --outputWSDir {output_dir}".format(
+    cmd = "python trees2ws.py --inputMass {mass} --productionMode {mode} --year 2022{era} --doSystematics --doDiffSplitting --inputConfig config/config_2022_{variable}.py --inputTreeFile '{path_to_root_files}/{process}_M-{mass}_{era}/'*.root --outputWSDir {output_dir}".format(
         mass=mass, mode=mode, era=era, variable=variable, path_to_root_files=path_to_root_files, process=process, output_dir=output_dir)
 
     with open(os.devnull, 'wb') as devnull:
