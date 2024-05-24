@@ -1,6 +1,6 @@
 from optparse import OptionParser
 from shanePalette import set_color_palette
-from usefulStyle import drawCMS, drawEnPu, setCanvasCorr, formatHisto
+from usefulStyle import drawCMS, drawEnPu, setCanvasCorr, formatHisto, setCanvas
 from collections import OrderedDict as od
 import ROOT
 import json
@@ -15,6 +15,9 @@ def get_options():
   parser.add_option('--translate', dest='translate', default=None, help='Load translations for pois')
   parser.add_option('--dropTHQ', dest='dropTHQ', default=False, action="store_true", help='Drop r_tHq from the poi list')
   parser.add_option('--doObserved', dest='doObserved', default=False, action="store_true", help='Do observed correlation')
+  parser.add_option('--doCov', dest='doCov', default=False, action="store_true", help='Do covariance matrix')
+  parser.add_option('--input', dest='input', default='./robustHessefirstStep.root', help='Input file for plotting.')
+  parser.add_option('--output', dest='output', default='', help='Output folder for plotting.')
   return parser.parse_args()
 (opt,args) = get_options() 
 
@@ -24,7 +27,7 @@ def LoadTranslations(jsonfilename):
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetNumberContours(500)
-lumi = 137
+lumi = 34.7
 
 if opt.doObserved: obs_ext = "_obs"
 else: obs_ext = ''
@@ -41,10 +44,16 @@ modes[opt.mode] = pois
 # Load translations
 translate = {} if opt.translate is None else LoadTranslations(opt.translate)
 
+print(translate)
+
 for mode,pois in modes.iteritems():
-  fileName = '%s/src/flashggFinalFit/Combine/runFits%s_%s/robustHesse_%s%s.root'%(os.environ['CMSSW_BASE'],opt.ext,opt.mode,name,obs_ext)
+  fileName = opt.input
+  print(mode, pois, name, fit.split(":"))
   inFile = ROOT.TFile(fileName,'READ')
-  theMatrix = inFile.Get('h_correlation')
+  if opt.doCov: 
+    theMatrix = inFile.Get('h_covariance')
+  else:
+    theMatrix = inFile.Get('h_correlation')
   theList   = inFile.Get('floatParsFinal')
 
   pars = od()
@@ -77,10 +86,10 @@ for mode,pois in modes.iteritems():
   pois_reverse.reverse()
   for iBin,iPar in enumerate(pois):
     for jBin,jPar in enumerate(pois_reverse):
-      theHist.GetXaxis().SetBinLabel(iBin+1, translate[iPar])
-      theHist.GetYaxis().SetBinLabel(jBin+1, translate[jPar])
-      #theHist.GetXaxis().SetBinLabel(iBin+1, iPar)
-      #theHist.GetYaxis().SetBinLabel(jBin+1, jPar)
+      # theHist.GetXaxis().SetBinLabel(iBin+1, translate[iPar])
+      # theHist.GetYaxis().SetBinLabel(jBin+1, translate[jPar])
+      theHist.GetXaxis().SetBinLabel(iBin+1, iPar)
+      theHist.GetYaxis().SetBinLabel(jBin+1, jPar)
 
       #print 'Filling correlation for %s and %s of %.3f'%(iPar, jPar, theMap[(iPar,jPar)])
       if iBin <= (theHist.GetNbinsX()-1-jBin): theHist.Fill(iBin, jBin, theMap[(iPar,jPar)])
@@ -95,7 +104,11 @@ for mode,pois in modes.iteritems():
 
   if mode.count('stage1p2'): canv = setCanvasCorr(stage='1p2')
   elif mode.count('mu_reco'): canv = setCanvasCorr(stage='1p2')
-  else: canv = setCanvasCorr()
+  else:
+    if opt.doCov:
+      canv = setCanvas()
+    else:
+      canv = setCanvasCorr()
   formatHisto(theHist)
   theHist.GetXaxis().SetTickLength(0.)
   theHist.GetXaxis().SetLabelSize(0.06)
@@ -104,7 +117,10 @@ for mode,pois in modes.iteritems():
   theHist.GetYaxis().SetLabelSize(0.06)
   theHist.GetYaxis().SetLabelOffset(0.003)
   theHist.GetYaxis().SetLabelFont(42)
-  theHist.GetZaxis().SetRangeUser(-1.,1.)
+  if opt.doCov:
+    theHist.GetZaxis().SetRangeUser(-0.5,0.5)
+  else:
+    theHist.GetZaxis().SetRangeUser(-1., 1.)
   theHist.GetZaxis().SetTickLength(0.)
   theHist.GetZaxis().SetLabelSize(0.03)
   if mode.count('stage1p2'): 
@@ -134,6 +150,27 @@ for mode,pois in modes.iteritems():
     theHist.GetXaxis().SetLabelSize(0.025)
     theHist.GetYaxis().SetLabelSize(0.025)
     theHist.SetMarkerSize(0.55)
+  elif mode.count("differential"):
+    theHist.GetXaxis().SetLabelOffset(0.003)
+    theHist.GetXaxis().LabelsOption("v")
+    if opt.doCov:
+      if mode.count("differential_pt"):
+        theHist.GetXaxis().SetLabelSize(0.035)
+        theHist.GetYaxis().SetLabelSize(0.035)
+        theHist.SetMarkerSize(2)
+      else:
+        theHist.GetXaxis().SetLabelSize(0.04)
+        theHist.GetYaxis().SetLabelSize(0.04)
+        theHist.SetMarkerSize(2)
+    else:
+      if mode.count("differential_pt"):
+        theHist.GetXaxis().SetLabelSize(0.02)
+        theHist.GetYaxis().SetLabelSize(0.02)
+        theHist.SetMarkerSize(2)
+      else:
+        theHist.GetXaxis().SetLabelSize(0.03)
+        theHist.GetYaxis().SetLabelSize(0.03)
+        theHist.SetMarkerSize(1.5)
   else:
     theHist.GetYaxis().SetLabelOffset(0.007)  
     theHist.SetMarkerSize(1.5)
@@ -142,16 +179,25 @@ for mode,pois in modes.iteritems():
   latex.SetNDC()
   latex.SetTextFont(42)
   latex.SetTextAlign(32)
-  latex.SetTextSize(0.05)
+  latex.SetTextSize(0.045)
   #latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.06,'#bf{CMS} #it{Preliminary}')
-  latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.06,'#bf{CMS}')
+  latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.06,'#bf{CMS} #it{Simulation Preliminary}')
   latex.SetTextSize(0.04)
-  latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.12,'%2.0f fb^{-1} (13 TeV)'%lumi)
+  latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.12,'%0.2f fb^{-1} (13.6 TeV)'%lumi)
   latex.SetTextSize(0.025)
   latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.18,'H #rightarrow #gamma#gamma, m_{H} = 125.38 GeV')
   #canv.Print("/eos/home-j/jlangfor/www/CMS/hgg/stxs_runII/May20/pass0/test/test_%s.png"%opt.mode)
   #canv.Print("/eos/home-j/jlangfor/www/CMS/hgg/stxs_runII/May20/pass0/test/test_%s.pdf"%opt.mode)
   #canv.Print('%s/src/flashggFinalFit/Combine/runFits%s_%s/Plots/corrMatrix_%s_%s%s%s.png'%(os.environ['CMSSW_BASE'],opt.ext,mode,mode,name.split("_")[-1],obs_ext,opt.ext))
   #canv.Print('%s/src/flashggFinalFit/Combine/runFits%s_%s/Plots/corrMatrix_%s_%s%s%s.pdf'%(os.environ['CMSSW_BASE'],opt.ext,mode,mode,name.split("_")[-1],obs_ext,opt.ext))
-  canv.Print('/eos/home-j/jlangfor/www/CMS/thesis/chapter6/final/corrMatrix_%s_%s%s%s.png'%(mode,name.split("_")[-1],obs_ext,opt.ext))
-  canv.Print('/eos/home-j/jlangfor/www/CMS/thesis/chapter6/final/corrMatrix_%s_%s%s%s.pdf'%(mode,name.split("_")[-1],obs_ext,opt.ext))
+  output_dir = opt.output
+  if opt.doCov:
+    output_path_png = os.path.join(opt.output, "covMatrix_%s_%s%s%s.png"%(mode,name.split("_")[-1],obs_ext,opt.ext))
+    output_path_pdf = os.path.join(opt.output, "covMatrix_%s_%s%s%s.pdf"%(mode,name.split("_")[-1],obs_ext,opt.ext))
+    canv.Print(output_path_png)
+    canv.Print(output_path_pdf)
+  else:
+    output_path_png = os.path.join(opt.output, "corrMatrix_%s_%s%s%s.png"%(mode,name.split("_")[-1],obs_ext,opt.ext))
+    output_path_pdf = os.path.join(opt.output, "corrMatrix_%s_%s%s%s.pdf"%(mode,name.split("_")[-1],obs_ext,opt.ext))
+    canv.Print(output_path_png)
+    canv.Print(output_path_pdf)
