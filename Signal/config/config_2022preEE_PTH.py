@@ -20,5 +20,5 @@ signalScriptCfg = {
 
   # Job submission options
   'batch':'condor_lxplus', # ['condor_lxplus','condor','SGE','IC','local']
-  'queue':'microcentury' # use hep.q for IC
+  'queue':'espresso' # use hep.q for IC
 }

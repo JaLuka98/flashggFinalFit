@@ -27,6 +27,7 @@ check_create_subfolder() {
         mkdir "$folder_name/asimov"
         mkdir "$folder_name/impact"
         mkdir "$folder_name/hesse"
+        mkdir "$folder_name/hesse/Plots"
         echo "Folders '$folder_name' created successfully."
     else
         echo "Folders '$folder_name' already exists."
@@ -36,7 +37,7 @@ check_create_subfolder() {
 # Check if fit folder is present
 check_create_subfolder
 
-cp "./Datacard_${differential_variable}.root" "$folder_name/impact/Datacard_${differential_variable}.root"
+cp "./Datacard_${differential_variable}.root" "$folder_name/hesse/Datacard_${differential_variable}.root"
 
 cd "runFits_${differential_variable}/hesse"
 
