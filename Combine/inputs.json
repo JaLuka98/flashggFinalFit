@@ -49,7 +49,7 @@
     },
 
     "differential_ptj0":{
-        "pois":"r_PTJ0_0p0_45p0,r_PTJ0_45p0_70p0,r_PTJ0_70p0_110p0,r_PTJ0_110p0_200p0,r_PTJ0_200p0_10000p0",
+        "pois":"r_PTJ0_0p0_30p0,r_PTJ0_30p0_45p0,r_PTJ0_45p0_70p0,r_PTJ0_70p0_110p0,r_PTJ0_110p0_200p0,r_PTJ0_200p0_10000p0",
         "fits":"profile1D:syst:all+profile1D:statonly:all",
         "points":"40:40+40:40",
         "fit_opts":"--setParameterRanges r=0,3 --saveSpecifiedNuis all+--setParameterRanges r=0,3 --saveSpecifiedNuis all"

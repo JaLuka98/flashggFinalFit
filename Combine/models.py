@@ -345,10 +345,14 @@ models = {
 --PO \"map=.*/vbf_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,0,3]\"",
 
 "differential_ptj0":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
---PO \"map=.*/ggh_PTJ0_0p0_45p0.*:r_PTJ0_0p0_45p0[1,0,3]\" \
---PO \"map=.*/tth_PTJ0_0p0_45p0.*:r_PTJ0_0p0_45p0[1,0,3]\" \
---PO \"map=.*/vh_PTJ0_0p0_45p0.*:r_PTJ0_0p0_45p0[1,0,3]\" \
---PO \"map=.*/vbf_PTJ0_0p0_45p0.*:r_PTJ0_0p0_45p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_30p0_45p0.*:r_PTJ0_30p0_45p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_30p0_45p0.*:r_PTJ0_30p0_45p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_30p0_45p0.*:r_PTJ0_30p0_45p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_30p0_45p0.*:r_PTJ0_30p0_45p0[1,0,3]\" \
 --PO \"map=.*/ggh_PTJ0_45p0_70p0.*:r_PTJ0_45p0_70p0[1,0,3]\" \
 --PO \"map=.*/tth_PTJ0_45p0_70p0.*:r_PTJ0_45p0_70p0[1,0,3]\" \
 --PO \"map=.*/vh_PTJ0_45p0_70p0.*:r_PTJ0_45p0_70p0[1,0,3]\" \
