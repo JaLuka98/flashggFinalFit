@@ -102,7 +102,6 @@ if opt.inputConfig != '':
     mainVars         = _cfg['mainVars']
     stxsVar          = _cfg['stxsVar']
     diffVar          = _cfg['diffVar']
-    notagVars        = _cfg['notagVars']
     systematicsVars  = _cfg['systematicsVars']
     theoryWeightContainers = _cfg['theoryWeightContainers']
     systematics      = _cfg['systematics']
