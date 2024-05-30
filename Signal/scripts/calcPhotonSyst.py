@@ -2,7 +2,7 @@
 # * Run script once per category, loops over signal processes
 # * Output is pandas dataframe 
 
-print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ HGG PHOTON SYST CALCULATOR ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+print(" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ HGG PHOTON SYST CALCULATOR ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ")
 import ROOT
 import pandas as pd
 import pickle
@@ -17,8 +17,8 @@ from commonTools import *
 from commonObjects import *
 
 def leave():
-  print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ HGG PHOTON SYST CALCULATOR (END) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
-  sys.exit(1)
+  print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ HGG PHOTON SYST CALCULATOR (END) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ")
+  exit(0)
 
 def get_options():
   parser = OptionParser()
@@ -56,23 +56,23 @@ def getHistograms( _ws, _nominalDataName, _sname ):
   # Check if not NONE type and fill histograms
   if rds_nominal: rds_nominal.fillHistogram(_hists['nominal'],ROOT.RooArgList(mgg))
   else:
-    print " --> [ERROR] Could not extract nominal RooDataSet: %s. Leaving"%_nominalDataName
-    sys,exit(1)
+    print(" --> [ERROR] Could not extract nominal RooDataSet: %s. Leaving"%_nominalDataName)
+    sys.exit(1)
   if rdh_up: rdh_up.fillHistogram(_hists['up'],ROOT.RooArgList(mgg))
   else:
-    print " --> [ERROR] Could not extract RooDataHist (%s,up) for %s. Leaving"%(_sname,_nominalDataName)
-    sys,exit(1)
+    print(" --> [ERROR] Could not extract RooDataHist (%s,up) for %s. Leaving"%(_sname,_nominalDataName))
+    sys.exit(1)
   if rdh_down: rdh_down.fillHistogram(_hists['down'],ROOT.RooArgList(mgg))
   else:
-    print " --> [ERROR] Could not extract RooDataHist (%s,down) for %s. Leaving"%(_sname,_nominalDataName)
-    sys,exit(1) 
+    print(" --> [ERROR] Could not extract RooDataHist (%s,down) for %s. Leaving"%(_sname,_nominalDataName))
+    sys.exit(1) 
   return _hists
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Functions to extract mean, sigma and rate variations
 def getMeanVar(_hists):
   mu, muVar = {}, {}
-  for htype,h in _hists.iteritems(): mu[htype] = h.GetMean()
+  for htype,h in _hists.items(): mu[htype] = h.GetMean()
   if mu['nominal']==0: return 0
   for htype in ['up','down']: muVar[htype] = (mu[htype]-mu['nominal'])/mu['nominal']
   x = (abs(muVar['up'])+abs(muVar['down']))/2
@@ -82,7 +82,7 @@ def getMeanVar(_hists):
 
 def getSigmaVar(_hists):
   sigma, sigmaVar = {}, {}
-  for htype,h in _hists.iteritems(): sigma[htype] = getEffSigma(h)
+  for htype,h in _hists.items(): sigma[htype] = getEffSigma(h)
   if sigma['nominal']==0: return 0
   for htype in ['up','down']: sigmaVar[htype] = (sigma[htype]-sigma['nominal'])/sigma['nominal']
   x = (abs(sigmaVar['up'])+abs(sigmaVar['down']))/2
@@ -91,7 +91,7 @@ def getSigmaVar(_hists):
 
 def getRateVar(_hists):
   rate, rateVar = {}, {}
-  for htype,h in _hists.iteritems(): rate[htype] = h.Integral()
+  for htype,h in _hists.items(): rate[htype] = h.Integral()
   # Shape variations can both be one sided therefore use midpoint as nominal
   rate['midpoint'] = 0.5*(rate['up']+rate['down'])
   if rate['midpoint']==0: return 0
@@ -114,6 +114,7 @@ data = pd.DataFrame( columns=columns_data )
 for _proc in opt.procs.split(","):
   # Glob M125 filename
   _WSFileName = glob.glob("%s/output*M125*%s.root"%(opt.inputWSDir,_proc))[0]
+  # Hard-coded for fiducial inclusve with in/out, should maybe be adjusted
   if (len(_proc.split("_")) <= 2) and (_proc.split("_")[-1] in ["in", "out"]):
     _nominalDataName = "%s_%s_125_%s_%s"%(procToData(_proc.split("_")[0]),procToData(_proc.split("_")[-1]),sqrts__,opt.cat)
   else:
@@ -123,7 +124,7 @@ for _proc in opt.procs.split(","):
 # Loop over rows in dataFrame and open ws
 for ir,r in data.iterrows():
 
-  print " --> Processing (%s,%s)"%(r['proc'],opt.cat)
+  print(" --> Processing (%s,%s)"%(r['proc'],opt.cat))
 
   # Open ROOT file and extract workspace
   f = ROOT.TFile(r['inputWSFile'])
@@ -133,24 +134,23 @@ for ir,r in data.iterrows():
   for stype in ['scales','scalesCorr','smears']:
     for s in getattr(opt,stype).split(","):
       if s == '': continue
-      # Following has been modified by JLS just for the early analysis, we need to revise the interfacing
-      else:
-        sname = "%s%s"%(inputNuisanceExtMap[stype],s)
-      #print "    * Systematic = %s (%s)"%(sname,stype)
-      hists = getHistograms(inputWS, r['nominalDataName'], sname)
+      # Note: Here was an else statement from JLS, include back in if the code does not run
+      sname = "%s%s"%(inputNuisanceExtMap[stype],s)
+      #print("    * Systematic = %s (%s)"%(sname,stype))
+      hists = getHistograms(inputWS,r['nominalDataName'],sname)
       # If nominal yield = 0:
       if hists['nominal'].Integral() == 0: _meanVar, _sigmaVar, _rateVar = 0, 0, 0
       else:
-	_meanVar = getMeanVar(hists)
-	_sigmaVar = getSigmaVar(hists)
-	_rateVar = getRateVar(hists)
+        _meanVar = getMeanVar(hists)
+        _sigmaVar = getSigmaVar(hists)
+        _rateVar = getRateVar(hists)
       # Add values to dataFrame
       data.at[ir,'%s_%s_mean'%(s,outputNuisanceExtMap[stype])] = _meanVar
       data.at[ir,'%s_%s_sigma'%(s,outputNuisanceExtMap[stype])] = _sigmaVar
       data.at[ir,'%s_%s_rate'%(s,outputNuisanceExtMap[stype])] = _rateVar
 
       # Delete histograms
-      for h in hists.itervalues(): h.Delete()
+      for h in hists.values(): h.Delete()
 
   # Delete ws and close file
   inputWS.Delete()
@@ -162,4 +162,4 @@ if not os.path.isdir("%s/outdir_%s"%(swd__,opt.ext)): os.system("mkdir %s/outdir
 if not os.path.isdir("%s/outdir_%s/calcPhotonSyst"%(swd__,opt.ext)): os.system("mkdir %s/outdir_%s/calcPhotonSyst"%(swd__,opt.ext))
 if not os.path.isdir("%s/outdir_%s/calcPhotonSyst/pkl"%(swd__,opt.ext)): os.system("mkdir %s/outdir_%s/calcPhotonSyst/pkl"%(swd__,opt.ext))
 with open("%s/outdir_%s/calcPhotonSyst/pkl/%s.pkl"%(swd__,opt.ext,opt.cat),"wb") as f: pickle.dump(data,f) 
-print " --> Successfully saved photon systematics as pkl file: %s/outdir_%s/calcPhotonSyst/pkl/%s.pkl"%(swd__,opt.ext,opt.cat)
+print(" --> Successfully saved photon systematics as pkl file: %s/outdir_%s/calcPhotonSyst/pkl/%s.pkl"%(swd__,opt.ext,opt.cat))
