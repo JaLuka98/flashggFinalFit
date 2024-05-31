@@ -177,6 +177,8 @@ experimental_systematics = [
                 {'name':'energyErrShift','title':'CMS_hgg_SigmaEOverEShift','type':'factory','prior':'lnN','correlateAcrossYears':1},
                 {'name':'JecSystTotal','title':'CMS_hgg_j_Total','type':'factory','prior':'lnN','correlateAcrossYears':0},
                 {'name':'JerSyst','title':'CMS_hgg_j_JER','type':'factory','prior':'lnN','correlateAcrossYears':0},
+                {'name':'FNUF','title':'CMS_hgg_FNUF','type':'factory','prior':'lnN','correlateAcrossYears':1},
+                {'name':'Material','title':'CMS_hgg_Material','type':'factory','prior':'lnN','correlateAcrossYears':1},
                 #{'name':'SigmaEOverEShift','title':'CMS_hgg_SigmaEOverEShift','type':'factory','prior':'lnN','correlateAcrossYears':0},
                 #{'name':'MvaShift','title':'CMS_hgg_phoIdMva','type':'factory','prior':'lnN','correlateAcrossYears':0},
                 #{'name':'PUJIDShift','title':'CMS_hgg_PUJIDShift','type':'factory','prior':'lnN','correlateAcrossYears':0},
