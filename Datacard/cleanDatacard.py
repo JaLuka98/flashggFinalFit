@@ -7,6 +7,7 @@ parser.add_option("-o","--outfilename",default=None,help="Output datacard file")
 parser.add_option("-f","--factor",default=5.,help="Factor beyond which uncertainty is considered incorrect and is removed")
 parser.add_option("--removeDoubleSided",default=False,action="store_true",help="Remove any nuisances which are listed as antisymmetric but both values point the same way")
 parser.add_option("--removeNonDiagonal",default=False,action="store_true",help="Remove any nuisances which are affect processes unimportant in that category")
+parser.add_option("--symmetrizeNuisance",default="",help="Symmetrizes asymmetric nuisance. Enter in the format nuisance1,nuisance2,nuisance3,etc.")
 #parser.add_option("--addYear",default=True,action="store_true",help="Add the year to names to facilitate combination")
 parser.add_option("--verbose",default=False,action="store_true",help="Spit out all the cleaning being done")
 (opts,args)=parser.parse_args()
@@ -17,6 +18,8 @@ if not opts.outfilename:
 opts.factor = float(opts.factor)
 factorLo = 1./opts.factor
 factorHi = opts.factor
+
+symmetrization_list = (opts.symmetrizeNuisance).split(",")
 
 procs = []
 cats  = []
@@ -67,7 +70,7 @@ with open(opts.outfilename,'w') as outFile:
         outFile.write('%s'%line)
         continue
       line_name = vals[0]
-      # if ("lumi" in line_name) or ("scale" in line_name):
+      # if ("lumi" in line_name):
       #   print("Skipping %s"%vals[0])
       #   outFile.write('%s\n'%line)
       #   continue
@@ -84,12 +87,12 @@ with open(opts.outfilename,'w') as outFile:
         if opts.removeNonDiagonal and not isDiag(proc,cat):
           # if 'bkg_mass' in proc: continue
           # print(proc, cat)
-          # if ("lumi" in line_name) or ("scale" in line_name):
+          # if ("lumi" in line_name):
           #   pass
           # else:
           
           if len(vals) == 1:
-            if ("lumi" in line_name) or ("scale" in line_name) or ("bkg_mass" in proc):
+            if ("lumi" in line_name) or ("bkg_mass" in proc):
               if vals[0] == '-':
                 line += '- '
               else:
@@ -98,7 +101,7 @@ with open(opts.outfilename,'w') as outFile:
           elif len(vals) == 2:
             valLo = float(vals[0])
             valHi = float(vals[1])
-            if ("lumi" in line_name) or ("scale" in line_name) or ("bkg_mass" in proc):
+            if ("lumi" in line_name) or ("bkg_mass" in proc):
               line += '%1.3f/%1.3f '%(valLo,valHi)
             else: line += '- '
           else:
@@ -107,7 +110,7 @@ with open(opts.outfilename,'w') as outFile:
           continue
         
         if len(vals) == 1:
-          if ("lumi" in line_name) or ("scale" in line_name):
+          if ("lumi" in line_name):
             if vals[0] == '-':
               line += '- '
             else:
@@ -126,8 +129,25 @@ with open(opts.outfilename,'w') as outFile:
         elif len(vals) == 2:
           valLo = float(vals[0])
           valHi = float(vals[1])
-          if ("lumi" in line_name) or ("scale" in line_name):
+          if ("lumi" in line_name):
             line += '%1.3f/%1.3f '%(valLo,valHi)
+          if opts.symmetrizeNuisance != "":
+            if line_name in symmetrization_list:
+              if ((abs(valLo - 1.000) < 0.003) or (abs(valHi - 1.000) < 0.003)) and (abs(valLo - valHi) >= 0.010):
+                if opts.verbose:
+                  print 'Onesided: Symmetrize...'
+                if (valLo < valHi) and ((valLo - valHi) >= 0.010):
+                  line += '%1.3f '%(max(valHi,valLo))
+                elif (valLo > valHi) and ((valLo - valHi) >= 0.010):
+                  if (abs(valHi - 1.000) < 0.003): line += '%1.3f '%(valLo)
+                  else:
+                    line += '%1.3f '%(valHi)
+                else:
+                  line += '%1.3f '%(min(valHi,valLo))
+              else:
+                line += '%1.3f/%1.3f '%(valLo,valHi)
+            else:
+              line += '%1.3f/%1.3f '%(valLo,valHi)
           else:
             if valLo < factorLo or valLo > factorHi:
               if opts.verbose:
