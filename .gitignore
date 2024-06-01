@@ -50,7 +50,14 @@ Background/outdir_*
 Datacard/yields_*
 
 # Combine directory
+Combine/impacts*
+Combine/gof*
 runFits_*
 runFits_*
 
 t2w_jobs/
+
+# Plots directory
+Plots/SplusBModels*
+Plots/pkl
+Plots/
