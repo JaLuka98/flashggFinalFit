@@ -448,7 +448,7 @@ def plotSplines(_finalModel,_outdir="./",_nominalMass='125',splinesToPlot=['xs',
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Function for plotting final signal model: neat
 def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
-  colorMap = {'2016':38,'2017':30,'2018':46}
+  colorMap = {'2016':38,'2017':30,'2018':46, '2022preEE': 6, '2022postEE': 7}
   canv = ROOT.TCanvas("c","c",650,600)
   canv.SetBottomMargin(0.12)
   canv.SetLeftMargin(0.15)
@@ -559,7 +559,8 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
   lat0.SetNDC()
   lat0.SetTextSize(0.045)
   lat0.DrawLatex(0.15,0.92,"#bf{CMS} #it{%s}"%_opt.label)
-  lat0.DrawLatex(0.77,0.92,"%s TeV"%(sqrts__.split("TeV")[0]))
+  #lat0.DrawLatex(0.77,0.92,"%s TeV"%(sqrts__.split("TeV")[0]))
+  lat0.DrawLatex(0.77,0.92,"13.6 TeV")
   lat0.DrawLatex(0.16+offset,0.83,"H #rightarrow #gamma#gamma")
 
   # Load translations
@@ -586,7 +587,7 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
   lat1.DrawLatex(0.85,0.86,"%s"%catStr)
   lat1.DrawLatex(0.83,0.8,"%s %s"%(procStr,yearStr))
 
-  drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+  #drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
 
   canv.Update()
 
