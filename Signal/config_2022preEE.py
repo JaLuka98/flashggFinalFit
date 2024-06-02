@@ -13,10 +13,10 @@ signalScriptCfg = {
   'massPoints':'120,125,130', # You can now run with a single mass point if necessary
 
   #Photon shape systematics  
-  'scales':'scale', # separate nuisance per year
-  'scalesCorr':'', # correlated across years
+  'scales':'ScaleEB,ScaleEE', # separate nuisance per year
+  'scalesCorr':'FNUF,Material', # correlated across years
   'scalesGlobal':'', # affect all processes equally, correlated across years
-  'smears':'smearing', # separate nuisance per year
+  'smears':'Smearing', # separate nuisance per year
 
   # Job submission options
   'batch':'condor', # ['condor_lxplus','condor','SGE','IC','local']
