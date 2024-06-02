@@ -33,7 +33,7 @@ decayMode = 'hgg'
 
 # flashgg input WS objects
 inputWSName__ = "tagsDumper/cms_hgg_13TeV"
-inputNuisanceExtMap = {'scales':'MCScale','scalesCorr':'','smears':'MCSmear'}
+inputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':''}
 # Signal output WS objects
 outputWSName__ = "wsig"
 outputWSObjectTitle__ = "hggpdfsmrel"

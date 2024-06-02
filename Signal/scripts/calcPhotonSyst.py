@@ -134,14 +134,10 @@ for ir,r in data.iterrows():
     for s in getattr(opt,stype).split(","):
       if s == '': continue
       # Following has been modified by JLS just for the early analysis, we need to revise the interfacing
-      if s=='scale' and stype=='scales':
-        sname = 'Scale'
-      elif s=='smearing' and stype=='smears':
-        sname = 'Smearing'
       else:
         sname = "%s%s"%(inputNuisanceExtMap[stype],s)
       #print "    * Systematic = %s (%s)"%(sname,stype)
-      hists = getHistograms(inputWS,r['nominalDataName'],sname)
+      hists = getHistograms(inputWS, r['nominalDataName'], sname)
       # If nominal yield = 0:
       if hists['nominal'].Integral() == 0: _meanVar, _sigmaVar, _rateVar = 0, 0, 0
       else:
