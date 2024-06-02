@@ -35,10 +35,18 @@ def run_process(args):
     # Construct the command as a single string
     cmd = "python trees2ws.py --inputMass {mass} --productionMode {mode} --year 2022{era} --doSystematics --doInOutSplitting --inputConfig config_2022.py --inputTreeFile '{path_to_root_files}/{process}_M-{mass}_{era}/'*.root --outputWSDir {output_dir}".format(
         mass=mass, mode=mode, era=era, path_to_root_files=path_to_root_files, process=process, output_dir=output_dir)
-
-    with open(os.devnull, 'wb') as devnull:
-        subprocess.call(cmd, shell=True, stdout=devnull, stderr=devnull)
-    print("Process for mass {}, era {}, and mode {} completed.".format(mass, era, mode))
+    
+    try:
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        if process.returncode != 0:
+            print("Error running process for mass {}, era {}, and mode {}:".format(mass, era, mode))
+            print(stderr)
+        else:
+            print("Process for mass {}, era {}, and mode {} completed successfully.".format(mass, era, mode))
+    except Exception as e:
+        print("Exception running process for mass {}, era {}, and mode {}:".format(mass, era, mode))
+        print(str(e))
 
 # Main function to parallelize tasks
 def main(path_to_root_files):
