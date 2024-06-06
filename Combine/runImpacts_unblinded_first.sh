@@ -39,13 +39,14 @@ check_create_subfolder() {
 # Check if fit folder is present
 check_create_subfolder
 
-cp "./Datacard_${differential_variable}.root" "$folder_name/impact/Datacard_${differential_variable}.root"
+cp "./Datacard_${differential_variable}.root" "$folder_name/impact_unblinded/Datacard_${differential_variable}.root"
 
-cd "runFits_${differential_variable}/impact"
+cd "runFits_${differential_variable}/impact_unblinded"
 
-combineTool.py -M Impacts -d Datacard_${differential_variable}.root --freezeParameters MH -m 125.38 --X-rtd MINIMIZER_freezeDisassociatedParams --X-rtd MINIMIZER_multiMin_hideConstants --X-rtd MINIMIZER_multiMin_maskConstraints --X-rtd MINIMIZER_multiMin_maskChannels=2 --cminDefaultMinimizerStrategy=0 --doInitialFit --robustFit 1 -t -1 --setParameters ${paramStr} --job-mode condor --task-name impacts_first --sub-opts='+JobFlavour = "workday"'
+combineTool.py -M Impacts -d Datacard_${differential_variable}.root --freezeParameters MH -m 125.38 --X-rtd MINIMIZER_freezeDisassociatedParams --X-rtd MINIMIZER_multiMin_hideConstants --X-rtd MINIMIZER_multiMin_maskConstraints --X-rtd MINIMIZER_multiMin_maskChannels=2 --cminDefaultMinimizerStrategy=0 --doInitialFit --robustFit 1 --job-mode condor --task-name impacts_unblinded_first --sub-opts='+JobFlavour = "workday"'
 
+# -t -1 necessary?
 
-condor_submit -spool ./condor_impacts_first.sub
+condor_submit -spool ./condor_impacts_unblinded_first.sub
 
-echo "Initial fit for impacts for ${differential_variable} sent to condor. Wait until finished and then launch ./runImpacts_second_<variable>.sh"
+echo "Initial fit for impacts for ${differential_variable} sent to condor. Wait until finished and then launch ./runImpacts_unblinded_second_<variable>.sh"

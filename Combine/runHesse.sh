@@ -26,7 +26,9 @@ check_create_subfolder() {
         mkdir "$folder_name"
         mkdir "$folder_name/asimov"
         mkdir "$folder_name/impact"
+        mkdir "$folder_name/impact_unblinded"
         mkdir "$folder_name/hesse"
+        mkdir "$folder_name/gof"
         mkdir "$folder_name/hesse/Plots"
         echo "Folders '$folder_name' created successfully."
     else
