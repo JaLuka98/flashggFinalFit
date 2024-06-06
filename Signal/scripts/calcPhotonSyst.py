@@ -136,6 +136,15 @@ for ir,r in data.iterrows():
       # Following has been modified by JLS just for the early analysis, we need to revise the interfacing
       if s=='scale' and stype=='scales':
         sname = 'Scale'
+      # Further modified by NH to include ScaleEE / Scale EB
+      elif s=='scaleEE' and stype=='scales':
+        sname = 'ScaleEE'
+      elif s=='scaleEB' and stype=='scales': 
+        sname = 'ScaleEB'
+      elif s=='fnuf' and stype=='scalesCorr':
+        sname = 'FNUF'
+      elif s=='material' and stype=='scalesCorr':
+        sname = 'Material'
       elif s=='smearing' and stype=='smears':
         sname = 'Smearing'
       else:

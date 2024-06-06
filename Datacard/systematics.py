@@ -177,8 +177,6 @@ experimental_systematics = [
                 {'name':'energyErrShift','title':'CMS_hgg_SigmaEOverEShift','type':'factory','prior':'lnN','correlateAcrossYears':1},
                 {'name':'JecSystTotal','title':'CMS_hgg_j_Total','type':'factory','prior':'lnN','correlateAcrossYears':0},
                 {'name':'JerSyst','title':'CMS_hgg_j_JER','type':'factory','prior':'lnN','correlateAcrossYears':0},
-                {'name':'FNUF','title':'CMS_hgg_FNUF','type':'factory','prior':'lnN','correlateAcrossYears':1},
-                {'name':'Material','title':'CMS_hgg_Material','type':'factory','prior':'lnN','correlateAcrossYears':1},
                 #{'name':'SigmaEOverEShift','title':'CMS_hgg_SigmaEOverEShift','type':'factory','prior':'lnN','correlateAcrossYears':0},
                 #{'name':'MvaShift','title':'CMS_hgg_phoIdMva','type':'factory','prior':'lnN','correlateAcrossYears':0},
                 #{'name':'PUJIDShift','title':'CMS_hgg_PUJIDShift','type':'factory','prior':'lnN','correlateAcrossYears':0},
@@ -212,7 +210,11 @@ experimental_systematics = [
 
 signal_shape_systematics = [
                 {'name':'deltafracright','title':'deltafracright','type':'signal_shape','mode':'other','mean':'0.0','sigma':'0.02'},
-                {'name':'scale','title':'scale','type':'signal_shape','mode':'scales','mean':'0.0','sigma':'1.0'},
+                #{'name':'scale','title':'scale','type':'signal_shape','mode':'scales','mean':'0.0','sigma':'1.0'},
+                {'name':'scaleEE','title':'scaleEE','type':'signal_shape','mode':'scales','mean':'0.0','sigma':'1.0'},
+                {'name':'scaleEB','title':'scaleEB','type':'signal_shape','mode':'scales','mean':'0.0','sigma':'1.0'},
+                {'name':'fnuf','title':'fnuf','type':'signal_shape','mode':'scalesCorr','mean':'0.0','sigma':'1.0'},
+                {'name':'material','title':'material','type':'signal_shape','mode':'scalesCorr','mean':'0.0','sigma':'1.0'},
                 {'name':'smearing','title':'smearing','type':'signal_shape','mode':'smears','mean':'0.0','sigma':'1.0'},
                 {'name':'NonLinearity','title':'NonLinearity','type':'signal_shape','mode':'scalesGlobal','mean':'0.0','sigma':'0.002'},
                 {'name':'Geant4','title':'Geant4','type':'signal_shape','mode':'scalesGlobal','mean':'0.0','sigma':'0.0005'},
