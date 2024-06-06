@@ -448,7 +448,7 @@ def plotSplines(_finalModel,_outdir="./",_nominalMass='125',splinesToPlot=['xs',
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Function for plotting final signal model: neat
 def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
-  colorMap = {'2016':38,'2017':30,'2018':46}
+  colorMap = {'2022preEE':8,'2022postEE':46}
   canv = ROOT.TCanvas("c","c",650,600)
   canv.SetBottomMargin(0.12)
   canv.SetLeftMargin(0.15)
@@ -559,7 +559,8 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
   lat0.SetNDC()
   lat0.SetTextSize(0.045)
   lat0.DrawLatex(0.15,0.92,"#bf{CMS} #it{%s}"%_opt.label)
-  lat0.DrawLatex(0.77,0.92,"%s TeV"%(sqrts__.split("TeV")[0]))
+  # lat0.DrawLatex(0.77,0.92,"%s TeV"%(sqrts__.split("TeV")[0]))
+  lat0.DrawLatex(0.77,0.92,"13.6 TeV")
   lat0.DrawLatex(0.16+offset,0.83,"H #rightarrow #gamma#gamma")
 
   # Load translations
@@ -572,7 +573,13 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
   lat1.SetNDC(1)
   lat1.SetTextSize(0.035)
   if _opt.procs == 'all': procStr, procExt = "", ""
-  elif len(_opt.procs.split(","))>1: procStr, procExt = "Multiple processes", "_multipleProcs"
+  elif len(_opt.procs.split(","))>1: 
+    if "=" in _opt.procs:
+      # Format: multiProcessName=proc0,proc1,proc2,...
+      procStr, _ = _opt.procs.split("=")
+      procExt = procStr
+    else:
+      procStr, procExt = "Multiple processes", "_multipleProcs"
   else: procStr, procExt = Translate(_opt.procs,translateProcs), "_%s"%_opt.procs
  
   if len(_opt.years.split(","))>1: yearStr, yearExt = "", ""
@@ -580,13 +587,19 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
 
   if _opt.cats == 'all': catStr, catExt = "All categories", "all"
   elif _opt.cats == 'wall': catStr, catExt = "#splitline{All categories}{S/(S+B) weighted}", "wall"
-  elif len(_opt.cats.split(","))>1: procStr, procExt = "Multiple categories", "multipleCats"
+  elif len(_opt.cats.split(","))>1: 
+    if "=" in _opt.cats:
+      # Format: multiCategoryName=cat0,proc1,proc2,...
+      catStr, _ = _opt.cats.split("=")
+      catExt = catStr
+    else:
+      catStr, catExt = "Multiple categories", "multipleCats"
   else: catStr, catExt = Translate(_opt.cats,translateCats), _opt.cats
  
   lat1.DrawLatex(0.85,0.86,"%s"%catStr)
   lat1.DrawLatex(0.83,0.8,"%s %s"%(procStr,yearStr))
 
-  drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+  # drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
 
   canv.Update()
 
