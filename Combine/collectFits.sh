@@ -35,5 +35,5 @@ do
 
     hadd higgsCombineAsimovPostFitScanStat_${param}.root higgsCombineAsimovPostFitScanStat_${param}.POINTS.*
 
-    plot1DScan.py higgsCombineAsimovPostFitScanFit_${param}.root -o scans/scan_${param} --POI ${param} --others higgsCombineAsimovPostFitScanStat_${param}.root:"stat-only":2
+    plot1DScan.py higgsCombineAsimovPostFitScanFit_${param}.root -o scans/scan_${param} --POI ${param} --others higgsCombineAsimovPostFitScanStat_${param}.root:"stat-only":2 --main-label Expected --translate ../../pois_differential.json
 done
