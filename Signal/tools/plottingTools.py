@@ -448,6 +448,7 @@ def plotSplines(_finalModel,_outdir="./",_nominalMass='125',splinesToPlot=['xs',
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Function for plotting final signal model: neat
 def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
+
   colorMap = {'2016':38,'2017':30,'2018':46, '2022preEE': 6, '2022postEE': 7}
   canv = ROOT.TCanvas("c","c",650,600)
   canv.SetBottomMargin(0.12)
@@ -474,13 +475,13 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
   h_effSigma.GetXaxis().SetRangeUser(effSigma_low,effSigma_high)
 
   # Legend
-  if len(_opt.years.split(","))>1:
+  if len(_opt.years.split(","))>1 and _opt.plot_years_separate:
     leg0 = ROOT.TLegend(0.15+offset,0.6,0.5+offset,0.82)
     leg0.SetFillStyle(0)
     leg0.SetLineColor(0)
     leg0.SetTextSize(0.03)
     leg0.AddEntry(_hists['data'],"Simulation","ep")
-    leg0.AddEntry(_hists['pdf'],"#splitline{Parametric}{model}","l")
+    leg.AddEntry(_hists['pdf'],"#splitline{Parametric}{model (%s)}"%year,"l")
     leg0.Draw("Same")
 
     leg1 = ROOT.TLegend(0.17+offset,0.45,0.4+offset,0.61)
@@ -503,7 +504,8 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
     leg.SetLineColor(0)
     leg.SetTextSize(0.03)
     leg.AddEntry(_hists['data'],"Simulation","lep")
-    leg.AddEntry(_hists['pdf'],"#splitline{Parametric}{model (%s)}"%year,"l")
+    # For publication: Do not display the years for the outside world in the legend
+    leg.AddEntry(_hists['pdf'],"#splitline{Parametric}{model}","l")
     leg.AddEntry(h_effSigma,"#sigma_{eff} = %1.2f GeV"%(0.5*(effSigma_high-effSigma_low)),"fl")
     leg.Draw("Same")    
 
@@ -539,7 +541,7 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
   _hists['pdf'].SetLineColor(4)
   _hists['pdf'].SetLineWidth(2)
   _hists['pdf'].Draw("Same Hist C")
-  if len(_opt.years.split(","))>1:
+  if len(_opt.years.split(","))>1 and _opt.plot_years_separate:
     for year in _opt.years.split(","):
       _hists['pdf_%s'%year].SetLineColor( colorMap[year] )  
       _hists['pdf_%s'%year].SetLineStyle(2)

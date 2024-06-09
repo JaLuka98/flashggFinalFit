@@ -13,6 +13,7 @@ def get_options():
   parser = OptionParser()
   parser.add_option('--procs', dest='procs', default='all', help="Comma separated list of processes to include. all = sum all signal procs")  
   parser.add_option('--years', dest='years', default='2016,2017,2018', help="Comma separated list of years to include")  
+  parser.add_option('--plot-years-separate', dest='plot_years_separate', action='store_true', help="If specified, do not plot the years separately in addition to the summed lineshape.")  
   parser.add_option('--cats', dest='cats', default='', help="Comma separated list of analysis categories to include. all = sum of all categories, wall = weighted sum of categories (requires S/S+B from ./Plots/getCatInfo.py)")
   parser.add_option('--loadCatWeights', dest='loadCatWeights', default='', help="Load S/S+B weights for analysis categories (path to weights json file)")
   parser.add_option('--ext', dest='ext', default='test', help="Extension: defines output dir where signal models are saved")
@@ -149,11 +150,11 @@ for cat,f in inputFiles.iteritems():
   if len(opt.years.split(",")) > 1:
     for year in opt.years.split(","):
       if 'pdf_%s'%year not in hists:
-	hists['pdf_%s'%year] = hists['pdf'].Clone()
-	hists['pdf_%s'%year].Reset()
+        hists['pdf_%s'%year] = hists['pdf'].Clone()
+        hists['pdf_%s'%year].Reset()
       # Fill
       for _id,p in hpdfs.iteritems():
-	if year in _id: hists['pdf_%s'%year] += p
+        if year in _id: hists['pdf_%s'%year] += p
    
   # Garbage removal
   for d in data_rwgt.itervalues(): d.Delete()
