@@ -23,13 +23,13 @@ pdfIndeces=$(eval "echo \${$pdfIndeces_var}")
 folder_name="runFits_${differential_variable}"
 
 if [ ! -d "$folder_name" ]; then
-    echo "Launch ./runImpacts_first_<variable>.sh first."
+    echo "Launch ./runImpacts_first.sh <variable> first."
 fi
 
 cd "runFits_${differential_variable}/impact"
 
 if [ ! -e "Datacard_${differential_variable}.root" ]; then
-    echo "Launch ./runImpacts_first_<variable>.sh first."
+    echo "Launch ./runImpacts_first.sh <variable> first."
 fi
 
 combineTool.py -M Impacts -d Datacard_${differential_variable}.root --freezeParameters MH -m 125.38 -o impacts.json

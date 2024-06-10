@@ -22,13 +22,13 @@ pdfIndeces=$(eval "echo \${$pdfIndeces_var}")
 folder_name="runFits_${differential_variable}"
 
 if [ ! -d "$folder_name" ]; then
-    echo "Launch ./runImpacts_first_<variable>.sh first."
+    echo "Launch ./runImpacts_first.sh <variable> first."
 fi
 
 cd "runFits_${differential_variable}/impact"
 
 if [ ! -e "Datacard_${differential_variable}.root" ]; then
-    echo "Launch ./runImpacts_first_<variable>.sh first."
+    echo "Launch ./runImpacts_first.sh <variable> first."
 fi
 
 
@@ -36,4 +36,4 @@ combineTool.py -M Impacts -d Datacard_${differential_variable}.root --freezePara
 
 condor_submit -spool ./condor_impacts_second.sub
 
-echo "Impacts for ${differential_variable} sent to condor. Wait until finished and then launch ./runImpacts_third_<variable>.sh"
+echo "Impacts for ${differential_variable} sent to condor. Wait until finished and then launch ./runImpacts_third.sh <variable>"

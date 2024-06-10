@@ -30,11 +30,18 @@ check_create_subfolder() {
 # Check if fit folder is present
 check_create_subfolder
 
-# cp "./Datacard_${differential_variable}.root" "$folder_name/impact_unblinded/Datacard_${differential_variable}.root"
-
 cd "runFits_${differential_variable}/gof"
 
-combine -M GoodnessOfFit ../../Datacard_${differential_variable}.root --algo saturated -m 125.38 --freezeParameters MH -n .goodnessOfFit_data
+if [ ! -e "higgsCombine.goodnessOfFit_toys0.GoodnessOfFit.mH125.38.0.root" ]; then
+    echo "Launch ./runGOF_second_<variable>.sh first."
+fi
 
+# cp "./Datacard_${differential_variable}.root" "$folder_name/impact_unblinded/Datacard_${differential_variable}.root"
 
-echo "Initial fit for GoF for ${differential_variable} done. Now launch ./runGOF_second.sh <variable>"
+combineTool.py -M CollectGoodnessOfFit --input higgsCombine.goodnessOfFit_data.GoodnessOfFit.mH125.38.root higgsCombine.goodnessOfFit_toys* -m 125.38 -o gof.json
+
+json_file="./gof.json"
+
+higgs_mass=$(jq -r 'keys[0]' "$json_file" | awk '{printf "%.12f\n", $0}')
+
+plotGof.py gof.json --statistic saturated --mass $higgs_mass -o differential_${differential_variable}_gof

@@ -25,6 +25,9 @@ check_create_subfolder() {
     if [ ! -d "$folder_name" ]; then
         mkdir "$folder_name"
         mkdir "$folder_name/asimov"
+        mkdir "$folder_name/unblinded"
+        mkdir "$folder_name/SplusBModels_stage2"
+        mkdir "$folder_name/SplusBModels_stage3"
         mkdir "$folder_name/impact"
         mkdir "$folder_name/impact_unblinded"
         mkdir "$folder_name/gof"
@@ -48,4 +51,4 @@ combineTool.py -M Impacts -d Datacard_${differential_variable}.root --freezePara
 
 condor_submit -spool ./condor_impacts_first.sub
 
-echo "Initial fit for impacts for ${differential_variable} sent to condor. Wait until finished and then launch ./runImpacts_second_<variable>.sh"
+echo "Initial fit for impacts for ${differential_variable} sent to condor. Wait until finished and then launch ./runImpacts_second.sh <variable>"

@@ -13,6 +13,9 @@ check_create_subfolder() {
     if [ ! -d "$folder_name" ]; then
         mkdir "$folder_name"
         mkdir "$folder_name/asimov"
+        mkdir "$folder_name/unblinded"
+        mkdir "$folder_name/SplusBModels_stage2"
+        mkdir "$folder_name/SplusBModels_stage3"
         mkdir "$folder_name/impact"
         mkdir "$folder_name/impact_unblinded"
         mkdir "$folder_name/gof"
@@ -65,4 +68,4 @@ sed -i "s/^queue 1$/queue ${number_of_jobs}/" condor_gof_test.sub
 
 condor_submit -spool ./condor_gof_test.sub
 
-echo "GoF for ${differential_variable} sent to condor. Wait until finished and then launch ./runGOF_third_<variable>.sh"
+echo "GoF for ${differential_variable} sent to condor. Wait until finished and then launch ./runGOF_third.sh <variable>"
