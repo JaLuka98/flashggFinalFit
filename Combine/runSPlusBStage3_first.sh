@@ -35,7 +35,7 @@ check_create_subfolder() {
 # Check if fit folder is present
 check_create_subfolder
 
-cd "./runFits_${differential_variable}/SplusBModels_stage3"
+cd ./runFits_${differential_variable}/SplusBModels_stage3
 
 for param in ${paramStrNoOne//\,/\ }
 do
@@ -54,6 +54,8 @@ do
     condor_submit -spool ./sub_toys.sub
 
     cd ../../..
+
+    # Its sufficient to compute the toys for one parameter (because in the inputWS all the other params are contained as well)
 done
 
 echo "Toys sent to HTCondor for ${differential_variable}. When done, launch ./runSPlusBStage3_second.sh <variable>"

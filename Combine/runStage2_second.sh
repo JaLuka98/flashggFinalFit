@@ -11,4 +11,4 @@ folder_name="runFits_${differential_variable}"
 
 cd "runFits_${differential_variable}"
 
-python ../../../Plots/makeSplusBModelPlot.py --inputWSFile ../../Datacard_${differential_variable}.root --cats all --doZeroes --ext _${differential_variable} --blindingRegion 125,125 --translateCats ../../../Plots/cats.json --doBands --doToyVeto --saveToyYields --ext _stage2
+python ../../Plots/makeSplusBModelPlot.py --inputWSFile ../Datacard_${differential_variable}.root --cats all --doZeroes --blindingRegion 125,125 --translateCats ../../Plots/cats.json --doBands --doToyVeto --saveToyYields --ext _stage2

@@ -42,6 +42,7 @@ combineTool.py -M CollectGoodnessOfFit --input higgsCombine.goodnessOfFit_data.G
 
 json_file="./gof.json"
 
-higgs_mass=$(jq -r 'keys[0]' "$json_file" | awk '{printf "%.12f\n", $0}')
+higgs_mass=$(jq -r 'keys[0]' "$json_file" | awk '{printf "%.9f\n", $0}')
+higgs_mass=$(echo "$higgs_mass" | bc -l)
 
-plotGof.py gof.json --statistic saturated --mass $higgs_mass -o differential_${differential_variable}_gof
+plotGof.py gof.json --statistic saturated --mass "$higgs_mass" -o differential_${differential_variable}_gof

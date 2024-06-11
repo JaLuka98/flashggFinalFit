@@ -12,6 +12,7 @@ folder_name="runFits_${differential_variable}"
 source variable_parameters.sh
 
 paramStrNoOne_var="paramStrNoOne_${differential_variable}"
+paramStrNoOne=$(eval "echo \${$paramStrNoOne_var}")
 
 check_create_subfolder() {
     if [ ! -d "$folder_name" ]; then
@@ -36,6 +37,19 @@ check_create_subfolder
 
 cd "runFits_${differential_variable}"
 
-python ../../../Plots/makeToys.py --inputWSFile ../../Datacard_${differential_variable}.root --ext _${differential_variable} --nToys 1000 --POIs $paramStrNoOne_var --batch condor --queue workday --ext _stage2
+echo $paramStrNoOne
+
+python ../../Plots/makeToys.py --inputWSFile ../Datacard_${differential_variable}.root --ext _${differential_variable} --nToys 1000 --POIs $paramStrNoOne --batch condor --queue workday --ext _stage2
+
+cd ./SplusBModels_stage2/toys
+
+# Fetch the toy directory
+current_dir=$(pwd)
+
+cd ./jobs
+# Replace the wrong path from the .sh file
+sed -i "0,/^cd /s|cd .*|cd \"$current_dir\"|" sub_toys.sh
+
+condor_submit -spool ./sub_toys.sub
 
 echo "Toys sent to HTCondor for ${differential_variable}. When done, launch ./runStage2_second.sh <variable>"
