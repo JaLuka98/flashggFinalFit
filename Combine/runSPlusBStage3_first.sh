@@ -18,6 +18,7 @@ check_create_subfolder() {
     if [ ! -d "$folder_name" ]; then
         mkdir "$folder_name"
         mkdir "$folder_name/asimov"
+        mkdir "$folder_name/combined"
         mkdir "$folder_name/unblinded"
         mkdir "$folder_name/SplusBModels_stage2"
         mkdir "$folder_name/SplusBModels_stage3"

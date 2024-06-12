@@ -27,6 +27,7 @@ check_create_subfolder() {
         mkdir "$folder_name"
         mkdir "$folder_name/asimov"
         mkdir "$folder_name/unblinded"
+        mkdir "$folder_name/combined"
         mkdir "$folder_name/SplusBModels_stage2"
         mkdir "$folder_name/SplusBModels_stage3"
         mkdir "$folder_name/impact"
@@ -48,7 +49,7 @@ cd "runFits_${differential_variable}/unblinded"
 
 for param in ${paramStrNoOne//\,/\ }
 do
-  plot1DScan.py higgsCombine.second_DataScan_${param}.MultiDimFit.mH125.38.root --POI $param --others higgsCombineDataPostFitScanFit_${param}.MultiDimFit.mH125.38.root:stat-only:2 -o ${param}_statsyst_fixedMH_observed
+  plot1DScan.py higgsCombineDataPostFitScanFit_${param}.MultiDimFit.mH125.38.root --POI $param --others higgsCombine.second_DataScan_${param}.MultiDimFit.mH125.38.root:stat-only:2 -o ${param}_statsyst_fixedMH_observed
 done
 
 # Go back to the main directory
