@@ -47,11 +47,22 @@ cp "./Datacard_${differential_variable}.root" "$folder_name/hesse/Datacard_${dif
 
 cd "runFits_${differential_variable}/hesse"
 
-combine -M MultiDimFit Datacard_${differential_variable}.root --freezeParameters MH -m 125.38 -n firstStep \
-    --cminDefaultMinimizerStrategy=0 --saveWorkspace \
-    --X-rtd MINIMIZER_freezeDisassociatedParams --X-rtd MINIMIZER_multiMin_hideConstants \
-    --X-rtd MINIMIZER_multiMin_maskConstraints --X-rtd MINIMIZER_multiMin_maskChannels=2 \
-    -t -1 --setParameters ${paramStr} --saveFitResult --saveSpecifiedIndex ${pdfIndeces} --floatOtherPOIs 1 --robustHesse 1 --robustHesseSave 1
+mkdir -p ./Plots/data
 
+if [ ! -f "./robustHessefirstStep_data.root" ]; then
+    combine -M MultiDimFit Datacard_${differential_variable}.root --freezeParameters MH -m 125.38 -n firstStep_data \
+        --cminDefaultMinimizerStrategy=0 --saveWorkspace \
+        --X-rtd MINIMIZER_freezeDisassociatedParams --X-rtd MINIMIZER_multiMin_hideConstants \
+        --X-rtd MINIMIZER_multiMin_maskConstraints --X-rtd MINIMIZER_multiMin_maskChannels=2 \
+        --saveFitResult --saveSpecifiedIndex ${pdfIndeces} --floatOtherPOIs 1 --robustHesse 1 --robustHesseSave 1
 
-echo "Hesse successfully created."
+    echo "Hesse successfully created."
+else
+    echo "Hesse already found. Using robustHessefirstStep_data.root found in the directory."
+fi
+
+cd ../../../Plots
+
+python makeCorrMatrix.py --inputJson ./inputs_robustHesse.json --mode differential_${differential_variable} --input ../Combine/runFits_${differential_variable}/hesse/robustHessefirstStep_data.root --output ../Combine/runFits_${differential_variable}/hesse/Plots/data --translate ./poi_differential_hesse.json  --doObserved
+python makeCorrMatrix.py --inputJson ./inputs_robustHesse.json --mode differential_${differential_variable} --input ../Combine/runFits_${differential_variable}/hesse/robustHessefirstStep_data.root --output ../Combine/runFits_${differential_variable}/hesse/Plots/data --translate ./poi_differential_hesse.json  --doObserved --doCov
+

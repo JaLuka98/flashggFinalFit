@@ -92,6 +92,11 @@ def set_color_palette(name, alpha=1., ncontours=256):
         red   = [0.00, 0.00, 0.00, 0.00, 0.87, 1.00, 0.51]
         green = [0.00, 0.00, 0.00, 0.81, 1.00, 0.20, 0.00]
         blue  = [0.00, 0.00, 0.51, 1.00, 0.12, 0.00, 0.00]
+    elif name == "gradient_8289":
+        stops = [0.000, 0.500, 1.000]
+        red   = [0.992, 1.000, 0.110]
+        green = [0.749, 1.000, 0.196]
+        blue  = [0.106, 1.000, 0.867]
     elif name == "":
         # default palette, looks cool
         stops = [0.00, 0.34, 0.61, 0.84, 1.00]
