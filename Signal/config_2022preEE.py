@@ -15,7 +15,7 @@ signalScriptCfg = {
   #Photon shape systematics  
   'scales':'ScaleEB,ScaleEE', # separate nuisance per year
   'scalesCorr':'FNUF,Material', # correlated across years
-  'scalesGlobal':'', # affect all processes equally, correlated across years
+  'scalesGlobal':'NonLinearity,Geant4', # affect all processes equally, correlated across years
   'smears':'Smearing', # separate nuisance per year
 
   # Job submission options
