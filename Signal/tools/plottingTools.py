@@ -595,8 +595,11 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
     else:
       catStr, catExt = "Multiple categories", "multipleCats"
   else: catStr, catExt = Translate(_opt.cats,translateCats), _opt.cats
- 
-  lat1.DrawLatex(0.85,0.86,"%s"%catStr)
+
+  if _opt.translateCats is not None:
+    lat1.DrawLatex(0.85,0.86,"%s"%translateCats[catStr])
+  else:
+    lat1.DrawLatex(0.85,0.86,"%s"%catStr)
   lat1.DrawLatex(0.83,0.8,"%s %s"%(procStr,yearStr))
 
   # drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
