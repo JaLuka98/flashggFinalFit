@@ -22,6 +22,7 @@ def writeCondorSub(_file,_exec,_queue,_nJobs,_jobOpts,doHoldOnFailure=True,doPer
   _file.write("executable = %s.sh\n"%_exec)
   _file.write("arguments  = $(ProcId)\n")
   _file.write("output     = %s.$(ClusterId).$(ProcId).out\n"%_exec)
+  _file.write("log        = %s.$(ClusterId).$(ProcId).log\n\n"%_exec)
   _file.write("error      = %s.$(ClusterId).$(ProcId).err\n\n"%_exec)
   if _jobOpts != '':
     _file.write("# User specified job options\n")

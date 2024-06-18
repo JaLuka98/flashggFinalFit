@@ -152,12 +152,12 @@ else:
       S = SB-B 
       # If option doBkfRenormalization: renormalize B pdf to be S+B-S
       if opt.doBkgRenormalization:
-	Bcorr = B-S
-	SBcorr = B
-	normFactor_B, normFactor_SB = Bcorr/B, SBcorr/SB
-	h_sbpdf_tmp.Scale(normFactor_SB)
-	h_bpdf_tmp.Scale(normFactor_B)
-	B = Bcorr # set new bkg yield
+        Bcorr = B-S
+        SBcorr = B
+        normFactor_B, normFactor_SB = Bcorr/B, SBcorr/SB
+        h_sbpdf_tmp.Scale(normFactor_SB)
+        h_bpdf_tmp.Scale(normFactor_B)
+        B = Bcorr # set new bkg yield
       # Make signal pdf
       h_spdf_tmp = h_sbpdf_tmp-h_bpdf_tmp
 
@@ -165,6 +165,9 @@ else:
       effSigma = getEffSigma(h_spdf_tmp) 
       # Calculate S/B yields in +-1sigma of peak
       rangeName = "effSigma_%s"%c
+      MH = w.var("MH").getVal()
+      # Note that these values should be the same between all categories as MH is shared between them
+      print "In category %s, the peak position is fitted to %.2f."%(c, MH)
       xvar.setRange(rangeName,w.var("MH").getVal()-effSigma,w.var("MH").getVal()+effSigma)
       Beff = bpdf.createIntegral(_xvar_argset,_xvar_argset,rangeName).getVal()*B
       Seff = math.erf(1./math.sqrt(2))*S
