@@ -214,7 +214,7 @@ signal_shape_systematics = [
                 {'name':'Smearing','title':'Smearing','type':'signal_shape','mode':'smears','mean':'0.0','sigma':'1.0'},
                 {'name':'Material','title':'Material','type':'signal_shape','mode':'scalesCorr','mean':'0.0','sigma':'1.0'},
                 {'name':'FNUF','title':'FNUF','type':'signal_shape','mode':'scalesCorr','mean':'0.0','sigma':'1.0'},
-                {'name':'NonLinearity','title':'NonLinearity','type':'signal_shape','mode':'scalesGlobal','mean':'0.0','sigma':'0.002'},
+                {'name':'NonLinearity','title':'NonLinearity','type':'signal_shape','mode':'scalesGlobal','mean':'0.0','sigma':'0.005'},
                 {'name':'Geant4','title':'Geant4','type':'signal_shape','mode':'scalesGlobal','mean':'0.0','sigma':'0.0005'},
                 #{'name':'HighR9EB','title':'HighR9EB','type':'signal_shape','mode':'scales','mean':'0.0','sigma':'1.0'},
                 #{'name':'HighR9EE','title':'HighR9EE','type':'signal_shape','mode':'scales','mean':'0.0','sigma':'1.0'},
