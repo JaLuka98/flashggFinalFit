@@ -16,8 +16,8 @@
     "mu_fiducial":{
         "pois":"r",
         "fits":"profile1D:statonly_fixedMH:all+profile1D:syst_fixedMH:all",
-        "points":"20:1+20:1",
-        "fit_opts":"-m 125.38 --freezeParameters MH --setParameterRanges r=0,2 --saveSpecifiedNuis all+-m 125.38 --freezeParameters MH --setParameterRanges r=0,2 --saveSpecifiedNuis all"
+        "points":"40:1+40:1",
+        "fit_opts":"-m 125.38 --freezeParameters ALL,MH --setParameterRanges r=0,2 --saveSpecifiedNuis all+-m 125.38 --freezeParameters MH --setParameterRanges r=0,2 --saveSpecifiedNuis all"
     },
 
     "differential_pt":{
