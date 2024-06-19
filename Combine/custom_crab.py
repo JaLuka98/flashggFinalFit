@@ -1,5 +1,5 @@
 def custom_crab(config):
-  print '>> Customising the crab config'
+  print('>> Customising the crab config')
   #config.Site.storageSite = 'T2_CH_CERNBOX'
   config.Site.storageSite = 'T3_CH_PSI'
   config.Site.blacklist = ['T3_US_Baylor', 'T3_US_UMiss', 'T2_KR_KISTI', 'T2_EE_Estonia']
