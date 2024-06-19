@@ -27,7 +27,7 @@ def get_options():
 (opt,args) = get_options()
 
 from collections import OrderedDict as od
-import imp
+from importlib import import_module
 
 import ROOT
 import pandas
@@ -87,15 +87,8 @@ options = od()
 if opt.inputConfig != '':
   if os.path.exists( opt.inputConfig ):
 
-    # Get the config name from the relative path
-    config_name = re.sub(r"\.py", "", opt.inputConfig)
-
-    # Add the current directory to sys.path
-    sys.path.append(".")
-
-    # Load the config using imp.load_source
-    module = imp.load_source(config_name, opt.inputConfig)
-    _cfg = getattr(module, "trees2wsCfg")
+    # Import config options
+    _cfg = import_module(re.sub(".py","",opt.inputConfig)).trees2wsCfg
 
     #Extract options
     inputTreeDir     = _cfg['inputTreeDir']
@@ -130,9 +123,6 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
 
     # a) make RooDataSets: type = nominal/notag
     mask = (df['cat']==cat)
-    # Convert dataframe to structured array, then to ROOT tree
-    sa = df[mask].to_records()
-    t = array2tree(sa)
 
     # Define RooDataSet
     dName = "%s_%s_%s_%s"%(productionMode_string,opt.inputMass,sqrts__,cat)
@@ -141,13 +131,15 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
     aset = make_argset(ws,varNames)
 
     # Convert tree to RooDataset and add to workspace
-    d = ROOT.RooDataSet(dName,dName,t,aset,'','weight')
+    d = ROOT.RooDataSet(dName,dName,aset,'weight')
+    
+    # Loop over events in dataframe and add entry
+    for row in df[mask][varNames].to_numpy():
+      for i, val in enumerate(row):
+        aset[i].setVal(val)
+      d.add(aset,aset.getRealValue("weight"))
+    
     getattr(ws,'import')(d)
-
-    # Delete trees and RooDataSet from heap
-    t.Delete()
-    d.Delete()
-    del sa
 
     if opt.doSystematics:
       # b) make RooDataHists for systematic variations
@@ -156,14 +148,11 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
         for direction in ['Up','Down']:
           # Create mask for systematic variation
           mask = (sdf['type']=='%s%s'%(s,direction))&(sdf['cat']==cat)
-          # Convert dataframe to structured array, then to ROOT tree
-          sa = sdf[mask].to_records()
-          t = array2tree(sa)
           
           # Define RooDataHist
           hName = "%s_%s_%s_%s_%s%s01sigma"%(productionMode_string,opt.inputMass,sqrts__,cat,s,direction)
 
-          # Make argset 
+          # Make argset: drop weight column for histogrammed observables
           systematicsVarsDropWeight = []
           for var in systematicsVars:
             if ('fiducial' in var) or ("diff" in var): continue
@@ -171,20 +160,15 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
           aset = make_argset(ws,systematicsVarsDropWeight)
           
           h = ROOT.RooDataHist(hName,hName,aset)
-          for ev in t:
-            for v in systematicsVars:
-              if (v == "weight") or ('fiducial' in v) or ("diff" in v): continue
-              else: ws.var(v).setVal(getattr(ev,v))
-            h.add(aset,getattr(ev,'weight'))
+          for row, weight in zip(sdf[mask][systematicsVarsDropWeight].to_numpy(),sdf[mask]["weight"].to_numpy()):
+            if (weight == "weight") or ('fiducial' in weight) or ("diff" in weight): continue # TODO: Test this line
+            for i, val in enumerate(row):
+              aset[i].setVal(val)
+            h.add(aset,weight)
           
           # Add to workspace
           getattr(ws,'import')(h)
 
-
-          # Delete trees and RooDataHist
-          t.Delete()
-          h.Delete()
-          del sa
   # sdf = sdf.drop(columns=['fiducialGeometricTagger_20', 'diffVariable_pt'])
 
   # Write WS to file
@@ -192,8 +176,6 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
 
   # Close file and delete workspace from heap
   fout.Close()
-  ws.Delete()
-  fout.Delete()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # For theory weights: create vars for each weight
@@ -336,7 +318,7 @@ for fiducialId in fiducialIds:
     outputWSDir = "/".join(opt.inputTreeFile.split("/")[:-1])+"/ws_%s_%s"%(dataToProc(opt.productionMode), fidTag)
   if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
   outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(opt.productionMode), fidTag),opt.inputTreeFile.split("/")[-1])
-  print " --> Creating output workspace: (%s)"%outputWSFile
+  print(" --> Creating output workspace: (%s)"%outputWSFile)
   
   productionMode_string = opt.productionMode + "_" + fidTag # This is, for example, "ggh_in"
 
@@ -366,7 +348,7 @@ if opt.doSTXSSplitting:
     outputWSDir = "/".join(opt.inputTreeFile.split("/")[:-1])+"/ws_%s"%stxsBin
     if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
     outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%stxsBin,opt.inputTreeFile.split("/")[-1])
-    print " --> Creating output workspace for STXS bin: %s (%s)"%(stxsBin,outputWSFile)
+    print(" --> Creating output workspace for STXS bin: %s (%s)"%(stxsBin,outputWSFile))
 
     productionMode_string = opt.productionMode
 
@@ -397,7 +379,7 @@ if opt.doDiffSplitting:
     if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
     outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%diffBin,opt.inputTreeFile.split("/")[-1])
     # outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(opt.productionMode), fidTag),opt.inputTreeFile.split("/")[-1])
-    print " --> Creating output workspace for differential bin: %s (%s)"%(diffBin,outputWSFile)
+    print(" --> Creating output workspace for differential bin: %s (%s)"%(diffBin,outputWSFile))
 
     productionMode_string = opt.productionMode
 
