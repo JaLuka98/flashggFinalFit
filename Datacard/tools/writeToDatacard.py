@@ -75,7 +75,9 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
   # For signal shape systematics add simple line
   if s['type'] == 'signal_shape':
     stitle = "%s_%s"%(outputWSNuisanceTitle__,s['title'])
-    if s['mode'] != 'other': stitle += "_%s"%outputNuisanceExtMap[s['mode']]
+    if s['mode'] != 'other':
+      if outputNuisanceExtMap[s['mode']] != '':
+        stitle += "_%s"%outputNuisanceExtMap[s['mode']]
     # If not correlated: separate nuisance per year
     if s['mode'] in ['scales','smears']:
       for year in options.years.split(","):
@@ -114,53 +116,53 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
     
       # Construct syst line/lines if separate by year
       if(s['correlateAcrossYears'] == 1)|(s['correlateAcrossYears'] == -1):
-	stitle = "%s%s%s"%(s['title'],mergeStr,tierStr)
-	lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
-	# Loop over categories and then iterate over rows in category
-	for cat in d.cat.unique():
-	  for ir,r in d[d['cat']==cat].iterrows():
-	    if r['proc'] == "data_obs": continue
-	    # Extract value and add to line (with checks)
-	    sval = r["%s%s%s"%(s['name'],mergeStr,tierStr)]
-	    lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
-	    # code.interact(local=locals())
-	# Remove final space from line and add to file
-	f.write("%s\n"%lsyst[:-1])
+        stitle = "%s%s%s"%(s['title'],mergeStr,tierStr)
+        lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
+        # Loop over categories and then iterate over rows in category
+        for cat in d.cat.unique():
+          for ir,r in d[d['cat']==cat].iterrows():
+            if r['proc'] == "data_obs": continue
+            # Extract value and add to line (with checks)
+            sval = r["%s%s%s"%(s['name'],mergeStr,tierStr)]
+            lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
+            # code.interact(local=locals())
+        # Remove final space from line and add to file
+        f.write("%s\n"%lsyst[:-1])
         # For uncorrelated scale weights: not for merged bins
         if options.doSTXSScaleCorrelationScheme:
           if(tier!='mnorm')&("scaleWeight" in s['name']):
-	    for ps,psProcs in scaleCorrScheme.iteritems():
-	      psStr = "_%s"%ps
-	      stitle = "%s%s%s"%(s['title'],psStr,tierStr)
-	      lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
-	      # Loop over categories and then iterate over rows in category
-	      for cat in d.cat.unique():
-		for ir,r in d[d['cat']==cat].iterrows():
-		  if r['proc'] == "data_obs": continue
-		  # Remove year+hgg tags from proc
-		  p = re.sub("_2016_hgg","",r['proc'])
-		  p = re.sub("_2017_hgg","",p)
-		  p = re.sub("_2018_hgg","",p)
-		  # Add value if in proc in phase space else -
-		  if p in psProcs: sval = r["%s%s"%(s['name'],tierStr)]
-		  else: sval = '-'
-		  lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
+            for ps,psProcs in scaleCorrScheme.iteritems():
+              psStr = "_%s"%ps
+              stitle = "%s%s%s"%(s['title'],psStr,tierStr)
+              lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
+              # Loop over categories and then iterate over rows in category
+              for cat in d.cat.unique():
+                for ir,r in d[d['cat']==cat].iterrows():
+                  if r['proc'] == "data_obs": continue
+                  # Remove year+hgg tags from proc
+                  p = re.sub("_2016_hgg","",r['proc'])
+                  p = re.sub("_2017_hgg","",p)
+                  p = re.sub("_2018_hgg","",p)
+                  # Add value if in proc in phase space else -
+                  if p in psProcs: sval = r["%s%s"%(s['name'],tierStr)]
+                  else: sval = '-'
+                  lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
               # Remove final space from line and add to file
               f.write("%s\n"%lsyst[:-1])
       else:
-	for year in options.years.split(","):
-	  stitle = "%s%s%s_%s"%(s['title'],mergeStr,tierStr,year)
-	  sname = "%s%s%s_%s"%(s['name'],mergeStr,tierStr,year)
-	  lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
-	  # Loop over categories and then iterate over rows in category
-	  for cat in d.cat.unique():
-	    for ir,r in d[d['cat']==cat].iterrows():
-	      if r['proc'] == "data_obs": continue
-	      # Extract value and add to line (with checks)
-	      sval = r[sname]
-	      lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
-	  # Remove final space from line and add to file
-	  f.write("%s\n"%lsyst[:-1])
+        for year in options.years.split(","):
+          stitle = "%s%s%s_%s"%(s['title'],mergeStr,tierStr,year)
+          sname = "%s%s%s_%s"%(s['name'],mergeStr,tierStr,year)
+          lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
+          # Loop over categories and then iterate over rows in category
+          for cat in d.cat.unique():
+            for ir,r in d[d['cat']==cat].iterrows():
+              if r['proc'] == "data_obs": continue
+              # Extract value and add to line (with checks)
+              sval = r[sname]
+              lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
+          # Remove final space from line and add to file
+          f.write("%s\n"%lsyst[:-1])
   return True
           
 
@@ -179,7 +181,7 @@ def addSyst(l,v,s,p,c,n):
       elif (n < minEventNumber) and (not ('lumi' in s)): l += "%-15s "%"-"
       # Check 2: variation is not negative. Print message and add - to datacard (cleaned later)
       elif v[0] < 0.: 
-        print " --> [WARNING] systematic %s: negative variation for (%s,%s)"%(s,p,c)
+        print(" --> [WARNING] systematic %s: negative variation for (%s,%s)"%(s,p,c))
         #vstr = "%s"%v[0]
         vstr = "-"
         # l += "%-15s "%v[0] # After discussion on the 10.04.24
@@ -194,7 +196,7 @@ def addSyst(l,v,s,p,c,n):
       elif (n < minEventNumber) and (not ('lumi' in s)): l += "%-15s "%"-"
       # Check 2: neither variation is negative. Print message and add - to datacard (cleaned later)
       elif(v[0]<0.)|(v[1]<0.):
-        print " --> [WARNING] systematic %s: negative variation for (%s,%s)"%(s,p,c)
+        print(" --> [WARNING] systematic %s: negative variation for (%s,%s)"%(s,p,c))
         #vstr = "%.3f/%.3f"%(v[0],v[1])
         vstr = "-"
         l += "%-15s "%vstr
@@ -210,7 +212,7 @@ def addSyst(l,v,s,p,c,n):
           l += "%-15s "%vstr
     return l
   else:
-    print " --> [ERROR] systematic %s: value does not have type string or list for (%s,%s). Leaving..."%(s['title'],p,c)
+    print(" --> [ERROR] systematic %s: value does not have type string or list for (%s,%s). Leaving..."%(s['title'],p,c))
     sys.exit(1)
 
 def writeMCStatUncertainty(f,d,options):
@@ -261,4 +263,3 @@ def writePdfIndex(f,d,options):
 def writeBreak(f):
   lbreak = '----------------------------------------------------------------------------------------------------------------------------------'
   f.write("%s\n"%lbreak)
-

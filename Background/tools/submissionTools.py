@@ -4,7 +4,7 @@ import re
 from commonObjects import *
 
 def run(cmd):
-  print "%s\n\n"%cmd
+  print("%s\n\n"%cmd)
   os.system(cmd)
 
 def writePreamble(_file):
@@ -98,11 +98,12 @@ def submitFiles(_opts):
   # CONDOR
   if "condor" in _opts['batch']:
     _executable = "condor_%s_%s"%(_opts['mode'],_opts['ext'])
-    if _opts['batch'] == "condor_lxplus": cmdLine = "cd %s; condor_submit -spool %s.sub; cd %s"%(_jobdir,_executable,swd__)
-    elif _opts['batch'] == "condor": cmdLine = "cd %s; condor_submit %s.sub; cd %s"%(_jobdir,_executable,swd__)
-    else: print "PROBLEM: Only condor_lxplus or condor allowed as condor-like settings for batch. Please check your settings."
+    if os.environ['PWD'].startswith("/eos"):
+      cmdLine = "cd %s; condor_submit -spool %s.sub; cd %s"%(_jobdir,_executable,bwd__)
+    else:
+      cmdLine = "cd %s; condor_submit %s.sub; cd %s"%(_jobdir,_executable,bwd__)
     run(cmdLine)
-    print "  --> Finished submitting files"
+    print("  --> Finished submitting files")
 
   # SGE
   elif _opts['batch'] in ['IC','SGE']:
@@ -118,7 +119,7 @@ def submitFiles(_opts):
         _subfile = "%s/%s_%s"%(_jobdir,_executable,c)
         cmdLine = "qsub -q hep.q %s -o %s.log -e %s.err %s.sh"%(jobOptsStr,_subfile,_subfile,_subfile)
         run(cmdLine)
-    print "  --> Finished submitting files"
+    print("  --> Finished submitting files")
   
   # Running locally
   elif _opts['batch'] == 'local':
@@ -131,6 +132,6 @@ def submitFiles(_opts):
         _subfile = "%s/%s_%s"%(_jobdir,_executable,c)
         cmdLine = "bash %s.sh"%_subfile
         run(cmdLine)
-    print "  --> Finished running files"
+    print("  --> Finished running files")
 
  
