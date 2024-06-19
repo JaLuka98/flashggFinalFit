@@ -11,6 +11,11 @@ from commonObjects import *
 from commonTools import *
 
 XSBRMap = od()
+# Tutorial analysis
+XSBRMap['tutorial'] = od()
+XSBRMap['tutorial']['decay'] = {'mode':'hgg'}
+XSBRMap['tutorial']['GG2H'] = {'mode':'constant', 'factor':51.96}
+XSBRMap['tutorial']['VBF'] = {'mode':'constant', 'factor':4.067}
 # For case of fixed xs/br Use 'mode':constant 'factor':X e.g.
 #XSBRMap['example'] = od()
 #XSBRMap['example']['decay'] = {'mode':'constant','factor':1}

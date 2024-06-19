@@ -237,7 +237,8 @@ def writeMCStatUncertainty(f,d,options):
       # Loop over categories and then iterate over rows in category
       for cat in d.cat.unique():
         for ir,r in d[d['cat']==cat].iterrows():
-          if r['proc'] == "data_obs": continue
+          #if r['proc'] == "data_obs": continue
+          if r['type'] != "sig": continue
           if (not (year in r['proc'])) or (r['proc'] == "bkg_mass"): 
             # Do not assign the MC uncertainty to procs not matching the year/era and to the data
             lsyst += "%-15s "%"-"

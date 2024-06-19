@@ -39,9 +39,9 @@ def get_options():
   return parser.parse_args()
 (opt,args) = get_options()
 
-print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ RUNNING YIELDS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ RUNNING YIELDS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 def leave():
-  print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ RUNNING YIELDS (END) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ RUNNING YIELDS (END) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
   sys.exit(1)
 
 # Store all opts in orderedDict for submissionTools
@@ -76,11 +76,11 @@ if options['cats'] == "auto": options['cats'] = extractListOfCats(WSFileNames)
 if( opt.doNOTAG )&( 'NOTAG' not in options['cats'] ):
   if( containsNOTAG(WSFileNames) ): options['cats'] += ',NOTAG'
   else:
-    print " --> [WARNING] NOTAG dataset not present in input workspace. Skipping NOTAG" 
+    print(" --> [WARNING] NOTAG dataset not present in input workspace. Skipping NOTAG")
 
 options['nCats'] = len(options['cats'].split(","))
 
-print " --> Running yields for following cats: %s"%options['cats']
+print(" --> Running yields for following cats: %s"%options['cats'])
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Make directory to store job scripts and output
@@ -88,13 +88,13 @@ if not os.path.isdir("%s/yields_%s"%(dwd__,options['ext'])): os.system("mkdir %s
 
 # Write submission files: style depends on batch system
 writeSubFiles(options)
-print "  --> Finished writing submission scripts"
+print("  --> Finished writing submission scripts")
 
 # Submit scripts to batch system
 if not options['printOnly']:
   submitFiles(options)
 else:
-  print "  --> Running with printOnly option. Will not submit scripts"
+  print("  --> Running with printOnly option. Will not submit scripts")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 leave()
