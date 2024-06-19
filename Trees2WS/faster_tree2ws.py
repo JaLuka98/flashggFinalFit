@@ -2,6 +2,7 @@ import os
 import subprocess
 from multiprocessing import Pool
 import glob
+import errno
 import time
 
 # Define an array of input masses
@@ -23,7 +24,7 @@ def safe_mkdir(path):
     try:
         os.makedirs(path)
     except OSError as exception:
-        if exception.errno != os.errno.EEXIST:
+        if exception.errno != errno.EEXIST:
             raise
 
 # Function to run the command
@@ -33,7 +34,7 @@ def run_process(args):
     safe_mkdir(output_dir)  # Create output directory if it doesn't exist
     
     # Construct the command as a single string
-    cmd = "python trees2ws.py --inputMass {mass} --productionMode {mode} --year 2022{era} --doSystematics --doInOutSplitting --inputConfig config_2022.py --inputTreeFile '{path_to_root_files}/{process}_M-{mass}_{era}/'*.root --outputWSDir {output_dir}".format(
+    cmd = "python3 trees2ws.py --inputMass {mass} --productionMode {mode} --year 2022{era} --doSystematics --doInOutSplitting --inputConfig config_2022.py --inputTreeFile '{path_to_root_files}/{process}_M-{mass}_{era}/'*.root --outputWSDir {output_dir}".format(
         mass=mass, mode=mode, era=era, path_to_root_files=path_to_root_files, process=process, output_dir=output_dir)
     
     try:

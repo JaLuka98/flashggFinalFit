@@ -161,7 +161,7 @@ def create_workspace(df, sdf, outputWSFile, productionMode_string):
           
           h = ROOT.RooDataHist(hName,hName,aset)
           for row, weight in zip(sdf[mask][systematicsVarsDropWeight].to_numpy(),sdf[mask]["weight"].to_numpy()):
-            if (weight == "weight") or ('fiducial' in weight) or ("diff" in weight): continue # TODO: Test this line
+            #if (weight == "weight") or ('fiducial' in weight) or ("diff" in weight): continue # TODO: Test this line
             for i, val in enumerate(row):
               aset[i].setVal(val)
             h.add(aset,weight)
@@ -217,7 +217,7 @@ for cat in cats:
   
   # Convert tree to pandas dataframe
   dfs = {}
-
+  
   # Theory weights
   for ts, tsColumns in theoryWeightColumns.items():
     if opt.productionMode in modesToSkipTheoryWeights: 
@@ -225,6 +225,7 @@ for cat in cats:
     else:
       dfs[ts] = pandas.DataFrame(np.reshape(np.array(t[ts].array()),(len(t),len(tsColumns))))
     dfs[ts].columns = tsColumns
+    
 
   # Main variables to add to nominal RooDataSets
   # For wildcards use filter_name functionality
