@@ -64,3 +64,6 @@ impacts*
 
 # Helper scripts
 transfer_held_jobs.sh
+
+# Plots
+Plots/*
