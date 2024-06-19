@@ -3,7 +3,7 @@
 backgroundScriptCfg = {
   
   # Setup
-  'inputWSDir':'../input_output_2022/ws', # location of 'allData.root' file
+  'inputWS':'../input_output_2022/ws/allData_2022.root', # location of 'allData.root' file
   'cats':'auto', # auto: automatically inferred from input ws
   'catOffset':0, # add offset to category numbers (useful for categories from different allData.root files)  
   'ext':'earlyAnalysis', # extension to add to output directory

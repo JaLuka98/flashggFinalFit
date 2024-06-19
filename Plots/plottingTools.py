@@ -41,7 +41,7 @@ def getEffSigma(_h):
         r+=y
         if r>rlim: reachedLimit = True
       else:
-        print " --> Reach nBins in effSigma calc: %s. Returning 0 for effSigma"%_h.GetName()
+        print(" --> Reach nBins in effSigma calc: %s. Returning 0 for effSigma"%_h.GetName())
         return 0
       # Down:
       if( not reachedLimit ):
@@ -52,7 +52,7 @@ def getEffSigma(_h):
           r+=y
           if r>rlim: reachedLimit = True
         else:
-          print " --> Reach 0 in effSigma calc: %s. Returning 0 for effSigma"%_h.GetName()
+          print(" --> Reach 0 in effSigma calc: %s. Returning 0 for effSigma"%_h.GetName())
           return 0
     # Calculate fractional width in bin takes above limt (assume linear)
     if y == 0.: dx = 0.
@@ -209,6 +209,8 @@ def makeSplusBPlot(workspace,hD,hSB,hB,hS,hDr,hBr,hSr,cat,options,dB=None,reduce
   lat0.DrawLatex(0.6,0.8,"#scale[0.6]{%s}"%Translate(cat,translateCats))
   #lat0.DrawLatex(0.15,0.83,"#scale[0.75]{H#rightarrow#gamma#gamma}")
   lat0.DrawLatex(0.15,0.83,"#scale[0.75]{H #rightarrow #gamma#gamma, m_{H} = 125.38 GeV}")
+  if "PseudoToy" in options.inputWSFile:
+    lat0.DrawLatex(0.15,0.76,"#scale[0.75]{Pseudo data}")
   if(options.loadSnapshot is not None):
     #lat0.DrawLatex(0.15,0.77,"#scale[0.6]{#vec{#alpha} = STXS stage 1.2 minimal}")
     #lat0.DrawLatex(0.15,0.77,"#scale[0.6]{#vec{#alpha} = (#mu_{ggH}, #mu_{VBF}, #mu_{VH}, #mu_{top})}")

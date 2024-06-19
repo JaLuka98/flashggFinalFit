@@ -186,16 +186,10 @@ def submitFiles(_opts):
   # CONDOR
   if "condor" in _opts['batch']:
     _executable = "condor_%s_%s"%(_opts['mode'],_opts['ext'])
-<<<<<<< HEAD
-    if _opts['batch'] == "condor_lxplus": cmdLine = "cd %s; condor_submit -spool %s.sub; cd %s"%(_jobdir,_executable,swd__)
-    elif _opts['batch'] == "condor": cmdLine = "cd %s; condor_submit %s.sub; cd %s"%(_jobdir,_executable,swd__)
-    else: print "PROBLEM: Only condor_lxplus or condor allowed as condor-like settings for batch. Please check your settings."
-=======
     if os.environ['PWD'].startswith("/eos"):
       cmdLine = "cd %s; condor_submit -spool %s.sub; cd %s"%(_jobdir,_executable,swd__)
     else:
       cmdLine = "cd %s; condor_submit %s.sub; cd %s"%(_jobdir,_executable,swd__)
->>>>>>> 46ba58a (Signal modeling now 14x compatible)
     run(cmdLine)
     print("  --> Finished submitting files")
 
