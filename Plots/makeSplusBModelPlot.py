@@ -8,6 +8,7 @@ import ROOT
 import pandas as pd
 import numpy as np
 import glob
+import scipy.stats
 import pickle
 import math
 import json
@@ -309,7 +310,7 @@ for cidx in range(len(cats)):
       # Skip blinded region
       if( not opt.unblind )&(bcenter > blindingRegion[0])&(bcenter < blindingRegion[1]): continue 
       if h_data.GetBinContent(ibin)==0.: 
-        h_data.SetBinError(ibin,1)
+        h_data.SetBinError(ibin, scipy.stats.gamma.interval(0.68,1)[1])
         if opt.doCatWeights: h_wdata.SetBinError(ibin,catsWeights[c])
 
   # Extract pdfs for category and create histograms
