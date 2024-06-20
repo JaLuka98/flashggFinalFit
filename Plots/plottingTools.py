@@ -84,7 +84,7 @@ def makeSplusBPlot(workspace,hD,hSB,hB,hS,hDr,hBr,hSr,cat,options,dB=None,reduce
   if reduceRange is not None:
     for h in [hD,hDr,hBr,hSr]: h.GetXaxis().SetRangeUser(reduceRange[0],reduceRange[1])
     for h_ipdf in [hSB,hB,hS]:
-      for h in h_ipdf.itervalues(): h.GetXaxis().SetRangeUser(reduceRange[0],reduceRange[1])
+      for h in h_ipdf.values(): h.GetXaxis().SetRangeUser(reduceRange[0],reduceRange[1])
   
   canv = ROOT.TCanvas("canv_%s"%cat,"canv_%s"%cat,700,700)
   pad1 = ROOT.TPad("pad1_%s"%cat,"pad1_%s"%cat,0,0.25,1,1)
