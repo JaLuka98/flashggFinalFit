@@ -158,7 +158,7 @@ def submitFiles(_opts):
   # CONDOR
   if _opts['batch'] == "condor":
     _executable = "condor_%s_%s"%(_opts['mode'],_opts['ext'])
-    if os.environ['PWD'].startswith("/eos"):
+    if os.path.realpath(os.environ['PWD']).startswith("/eos"):
       cmdLine = "cd %s; condor_submit -spool %s.sub; cd %s"%(_jobdir,_executable,twd__)
     else:
       cmdLine = "cd %s; condor_submit %s.sub; cd %s"%(_jobdir,_executable,twd__)

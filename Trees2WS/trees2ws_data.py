@@ -5,6 +5,26 @@
 import os, sys
 import re
 from optparse import OptionParser
+import importlib.util
+
+
+def import_module_from_path(file_path):
+    # Convert file path to module path
+    module_name = re.sub(r'\.py$', '', file_path.replace(os.sep, '.'))
+    
+    # Check if file exists
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"The file {file_path} does not exist.")
+    
+    # Load the module from the file path
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec is None:
+        raise ImportError(f"Could not load the spec for module {module_name} from {file_path}.")
+    
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 
 def get_options():
   parser = OptionParser()
@@ -68,8 +88,8 @@ if opt.inputConfig != '':
   if os.path.exists( opt.inputConfig ):
 
     # Import config options
-    _cfg = import_module(re.sub(".py","",opt.inputConfig)).trees2wsCfg
-
+    _cfg = import_module_from_path(opt.inputConfig).trees2wsCfg
+    
     #Extract options
     inputTreeDir     = _cfg['inputTreeDir']
     dataVars         = _cfg['dataVars']
