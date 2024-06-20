@@ -59,7 +59,7 @@ if opt.batch == 'condor':
 # Submit
 # if opt.batch == "condor": subcmd = "condor_submit -spool ./t2w_jobs/t2w_%s%s.sub"%(opt.mode,opt.ext)
 if opt.batch == "condor": 
-  if os.environ['PWD'].startswith("/eos"):
+  if os.path.realpath(os.environ['PWD']).startswith("/eos"):
     subcmd = "condor_submit -spool ./t2w_jobs/t2w_%s%s.sub"%(opt.mode,opt.ext) 
   else:
     subcmd = "condor_submit ./t2w_jobs/t2w_%s%s.sub"%(opt.mode,opt.ext)
