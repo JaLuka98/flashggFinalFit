@@ -144,7 +144,8 @@ if opt.prune:
     for cat in data.cat.unique(): catYields[cat] = data[(data['cat']==cat)&(data['type']=='sig')].nominal_yield.sum()
     
     # Set prune = 1 if < threshold of total cat yield
-    mask = (data['nominal_yield']<opt.pruneThreshold*data.apply(lambda x: catYields[x['cat']], axis=1))&(data['type']=='sig')&(~data['cat'].str.contains('NOTAG'))
+    # mask = (data['nominal_yield']<opt.pruneThreshold*data.apply(lambda x: catYields[x['cat']], axis=1))&(data['type']=='sig')&(~data['cat'].str.contains('NOTAG'))
+    mask = (pd.to_numeric(data['nominal_yield'], errors='coerce')<opt.pruneThreshold*data.apply(lambda x: catYields[x['cat']], axis=1))&(data['type']=='sig')&(~data['cat'].str.contains('NOTAG'))
     data.loc[mask,'prune'] = 1
 
   # Finally set all NOTAG events to be pruned

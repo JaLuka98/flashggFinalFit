@@ -108,7 +108,7 @@ def calcSystYields(_nominalDataName,_nominalDataContents,_inputWS,_systFactoryTy
   # Define dictionary to store systematic yield counters
   systYields = {}
   # Loop over systematics and create counter in dict
-  for s, f in _systFactoryTypes.iteritems():
+  for s, f in _systFactoryTypes.items():
     if f in ["a_h","a_w"]:
       for direction in ['up','down']: 
         systYields["%s_%s"%(s,direction)] = 0
@@ -123,7 +123,7 @@ def calcSystYields(_nominalDataName,_nominalDataContents,_inputWS,_systFactoryTy
   data_nominal = _inputWS.data(_nominalDataName)
   # CHECK: is weight in contents: if not then add syst to systToSkip container + print warning
   systToSkip = []
-  for s,f in _systFactoryTypes.iteritems():
+  for s,f in _systFactoryTypes.items():
     if f == "a_h": continue
     elif f == "a_w":
       # Adapting to HiggsDNA output conventions, we have just "Up", 01sigma is missing
@@ -149,7 +149,7 @@ def calcSystYields(_nominalDataName,_nominalDataContents,_inputWS,_systFactoryTy
     f_COWCorr = p.getRealValue("centralObjectWeight") if "centralObjectWeight" in _nominalDataContents else 1.
     f_NNLOPS = abs(p.getRealValue("NNLOPSweight")) if "NNLOPSweight" in _nominalDataContents else 1.
     # Loop over systematics:
-    for s, f in _systFactoryTypes.iteritems():
+    for s, f in _systFactoryTypes.items():
 
       if f == "a_h": continue
 
@@ -226,7 +226,7 @@ def calcSystYields(_nominalDataName,_nominalDataContents,_inputWS,_systFactoryTy
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # For systematics stored as separate RooDataHists
-  for s, f in _systFactoryTypes.iteritems():
+  for s, f in _systFactoryTypes.items():
     if f == "a_h":
       data_hist_up, data_hist_down = _inputWS.data("%s_%sUp01sigma"%(_nominalDataName,s)), _inputWS.data("%s_%sDown01sigma"%(_nominalDataName,s))
       # Check if datasets exist: if not print warning message and set to nominal weight
@@ -312,7 +312,7 @@ def theorySystFactory(d,systs,ftype,options,stxsMergeScheme=None,_removal=False)
 
   # For merging STXS bins in parameter scheme:
   if options.doSTXSMerging:
-    for mergeName, mergeBins in stxsMergeScheme.iteritems():
+    for mergeName, mergeBins in stxsMergeScheme.items():
       for year in options.years.split(","):
         mBins = [] # add full name (inc year and and decay)
         for mb in mergeBins: mBins.append("%s_%s_hgg"%(mb,year)) 

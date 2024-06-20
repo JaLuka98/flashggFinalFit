@@ -53,7 +53,7 @@ for i in opt.inputWSDirMap.split(","):
     print(" --> [ERROR] Directory %s does not exist. Leaving..."%i.split("=")[1])
     leave()
   inputWSDirMap[i.split("=")[0]] = i.split("=")[1]
-years = inputWSDirMap.keys()
+years = list(inputWSDirMap.keys())
 
 procsMap = od()
 if opt.procs == 'auto':
