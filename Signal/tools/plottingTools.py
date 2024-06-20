@@ -574,7 +574,13 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
   lat1.SetNDC(1)
   lat1.SetTextSize(0.035)
   if _opt.procs == 'all': procStr, procExt = "", ""
-  elif len(_opt.procs.split(","))>1: procStr, procExt = "Multiple processes", "_multipleProcs"
+  elif len(_opt.procs.split(","))>1: 
+    if "=" in _opt.procs:
+      # Format: multiProcessName=proc0,proc1,proc2,...
+      procStr, _ = _opt.procs.split("=")
+      procExt = procStr
+    else:
+      procStr, procExt = "Multiple processes", "_multipleProcs"
   else: procStr, procExt = Translate(_opt.procs,translateProcs), "_%s"%_opt.procs
  
   if len(_opt.years.split(","))>1: yearStr, yearExt = "", ""
@@ -582,13 +588,22 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
 
   if _opt.cats == 'all': catStr, catExt = "All categories", "all"
   elif _opt.cats == 'wall': catStr, catExt = "#splitline{All categories}{S/(S+B) weighted}", "wall"
-  elif len(_opt.cats.split(","))>1: procStr, procExt = "Multiple categories", "multipleCats"
+  elif len(_opt.cats.split(","))>1:     
+    if "=" in _opt.cats:
+      # Format: multiCategoryName=cat0,proc1,proc2,...
+      catStr, _ = _opt.cats.split("=")
+      catExt = catStr
+    else:
+      catStr, catExt = "Multiple categories", "multipleCats"
   else: catStr, catExt = Translate(_opt.cats,translateCats), _opt.cats
  
-  lat1.DrawLatex(0.85,0.86,"%s"%catStr)
+  if _opt.translateCats is not None:
+    lat1.DrawLatex(0.85,0.86,"%s"%translateCats[catStr])
+  else:
+    lat1.DrawLatex(0.85,0.86,"%s"%catStr)
   lat1.DrawLatex(0.83,0.8,"%s %s"%(procStr,yearStr))
 
-  #drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+  # drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
 
   canv.Update()
 
