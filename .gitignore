@@ -16,6 +16,7 @@ crabConfig_*
 # ROOT-related files
 *.root
 *.C
+!checkPdfIdx.C
 *_cc.d
 *_cc.so
 *_C.d
