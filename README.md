@@ -10,16 +10,17 @@ You can follow the latest Final Fits tutorial [here](https://gitlab.cern.ch/jspa
 
 ```
 export SCRAM_ARCH=el9_amd64_gcc12
-cmsrel CMSSW_14_0_0_pre0
-cd CMSSW_14_0_0_pre0/src
+cmsrel CMSSW_14_1_0_pre4
+cd CMSSW_14_1_0_pre4/src
 cmsenv
 
-COMBINE_TAG=dev_jlangfor_combinev10_revert974
-COMBINEHARVESTER_TAG=main
-FINALFIT_TAG=higgsdnafinalfit
+COMBINE_TAG=07b56c67ba6e4304b42c3a6cdba710d59c719192
+COMBINEHARVESTER_TAG=94017ba5a3a657f7b88669b1a525b19d34ea41a2
+FINALFIT_TAG=dev_higgsdnafinalfit_forCMSSW14
 
 # Install Combine with the latest EL9 compatible branch
-git clone -b $COMBINE_TAG https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
+git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
+cd HiggsAnalysis/CombinedLimit && git fetch origin ${COMBINE_TAG} && git checkout ${COMBINE_TAG}
 
 # Install CombineTools in CombineHarvester
 cd ${CMSSW_BASE}/src
@@ -33,13 +34,8 @@ scram b clean
 scram b -j 8
 
 # Install Final Fit package
-git clone -b $FINALFIT_TAG https://github.com/cms-analysis/flashggFinalFit.git
+git clone -b $FINALFIT_TAG https://github.com/JaLuka98/flashggFinalFit.git
 cd flashggFinalFit/
-```
-
-Ignore the compilation warnings from the CombineTools package. These will be fixed in the near future. In every new shell run the following to add `tools/commonTools` and `tools/commonObjects` to you `${PYTHONPATH}`:
-```
-cmsenv
 source setup.sh
 ```
 
