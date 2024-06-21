@@ -480,14 +480,15 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
     leg0.SetLineColor(0)
     leg0.SetTextSize(0.03)
     leg0.AddEntry(_hists['data'],"Simulation","ep")
-    leg.AddEntry(_hists['pdf'],"#splitline{Parametric}{model (%s)}"%year,"l")
+    # leg0.AddEntry(_hists['pdf'],"#splitline{Parametric}{model (%s)}"%year,"l")
+    leg0.AddEntry(_hists['pdf'],"#splitline{Parametric}{model}","l")
     leg0.Draw("Same")
 
     leg1 = ROOT.TLegend(0.17+offset,0.45,0.4+offset,0.61)
     leg1.SetFillStyle(0)
     leg1.SetLineColor(0)
     leg1.SetTextSize(0.03)
-    for year in _opt.years.split(","): leg1.AddEntry(_hists['pdf_%s'%year],"%s: #scale[0.8]{#sigma_{eff} = %1.2f GeV}"%(year,getEffSigma(_hists['pdf_%s'%year])),"l")
+    for year in _opt.years.split(","): leg1.AddEntry(_hists['pdf_%s'%year],"#splitline{%s:}{#scale[0.8]{#sigma_{eff} = %1.2f GeV}}"%(year,getEffSigma(_hists['pdf_%s'%year])),"l")
     leg1.Draw("Same")
 
     leg2 = ROOT.TLegend(0.15+offset,0.3,0.5+offset,0.45)
@@ -597,7 +598,7 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
       catStr, catExt = "Multiple categories", "multipleCats"
   else: catStr, catExt = Translate(_opt.cats,translateCats), _opt.cats
  
-  if _opt.translateCats is not None:
+  if (_opt.translateCats is not None) and not(_opt.cats == "all"):
     lat1.DrawLatex(0.85,0.86,"%s"%translateCats[catStr])
   else:
     lat1.DrawLatex(0.85,0.86,"%s"%catStr)

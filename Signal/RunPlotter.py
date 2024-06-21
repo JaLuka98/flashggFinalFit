@@ -49,7 +49,11 @@ if opt.cats in ['all','wall']:
       alist = ROOT.RooArgList(xvar)
     citr += 1
 else:
-  for cat in opt.cats.split(","):
+  if "=" in opt.cats:
+    catString = opt.cats.split("=")[-1]
+  else:
+    catString = opt.cats.split(",")
+  for cat in catString.split(","):
     f = "%s/outdir_%s/CMS-HGG_sigfit_%s_%s.root"%(swd__,opt.ext,opt.ext,cat)
     inputFiles[cat] = f
     if citr == 0:
