@@ -63,5 +63,5 @@ fi
 
 cd ../../../Plots
 
-python makeCorrMatrix.py --inputJson ./inputs_robustHesse.json --mode differential_${differential_variable} --input ../Combine/runFits_${differential_variable}/hesse/robustHessefirstStep.root --output ../Combine/runFits_${differential_variable}/hesse/Plots --translate ./poi_differential_hesse.json 
-python makeCorrMatrix.py --inputJson ./inputs_robustHesse.json --mode differential_${differential_variable} --input ../Combine/runFits_${differential_variable}/hesse/robustHessefirstStep.root --output ../Combine/runFits_${differential_variable}/hesse/Plots --translate ./poi_differential_hesse.json --doCov
+python3 makeCorrMatrix.py --inputJson ./inputs_robustHesse.json --mode differential_${differential_variable} --input ../Combine/runFits_${differential_variable}/hesse/robustHessefirstStep.root --output ../Combine/runFits_${differential_variable}/hesse/Plots --translate ./poi_differential_hesse.json 
+python3 makeCorrMatrix.py --inputJson ./inputs_robustHesse.json --mode differential_${differential_variable} --input ../Combine/runFits_${differential_variable}/hesse/robustHessefirstStep.root --output ../Combine/runFits_${differential_variable}/hesse/Plots --translate ./poi_differential_hesse.json --doCov

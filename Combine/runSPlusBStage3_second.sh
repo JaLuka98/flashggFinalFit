@@ -21,7 +21,7 @@ mkdir ./Plots
 
 for param in ${paramStrNoOne//\,/\ }
 do
-    python ../../../Plots/makeSplusBModelPlot.py --inputWSFile ../unblinded/higgsCombineDataPostFitScanFit_${param}.MultiDimFit.mH125.38.root --loadSnapshot MultiDimFit --cats all --doZeroes --unblind --translateCats ../../../Plots/cats.json --doBands --doToyVeto --saveToyYields --doSumCategories --doCatWeights --saveWeights --ext _${param} --POI $param
+    python3 ../../../Plots/makeSplusBModelPlot.py --inputWSFile ../unblinded/higgsCombineDataPostFitScanFit_${param}.MultiDimFit.mH125.38.root --loadSnapshot MultiDimFit --cats all --doZeroes --unblind --translateCats ../../../Plots/cats.json --doBands --doToyVeto --saveToyYields --doSumCategories --doCatWeights --saveWeights --ext _${param} --POI $param
 
     cd ./SplusBModels_${param}
 

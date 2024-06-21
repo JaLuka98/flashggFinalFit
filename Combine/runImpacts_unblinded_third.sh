@@ -36,7 +36,7 @@ fi
 
 combineTool.py -M Impacts -d Datacard_${differential_variable}.root --freezeParameters MH -m 125.38 -o impacts.json
 
-python $impact_dir/../../../Plots/correctImpacts.py --impactsJson impacts.json --frozenParam MH --dropBkgModelParams
+python3 $impact_dir/../../../Plots/correctImpacts.py --impactsJson impacts.json --frozenParam MH --dropBkgModelParams
 
 # Switch to Combine v9 for getting pull in impacts.
 cd /afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_11_3_4/src
