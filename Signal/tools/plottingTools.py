@@ -480,7 +480,7 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
     leg0.SetLineColor(0)
     leg0.SetTextSize(0.03)
     leg0.AddEntry(_hists['data'],"Simulation","ep")
-    leg.AddEntry(_hists['pdf'],"#splitline{Parametric}{model (%s)}"%year,"l")
+    leg0.AddEntry(_hists['pdf'],"#splitline{Parametric}{model}","l")
     leg0.Draw("Same")
 
     leg1 = ROOT.TLegend(0.17+offset,0.45,0.4+offset,0.61)
