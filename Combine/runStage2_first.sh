@@ -40,7 +40,7 @@ cd "runFits_${differential_variable}"
 
 echo $paramStrNoOne
 
-python ../../Plots/makeToys.py --inputWSFile ../Datacard_${differential_variable}.root --ext _${differential_variable} --nToys 1000 --POIs $paramStrNoOne --batch condor --queue workday --ext _stage2
+python3 ../../Plots/makeToys.py --inputWSFile ../Datacard_${differential_variable}.root --ext _${differential_variable} --nToys 1000 --POIs $paramStrNoOne --batch condor --queue workday --ext _stage2
 
 cd ./SplusBModels_stage2/toys
 

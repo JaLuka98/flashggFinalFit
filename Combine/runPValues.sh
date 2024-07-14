@@ -45,7 +45,7 @@ NBINS=$(echo "$paramStrNoOne" | tr ',' '\n' | wc -l)
 cd ../../
 
 # Run the Python script and capture the output
-PVALUE=$(python ./pvalue.py --filename "$FILENAME" --nBins $NBINS)
+PVALUE=$(python3 ./pvalue.py --filename "$FILENAME" --nBins $NBINS)
 
 # Print the p-value
 echo "The p-value of the variable $differential_variable is: $PVALUE"

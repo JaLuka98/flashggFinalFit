@@ -75,14 +75,13 @@ with open(opts.outfilename,'w') as outFile:
       #   outFile.write('%s\n'%line)
       #   continue
       
-      print
-      print 'Processing line %s'%vals[0]
+      print('Processing line %s'%vals[0])
       line = line.split('lnN')[0] + 'lnN   '
       for i,effect in enumerate(vals[2:]):
         proc = procs[i]
         cat =  cats[i]
-        #print 'proc = %s'%proc
-        #print 'cat  = %s'%cat
+        #print('proc = %s'%proc)
+        #print('cat  = %s'%cat)
         vals = effect.split('/')
         if opts.removeNonDiagonal and not isDiag(proc,cat):
           # if 'bkg_mass' in proc: continue
@@ -123,7 +122,7 @@ with open(opts.outfilename,'w') as outFile:
               if val < factorLo or val > factorHi:
                 line += '- '
                 if opts.verbose:
-                  print 'Symmetric: replacing value of %1.3f with -'%val
+                  print('Symmetric: replacing value of %1.3f with -'%val)
               else:
                 line += '%1.3f '%val
         elif len(vals) == 2:
@@ -135,7 +134,7 @@ with open(opts.outfilename,'w') as outFile:
             if line_name in symmetrization_list:
               if ((abs(valLo - 1.000) < 0.003) or (abs(valHi - 1.000) < 0.003)) and (abs(valLo - valHi) >= 0.010):
                 if opts.verbose:
-                  print 'Onesided: Symmetrize...'
+                  print('Onesided: Symmetrize...')
                 if (valLo < valHi) and ((valLo - valHi) >= 0.010):
                   line += '%1.3f '%(max(valHi,valLo))
                 elif (valLo > valHi) and ((valLo - valHi) >= 0.010):
@@ -151,24 +150,24 @@ with open(opts.outfilename,'w') as outFile:
           else:
             if valLo < factorLo or valLo > factorHi:
               if opts.verbose:
-                print 'Asymmetric: replacing low value of %1.3f with 1'%valLo
+                print('Asymmetric: replacing low value of %1.3f with 1'%valLo)
               valLo = 1
             if valHi <= factorLo or valHi > factorHi:
               if opts.verbose:
-                print 'Asymmetric: replacing high value of %1.3f with 1'%valHi
+                print('Asymmetric: replacing high value of %1.3f with 1'%valHi)
               valHi = 1
             if opts.removeDoubleSided and valHi > 1.000001 and valLo > 1.000001:
               #line += '%1.3f '%(0.5*(valHi+valLo))
               line += '%1.3f '%(max(valHi,valLo))
               if opts.verbose:
-                #print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, 0.5*(valHi+valLo))
-                print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, max(valHi,valLo))
+                #print('DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, 0.5*(valHi+valLo)))
+                print('DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, max(valHi,valLo)))
             elif opts.removeDoubleSided and valHi < 0.999999 and valLo < 0.999999:
               #line += '%1.3f '%(0.5*(valHi+valLo))
               line += '%1.3f '%(min(valHi,valLo))
               if opts.verbose:
-                #print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, 0.5*(valHi+valLo))
-                print 'DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, min(valHi,valLo))
+                #print('DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, 0.5*(valHi+valLo)))
+                print('DoubleSided: replacing %1.3f/%1.3f with %1.3f'%(valLo, valHi, min(valHi,valLo)))
             else:
               line += '%1.3f/%1.3f '%(valLo,valHi)
         else:

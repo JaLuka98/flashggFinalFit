@@ -20,20 +20,19 @@
         "fit_opts":"-m 125.38 --freezeParameters MH --saveInactivePOI 1 --saveWorkspace --saveSpecifiedNuis all"
     },
 
-    "differential_pt":{
+    "PTH":{
         "pois":"r_PTH_0p0_15p0,r_PTH_15p0_30p0,r_PTH_30p0_45p0,r_PTH_45p0_80p0,r_PTH_80p0_120p0,r_PTH_120p0_200p0,r_PTH_200p0_350p0,r_PTH_350p0_10000p0",
         "fits":"bestfit:syst:all",
         "points":"1",
-        "fit_opts":"--saveInactivePOI 1 --saveWorkspace --saveSpecifiedNuis all"
+        "fit_opts":"-m 125.38 --freezeParameters MH --saveInactivePOI 1 --saveWorkspace --saveSpecifiedNuis all"
     },
 
-    "differential_y":{
+    "rapidity":{
         "pois":"r_YH_0p0_0p15,r_YH_0p15_0p3,r_YH_0p3_0p6,r_YH_0p6_0p9,r_YH_0p9_2p5",
         "fits":"bestfit:syst:all",
         "points":"1",
-        "fit_opts":"--saveInactivePOI 1 --saveWorkspace --saveSpecifiedNuis all"
+        "fit_opts":"-m 125.38 --freezeParameters MH --saveInactivePOI 1 --saveWorkspace --saveSpecifiedNuis all"
     },
-
 
     "mu_extended":{
         "pois":"r_ggH,r_VBF,r_WH,r_ZH,r_top",
