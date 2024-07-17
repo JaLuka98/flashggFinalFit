@@ -251,8 +251,11 @@ def makeSplusBPlot(workspace,hD,hSB,hB,hS,hDr,hBr,hSr,cat,options,dB=None,reduce
     #lat0.DrawLatex(0.15,0.77,"#scale[0.75]{#hat{#mu} = 1.03}")
     #muhat_ggh, muhat_vbf, muhat_vh, muhat_top, mhhat = workspace.var("r_ggH").getVal(), workspace.var("r_VBF").getVal(), workspace.var("r_VH").getVal(), workspace.var("r_top").getVal(), workspace.var("MH").getVal()
     #lat0.DrawLatex(0.13,0.77,"#scale[0.6]{(#hat{#mu}_{ggH},#hat{#mu}_{VBF},#hat{#mu}_{VH},#hat{#mu}_{top}) = (%.2f,%.2f,%.2f,%.2f)}"%(muhat_ggh,muhat_vbf,muhat_vh,muhat_top))
-    muhat, mhhat = workspace.var("r").getVal(), workspace.var("MH").getVal()
-    lat0.DrawLatex(0.13,0.77,"#scale[0.75]{#hat{#mu}_{in} = %.2f}"%(muhat))
+    if options.POI != '':
+      muhat, mhhat = workspace.var(options.POI).getVal(), workspace.var("MH").getVal()
+      lat0.DrawLatex(0.15,0.77,"#scale[0.75]{#hat{#mu} = %.2f}"%(muhat))
+    else:
+      lat0.DrawLatex(0.15,0.77,"#scale[0.6]{#vec{#alpha} = (#mu_{ggH}, #mu_{VBF}, #mu_{VH}, #mu_{top})}")
   #elif options.parameterMap is not None:
   #  poiStr = ''
   #  for kv in options.parameterMap.split(","):
