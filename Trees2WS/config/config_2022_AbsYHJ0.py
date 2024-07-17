@@ -5,12 +5,12 @@ trees2wsCfg = {
   'inputTreeDir':'DiphotonTree',
 
   # Variables to be added to dataframe: use wildcard * for common strings
-  'mainVars':["CMS_hgg_mass","weight","weight_central","dZ","*Up","*Down","fiducialGeometricFlag", "diffVariable_GenNJ"],
+  'mainVars':["CMS_hgg_mass","weight","weight_central","dZ","*Up","*Down","fiducialGeometricFlag", "diffVariable_GenAbsYHJ0"],
   'dataVars':["CMS_hgg_mass","weight"], # Vars to be added for data
   'stxsVar':'',
-  'diffVar':'diffVariable_GenNJ',
+  'diffVar':'diffVariable_GenAbsYHJ0',
   'notagVars':[], # Vars to add to NOTAG RooDataset
-  'systematicsVars':["CMS_hgg_mass","weight","fiducialGeometricFlag", "diffVariable_GenNJ"], # Variables to add to sytematic RooDataHists
+  'systematicsVars':["CMS_hgg_mass","weight","fiducialGeometricFlag", "diffVariable_GenAbsYHJ0"], # Variables to add to sytematic RooDataHists
   'theoryWeightContainers':{'weight_LHEPdf': 101, 'weight_LHEScale': 9},
 
   # List of systematics: use string YEAR for year-dependent systematics
