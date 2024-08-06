@@ -10,7 +10,7 @@ backgroundScriptCfg = {
   'year':'2022', # Use combined when merging all years in category (for plots)
 
   # Job submission options
-  'batch':'condor_lxplus', # [condor,condor_lxplus,SGE,IC,local]
+  'batch':'local', # [condor,condor_lxplus,SGE,IC,local]
   'queue':'microcentury' # for condor e.g. microcentury
   
 }
