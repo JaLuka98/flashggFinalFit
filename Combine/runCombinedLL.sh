@@ -28,7 +28,7 @@ cd "runFits_${differential_variable}/combined"
 
 for param in ${paramStrNoOne//\,/\ }
 do
-  python3 /afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_10_2_13/src/flashggFinalFit/Plots/plot1DScan_combined.py ../unblinded/higgsCombineDataPostFitScanFit_${param}.MultiDimFit.mH125.38.root --POI ${param} --observed ../unblinded/higgsCombine.second_DataScan_${param}.MultiDimFit.mH125.38.root:Observed-stat-only:1 --expected ../asimov/higgsCombineAsimovPostFitScanFit_${param}.root:Expected:2 ../asimov/higgsCombineAsimovPostFitScanStat_${param}.root:Expected-stat-only:2 -o ${param}_statsyst_fixedMH_combined --breakdown1 syst,stat --breakdown2 syst,stat --translate /afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_10_2_13/src/flashggFinalFit/Plots/poi_differential.json
+  python3 ../../../Plots/plot1DScan_combined.py ../unblinded/higgsCombineDataPostFitScanFit_${param}.MultiDimFit.mH125.38.root --POI ${param} --observed ../unblinded/higgsCombine.second_DataScan_${param}.MultiDimFit.mH125.38.root:Observed-stat-only:1 --expected ../asimov/higgsCombineAsimovPostFitScanFit_${param}.root:Expected:2 ../asimov/higgsCombineAsimovPostFitScanStat_${param}.root:Expected-stat-only:2 -o ${param}_statsyst_fixedMH_combined --breakdown1 syst,stat --breakdown2 syst,stat --translate ../../pois_differential.json
 done
 
 # Go back to the main directory
