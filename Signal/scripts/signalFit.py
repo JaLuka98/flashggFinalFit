@@ -241,7 +241,7 @@ if not opt.skipVertexScenarioSplit:
       f.Close()
     # Check if replacement dataset has too few entries: if so throw error
     if( datasetWVForFit[MHNominal].numEntries() < opt.replacementThreshold )|( datasetWVForFit[MHNominal].sumEntries() < 0. ):
-      print(" --> [ERROR] replacement dataset (%s,%s) has too few entries (%g < %g)"%(procReplacementFit,catReplacementFit,datasetWVForFit[MHNominal].numEntries,opt.replacementThreshold))
+      print(" --> [ERROR] replacement dataset (%s,%s) has too few entries (%g < %g)"%(procReplacementFit,catReplacementFit,datasetWVForFit[MHNominal].numEntries(),opt.replacementThreshold))
       sys.exit(1)
     else:
       procWVFit, catWVFit = procReplacementFit, catReplacementFit
