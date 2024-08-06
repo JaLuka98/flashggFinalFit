@@ -52,8 +52,8 @@
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     },
     "differential_ptJ0":{
-        "pois":"r_PTJ0_0p0_30p0,r_PTJ0_30p0_45p0,r_PTJ0_45p0_70p0,r_PTJ0_70p0_110p0,r_PTJ0_110p0_200p0,r_PTJ0_200p0_10000p0",
-        "fits":"robustHesse:syst:r_PTJ0_30p0_45p0",
+        "pois":"r_PTJ0_0p0_30p0,r_PTJ0_30p0_75p0,r_PTJ0_75p0_120p0,r_PTJ0_120p0_200p0,r_PTJ0_200p0_10000p0",
+        "fits":"robustHesse:syst:r_PTJ0_30p0_75p0",
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     }

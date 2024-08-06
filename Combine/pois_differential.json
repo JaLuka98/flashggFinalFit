@@ -15,5 +15,10 @@
     "r_NJ_0p0_1p0":"r_{N_{Jets} #in [0,1[}",
     "r_NJ_1p0_2p0":"r_{N_{Jets} #in [1,2[}",
     "r_NJ_2p0_3p0":"r_{N_{Jets} #in [2,3[}",
-    "r_NJ_3p0_100p0":"r_{N_{Jets} #in [3,+inf[}"
+    "r_NJ_3p0_100p0":"r_{N_{Jets} #in [3,+inf[}",
+    "r_PTJ0_0p0_30p0":"r_{p_{T,j0}} (N_{Jets} = 0)",
+    "r_PTJ0_30p0_75p0":"r_{p_{T,j0} #in [30,75[ GeV}",
+    "r_PTJ0_75p0_120p0":"r_{p_{T,j0} #in [75,120[ GeV}",
+    "r_PTJ0_120p0_200p0":"r_{p_{T,j0} #in [120,200[ GeV}",
+    "r_PTJ0_200p0_10000p0":"r_{p_{T,j0} #in [200,+inf[ GeV}"
 }
