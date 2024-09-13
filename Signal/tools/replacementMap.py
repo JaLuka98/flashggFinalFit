@@ -439,110 +439,6 @@ globalReplacementMap["earlyAnalysisDiffNJ"]["catRVMap"]["RECO_Njets2p5_3p0_100p0
 globalReplacementMap["earlyAnalysisDiffNJ"]["catRVMap"]["RECO_Njets2p5_3p0_100p0_cat1"] = "RECO_Njets2p5_3p0_100p0_cat1"
 globalReplacementMap["earlyAnalysisDiffNJ"]["catRVMap"]["RECO_Njets2p5_3p0_100p0_cat2"] = "RECO_Njets2p5_3p0_100p0_cat2"
 
-# globalReplacementMap["earlyAnalysisDiffNJ"]["catRVMap"]["RECO_Njets2p5_3p0_4p0_cat0"] = "RECO_Njets2p5_3p0_4p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffNJ"]["catRVMap"]["RECO_Njets2p5_3p0_4p0_cat1"] = "RECO_Njets2p5_3p0_4p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffNJ"]["catRVMap"]["RECO_Njets2p5_3p0_4p0_cat2"] = "RECO_Njets2p5_3p0_4p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffNJ"]["catRVMap"]["RECO_Njets2p5_4p0_100p0_cat0"] = "RECO_Njets2p5_4p0_100p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffNJ"]["catRVMap"]["RECO_Njets2p5_4p0_100p0_cat1"] = "RECO_Njets2p5_4p0_100p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffNJ"]["catRVMap"]["RECO_Njets2p5_4p0_100p0_cat2"] = "RECO_Njets2p5_4p0_100p0_cat2"
-
-
-# # Differential PTJ0 (PT of the leading jet)
-# globalReplacementMap["earlyAnalysisDiffPTJ0"] = od()
-# # Wrong vertex stuff, which process should be considered?
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]['procWV'] = "ggh_PTJ0_30p0_45p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]['catWV'] = "RECO_first_jet_pt_30p0_45p0_cat2"
-# # Relacement processes for RV
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]['procRVMap'] = od()
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_0p0_30p0_cat0"] = "ggh_PTJ0_0p0_30p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_0p0_30p0_cat1"] = "ggh_PTJ0_0p0_30p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_0p0_30p0_cat2"] = "ggh_PTJ0_0p0_30p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_30p0_45p0_cat0"] = "ggh_PTJ0_30p0_45p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_30p0_45p0_cat1"] = "ggh_PTJ0_30p0_45p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_30p0_45p0_cat2"] = "ggh_PTJ0_30p0_45p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_45p0_70p0_cat0"] = "ggh_PTJ0_45p0_70p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_45p0_70p0_cat1"] = "ggh_PTJ0_45p0_70p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_45p0_70p0_cat2"] = "ggh_PTJ0_45p0_70p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_70p0_110p0_cat0"] = "ggh_PTJ0_70p0_110p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_70p0_110p0_cat1"] = "ggh_PTJ0_70p0_110p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_70p0_110p0_cat2"] = "ggh_PTJ0_70p0_110p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_110p0_200p0_cat0"] = "ggh_PTJ0_110p0_200p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_110p0_200p0_cat1"] = "ggh_PTJ0_110p0_200p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_110p0_200p0_cat2"] = "ggh_PTJ0_110p0_200p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat0"] = "ggh_PTJ0_200p0_10000p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat1"] = "ggh_PTJ0_200p0_10000p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat2"] = "ggh_PTJ0_200p0_10000p0_in"
-
-
-# # Replacement categories for RV
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"] = od()
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_0p0_30p0_cat0"] = "RECO_first_jet_pt_0p0_30p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_0p0_30p0_cat1"] = "RECO_first_jet_pt_0p0_30p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_0p0_30p0_cat2"] = "RECO_first_jet_pt_0p0_30p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_30p0_45p0_cat0"] = "RECO_first_jet_pt_30p0_45p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_30p0_45p0_cat1"] = "RECO_first_jet_pt_30p0_45p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_30p0_45p0_cat2"] = "RECO_first_jet_pt_30p0_45p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_45p0_70p0_cat0"] = "RECO_first_jet_pt_45p0_70p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_45p0_70p0_cat1"] = "RECO_first_jet_pt_45p0_70p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_45p0_70p0_cat2"] = "RECO_first_jet_pt_45p0_70p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_70p0_110p0_cat0"] = "RECO_first_jet_pt_70p0_110p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_70p0_110p0_cat1"] = "RECO_first_jet_pt_70p0_110p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_70p0_110p0_cat2"] = "RECO_first_jet_pt_70p0_110p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_110p0_200p0_cat0"] = "RECO_first_jet_pt_110p0_200p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_110p0_200p0_cat1"] = "RECO_first_jet_pt_110p0_200p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_110p0_200p0_cat2"] = "RECO_first_jet_pt_110p0_200p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat0"] = "RECO_first_jet_pt_200p0_10000p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat1"] = "RECO_first_jet_pt_200p0_10000p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat2"] = "RECO_first_jet_pt_200p0_10000p0_cat2"
-
-# # Differential PTJ0 (PT of the leading jet)
-# globalReplacementMap["earlyAnalysisDiffPTJ0"] = od()
-# # Wrong vertex stuff, which process should be considered?
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]['procWV'] = "ggh_PTJ0_30p0_60p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]['catWV'] = "RECO_first_jet_pt_30p0_60p0_cat2"
-# # Relacement processes for RV
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]['procRVMap'] = od()
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_0p0_30p0_cat0"] = "ggh_PTJ0_0p0_30p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_0p0_30p0_cat1"] = "ggh_PTJ0_0p0_30p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_0p0_30p0_cat2"] = "ggh_PTJ0_0p0_30p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_30p0_60p0_cat0"] = "ggh_PTJ0_30p0_60p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_30p0_60p0_cat1"] = "ggh_PTJ0_30p0_60p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_30p0_60p0_cat2"] = "ggh_PTJ0_30p0_60p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_60p0_90p0_cat0"] = "ggh_PTJ0_60p0_90p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_60p0_90p0_cat1"] = "ggh_PTJ0_60p0_90p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_60p0_90p0_cat2"] = "ggh_PTJ0_60p0_90p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_90p0_120p0_cat0"] = "ggh_PTJ0_90p0_120p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_90p0_120p0_cat1"] = "ggh_PTJ0_90p0_120p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_90p0_120p0_cat2"] = "ggh_PTJ0_90p0_120p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_120p0_200p0_cat0"] = "ggh_PTJ0_120p0_200p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_120p0_200p0_cat1"] = "ggh_PTJ0_120p0_200p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_120p0_200p0_cat2"] = "ggh_PTJ0_120p0_200p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat0"] = "ggh_PTJ0_200p0_10000p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat1"] = "ggh_PTJ0_200p0_10000p0_in"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat2"] = "ggh_PTJ0_200p0_10000p0_in"
-
-
-# # Replacement categories for RV
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"] = od()
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_0p0_30p0_cat0"] = "RECO_first_jet_pt_0p0_30p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_0p0_30p0_cat1"] = "RECO_first_jet_pt_0p0_30p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_0p0_30p0_cat2"] = "RECO_first_jet_pt_0p0_30p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_30p0_60p0_cat0"] = "RECO_first_jet_pt_30p0_60p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_30p0_60p0_cat1"] = "RECO_first_jet_pt_30p0_60p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_30p0_60p0_cat2"] = "RECO_first_jet_pt_30p0_60p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_60p0_90p0_cat0"] = "RECO_first_jet_pt_60p0_90p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_60p0_90p0_cat1"] = "RECO_first_jet_pt_60p0_90p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_60p0_90p0_cat2"] = "RECO_first_jet_pt_60p0_90p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_90p0_120p0_cat0"] = "RECO_first_jet_pt_90p0_120p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_90p0_120p0_cat1"] = "RECO_first_jet_pt_90p0_120p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_90p0_120p0_cat2"] = "RECO_first_jet_pt_90p0_120p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_120p0_200p0_cat0"] = "RECO_first_jet_pt_120p0_200p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_120p0_200p0_cat1"] = "RECO_first_jet_pt_120p0_200p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_120p0_200p0_cat2"] = "RECO_first_jet_pt_120p0_200p0_cat2"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat0"] = "RECO_first_jet_pt_200p0_10000p0_cat0"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat1"] = "RECO_first_jet_pt_200p0_10000p0_cat1"
-# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat2"] = "RECO_first_jet_pt_200p0_10000p0_cat2"
-
 # Differential PTJ0 (PT of the leading jet)
 globalReplacementMap["earlyAnalysisDiffPTJ0"] = od()
 # Wrong vertex stuff, which process should be considered?
@@ -584,6 +480,30 @@ globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_120
 globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat0"] = "RECO_first_jet_pt_200p0_10000p0_cat0"
 globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat1"] = "RECO_first_jet_pt_200p0_10000p0_cat1"
 globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_200p0_10000p0_cat2"] = "RECO_first_jet_pt_200p0_10000p0_cat2"
+
+# # Differential PTJ0 (PT of the leading jet)
+# globalReplacementMap["earlyAnalysisDiffPTJ0"] = od()
+# # Wrong vertex stuff, which process should be considered?
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]['procWV'] = "ggh_PTJ0_30p0_10000p0_in"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]['catWV'] = "RECO_first_jet_pt_30p0_10000p0_cat2"
+# # Relacement processes for RV
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]['procRVMap'] = od()
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_0p0_30p0_cat0"] = "ggh_PTJ0_0p0_30p0_in"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_0p0_30p0_cat1"] = "ggh_PTJ0_0p0_30p0_in"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_0p0_30p0_cat2"] = "ggh_PTJ0_0p0_30p0_in"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_30p0_10000p0_cat0"] = "ggh_PTJ0_30p0_10000p0_in"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_30p0_10000p0_cat1"] = "ggh_PTJ0_30p0_10000p0_in"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["procRVMap"]["RECO_first_jet_pt_30p0_10000p0_cat2"] = "ggh_PTJ0_30p0_10000p0_in"
+
+
+# # Replacement categories for RV
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"] = od()
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_0p0_30p0_cat0"] = "RECO_first_jet_pt_0p0_30p0_cat0"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_0p0_30p0_cat1"] = "RECO_first_jet_pt_0p0_30p0_cat1"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_0p0_30p0_cat2"] = "RECO_first_jet_pt_0p0_30p0_cat2"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_30p0_10000p0_cat0"] = "RECO_first_jet_pt_30p0_10000p0_cat0"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_30p0_10000p0_cat1"] = "RECO_first_jet_pt_30p0_10000p0_cat1"
+# globalReplacementMap["earlyAnalysisDiffPTJ0"]["catRVMap"]["RECO_first_jet_pt_30p0_10000p0_cat2"] = "RECO_first_jet_pt_30p0_10000p0_cat2"
 
 # Differential YJ0 (Rapidity of the leading jet)
 globalReplacementMap["earlyAnalysisDiffYJ0"] = od()
@@ -687,7 +607,7 @@ globalReplacementMap["earlyAnalysisDiffAbsPhiHJ0"]["catRVMap"]["RECO_AbsPhiHJ0_N
 globalReplacementMap["earlyAnalysisDiffAbsYHJ0"] = od()
 # Wrong vertex stuff, which process should be considered?
 globalReplacementMap["earlyAnalysisDiffAbsYHJ0"]['procWV'] = "ggh_AbsYHJ0_0p0_0p6_in"
-globalReplacementMap["earlyAnalysisDiffAbsYHJ0"]['catWV'] = "RECO_AbsYHJ0_0p0_0p6_cat2"
+globalReplacementMap["earlyAnalysisDiffAbsYHJ0"]['catWV'] = "RECO_AbsYHJ0_NJ0_cat2"
 # Relacement processes for RV
 globalReplacementMap["earlyAnalysisDiffAbsYHJ0"]['procRVMap'] = od()
 globalReplacementMap["earlyAnalysisDiffAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_0p0_0p6_cat0"] = "ggh_AbsYHJ0_0p0_0p6_in"

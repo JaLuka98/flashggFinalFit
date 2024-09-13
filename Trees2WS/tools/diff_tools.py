@@ -42,6 +42,10 @@ diffDict[43] = "PTJ0_120p0_200p0_in"
 diffDict[44] = "PTJ0_200p0_10000p0_in"
 diffDict[45] = "PTJ0_0p0_10000p0_out"
 
+# diffDict[40] = "PTJ0_0p0_30p0_in"
+# diffDict[41] = "PTJ0_30p0_10000p0_in"
+# diffDict[45] = "PTJ0_0p0_10000p0_out"
+
 diffDict[50] = "YJ0_0p0_0p5_in"
 diffDict[51] = "YJ0_0p5_1p2_in"
 diffDict[52] = "YJ0_1p2_2p0_in"
