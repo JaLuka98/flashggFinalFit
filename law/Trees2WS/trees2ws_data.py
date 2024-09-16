@@ -39,7 +39,7 @@ def import_module_from_path(file_path):
     spec.loader.exec_module(module)
     return module
 
-class ConvertTreesToWS(law.Task):
+class Trees2WSData(law.Task):
     input_path = law.Parameter(description="Path to the data input ROOT file")
     output_dir = law.Parameter(description="Path to the output directory")
     variable = law.Parameter(description="Variable to be used for output folder naming")
@@ -75,12 +75,12 @@ class ConvertTreesToWS(law.Task):
         f = uproot.open(self.input_path)
         list_of_tree_names = f.keys() if input_tree_dir == '' else f[input_tree_dir].keys()
 
-        if cats == 'auto':
-        cats = []
+        if categories == 'auto':
+            categories = []
         for tn in list_of_tree_names:
             if "sigma" in tn: continue
             c = tn.split("_%s_"%sqrts__)[-1].split(";")[0]
-            cats.append(c)
+            categories.append(c)
             
         f = ROOT.TFile(self.input_path)
 
