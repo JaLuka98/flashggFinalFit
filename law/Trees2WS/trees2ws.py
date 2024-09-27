@@ -9,6 +9,7 @@ from optparse import OptionParser
 from collections import OrderedDict as od
 from importlib import import_module
 import glob
+import errno
 
 import pandas
 import numpy as np
@@ -19,7 +20,8 @@ from commonObjects import *
 from tools.STXS_tools import *
 from tools.diff_tools import *
 
-# from framework import Task, HTCondorWorkflow
+# from framework import Task
+# from framework import HTCondorWorkflow
 
 # Centre of mass energy string
 sqrts__ = "13TeV"
@@ -57,12 +59,11 @@ production_modes = [
     ("tth", "ttHtoGG")
 ]
 
-# Define an array of input masses
-input_masses = [130]
+# input_masses = [120, 125, 130]
 
-production_modes = [
-    ("tth", "ttHtoGG")
-]
+# production_modes = [
+#     ("tth", "ttHtoGG")
+# ]
 # flashgg input WS objects
 inputWSName__ = "tagsDumper/cms_hgg_13TeV"
 
@@ -89,7 +90,7 @@ def safe_mkdir(path):
             raise
                 
 
-class Trees2WSSingleProcess(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_path = law.Parameter(description="Path to the data input ROOT file")
     output_dir = law.Parameter(description="Path to the output directory")
     variable = law.Parameter(description="Variable to be used for output folder naming")
@@ -105,13 +106,13 @@ class Trees2WSSingleProcess(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkfl
     doDiffSplitting = law.Parameter(default=False, description="Split output WS per differential bin")
     doInOutSplitting = law.Parameter(default=False, description="Split output WS into in/out fiducial based on some variable in the input trees (to be improved).")
     
-        
+
     # htcondor_job_kwargs_submit = {"spool": True}
     
     
-    # def create_branch_map(self):
-    #     # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
-    #     return varBins[self.variable]
+    def create_branch_map(self):
+        # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
+        return varBins[self.variable]
 
     def output(self):
         
@@ -527,11 +528,45 @@ class Trees2WS(law.Task):
     mass_cut = law.Parameter(default=False, description="Apply mass cut")
     mass_cut_r = law.Parameter(default='100,180', description="Mass cut range")
     
-    # def requires(self):
-    #     # req() is defined on all tasks and handles the passing of all parameter values that are
-    #     # common between the required task and the instance (self)
-    #     return Trees2WSSingleProcess.req(self)
+    def requires(self):
+        # req() is defined on all tasks and handles the passing of all parameter values that are
+        # common between the required task and the instance (self)
+        
+        tasks = []
+        mass_era_list = [
+        (mass, era, self.variable, self.input_paths)
+        for era in eras
+        for mass in input_masses
+        ]
     
+        proc_list = [
+            (mode, process)
+            for mode, process in production_modes
+        ]
+        
+        for mode, process in proc_list:
+            
+            for mass, era, var, path_to_root_files in mass_era_list:
+                # print(mass, era, var, path_to_root_files)
+                current_output_path = self.all_output_dir + "/input_output_{}_2022{}".format(var, era)
+                # print(current_output_path)
+                # safe_mkdir(current_output_path)  # Create output directory if it doesn't exist
+                # input_path = f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root"
+                
+                # print(input_path, mass, mode, f"2022{era}", self.all_output_dir, var)               
+                # print(path_to_root_files)
+                # print(glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0])
+                # f = uproot.open(f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root")
+                # f = uproot.open(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")
+                # f = uproot.open(f"")
+                # print(glob.glob(input_path))
+                                
+                input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
+                # print(current_output_path)
+                #IDK what this version parameter means
+                tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=self.mass_cut, mass_cut_range=self.mass_cut_r, year=f"2022{era}", doSystematics=self.doSystematics, doDiffSplitting=self.doDiffSplitting, doSTXSSplitting=self.doSTXSSplitting, doInOutSplitting=self.doInOutSplitting, output_dir=current_output_path, variable=var))#, version="v1", workflow="htcondor")
+        
+        return tasks    
     def output(self):
         # returns output folder
         
@@ -603,39 +638,40 @@ class Trees2WS(law.Task):
         # return outputFileTargets
     
     def run(self):
-        mass_era_list = [
-        (mass, era, self.variable, self.input_paths)
-        for era in eras
-        for mass in input_masses
-        ]
+        # mass_era_list = [
+        # (mass, era, self.variable, self.input_paths)
+        # for era in eras
+        # for mass in input_masses
+        # ]
     
-        proc_list = [
-            (mode, process)
-            for mode, process in production_modes
-        ]
+        # proc_list = [
+        #     (mode, process)
+        #     for mode, process in production_modes
+        # ]
         
-        for mode, process in proc_list:
+        # for mode, process in proc_list:
             
-            for mass, era, var, path_to_root_files in mass_era_list:
-                # print(mass, era, var, path_to_root_files)
-                current_output_path = self.all_output_dir + "/input_output_{}_2022{}".format(var, era)
-                # print(current_output_path)
-                # safe_mkdir(current_output_path)  # Create output directory if it doesn't exist
-                # input_path = f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root"
+        #     for mass, era, var, path_to_root_files in mass_era_list:
+        #         # print(mass, era, var, path_to_root_files)
+        #         current_output_path = self.all_output_dir + "/input_output_{}_2022{}".format(var, era)
+        #         # print(current_output_path)
+        #         # safe_mkdir(current_output_path)  # Create output directory if it doesn't exist
+        #         # input_path = f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root"
                 
-                # print(input_path, mass, mode, f"2022{era}", self.all_output_dir, var)               
-                # print(path_to_root_files)
-                # print(glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0])
-                # f = uproot.open(f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root")
-                # f = uproot.open(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")
-                # f = uproot.open(f"")
-                # print(glob.glob(input_path))
+        #         # print(input_path, mass, mode, f"2022{era}", self.all_output_dir, var)               
+        #         # print(path_to_root_files)
+        #         # print(glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0])
+        #         # f = uproot.open(f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root")
+        #         # f = uproot.open(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")
+        #         # f = uproot.open(f"")
+        #         # print(glob.glob(input_path))
                 
-                input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
-                print(current_output_path)
-                #IDK what this version parameter means
-                task_instance = Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=self.mass_cut, mass_cut_range=self.mass_cut_r, year=f"2022{era}", doSystematics=self.doSystematics, doDiffSplitting=self.doDiffSplitting, doSTXSSplitting=self.doSTXSSplitting, doInOutSplitting=self.doInOutSplitting, output_dir=current_output_path, variable=var)#, version="v1")
+        #         input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
+        #         print(current_output_path)
+        #         #IDK what this version parameter means
+        #         task_instance = Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=self.mass_cut, mass_cut_range=self.mass_cut_r, year=f"2022{era}", doSystematics=self.doSystematics, doDiffSplitting=self.doDiffSplitting, doSTXSSplitting=self.doSTXSSplitting, doInOutSplitting=self.doInOutSplitting, output_dir=current_output_path, variable=var)#, version="v1", workflow="htcondor")
         
-                task_instance.run()
+        #         task_instance.run()
+        return True
     
     
