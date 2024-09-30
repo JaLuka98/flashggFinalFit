@@ -79,18 +79,16 @@ class BackgroundCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
     def output(self):
         
 
-        bkg_plots = glob.glob("/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/Background" + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{self.cat_offset}.png')
-        bkg_plots += glob.glob("/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/Background" + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{self.cat_offset}.pdf')
-        bkg_plots += glob.glob("/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/Background" + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{self.cat_offset}.pdf_gofTest.pdf')
+        bkg_plots = glob.glob(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{self.cat_offset}.png')
+        bkg_plots += glob.glob(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{self.cat_offset}.pdf')
+        bkg_plots += glob.glob(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{self.cat_offset}.pdf_gofTest.pdf')
         
         outputFileTargets = []
         
         output_paths = [self.output_dir + f'/outdir_{self.ext}/CMS-HGG_multipdf_{self.cat}.root', self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/multipdf_{self.cat}.pdf',self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/multipdf_{self.cat}.png']
         
         output_paths += bkg_plots
-        
-        # output_paths.append(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt')
-        
+                
         for _, current_output_path in enumerate(output_paths):
             outputFileTargets.append(law.LocalFileTarget(current_output_path))
 
@@ -128,7 +126,7 @@ class Background(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
-    ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
+    # ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
@@ -136,7 +134,11 @@ class Background(law.Task):
         
         #Path should be somewhere centrally...
         configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        configYamlPath += f"{self.year}_{self.variable}.yml"
+        if "2022" in self.year:
+            year = "2022"
+        else:
+            year = self.year
+        configYamlPath += f"{year}_{self.variable}.yml"
         
         #Load central config file
         with open(configYamlPath, 'r') as file:
@@ -153,12 +155,11 @@ class Background(law.Task):
         config['procs'] = 'none'
         config['batch'] = 'local'
         config['queue'] = 'none'
-        config['ext'] = self.ext
         if self.year == 'combined': config['year'] = 'all'
         else: config['year'] = self.year
         
             
-        tasks = [BackgroundCategory(input_path=config['inputWS'], output_dir=self.output_dir, year=self.year, cat=config['cats'].split(",")[categoryIndex], cat_offset=str(config['catOffset']+categoryIndex), nCats=config['nCats'], ext=self.ext) for categoryIndex in range(config['nCats'])]
+        tasks = [BackgroundCategory(input_path=config['inputWS'], output_dir=self.output_dir, year=self.year, cat=config['cats'].split(",")[categoryIndex], cat_offset=str(config['catOffset']+categoryIndex), nCats=config['nCats'], ext=config['ext']) for categoryIndex in range(config['nCats'])]
         return tasks
         
 
@@ -173,77 +174,8 @@ class Background(law.Task):
         output_paths.append(law.LocalFileTarget(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt'))
                         
         return output_paths
-        
-        #Path should be somewhere centrally...
-        # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        # configYamlPath += f"{self.year}_{self.variable}.yml"
-        
-        # #Load central config file
-        # with open(configYamlPath, 'r') as file:
-        #     config = yaml.safe_load(file)
-            
-        # config = config["backgroundScriptCfg"]
-        
-        # if config['cats'] == 'auto':
-        #     config['cats'] = (extractListOfCatsFromData(config['inputWS']))
-        # config['nCats'] = len(config['cats'].split(","))
-        
-        # if self.year == 'combined': config['year'] = 'all'
-        # else: config['year'] = self.year
-        
-        # outputFileTargets = []
-        
-        # for categoryIndex in range(config['nCats']):
-            
-        #     cat_offset = str(config['catOffset']+categoryIndex)
-        #     cat = config['cats'].split(",")[categoryIndex]
-        
-        #     bkg_plots = glob.glob("/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/Background" + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{cat_offset}.png')
-        #     bkg_plots += glob.glob("/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/Background" + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{cat_offset}.pdf')
-        #     bkg_plots += glob.glob("/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/Background" + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{cat_offset}.pdf_gofTest.pdf')
-            
-        #     output_paths = [self.output_dir + f'/outdir_{self.ext}/CMS-HGG_multipdf_{cat}.root', self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/multipdf_{cat}.pdf',self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/multipdf_{cat}.png',self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{cat_offset}.pdf']
-            
-        #     output_paths += bkg_plots
-            
-        #     for _, current_output_path in enumerate(output_paths):
-        #         outputFileTargets.append(law.LocalFileTarget(current_output_path))
-            
-        # output_paths.append(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt')
-
-        # return outputFileTargets
-
                 
     
     def run(self):
         
-        # #Path should be somewhere centrally...
-        # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        # configYamlPath += f"{self.year}_{self.variable}.yml"
-        
-        # #Load central config file
-        # with open(configYamlPath, 'r') as file:
-        #     config = yaml.safe_load(file)
-            
-        # config = config["backgroundScriptCfg"]
-        
-        # if config['cats'] == 'auto':
-        #     config['cats'] = (extractListOfCatsFromData(config['inputWS']))
-        # config['nCats'] = len(config['cats'].split(","))
-    
-        # # Add dummy entries for procs and signalFitWSFile (used in old plotting script)
-        # config['signalFitWSFile'] = 'none'
-        # config['procs'] = 'none'
-        # config['batch'] = 'local'
-        # config['queue'] = 'none'
-        # config['ext'] = self.ext
-        # if self.year == 'combined': config['year'] = 'all'
-        # else: config['year'] = self.year
-        
-        # for categoryIndex in range(config['nCats']):
-        #     category = config['cats'].split(",")[categoryIndex]
-        #     categoryWithOffset = config['catOffset']+categoryIndex
-        #     _cmd = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/Background/runBackgroundScripts.sh -i %s -p %s -f %s --ext %s --catOffset %g --intLumi %s --year %s --batch %s --queue %s --sigFile %s --isData --fTest"%(config['inputWS'],config['procs'],category,self.ext,categoryWithOffset,lumiMap[self.year],config['year'],config['batch'],config['queue'],config['signalFitWSFile'])
-        #     print(_cmd)
-    
         return True

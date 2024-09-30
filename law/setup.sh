@@ -6,6 +6,10 @@ action() {
     local this_dir="$( cd "$( dirname "${this_file}" )" && pwd )"
 
     export PYTHONPATH="${this_dir}:${PYTHONPATH}"
+    export PYTHONPATH="${this_dir}/Background:${PYTHONPATH}"
+    export PYTHONPATH="${this_dir}/Trees2WS:${PYTHONPATH}"
+    export PYTHONPATH="${this_dir}/Signal:${PYTHONPATH}"
+    export PYTHONPATH="${this_dir}/commonTools:${PYTHONPATH}"
     export LAW_HOME="${this_dir}/.law"
     export LAW_CONFIG_FILE="${this_dir}/law.cfg"
 
