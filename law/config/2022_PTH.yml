@@ -70,6 +70,10 @@ signalScriptCfg_2022_preEE:
   scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
+  beamspotWidthData: '3.2'
+  beamspotWidthMC: '3.732'
+
+
   # Job submission options
   batch: 'local' # ['condor_lxplus','condor','SGE','IC','local']
   queue: 'microcentury' # use hep.q for IC
@@ -89,6 +93,10 @@ signalScriptCfg_2022_postEE:
   scalesCorr: 'FNUF,Material' # correlated across years
   scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
+
+  
+  beamspotWidthData: '3.5'
+  beamspotWidthMC: '3.732'
 
   # Job submission options
   batch: 'local' # ['condor_lxplus','condor','SGE','IC','local']

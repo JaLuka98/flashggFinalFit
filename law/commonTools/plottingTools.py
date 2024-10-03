@@ -5,6 +5,8 @@ import pandas
 import numpy as np
 import re
 import scipy.stats
+from collections import OrderedDict as od
+
 
 def Translate(name, ndict):
     return ndict[name] if name in ndict else name
@@ -12,6 +14,133 @@ def Translate(name, ndict):
 def LoadTranslations(jsonfilename):
     with open(jsonfilename) as jsonfile:
         return json.load(jsonfile)
+      
+def drawCMS(onTop=False, CMSString="Simulation Private Work", sqrts=13.6):
+    text='#bf{CMS} #scale[0.75]{#it{'+CMSString+'}}'
+    latex = ROOT.TLatex()
+    latex.SetNDC()
+    latex.SetTextFont(42)
+    latex.SetTextSize(0.05)
+    latex.DrawLatex(0.1, 0.85 if not onTop else 0.91, text)
+    if sqrts is not None: latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.12,'('+sqrts+' TeV)')
+      
+def plotFTest(ssfs,_opt=1,_outdir='./',_extension='',_proc='',_cat='',_mass='125'):
+  canv = ROOT.TCanvas()
+  canv.SetLeftMargin(0.15)
+  LineColorMap = {'1':ROOT.kAzure+1,'2':ROOT.kRed-4,'3':ROOT.kGreen+2,'4':ROOT.kMagenta-9,'5':ROOT.kOrange}
+  pdfs = od()
+  hists = od()
+  hmax, hmin = 0, 0
+  # Loop over nGauss fits
+  for k,ssf in ssfs.items():
+    ssf.MH.setVal(int(_mass))
+    hists[k] = ssf.Pdfs['final'].createHistogram("h_%s_%s"%(k,_extension),ssf.xvar,ROOT.RooFit.Binning(1600))
+    if int(k.split("_")[-1]) == _opt: hists[k].SetLineWidth(3)
+    else: hists[k].SetLineWidth(1)
+    hists[k].SetLineColor(LineColorMap[k.split("_")[-1]])
+    hists[k].SetTitle("")
+    hists[k].GetXaxis().SetTitle("m_{#gamma#gamma} [GeV]")
+    hists[k].SetMinimum(0)
+    if hists[k].GetMaximum()>hmax: hmax = hists[k].GetMaximum()
+    if hists[k].GetMinimum()<hmin: hmin = hists[k].GetMinimum()
+    hists[k].GetXaxis().SetRangeUser(115,140)
+  # Extract data histogram
+  hists['data'] = ssf.xvar.createHistogram("h_data%s"%_extension,ROOT.RooFit.Binning(ssf.nBins))
+  ssf.DataHists[_mass].fillHistogram(hists['data'],ROOT.RooArgList(ssf.xvar))
+  hists['data'].Scale(float(ssf.nBins)/1600)
+  hists['data'].SetMarkerStyle(20)
+  hists['data'].SetMarkerColor(1)
+  hists['data'].SetLineColor(1)
+  hists['data'].SetTitle("")
+  hists['data'].GetXaxis().SetTitle("m_{#gamma#gamma} [GeV]")
+  hists['data'].SetMinimum(0)
+  hists['data'].GetXaxis().SetRangeUser(115,140)
+  if hists['data'].GetMaximum()>hmax: hmax = hists['data'].GetMaximum()
+  if hists['data'].GetMinimum()<hmin: hmin = hists['data'].GetMinimum()
+
+  # Loop over histograms and plot
+  hists['data'].SetMaximum(1.2*hmax)
+  hists['data'].SetMinimum(1.2*hmin)
+  hists['data'].Draw("PE")
+  for k,h in hists.items():
+    if k == "data": continue
+    h.Draw("HIST SAME")
+
+  # Legend & Text
+  leg = ROOT.TLegend(0.55,0.3,0.86,0.8)
+  leg.SetFillStyle(0)
+  leg.SetLineColor(0)
+  leg.SetTextSize(0.03)
+  leg.AddEntry(hists['data'],"Simulation","ep")
+  for k,ssf in ssfs.items(): 
+    if int(k.split("_")[-1]) == _opt: leg.AddEntry(hists[k],"#bf{N_{gauss} = %s}: #chi^{2}/n(dof) = %.4f"%(k.split("_")[-1],ssf.getReducedChi2()),"L")
+    else: leg.AddEntry(hists[k],"N_{gauss} = %s: #chi^{2}/n(dof) = %.4f"%(k.split("_")[-1],ssf.getReducedChi2()),"L")
+  leg.Draw("Same")
+  # Add Latex
+  lat = ROOT.TLatex()
+  lat.SetTextFont(42)
+  lat.SetTextAlign(31)
+  lat.SetNDC()
+  lat.SetTextSize(0.03)
+  lat.DrawLatex(0.9,0.92,"( %s , %s , %s )"%(_extension,_proc,_cat))
+
+  drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+
+  canv.Update()
+  canv.SaveAs("%s/fTest_%s_%s_%s.png"%(_outdir,_cat,_proc,_extension))
+  canv.SaveAs("%s/fTest_%s_%s_%s.pdf"%(_outdir,_cat,_proc,_extension))
+
+# Plot reduced chi2 vs nGauss
+def plotFTestResults(ssfs,_opt,_outdir="./",_extension='',_proc='',_cat='',_mass='125'):
+  canv = ROOT.TCanvas()
+  gr = ROOT.TGraph()
+  # Loop over nGuassians
+  p = 0
+  xmax = 1
+  ymax = -1
+  for k,ssf in ssfs.items():
+    ssf.MH.setVal(int(_mass))
+    x = int(k.split("_")[-1])
+    if x > xmax: xmax = x
+    y = ssf.getReducedChi2()
+    if y > ymax: ymax = y
+    gr.SetPoint(p,x,y)
+    p += 1
+
+  # Draw axes
+  haxes = ROOT.TH1F("h_axes_%s_%s"%(_proc,_extension),"h_axes_%s_%s"%(_proc,_extension),xmax+1,0,xmax+1)
+  haxes.SetTitle("")
+  haxes.GetXaxis().SetTitle("N_{gauss}")
+  haxes.GetXaxis().SetTitleSize(0.05)
+  haxes.GetXaxis().SetTitleOffset(0.85)
+  haxes.GetXaxis().SetLabelSize(0.035)
+  haxes.GetYaxis().SetTitle("#chi^{2} / n(dof)")
+  haxes.GetYaxis().SetTitleOffset(0.85)
+  haxes.GetYaxis().SetTitleSize(0.05)
+  haxes.SetMaximum(1.2*ymax)
+  haxes.SetMinimum(0)
+  haxes.Draw()
+  # Draw graph
+  if "RV" in _extension: gr.SetLineColor(ROOT.kRed-4)
+  elif "WV" in _extension: gr.SetLineColor(ROOT.kAzure+1)
+  else: gr.SetLineColor(1)
+  gr.SetMarkerColor(1)
+  gr.SetMarkerStyle(20)
+  gr.Draw("Same PL")
+  # Add Latex
+  lat = ROOT.TLatex()
+  lat.SetTextFont(42)
+  lat.SetTextAlign(31)
+  lat.SetNDC()
+  lat.SetTextSize(0.03)
+  lat.DrawLatex(0.9,0.92,"( %s , %s , %s )"%(_extension,_proc,_cat))
+  lat.DrawLatex(0.6,0.75,"Optimum N_{gauss} = %s"%_opt)
+
+  drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+
+  canv.Update()
+  canv.SaveAs("%s/fTest_%s_%s_%s_chi2_vs_nGauss.png"%(_outdir,_cat,_proc,_extension))
+  canv.SaveAs("%s/fTest_%s_%s_%s_chi2_vs_nGauss.pdf"%(_outdir,_cat,_proc,_extension))
 
 # Function to extract the sigma effective of a histogram
 def getEffSigma(_h):

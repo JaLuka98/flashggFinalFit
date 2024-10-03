@@ -67,3 +67,6 @@ Plots/pkl
 *.sub
 jobs/*.sh
 jobs*
+
+install_dir
+.law

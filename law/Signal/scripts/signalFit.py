@@ -16,7 +16,8 @@ from tools.replacementMap import globalReplacementMap
 from tools.XSBRMap import *
 from tools.simultaneousFit import *
 from tools.finalModel import *
-from tools.plottingTools import *
+# from tools.plottingTools import *
+from plottingTools import *
 
 # Constant
 MHLow, MHHigh = '120', '130'
