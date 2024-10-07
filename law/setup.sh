@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 
 action() {
+    cmsenv
+
     local shell_is_zsh="$( [ -z "${ZSH_VERSION}" ] && echo "false" || echo "true" )"
     local this_file="$( ${shell_is_zsh} && echo "${(%):-%x}" || echo "${BASH_SOURCE[0]}" )"
     local this_dir="$( cd "$( dirname "${this_file}" )" && pwd )"
+
+    # PYTHONUSERBASE="${PWD}/install_dir" pip3 install --user --no-cache-dir --force-reinstall "law"
+
+    echo "Using local law installation..."
+
+    export INSTALL_DIR="${PWD}/install_dir"
+    export PYTHONPATH="${PYTHONPATH}:${INSTALL_DIR}/lib/python3.9/site-packages"
+    export PATH="${INSTALL_DIR}/bin:${PATH}"
 
     export PYTHONPATH="${this_dir}:${PYTHONPATH}"
     export PYTHONPATH="${this_dir}/Background:${PYTHONPATH}"
