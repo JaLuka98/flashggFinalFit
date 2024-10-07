@@ -8,8 +8,9 @@ import uproot
 from optparse import OptionParser
 from collections import OrderedDict as od
 from importlib import import_module
-import glob
+import glob, shutil
 import errno
+import yaml
 
 import pandas
 import numpy as np
@@ -17,8 +18,8 @@ import awkward as ak
 
 from commonTools import *
 from commonObjects import *
-from tools.STXS_tools import *
-from tools.diff_tools import *
+from T2WSTools.STXS_tools import *
+from T2WSTools.diff_tools import *
 
 # from framework import Task
 # from framework import HTCondorWorkflow
@@ -49,7 +50,11 @@ varBins = {
 input_masses = [120, 125, 130]
 
 # Define an array of eras
-eras = ["preEE", "postEE"]
+TwentyTwentyTwoEras = ["preEE", "postEE"]
+
+allErasMap = {
+    '2022': TwentyTwentyTwoEras
+}
 
 # Define an array of production modes and corresponding process strings
 production_modes = [
@@ -88,12 +93,17 @@ def safe_mkdir(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
+
+def leave():
+  print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ HGG TREES 2 WS (END) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+  exit(0)
+
                 
 
 class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_path = law.Parameter(description="Path to the data input ROOT file")
     output_dir = law.Parameter(description="Path to the output directory")
-    variable = law.Parameter(description="Variable to be used for output folder naming")
+    variable = law.Parameter(default='', description="Variable to be used for output folder naming")
     year = law.Parameter(default='2022', description="Year")
     apply_mass_cut = law.Parameter(default=False, description="Apply mass cut")
     mass_cut_range = law.Parameter(default='100,180', description="Mass cut range")
@@ -132,8 +142,8 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
             else: fidTag = "incl"
 
             # Define output workspace file
-            if self.outputWSDir is not None:
-                outputWSDir = self.outputWSDir+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag) # Multiple slashes are normalised away, no worries ("../test/" and "../test" are equivalent)
+            if self.output_dir is not None:
+                outputWSDir = self.output_dir+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag) # Multiple slashes are normalised away, no worries ("../test/" and "../test" are equivalent)
             else:
                 outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag)
             if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
@@ -170,11 +180,21 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
         # Production modes to skip theory weights: fill with 1's
         modesToSkipTheoryWeights = ['bbh','thq','thw']
         
-        # Load the input configuration
         if "2022" in self.year:
-            input_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"config/config_2022_{self.variable}.py")
+            if self.variable == '':
+                # input_config = os.path.dirname(os.path.abspath(__file__)) + f"/../config/2022_inclusive.yml"
+                input_config = os.environ["ANALYSIS_PATH"] + f"/config/2022_inclusive.yml"
+            else:
+                # input_config = os.path.dirname(os.path.abspath(__file__)) + f"/../config/2022_{self.variable}.yml"
+                input_config = os.environ["ANALYSIS_PATH"] + f"/config/2022_{self.variable}.yml"
         else:
-            input_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"config/config_{self.year}_{self.variable}.py")
+        # Load the input configuration
+            if self.variable == '':
+                # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+                input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+            else:
+                # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+                input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Extract options from config file:
@@ -182,19 +202,33 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
         if input_config != '':
             if os.path.exists( input_config ):
 
-                # Import config options
-                # _cfg = import_module(re.sub(".py","",input_config)).trees2wsCfg
-                _cfg = import_module_from_path(input_config).trees2wsCfg
+                # # Import config options
+                # # _cfg = import_module(re.sub(".py","",input_config)).trees2wsCfg
+                # _cfg = import_module_from_path(input_config).trees2wsCfg
 
-                #Extract options
-                inputTreeDir     = _cfg['inputTreeDir']
-                mainVars         = _cfg['mainVars']
-                stxsVar          = _cfg['stxsVar']
-                diffVar          = _cfg['diffVar']
-                systematicsVars  = _cfg['systematicsVars']
-                theoryWeightContainers = _cfg['theoryWeightContainers']
-                systematics      = _cfg['systematics']
-                cats             = _cfg['cats']
+                # #Extract options
+                # inputTreeDir     = _cfg['inputTreeDir']
+                # mainVars         = _cfg['mainVars']
+                # stxsVar          = _cfg['stxsVar']
+                # diffVar          = _cfg['diffVar']
+                # systematicsVars  = _cfg['systematicsVars']
+                # theoryWeightContainers = _cfg['theoryWeightContainers']
+                # systematics      = _cfg['systematics']
+                # cats             = _cfg['cats']
+                
+                with open(input_config, 'r') as file:
+                    config = yaml.safe_load(file)
+                    
+                config = config[f"trees2wsCfg"]
+                inputTreeDir     = config['inputTreeDir']
+                mainVars         = config['mainVars']
+                stxsVar          = config['stxsVar']
+                diffVar          = config['diffVar']
+                systematicsVars  = config['systematicsVars']
+                theoryWeightContainers = config['theoryWeightContainers']
+                systematics      = config['systematics']
+                cats             = config['cats']
+
 
             else:
                 print( "[ERROR] %s config file does not exist. Leaving..."%input_config)
@@ -517,14 +551,14 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                 create_workspace(df, sdf, outputWSFile, productionMode_string)
 
 class Trees2WS(law.Task):
-    input_paths = law.Parameter(description="Path to the data input ROOT file")
-    all_output_dir = law.Parameter(description="Path to the output directory")
-    variable = law.Parameter(description="Variable to be used for output folder naming")
+    # input_paths = law.Parameter(description="Path to the data input ROOT file")
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    variable = law.Parameter(default='', description="Variable to be used for output folder naming")
     doSTXSSplitting = law.Parameter(default=False, description="Split output WS per STXS bin")
     doDiffSplitting = law.Parameter(default=False, description="Split output WS per differential bin")
     doInOutSplitting = law.Parameter(default=False, description="Split output WS into in/out fiducial based on some variable in the input trees (to be improved).")
-    doSystematics = law.Parameter(default=False, description="Add systematics datasets to output WS")
-    # year = law.Parameter(default='2022', description="Year")
+    doSystematics = law.Parameter(default=True, description="Add systematics datasets to output WS")
+    year = law.Parameter(default='2022', description="Year")
     mass_cut = law.Parameter(default=False, description="Apply mass cut")
     mass_cut_r = law.Parameter(default='100,180', description="Mass cut range")
     
@@ -532,10 +566,26 @@ class Trees2WS(law.Task):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)
         
+        # Load the input configuration
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+        with open(input_config, 'r') as file:
+            config = yaml.safe_load(file)
+        if self.output_dir == '':
+            output_dir = config["outputFolder"]
+        else:
+            output_dir = self.output_dir
+        input_paths = config["inputFiles"]["Trees2WS"]
+        
         tasks = []
         mass_era_list = [
-        (mass, era, self.variable, self.input_paths)
-        for era in eras
+        (mass, era, self.variable, input_paths)
+        for era in allErasMap[f"{self.year}"]
         for mass in input_masses
         ]
     
@@ -548,130 +598,94 @@ class Trees2WS(law.Task):
             
             for mass, era, var, path_to_root_files in mass_era_list:
                 # print(mass, era, var, path_to_root_files)
-                current_output_path = self.all_output_dir + "/input_output_{}_2022{}".format(var, era)
-                # print(current_output_path)
-                # safe_mkdir(current_output_path)  # Create output directory if it doesn't exist
-                # input_path = f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root"
-                
-                # print(input_path, mass, mode, f"2022{era}", self.all_output_dir, var)               
-                # print(path_to_root_files)
-                # print(glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0])
-                # f = uproot.open(f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root")
-                # f = uproot.open(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")
-                # f = uproot.open(f"")
-                # print(glob.glob(input_path))
+                if var == '':
+                    current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+                else:
+                    current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
                                 
                 input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
                 # print(current_output_path)
                 #IDK what this version parameter means
-                tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=self.mass_cut, mass_cut_range=self.mass_cut_r, year=f"2022{era}", doSystematics=self.doSystematics, doDiffSplitting=self.doDiffSplitting, doSTXSSplitting=self.doSTXSSplitting, doInOutSplitting=self.doInOutSplitting, output_dir=current_output_path, variable=var))#, version="v1", workflow="htcondor")
+                tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=self.mass_cut, mass_cut_range=self.mass_cut_r, year=f"{self.year}{era}", doSystematics=self.doSystematics, doDiffSplitting=self.doDiffSplitting, doSTXSSplitting=self.doSTXSSplitting, doInOutSplitting=self.doInOutSplitting, output_dir=current_output_path, variable=var))#, version="v1", workflow="htcondor")
         
         return tasks    
     def output(self):
+        
         # returns output folder
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
-        mass_era_list = [
-        (mass, era, self.variable, self.input_paths)
-        for era in eras
-        for mass in input_masses
+        with open(input_config, 'r') as file:
+            config = yaml.safe_load(file)
+
+        if self.output_dir == '':
+            output_dir = config["outputFolder"]
+        else:
+            output_dir = self.output_dir
+        
+        era_list_with_variable = [
+            (era, self.variable)
+            for era in allErasMap[f"{self.year}"]
         ]
-    
-        proc_list = [
-            (mode, process)
-            for mode, process in production_modes
-        ]
-        
-        
         outputFolders = []
-        for mass, era, var, path_to_root_files in mass_era_list:
-            current_output_path = self.all_output_dir + "/input_output_{}_2022{}".format(var, era)
+        for era, var in era_list_with_variable:
+            if var == '':
+                current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+            else:
+                current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
             outputFolders.append(law.LocalFileTarget(current_output_path))
-            # safe_mkdir(current_output_path)  # Create output directory if it doesn't exist
             
         return outputFolders
-                
-        # outputFileTargets = []
-        # if self.doInOutSplitting: fiducialIds = [True, False]
-        # else: fiducialIds = [0] # If we do not perform in/out splitting, we want to have one inclusive (for particle-level) process definition, our code int for that is zero
-
-        # for fiducialId in fiducialIds:
-        
-        #     if self.doDiffSplitting: continue
-
-        #     # In the end, the STXS and fiducial in/out splitting should maybe be harmonised, this looks a bit ugly
-        #     if (self.doSTXSSplitting): continue
-
-        #     if fiducialId == True: fidTag = "in"
-        #     elif fiducialId == False: fidTag = "out"
-        #     else: fidTag = "incl"
-
-        #     # Define output workspace file
-        #     if self.outputWSDir is not None:
-        #         outputWSDir = self.outputWSDir+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag) # Multiple slashes are normalised away, no worries ("../test/" and "../test" are equivalent)
-        #     else:
-        #         outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag)
-        #     if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
-        #     outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(self.productionMode), fidTag),self.input_path.split("/")[-1])
-        #     outputFileTargets.append(law.LocalFileTarget(outputWSFile))
-            
-            
-        # if self.doSTXSSplitting:
-        #     #STXS currently not implemented
-        #     pass
-                
-        # if self.doDiffSplitting:
-        #     for currentBin in varBins[self.variable]:
-
-        #         # Extract diffBin
-        #         diffBin = self.productionMode + "_" + currentBin
-
-        #         # Define output workspace file
-        #         if self.output_dir is not None:
-        #             # outputWSDir = self.outputWSDir+"/ws_%s"%(dataToProc(self.productionMode)) + "/ws_%s"%diffBin
-        #             outputWSDir = self.output_dir + "/ws_%s"%diffBin
-        #         else:
-        #             outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s"%diffBin
-        #         outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%diffBin,self.input_path.split("/")[-1])
-        #         outputFileTargets.append(law.LocalFileTarget(outputWSFile))
-        #         # outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(self.productionMode), fidTag),self.input_path.split("/")[-1])
-
-        # return outputFileTargets
     
     def run(self):
-        # mass_era_list = [
-        # (mass, era, self.variable, self.input_paths)
-        # for era in eras
-        # for mass in input_masses
-        # ]
-    
-        # proc_list = [
-        #     (mode, process)
-        #     for mode, process in production_modes
-        # ]
         
-        # for mode, process in proc_list:
+        print("Trees2WS ran through. Moving output to the subdirectory ./ws_signal")
+        
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+        with open(input_config, 'r') as file:
+            config = yaml.safe_load(file)
+
+        if self.output_dir == '':
+            output_dir = config["outputFolder"]
+        else:
+            output_dir = self.output_dir
+        
+        era_list_with_variable = [
+            (era, self.variable)
+            for era in allErasMap[f"{self.year}"]
+        ]
+        
+        outputFolders = []
+        for era, var in era_list_with_variable:
+            if var == '':
+                current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+            else:
+                current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
+            outputFolders.append(current_output_path)
+
             
-        #     for mass, era, var, path_to_root_files in mass_era_list:
-        #         # print(mass, era, var, path_to_root_files)
-        #         current_output_path = self.all_output_dir + "/input_output_{}_2022{}".format(var, era)
-        #         # print(current_output_path)
-        #         # safe_mkdir(current_output_path)  # Create output directory if it doesn't exist
-        #         # input_path = f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root"
-                
-        #         # print(input_path, mass, mode, f"2022{era}", self.all_output_dir, var)               
-        #         # print(path_to_root_files)
-        #         # print(glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0])
-        #         # f = uproot.open(f"'{path_to_root_files}/{process}_M-{mass}_{era}/'*.root")
-        #         # f = uproot.open(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")
-        #         # f = uproot.open(f"")
-        #         # print(glob.glob(input_path))
-                
-        #         input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
-        #         print(current_output_path)
-        #         #IDK what this version parameter means
-        #         task_instance = Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=self.mass_cut, mass_cut_range=self.mass_cut_r, year=f"2022{era}", doSystematics=self.doSystematics, doDiffSplitting=self.doDiffSplitting, doSTXSSplitting=self.doSTXSSplitting, doInOutSplitting=self.doInOutSplitting, output_dir=current_output_path, variable=var)#, version="v1", workflow="htcondor")
-        
-        #         task_instance.run()
+        for currentEra in outputFolders:
+            # Create ws_signal folder
+            dst_folder = currentEra + "/ws_signal"
+            safe_mkdir(dst_folder)
+            
+            # Copy files to ws_signal
+            src_file_list = glob.glob(currentEra + "/*/*")
+            for currentFile in src_file_list:
+                shutil.copy2(currentFile, dst_folder)
+            
+        print("Copy completed.")
+
         return True
     
     

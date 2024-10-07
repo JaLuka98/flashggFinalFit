@@ -7,6 +7,7 @@ import re
 import uproot
 from optparse import OptionParser
 from collections import OrderedDict as od
+import yaml
 
 # Centre of mass energy string
 sqrts__ = "13TeV"
@@ -40,39 +41,102 @@ def import_module_from_path(file_path):
     return module
 
 class Trees2WSData(law.Task):
-    input_path = law.Parameter(description="Path to the data input ROOT file")
-    output_dir = law.Parameter(description="Path to the output directory")
-    variable = law.Parameter(description="Variable to be used for output folder naming")
+    # input_path = law.Parameter(description="Path to the data input ROOT file")
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    variable = law.Parameter(default='', description="Variable to be used for output folder naming")
     year = law.Parameter(default='2022', description="Year")
     apply_mass_cut = law.Parameter(default=False, description="Apply mass cut")
     mass_cut_range = law.Parameter(default='100,180', description="Mass cut range")
 
     def output(self):
-        ws_dir = os.path.join(self.output_dir, f"input_output_data_{self.variable}_2022/ws/")
-        return law.LocalFileTarget(os.path.join(ws_dir, "allData.root"))
-
-    def run(self):
-        # Step 1: Create the output directory if it doesn't exist
-        ws_dir = os.path.join(self.output_dir, f"input_output_data_{self.variable}_2022/ws/")
-        os.makedirs(ws_dir, exist_ok=True)
-
         # Load the input configuration
-        input_config = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"config/config_{self.year}_{self.variable}.py")
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
 
         if not os.path.exists(input_config):
             print(f"[ERROR] {input_config} does not exist. Exiting...")
             return
 
         # Import the configuration options from the config file
-        config_module = import_module_from_path(input_config)
-        trees2ws_cfg = config_module.trees2wsCfg
-        input_tree_dir = trees2ws_cfg['inputTreeDir']
-        data_vars = trees2ws_cfg['dataVars']
-        categories = trees2ws_cfg['cats']
+        # config_module = import_module_from_path(input_config)
+        with open(input_config, 'r') as file:
+            config = yaml.safe_load(file)
+        if self.output_dir == '':
+            output_dir = config["outputFolder"]
+        else:
+            output_dir = self.output_dir
+            
+        if self.variable == '':
+            ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}/ws/")
+        else:
+            ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/")
+        return law.LocalFileTarget(os.path.join(ws_dir, "allData.root"))
+
+    def run(self):
+        # Load the input configuration
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+
+        if not os.path.exists(input_config):
+            print(f"[ERROR] {input_config} does not exist. Exiting...")
+            return
+
+        # Import the configuration options from the config file
+        # config_module = import_module_from_path(input_config)
+        with open(input_config, 'r') as file:
+            config = yaml.safe_load(file)
+        if self.output_dir == '':
+            output_dir = config["outputFolder"]
+        else:
+            output_dir = self.output_dir
+            
+        # Step 1: Create the output directory if it doesn't exist
+        if self.variable == '':
+            ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}/ws/")
+        else:
+            ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/")
+        os.makedirs(ws_dir, exist_ok=True)
+
+        # Load the input configuration
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+
+        if not os.path.exists(input_config):
+            print(f"[ERROR] {input_config} does not exist. Exiting...")
+            return
+
+        # Import the configuration options from the config file
+        # config_module = import_module_from_path(input_config)
+        with open(input_config, 'r') as file:
+            config = yaml.safe_load(file)
+            
+        # trees2ws_cfg = config_module.trees2wsCfg
+        # input_tree_dir = trees2ws_cfg['inputTreeDir']
+        # data_vars = trees2ws_cfg['dataVars']
+        # categories = trees2ws_cfg['cats']
+        input_path = config["inputFiles"]["Trees2WSData"]
+        
+        config = config[f"trees2wsCfg"]
+        input_tree_dir = config['inputTreeDir']
+        data_vars = config['dataVars']
+        categories = config['cats']
+        
 
         # Step 2: Convert data trees to RooWorkspace
         # Open the input ROOT file
-        f = uproot.open(self.input_path)
+        f = uproot.open(input_path)
         list_of_tree_names = f.keys() if input_tree_dir == '' else f[input_tree_dir].keys()
 
         if categories == 'auto':
@@ -82,10 +146,10 @@ class Trees2WSData(law.Task):
             c = tn.split("_%s_"%sqrts__)[-1].split(";")[0]
             categories.append(c)
             
-        f = ROOT.TFile(self.input_path)
+        f = ROOT.TFile(input_path)
 
         # Create ROOT output workspace
-        output_ws_file = os.path.join(ws_dir, "allData_2022.root")
+        output_ws_file = os.path.join(ws_dir, "allData_{self.year}.root")
         fout = ROOT.TFile(output_ws_file, "RECREATE")
         # fout_dir = fout.mkdir("ws")
         # fout_dir.cd()

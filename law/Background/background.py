@@ -77,8 +77,6 @@ class BackgroundCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
         return {i: num for i, num in enumerate(range(0, self.nCats + 1))}
 
     def output(self):
-        
-
         bkg_plots = glob.glob(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{self.cat_offset}.png')
         bkg_plots += glob.glob(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{self.cat_offset}.pdf')
         bkg_plots += glob.glob(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/*_cat{self.cat_offset}.pdf_gofTest.pdf')
@@ -114,7 +112,7 @@ class BackgroundCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
             "--fTest"
         ]
         command = [script_path] + arguments
-        # print(command)
+        print("Output:", command)
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)
@@ -124,7 +122,7 @@ class BackgroundCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
 
 class Background(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
-    output_dir = law.Parameter(description="Path to the output directory")
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
     # ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
     
@@ -132,22 +130,29 @@ class Background(law.Task):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)
         
-        #Path should be somewhere centrally...
-        configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        if "2022" in self.year:
-            year = "2022"
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            year = self.year
-        configYamlPath += f"{year}_{self.variable}.yml"
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+            
+        # input_path = config['inputFiles']['Background']
+        input_path = output_dir + f"input_output_data_{self.year}/ws/allData.root"
             
         config = config["backgroundScriptCfg"]
         
         if config['cats'] == 'auto':
-            config['cats'] = (extractListOfCatsFromData(config['inputWS']))
+            config['cats'] = (extractListOfCatsFromData(input_path))
         config['nCats'] = len(config['cats'].split(","))
     
         # Add dummy entries for procs and signalFitWSFile (used in old plotting script)
@@ -156,10 +161,9 @@ class Background(law.Task):
         config['batch'] = 'local'
         config['queue'] = 'none'
         if self.year == 'combined': config['year'] = 'all'
-        else: config['year'] = self.year
-        
+        else: config['year'] = self.year        
             
-        tasks = [BackgroundCategory(input_path=config['inputWS'], output_dir=self.output_dir, year=self.year, cat=config['cats'].split(",")[categoryIndex], cat_offset=str(config['catOffset']+categoryIndex), nCats=config['nCats'], ext=config['ext']) for categoryIndex in range(config['nCats'])]
+        tasks = [BackgroundCategory(input_path=input_path, output_dir=output_dir, year=self.year, cat=config['cats'].split(",")[categoryIndex], cat_offset=str(config['catOffset']+categoryIndex), nCats=config['nCats'], ext=config['ext']) for categoryIndex in range(config['nCats'])]
         return tasks
         
 
@@ -167,11 +171,35 @@ class Background(law.Task):
     def output(self):
         # returns output folder
         
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+            
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+            
+        config = config["backgroundScriptCfg"]
+        ext=config['ext']
+        
         output_paths = []
         
-        output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{self.ext}_{self.variable}"))
-        
-        output_paths.append(law.LocalFileTarget(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt'))
+        if self.variable == '': 
+            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{ext}"))
+            
+            output_paths.append(law.LocalFileTarget(output_dir + f'/outdir_{ext}/bkgfTest-Data/fTestResults.txt'))
+        else:
+            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{ext}_{self.variable}"))
+            
+            output_paths.append(law.LocalFileTarget(output_dir + f'/outdir_{ext}_{self.variable}/bkgfTest-Data/fTestResults.txt'))
                         
         return output_paths
                 

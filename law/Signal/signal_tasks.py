@@ -2,19 +2,19 @@ import law
 import os, sys
 import subprocess
 import importlib.util
-import ROOT
+# import ROOT
 import re
-import uproot
-from optparse import OptionParser
-from collections import OrderedDict as od
-from importlib import import_module
+# import uproot
+# from optparse import OptionParser
+# from collections import OrderedDict as od
+# from importlib import import_module
 import glob
 import yaml
 import errno
 
-import pandas
-import numpy as np
-import awkward as ak
+# import pandas
+# import numpy as np
+# import awkward as ak
 
 from commonTools import *
 from commonObjects import *
@@ -40,6 +40,13 @@ lumiMap = {
     '2022': 34.70
 }
 
+# Define an array of eras
+TwentyTwentyTwoEras = ["preEE", "postEE"]
+
+allErasMap = {
+    '2022': TwentyTwentyTwoEras
+}
+
 # Helper function to import a module from a file path
 def import_module_from_path(file_path):
     module_name = re.sub(r'\.py$', '', file_path.replace(os.sep, '.'))
@@ -63,7 +70,7 @@ def safe_mkdir(path):
             raise
                 
 
-class FTestCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class FTestCategory(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_path = law.Parameter(description="Path to the alldata input ROOT file")
     output_dir = law.Parameter(description="Path to the output directory")
     ext = law.Parameter(default="earlyAnalysis", description="Extension to be used for output folder naming")
@@ -100,7 +107,7 @@ class FTestCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWo
         safe_mkdir(self.output_dir+f"/outdir_{self.ext}/fTest/Plots")
         safe_mkdir(self.output_dir+f"/outdir_{self.ext}/fTest/json")
 
-        script_path = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/Signal/scripts/fTest.py"
+        script_path = os.environ["ANALYSIS_PATH"] + "/Signal/scripts/fTest.py"
         arguments = [
             "python3",
             script_path,
@@ -121,23 +128,32 @@ class FTestCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWo
             print("Error executing script:", e.stderr)
 
 class FTest(law.Task):
-    input_path = law.Parameter(description="Path to the WS from Trees2WS.")
+    input_path = law.Parameter(default = '', description="Path to the WS from Trees2WS.")
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
     ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
+    era = law.Parameter(default='None', description="Current era (eg. preEE, postEE for 2022), if any.")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)
         
-        #Path should be somewhere centrally...
-        configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        if "2022" in self.year:
-            year = "2022"
+        # #Path should be somewhere centrally...
+        # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
+        # if "2022" in self.year:
+        #     year = "2022"
+        # else:
+        #     year = self.year
+        # configYamlPath += f"{year}_{self.variable}.yml"
+        
+        # Path should be somewhere centrally...
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            year = self.year
-        configYamlPath += f"{year}_{self.variable}.yml"
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
 
         
         #Load central config file
@@ -145,7 +161,10 @@ class FTest(law.Task):
             config = yaml.safe_load(file)
 
 
-        config = config[f"signalScriptCfg_{self.year}"]
+        if self.era != "None":
+            config = config[f"signalScriptCfg_{self.year}_{self.era}"]
+        else:
+            config = config[f"signalScriptCfg_{self.year}"]
         
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Extract list of filenames
@@ -183,12 +202,20 @@ class FTest(law.Task):
     def output(self):
         
         #Path should be somewhere centrally...
-        configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        if "2022" in self.year:
-            year = "2022"
+        # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
+        # if "2022" in self.year:
+        #     year = "2022"
+        # else:
+        #     year = self.year
+        # configYamlPath += f"{year}_{self.variable}.yml"
+        
+        # Path should be somewhere centrally...
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            year = self.year
-        configYamlPath += f"{year}_{self.variable}.yml"
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
 
         
         #Load central config file
@@ -196,7 +223,10 @@ class FTest(law.Task):
             config = yaml.safe_load(file)
 
 
-        config = config[f"signalScriptCfg_{self.year}"]
+        if self.era != "None":
+            config = config[f"signalScriptCfg_{self.year}_{self.era}"]
+        else:
+            config = config[f"signalScriptCfg_{self.year}"]
         # returns output folder
         
         output_paths = []
@@ -255,7 +285,7 @@ class CalcPhotonSystCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, la
         safe_mkdir(self.output_dir+f"/outdir_{self.ext}/calcPhotonSyst")
         safe_mkdir(self.output_dir+f"/outdir_{self.ext}/calcPhotonSyst/pkl")
 
-        script_path = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/Signal/scripts/calcPhotonSyst.py"
+        script_path = os.environ["ANALYSIS_PATH"] + "/Signal/scripts/calcPhotonSyst.py"
         arguments = [
             "python3",
             script_path,
@@ -284,18 +314,28 @@ class CalcPhotonSyst(law.Task):
     output_dir = law.Parameter(description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
     ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
+    era = law.Parameter(default='None', description="Current era (eg. preEE, postEE for 2022), if any.")
+
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)
         
-        #Path should be somewhere centrally...
-        configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        if "2022" in self.year:
-            year = "2022"
+        # #Path should be somewhere centrally...
+        # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
+        # if "2022" in self.year:
+        #     year = "2022"
+        # else:
+        #     year = self.year
+        # configYamlPath += f"{year}_{self.variable}.yml"
+        
+        # Path should be somewhere centrally...
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            year = self.year
-        configYamlPath += f"{year}_{self.variable}.yml"
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
 
         
         #Load central config file
@@ -303,7 +343,10 @@ class CalcPhotonSyst(law.Task):
             config = yaml.safe_load(file)
 
 
-        config = config[f"signalScriptCfg_{self.year}"]
+        if self.era != "":
+            config = config[f"signalScriptCfg_{self.year}_{self.era}"]
+        else:
+            config = config[f"signalScriptCfg_{self.year}"]
                 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Extract list of filenames
@@ -339,13 +382,21 @@ class CalcPhotonSyst(law.Task):
     
     def output(self):
         
-        #Path should be somewhere centrally...
-        configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        if "2022" in self.year:
-            year = "2022"
+        # #Path should be somewhere centrally...
+        # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
+        # if "2022" in self.year:
+        #     year = "2022"
+        # else:
+        #     year = self.year
+        # configYamlPath += f"{year}_{self.variable}.yml"
+        
+        # Path should be somewhere centrally...
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            year = self.year
-        configYamlPath += f"{year}_{self.variable}.yml"
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
 
         
         #Load central config file
@@ -353,7 +404,10 @@ class CalcPhotonSyst(law.Task):
             config = yaml.safe_load(file)
 
 
-        config = config[f"signalScriptCfg_{self.year}"]
+        if self.era != "None":
+            config = config[f"signalScriptCfg_{self.year}_{self.era}"]
+        else:
+            config = config[f"signalScriptCfg_{self.year}"]
         # returns output folder
         
         output_paths = []
@@ -388,7 +442,72 @@ class SignalFitCategoryProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, 
     beamspotWidthData = law.Parameter(description="Beamspot width in Data")
     beamspotWidthMC = law.Parameter(description="Beamspot width in MC")
     
+    variable = law.Parameter(default="", description="Variable to be used")
+    
     # htcondor_job_kwargs_submit = {"spool": True}
+    
+    def requires(self):
+        
+        year = self.year[:4]
+        
+        # Path should be somewhere centrally...
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{year}_{self.variable}.yml"
+        
+        # configYamlPath += f"{self.year}_{self.variable}.yml"
+
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+            
+        if self.output_dir == '':
+            output_dir = config["outputFolder"]
+        else:
+            output_dir = self.output_dir
+            
+        tasks = []
+            
+        # Loop over a years era
+        for currentEra in allErasMap[f"{year}"]:
+            
+            input_path = config["outputFolder"] + f"/input_output_{year}{currentEra}/ws_signal"
+
+
+            currentConfig = config[f"signalScriptCfg_{year}_{currentEra}"]
+                    
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Extract list of filenames
+            WSFileNames = extractWSFileNames(input_path)
+
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # If proc/cat == auto. Extract processes and categories
+            if currentConfig['procs'] == "auto":
+                currentConfig['procs'] = extractListOfProcs(WSFileNames)
+                currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+
+            if currentConfig['cats'] == "auto":
+                currentConfig['cats'] = extractListOfCats(WSFileNames)
+                currentConfig['nCats'] = len(currentConfig['cats'].split(","))
+            
+            # Extract low and high MH values
+            mps = []
+            for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+            currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+                        
+            currentConfig['batch'] = 'local'
+            currentConfig['queue'] = 'none'
+            
+            
+            tasks.append(FTest(input_path=input_path, variable=self.variable, output_dir=output_dir, year=year, ext=currentConfig['ext'], era=currentEra))
+            tasks.append(CalcPhotonSyst(input_path=input_path, variable=self.variable, output_dir=output_dir, year=year, ext=currentConfig['ext'], era=currentEra))
+                    
+                
+        return tasks
     
     
     def create_branch_map(self):
@@ -418,7 +537,7 @@ class SignalFitCategoryProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, 
         safe_mkdir(self.output_dir+f"/outdir_{self.ext}/signalFit/output")
         safe_mkdir(self.output_dir+f"/outdir_{self.ext}/signalFit/Plots")
 
-        script_path = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/Signal/scripts/signalFit.py"
+        script_path = os.environ["ANALYSIS_PATH"] + "/Signal/scripts/signalFit.py"
         arguments = [
             "python3",
             script_path,
@@ -446,114 +565,276 @@ class SignalFitCategoryProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, 
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
 
-class SignalFitRequirements(law.Task):
-    input_path = law.Parameter(description="Path to the WS from Trees2WS.")
-    variable = law.Parameter(default="", description="Variable to be used")
-    output_dir = law.Parameter(description="Path to the output directory")
-    year = law.Parameter(default='2022', description="Year")
-    ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
+# class SignalFitRequirements(law.Task):
+#     input_path = law.Parameter(description="Path to the WS from Trees2WS.")
+#     variable = law.Parameter(default="", description="Variable to be used")
+#     output_dir = law.Parameter(description="Path to the output directory")
+#     year = law.Parameter(default='2022', description="Year")
+#     era = law.Parameter(default='None', description="Current era (eg. preEE, postEE for 2022), if any.")
+#     ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
     
-    def requires(self):
+#     def requires(self):
         
-        #Path should be somewhere centrally...
-        configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        if "2022" in self.year:
-            year = "2022"
-        else:
-            year = self.year
-        configYamlPath += f"{year}_{self.variable}.yml"
+#         # #Path should be somewhere centrally...
+#         # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
+#         # if "2022" in self.year:
+#         #     year = "2022"
+#         # else:
+#         #     year = self.year
+#         # configYamlPath += f"{year}_{self.variable}.yml"
+        
+#         # Path should be somewhere centrally...
+#         if self.variable == '':
+#             # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+#             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+#         else:
+#             # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+#             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
 
         
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
+#         #Load central config file
+#         with open(configYamlPath, 'r') as file:
+#             config = yaml.safe_load(file)
 
-
-        config = config[f"signalScriptCfg_{self.year}"]
+#         if self.era != "None":
+#             config = config[f"signalScriptCfg_{self.year}_{self.era}"]
+#         else:
+#             config = config[f"signalScriptCfg_{self.year}"]
                 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Extract list of filenames
-        WSFileNames = extractWSFileNames(self.input_path)
+#         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#         # Extract list of filenames
+#         WSFileNames = extractWSFileNames(self.input_path)
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # If proc/cat == auto. Extract processes and categories
-        if config['procs'] == "auto":
-            config['procs'] = extractListOfProcs(WSFileNames)
-            config['nProcs'] = len(config['procs'].split(","))
+#         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#         # If proc/cat == auto. Extract processes and categories
+#         if config['procs'] == "auto":
+#             config['procs'] = extractListOfProcs(WSFileNames)
+#             config['nProcs'] = len(config['procs'].split(","))
 
-        if config['cats'] == "auto":
-            config['cats'] = extractListOfCats(WSFileNames)
-            config['nCats'] = len(config['cats'].split(","))
+#         if config['cats'] == "auto":
+#             config['cats'] = extractListOfCats(WSFileNames)
+#             config['nCats'] = len(config['cats'].split(","))
         
-        # Extract low and high MH values
-        mps = []
-        for mp in config['massPoints'].split(","): mps.append(int(mp))
-        config['massLow'], config['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+#         # Extract low and high MH values
+#         mps = []
+#         for mp in config['massPoints'].split(","): mps.append(int(mp))
+#         config['massLow'], config['massHigh'] = '%s'%min(mps), '%s'%max(mps)
                     
-        config['batch'] = 'local'
-        config['queue'] = 'none'
+#         config['batch'] = 'local'
+#         config['queue'] = 'none'
         
         
-        tasks = []
-        tasks.append(FTest(input_path=self.input_path, variable=self.variable, output_dir=self.output_dir, year=self.year, ext=config['ext']))
-        tasks.append(CalcPhotonSyst(input_path=self.input_path, variable=self.variable, output_dir=self.output_dir, year=self.year, ext=config['ext']))
+#         tasks = []
+#         tasks.append(FTest(input_path=self.input_path, variable=self.variable, output_dir=self.output_dir, year=self.year, ext=config['ext'], era=self.era))
+#         tasks.append(CalcPhotonSyst(input_path=self.input_path, variable=self.variable, output_dir=self.output_dir, year=self.year, ext=config['ext'], era=self.era))
         
-        return tasks
+#         return tasks
         
 
     
-    def output(self):
+#     def output(self):
         
-        #Path should be somewhere centrally...
-        configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        if "2022" in self.year:
-            year = "2022"
-        else:
-            year = self.year
-        configYamlPath += f"{year}_{self.variable}.yml"
+#         # #Path should be somewhere centrally...
+#         # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
+#         # if "2022" in self.year:
+#         #     year = "2022"
+#         # else:
+#         #     year = self.year
+#         # configYamlPath += f"{year}_{self.variable}.yml"
+        
+#         # Path should be somewhere centrally...
+#         if self.variable == '':
+#             # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+#             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+#         else:
+#             # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+#             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
 
         
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
+#         #Load central config file
+#         with open(configYamlPath, 'r') as file:
+#             config = yaml.safe_load(file)
 
 
-        config = config[f"signalScriptCfg_{self.year}"]
-        # returns output folder
+#         if self.era != "None":
+#             config = config[f"signalScriptCfg_{self.year}_{self.era}"]
+#         else:
+#             config = config[f"signalScriptCfg_{self.year}"]
+#         # returns output folder
         
-        output_paths = []
+#         output_paths = []
         
-        # output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{self.ext}"))
-        output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/calcPhotonSyst"))
-        output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/calcPhotonSyst/pkl"))
-        output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/fTest"))
-        output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/fTest/Plots"))
-        output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/fTest/json"))
+#         # output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{self.ext}"))
+#         output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/calcPhotonSyst"))
+#         output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/calcPhotonSyst/pkl"))
+#         output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/fTest"))
+#         output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/fTest/Plots"))
+#         output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/fTest/json"))
         
-        # output_paths.append(law.LocalFileTarget(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt'))
+#         # output_paths.append(law.LocalFileTarget(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt'))
                         
-        return output_paths
+#         return output_paths
                 
     
-    def run(self):
-        return True
+#     def run(self):
+#         return True
     
+# class SignalFit(law.Task):
+#     # input_path = law.Parameter(default = '', description="Path to the WS from Trees2WS.")
+#     variable = law.Parameter(default="", description="Variable to be used")
+#     output_dir = law.Parameter(default = '', description="Path to the output directory")
+#     year = law.Parameter(default='2022', description="Year")
+#     # ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
+    
+#     def requires(self):
+        
+#         # #Path should be somewhere centrally...
+#         # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
+#         # if "2022" in self.year:
+#         #     year = "2022"
+#         # else:
+#         #     year = self.year
+#         # configYamlPath += f"{year}_{self.variable}.yml"
+        
+#         # Path should be somewhere centrally...
+#         if self.variable == '':
+#             # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+#             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+#         else:
+#             # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+#             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+#         # configYamlPath += f"{self.year}_{self.variable}.yml"
+
+        
+#         #Load central config file
+#         with open(configYamlPath, 'r') as file:
+#             config = yaml.safe_load(file)
+            
+#         if self.output_dir == '':
+#             output_dir = config["outputFolder"]
+#         else:
+#             output_dir = self.output_dir
+            
+#         tasks = []
+            
+#         # Loop over a years era
+#         for currentEra in allErasMap[f"{self.year}"]:
+            
+#             input_path = config["outputFolder"] + f"/input_output_{self.year}{currentEra}/ws_signal"
+
+
+#             currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+                    
+#             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#             # Extract list of filenames
+#             WSFileNames = extractWSFileNames(input_path)
+
+#             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#             # If proc/cat == auto. Extract processes and categories
+#             if currentConfig['procs'] == "auto":
+#                 currentConfig['procs'] = extractListOfProcs(WSFileNames)
+#                 currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+
+#             if currentConfig['cats'] == "auto":
+#                 currentConfig['cats'] = extractListOfCats(WSFileNames)
+#                 currentConfig['nCats'] = len(currentConfig['cats'].split(","))
+            
+#             # Extract low and high MH values
+#             mps = []
+#             for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+#             currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+                        
+#             currentConfig['batch'] = 'local'
+#             currentConfig['queue'] = 'none'
+            
+            
+            
+#             tasks.append(SignalFitRequirements(input_path=input_path, variable=self.variable, output_dir=output_dir, year=self.year, ext=currentConfig['ext'], era=currentEra))   
+            
+#             for processIndex in range(currentConfig['nProcs']):
+#                 for categoryIndex in range(currentConfig['nCats']):
+#                     # processCategoryIndex = processIndex*config['nCats']+categoryIndex
+#                     category = currentConfig['cats'].split(",")[categoryIndex]
+#                     process = currentConfig['procs'].split(",")[processIndex]
+#                     tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cat=category, proc=process, scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC']))
+#                     # SignalFitCategoryProcess(input_path=self.input_path, output_dir=self.output_dir, ext=config['ext'], cat=category, proc=process, scales=config['scales'], scalesCorr=config['scalesCorr'], scalesGlobal=config['scalesGlobal'], smears=config['smears'], year=config['year'], analysis=config['analysis'], massPoints=config['massPoints'])
+                    
+                
+#         return tasks
+        
+
+    
+#     def output(self):
+        
+#         # #Path should be somewhere centrally...
+#         # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
+#         # if "2022" in self.year:
+#         #     year = "2022"
+#         # else:
+#         #     year = self.year
+#         # configYamlPath += f"{year}_{self.variable}.yml"
+        
+#         # Path should be somewhere centrally...
+#         if self.variable == '':
+#             # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+#             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+#         else:
+#             # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+#             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+#         # configYamlPath += f"{self.year}_{self.variable}.yml"
+
+        
+#         #Load central config file
+#         with open(configYamlPath, 'r') as file:
+#             config = yaml.safe_load(file)
+            
+#         if self.output_dir == '':
+#             output_dir = config["outputFolder"]
+#         else:
+#             output_dir = self.output_dir
+            
+#         output_paths = []
+                    
+#         # Loop over a years era
+#         for currentEra in allErasMap[f"{self.year}"]:
+
+#             currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+#             # returns output folder
+            
+#             # output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{self.ext}"))
+#             output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{currentConfig['ext']}/signalFit"))
+#             output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/output"))
+#             output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/Plots"))
+            
+#             output_paths += glob.glob(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/output/CMS-HGG_sigfit*.root")
+            
+#             # output_paths.append(law.LocalFileTarget(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt'))
+                        
+#         return output_paths
+                
+#     def run(self):
+        
+#         return True
+
+
 class SignalFit(law.Task):
-    input_path = law.Parameter(description="Path to the WS from Trees2WS.")
+    # input_path = law.Parameter(default = '', description="Path to the WS from Trees2WS.")
     variable = law.Parameter(default="", description="Variable to be used")
-    output_dir = law.Parameter(description="Path to the output directory")
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
-    ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
+    # ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
     
     def requires(self):
         
-        #Path should be somewhere centrally...
-        configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        if "2022" in self.year:
-            year = "2022"
+                # Path should be somewhere centrally...
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            year = self.year
-        configYamlPath += f"{year}_{self.variable}.yml"
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         # configYamlPath += f"{self.year}_{self.variable}.yml"
 
@@ -561,82 +842,108 @@ class SignalFit(law.Task):
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-
-
-        config = config[f"signalScriptCfg_{self.year}"]
-                
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Extract list of filenames
-        WSFileNames = extractWSFileNames(self.input_path)
-
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # If proc/cat == auto. Extract processes and categories
-        if config['procs'] == "auto":
-            config['procs'] = extractListOfProcs(WSFileNames)
-            config['nProcs'] = len(config['procs'].split(","))
-
-        if config['cats'] == "auto":
-            config['cats'] = extractListOfCats(WSFileNames)
-            config['nCats'] = len(config['cats'].split(","))
-        
-        # Extract low and high MH values
-        mps = []
-        for mp in config['massPoints'].split(","): mps.append(int(mp))
-        config['massLow'], config['massHigh'] = '%s'%min(mps), '%s'%max(mps)
-                    
-        config['batch'] = 'local'
-        config['queue'] = 'none'
-        
+            
+        if self.output_dir == '':
+            output_dir = config["outputFolder"]
+        else:
+            output_dir = self.output_dir
+            
         tasks = []
-        
-        tasks.append(SignalFitRequirements(input_path=self.input_path, variable=self.variable, output_dir=self.output_dir, year=self.year, ext=self.ext))   
-        
-        for processIndex in range(config['nProcs']):
-            for categoryIndex in range(config['nCats']):
-                # processCategoryIndex = processIndex*config['nCats']+categoryIndex
-                category = config['cats'].split(",")[categoryIndex]
-                process = config['procs'].split(",")[processIndex]
-                tasks.append(SignalFitCategoryProcess(input_path=self.input_path, output_dir=self.output_dir, ext=config['ext'], cat=category, proc=process, scales=config['scales'], scalesCorr=config['scalesCorr'], scalesGlobal=config['scalesGlobal'], smears=config['smears'], year=config['year'], analysis=config['analysis'], massPoints=config['massPoints'], beamspotWidthData=config['beamspotWidthData'], beamspotWidthMC=config['beamspotWidthMC']))
-                # SignalFitCategoryProcess(input_path=self.input_path, output_dir=self.output_dir, ext=config['ext'], cat=category, proc=process, scales=config['scales'], scalesCorr=config['scalesCorr'], scalesGlobal=config['scalesGlobal'], smears=config['smears'], year=config['year'], analysis=config['analysis'], massPoints=config['massPoints'])
-                
+            
+        # Loop over a years era
+        for currentEra in allErasMap[f"{self.year}"]:
+            
+            input_path = config["outputFolder"] + f"/input_output_{self.year}{currentEra}/ws_signal"
+
+
+            currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+                    
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Extract list of filenames
+            WSFileNames = extractWSFileNames(input_path)
+
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # If proc/cat == auto. Extract processes and categories
+            if currentConfig['procs'] == "auto":
+                currentConfig['procs'] = extractListOfProcs(WSFileNames)
+                currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+
+            if currentConfig['cats'] == "auto":
+                currentConfig['cats'] = extractListOfCats(WSFileNames)
+                currentConfig['nCats'] = len(currentConfig['cats'].split(","))
+            
+            # Extract low and high MH values
+            mps = []
+            for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+            currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+                        
+            currentConfig['batch'] = 'local'
+            currentConfig['queue'] = 'none'
+            
+                        
+            for processIndex in range(currentConfig['nProcs']):
+                for categoryIndex in range(currentConfig['nCats']):
+                    # processCategoryIndex = processIndex*config['nCats']+categoryIndex
+                    category = currentConfig['cats'].split(",")[categoryIndex]
+                    process = currentConfig['procs'].split(",")[processIndex]
+                    tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cat=category, proc=process, scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC']))
+                    # SignalFitCategoryProcess(input_path=self.input_path, output_dir=self.output_dir, ext=config['ext'], cat=category, proc=process, scales=config['scales'], scalesCorr=config['scalesCorr'], scalesGlobal=config['scalesGlobal'], smears=config['smears'], year=config['year'], analysis=config['analysis'], massPoints=config['massPoints'])
+                    
+        # output = self.output()
+        # output.dump(tasks)
+                    
                 
         return tasks
-        
 
     
     def output(self):
         
-        #Path should be somewhere centrally...
-        configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        if "2022" in self.year:
-            year = "2022"
+        # #Path should be somewhere centrally...
+        # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
+        # if "2022" in self.year:
+        #     year = "2022"
+        # else:
+        #     year = self.year
+        # configYamlPath += f"{year}_{self.variable}.yml"
+        
+        # Path should be somewhere centrally...
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            year = self.year
-        configYamlPath += f"{year}_{self.variable}.yml"
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+        # configYamlPath += f"{self.year}_{self.variable}.yml"
 
         
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-
-
-        config = config[f"signalScriptCfg_{self.year}"]
-        # returns output folder
-        
+            
+        if self.output_dir == '':
+            output_dir = config["outputFolder"]
+        else:
+            output_dir = self.output_dir
+            
         output_paths = []
-        
-        # output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{self.ext}"))
-        output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/signalFit"))
-        output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/signalFit/output"))
-        output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{config['ext']}/signalFit/Plots"))
-        
-        output_paths += glob.glob(self.output_dir + f'/outdir_{self.ext}/sifnalFit/output/CMS-HGG_sigfit*.root')
-        
-        # output_paths.append(law.LocalFileTarget(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt'))
+                    
+        # Loop over a years era
+        for currentEra in allErasMap[f"{self.year}"]:
+
+            currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+            # returns output folder
+            
+            # output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{self.ext}"))
+            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{currentConfig['ext']}/signalFit"))
+            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/output"))
+            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/Plots"))
+            
+            output_paths += glob.glob(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/output/CMS-HGG_sigfit*.root")
+            
+            # output_paths.append(law.LocalFileTarget(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt'))
                         
         return output_paths
                 
-    
     def run(self):
-        
         return True
