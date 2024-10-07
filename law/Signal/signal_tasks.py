@@ -18,6 +18,7 @@ import errno
 
 from commonTools import *
 from commonObjects import *
+from Trees2WS.trees2ws import *
 # from tools.STXS_tools import *
 # from tools.diff_tools import *
 
@@ -79,6 +80,27 @@ class FTestCategory(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalW
     
     # htcondor_job_kwargs_submit = {"spool": True}
     
+    def remote(self):
+        
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+            
+        tasks = [Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year)]
+        
+        return tasks
     
     def create_branch_map(self):
         # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
@@ -257,7 +279,27 @@ class CalcPhotonSystCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, la
     smears = law.Parameter(description="Smearings")
     
     # htcondor_job_kwargs_submit = {"spool": True}
-    
+    def remote(self):
+        
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+            
+        tasks = [Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year)]
+        
+        return tasks
     
     def create_branch_map(self):
         # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")

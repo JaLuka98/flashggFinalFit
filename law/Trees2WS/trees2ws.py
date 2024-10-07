@@ -582,6 +582,15 @@ class Trees2WS(law.Task):
             output_dir = self.output_dir
         input_paths = config["inputFiles"]["Trees2WS"]
         
+        config = config["trees2wsCfg"]
+        
+        doSTXSSplitting = config["doSTXSSplitting"]
+        doDiffSplitting = config["doDiffSplitting"]
+        doInOutSplitting = config["doInOutSplitting"]
+        doSystematics = config["doSystematics"]
+        mass_cut = config["apply_mass_cut"]
+        mass_cut_r = config["mass_cut_range"]
+        
         tasks = []
         mass_era_list = [
         (mass, era, self.variable, input_paths)
@@ -606,7 +615,7 @@ class Trees2WS(law.Task):
                 input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
                 # print(current_output_path)
                 #IDK what this version parameter means
-                tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=self.mass_cut, mass_cut_range=self.mass_cut_r, year=f"{self.year}{era}", doSystematics=self.doSystematics, doDiffSplitting=self.doDiffSplitting, doSTXSSplitting=self.doSTXSSplitting, doInOutSplitting=self.doInOutSplitting, output_dir=current_output_path, variable=var))#, version="v1", workflow="htcondor")
+                tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var))#, version="v1", workflow="htcondor")
         
         return tasks    
     def output(self):

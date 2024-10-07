@@ -44,6 +44,7 @@ decayMode = 'hgg'
 
 # flashgg input WS objects
 inputWSName__ = "tagsDumper/cms_hgg_13TeV"
+inputHiggsDNAAllData__ = "DiphotonTree"
 inputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':''}
 # Signal output WS objects
 outputWSName__ = "wsig"

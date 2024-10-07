@@ -132,6 +132,8 @@ class Trees2WSData(law.Task):
         input_tree_dir = config['inputTreeDir']
         data_vars = config['dataVars']
         categories = config['cats']
+        apply_mass_cut = config["apply_mass_cut"]
+        massCutRange = config["mass_cut_range"]
         
 
         # Step 2: Convert data trees to RooWorkspace
@@ -210,8 +212,8 @@ class Trees2WSData(law.Task):
 
             # Loop over events in the tree and add to the dataset
             for ev in t:
-                if self.mass_cut_range:
-                    if(getattr(ev,"CMS_hgg_mass") < float(self.mass_cut_range.split(",")[0])) | (getattr(ev,"CMS_hgg_mass") > float(self.mass_cut_range.split(",")[1])): continue
+                if self.apply_mass_cut:
+                    if(getattr(ev,"CMS_hgg_mass") < float(massCutRange.split(",")[0])) | (getattr(ev,"CMS_hgg_mass") > float(massCutRange.split(",")[1])): continue
                 for var in data_vars: 
                     if var == "weight": continue
                     ws.var(var).setVal(getattr(ev,var))

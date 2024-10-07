@@ -136,8 +136,8 @@ echo "--> Create fake data by fitting simulations, throwing toys and adding data
 echo "--> generating $INTLUMI fb^{-1} of pseudodata."
 echo "--------------------------------------"
 
-echo " ./bin/pseudodataMaker -i $PSEUDODATADAT --pseudodata 1 --plotdir $OUTDIR/pseudoData -f $CATS --seed $SEED --intLumi $INTLUMI "
-./bin/pseudodataMaker -i $PSEUDODATADAT --pseudodata 1 --plotdir $OUTDIR/pseudoData -f $CATS --seed $SEED --intLumi $INTLUMI  -y $OUTDIR/pseudoData/yields_pseudodata.txt
+echo " ${ANALYSIS_PATH}/Background/bin/pseudodataMaker -i $PSEUDODATADAT --pseudodata 1 --plotdir $OUTDIR/pseudoData -f $CATS --seed $SEED --intLumi $INTLUMI "
+$ANALYSIS_PATH/Background/bin/pseudodataMaker -i $PSEUDODATADAT --pseudodata 1 --plotdir $OUTDIR/pseudoData -f $CATS --seed $SEED --intLumi $INTLUMI  -y $OUTDIR/pseudoData/yields_pseudodata.txt
 FILE=$OUTDIR/pseudoData/pseudoWS.root
 
 fi
@@ -161,8 +161,8 @@ if [ $ISDATA == 1 ]; then
 OPT=" --isData 1"
 fi
 
-echo " ./bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET"
-./bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET
+echo " ${ANALYSIS_PATH}/Background/bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET"
+$ANALYSIS_PATH/Background/bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET
 
 OPT=""
 fi
@@ -182,8 +182,8 @@ fi
 if [ $UNBLIND == 1 ]; then
 OPT=" --unblind"
 fi
-echo "./scripts/subBkgPlots.py -b CMS-HGG_multipdf_$EXT.root -d $OUTDIR/bkgPlots$DATAEXT -S 13 --isMultiPdf --useBinnedData  --doBands --massStep 1 $SIG -L 100 -H 180 -f $CATS -l $CATS --intLumi $INTLUMI $OPT --batch $BATCH -q $QUEUE --year $YEAR"
-./scripts/subBkgPlots.py -b CMS-HGG_multipdf_$EXT.root -d $OUTDIR/bkgPlots$DATAEXT -S 13 --isMultiPdf --useBinnedData  --doBands  --massStep 1 $SIG -L 100 -H 180 -f $CATS -l $CATS --intLumi $INTLUMI $OPT --batch $BATCH -q $QUEUE --year $YEAR
+echo "${ANALYSIS_PATH}/Background/scripts/subBkgPlots.py -b CMS-HGG_multipdf_$EXT.root -d $OUTDIR/bkgPlots$DATAEXT -S 13 --isMultiPdf --useBinnedData  --doBands --massStep 1 $SIG -L 100 -H 180 -f $CATS -l $CATS --intLumi $INTLUMI $OPT --batch $BATCH -q $QUEUE --year $YEAR"
+$ANALYSIS_PATH/Background/scripts/subBkgPlots.py -b CMS-HGG_multipdf_$EXT.root -d $OUTDIR/bkgPlots$DATAEXT -S 13 --isMultiPdf --useBinnedData  --doBands  --massStep 1 $SIG -L 100 -H 180 -f $CATS -l $CATS --intLumi $INTLUMI $OPT --batch $BATCH -q $QUEUE --year $YEAR
 
 # FIX THIS FOR CONDOR: 
 #continueLoop=1

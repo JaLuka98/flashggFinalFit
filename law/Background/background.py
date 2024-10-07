@@ -18,6 +18,8 @@ import awkward as ak
 
 from commonTools import *
 from commonObjects import *
+
+from Trees2WS.trees2ws_data import *
 # from tools.STXS_tools import *
 # from tools.diff_tools import *
 
@@ -68,8 +70,31 @@ class BackgroundCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
     cat = law.Parameter(description="Current category (e.g. RECO_PTH_0p0_15p0_cat0)")
     cat_offset = law.Parameter(description="Category offset")
     nCats = law.Parameter(description="Number of Categories")
+    variable = law.Parameter(default="", description="Variable to be used")
     
     # htcondor_job_kwargs_submit = {"spool": True}
+    
+    def requires(self):
+        
+        if self.variable == '':
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+            
+        tasks = [Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year)]
+        
+        return tasks
     
     
     def create_branch_map(self):
@@ -95,7 +120,7 @@ class BackgroundCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
     def run(self):
         safe_mkdir(self.output_dir)
 
-        script_path = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/Background/runBackgroundScripts.sh"
+        script_path = os.environ["ANALYSIS_PATH"] + "/Background/runBackgroundScripts.sh"
         arguments = [
             "-i", self.input_path,
             "-p", "none",
@@ -146,13 +171,14 @@ class Background(law.Task):
         else:
             output_dir = self.output_dir
             
-        # input_path = config['inputFiles']['Background']
-        input_path = output_dir + f"input_output_data_{self.year}/ws/allData.root"
-            
+        
+        input_path = config['inputFiles']['Trees2WSData']
+        all_data_input_path = output_dir + f"input_output_data_{self.year}/ws/allData.root"
+                    
         config = config["backgroundScriptCfg"]
         
         if config['cats'] == 'auto':
-            config['cats'] = (extractListOfCatsFromData(input_path))
+            config['cats'] = (extractListOfCatsFromHiggsDNAAllData(input_path))
         config['nCats'] = len(config['cats'].split(","))
     
         # Add dummy entries for procs and signalFitWSFile (used in old plotting script)
@@ -163,7 +189,7 @@ class Background(law.Task):
         if self.year == 'combined': config['year'] = 'all'
         else: config['year'] = self.year        
             
-        tasks = [BackgroundCategory(input_path=input_path, output_dir=output_dir, year=self.year, cat=config['cats'].split(",")[categoryIndex], cat_offset=str(config['catOffset']+categoryIndex), nCats=config['nCats'], ext=config['ext']) for categoryIndex in range(config['nCats'])]
+        tasks = [BackgroundCategory(input_path=all_data_input_path, output_dir=output_dir, year=self.year, cat=config['cats'].split(",")[categoryIndex], cat_offset=str(config['catOffset']+categoryIndex), nCats=config['nCats'], ext=config['ext']) for categoryIndex in range(config['nCats'])]
         return tasks
         
 

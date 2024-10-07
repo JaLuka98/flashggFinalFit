@@ -56,6 +56,18 @@ def extractListOfCatsFromData( _fileName ):
   f.Close()
   return ",".join(cats)
 
+def extractListOfCatsFromHiggsDNAAllData( _fileName ):
+  f = ROOT.TFile(_fileName)
+  trees = f.Get(inputHiggsDNAAllData__)
+  cats = []
+  for key in trees.GetListOfKeys():
+    c = key.GetName().split("Data_%s_"%sqrts__)[-1]
+    cats.append(c)
+  cats.sort()
+  trees.Delete()
+  f.Close()
+  return ",".join(cats)
+
 def containsNOTAG( _listOfWSFileNames ):
   f0 = ROOT.TFile(_listOfWSFileNames[0]) 
   ws = f0.Get(inputWSName__)
