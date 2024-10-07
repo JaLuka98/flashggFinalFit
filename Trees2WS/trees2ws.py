@@ -350,6 +350,7 @@ if opt.doSTXSSplitting:
 
   for stxsId in data[stxsVar].unique():
     df = data[data[stxsVar]==stxsId]
+    sdf = None
     if opt.doSystematics: sdf = sdata[sdata[stxsVar]==stxsId]
 
     # Extract stxsBin
@@ -382,6 +383,7 @@ if opt.doDiffSplitting:
   for diffId in data[diffVar].unique():
     # diffId should be a gen-level pt bin
     df = data[data[diffVar]==diffId]
+    sdf = None
     if opt.doSystematics: sdf = sdata[sdata[diffVar]==diffId]
 
     # For the moment, skip these events (as their count is usually very small)

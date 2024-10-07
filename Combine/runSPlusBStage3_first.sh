@@ -40,7 +40,7 @@ cd ./runFits_${differential_variable}/SplusBModels_stage3
 
 for param in ${paramStrNoOne//\,/\ }
 do
-    python3 ../../../Plots/makeToys.py --inputWSFile ../unblinded/higgsCombineDataPostFitScanFit_${param}.MultiDimFit.mH125.38.root --loadSnapshot MultiDimFit --ext _${param} --nToys 1000 --POIs $param --batch condor --queue workday
+    python3 ../../../Plots/makeToys.py --inputWSFile ../unblinded/higgsCombineDataPostFitScanFit_${param}.MultiDimFit.mH125.38.root --loadSnapshot MultiDimFit --ext _${param} --nToys 1000 --POIs $param --batch condor --queue workday --dryRun
     
 
     cd ./SplusBModels_${param}/toys

@@ -2,23 +2,23 @@
 signalScriptCfg = {
   
   # Setup
-  'inputWSDir':'../input_output_2022_rapiditypostEE/ws_signal/', # dir storing flashgg workspaces
+  'inputWSDir':'../input_output_AbsYHJ0_2022postEE/ws_signal/', # dir storing flashgg workspaces
   #'inputWSDir':'/net/scratch_cms3a/spaeh/private/PhD/analyses/early_Run3_Hgg/fitting/CMSSW_10_2_13/src/flashggFinalFit/input_output_freeze/ws_signal/',
   'procs':'auto', # if auto: inferred automatically from filenames (requires names to be of from *pythia8_{PROC}.root)
   'cats':'auto', # if auto: inferred automatically from (0) workspace
   #'ext':'earlyAnalysis_freeze_include', # output directory extension
-  'ext':'earlyAnalysis_2022_rapiditypostEE', # output directory extension
-  'analysis':'earlyAnalysisDiffYH', # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
+  'ext':'earlyAnalysis_AbsYHJ0_2022postEE', # output directory extension
+  'analysis':'earlyAnalysisDiffAbsYHJ0', # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
   'year':'2022postEE', # Use 'combined' if merging all years: not recommended
   'massPoints':'120,125,130', # You can now run with a single mass point if necessary
 
   #Photon shape systematics  
-  'scales':'scale', # separate nuisance per year
-  'scalesCorr':'', # correlated across years
+  'scales':'ScaleEE,ScaleEB', # separate nuisance per year
+  'scalesCorr':'FNUF,Material', # correlated across years
   'scalesGlobal':'NonLinearity,Geant4', # affect all processes equally, correlated across years
-  'smears':'smearing', # separate nuisance per year
+  'smears':'Smearing', # separate nuisance per year
 
   # Job submission options
-  'batch':'condor_lxplus',  # ['condor_lxplus','condor','SGE','IC','local']
+  'batch':'condor_lxplus', # ['condor_lxplus','condor','SGE','IC','local']
   'queue':'microcentury' # use hep.q for IC
 }

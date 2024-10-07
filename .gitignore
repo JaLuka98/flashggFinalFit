@@ -55,9 +55,15 @@ Combine/impacts*
 Combine/gof*
 runFits_*
 runFits_*
+Models*
 
 t2w_jobs/
 
 # Plots directory
 Plots/SplusBModels*
 Plots/pkl
+
+# Condor submission files and folders
+*.sub
+jobs/*.sh
+jobs*

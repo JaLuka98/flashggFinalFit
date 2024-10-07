@@ -15,7 +15,7 @@ def main():
     nll = uproot.open(opt.filename)["limit"].arrays()
     nll = nll['deltaNLL'][1]
     
-    chi2pdf = chi2(opt.nBins - 1)
+    chi2pdf = chi2(opt.nBins)
     pval = 1 - (chi2pdf.cdf(2*nll))
     
     print(pval)

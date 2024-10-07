@@ -38,13 +38,15 @@ def BuildScan(scan, param, files, color, yvals, ycut):
         graph.Print()
         raise RuntimeError('Attempting to build %s scan from TGraph with zero or one point (see above)' % files)
     bestfit = None
-    for i in xrange(graph.GetN()):
+    for i in range(graph.GetN()):
         if graph.GetY()[i] == 0.:
             bestfit = graph.GetX()[i]
     graph.SetMarkerColor(color)
     spline = ROOT.TSpline3("spline3", graph)
     global NAMECOUNTER
-    func = ROOT.TF1('splinefn'+str(NAMECOUNTER), partial(Eval, spline), graph.GetX()[0], graph.GetX()[graph.GetN() - 1], 1)
+    func_method = partial(Eval, spline)
+    func = ROOT.TF1('splinefn'+str(NAMECOUNTER), func_method, graph.GetX()[0], graph.GetX()[graph.GetN() - 1], 1)
+    func._method = func_method
     NAMECOUNTER += 1
     func.SetLineColor(color)
     func.SetLineWidth(3)
@@ -119,7 +121,6 @@ if args.translate is not None:
         fixed_name = name_translate[args.POI]
 
 yvals = [1., 4.]
-
 
 main_scan = BuildScan(args.output, args.POI, [args.main], args.main_color, yvals, args.y_cut)
 
@@ -328,7 +329,8 @@ pt2.SetTextAlign(11)
 pt2.SetTextFont(42)
 pt2.Draw()
 
-plot.DrawCMSLogo(pads[0], args.logo, args.logo_sub, 11, 0.045, 0.035, 1.2,  cmsTextSize = 1.)
+# plot.DrawCMSLogo(pads[0], args.logo, args.logo_sub, 11, 0.045, 0.035, 1.2,  cmsTextSize = 1.)
+plot.DrawCMSLogo(pads[0], args.logo, args.logo_sub, 11, 0.095, 0.035, 1.2,  cmsTextSize = 1.)
 lumi_com = ROOT.TPaveText(0.75, 0.945, 0.97, 0.98, 'NDCNB')
 lumi_com.AddText("34.7 fb^{-1} (13.6 TeV)")
 lumi_com.SetTextAlign(11)
