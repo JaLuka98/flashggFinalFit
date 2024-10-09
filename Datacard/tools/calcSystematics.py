@@ -149,7 +149,7 @@ def calcSystYields(_nominalDataName,_nominalDataContents,_inputWS,_systFactoryTy
     f_COWCorr = p.getRealValue("centralObjectWeight") if "centralObjectWeight" in _nominalDataContents else 1.
     f_NNLOPS = abs(p.getRealValue("NNLOPSweight")) if "NNLOPSweight" in _nominalDataContents else 1.
     # Loop over systematics:
-    for s, f in _systFactoryTypes.items():
+    for s, f in _systFactoryTypes.items(): 
 
       if f == "a_h": continue
 
@@ -167,6 +167,8 @@ def calcSystYields(_nominalDataName,_nominalDataContents,_inputWS,_systFactoryTy
         else:
           #centralWeightStr = "centralObjectWeight"
           centralWeightStr = "weight_central"
+          # Careful, f_central is actually not used here at the moment
+          # Do not set it to "weight" since then he will not find it (it is variable and not in the RooDataSet, setting it to zero and skipping all calculations :/)
           if centralWeightStr in _nominalDataContents:
             f_central = p.getRealValue(centralWeightStr)
           else:
@@ -179,7 +181,13 @@ def calcSystYields(_nominalDataName,_nominalDataContents,_inputWS,_systFactoryTy
           # 2) if up weight is equal to down weight (=1) then set to nominal
           elif f_up == f_down: w_up, w_down = w, w
           else:
-            w_up, w_down = w*(f_up/f_central), w*(f_down/f_central)
+            # In case the weights are normalised with respect to a central weight and you extract ...
+            # ... the relative weight variations based on the comparison, use the line below
+            #w_up, w_down = w*(f_up/f_central), w*(f_down/f_central)
+            # In case the weight variation branches are already normalised to yield acc x eff when summing them ...
+            # ... it is not needed to normalise them again, so use the line below
+            w_up = f_up
+            w_down = f_down
           # Add weights to counters
           systYields["%s_up"%s] += w_up        
           systYields["%s_down"%s] += w_down
@@ -219,7 +227,9 @@ def calcSystYields(_nominalDataName,_nominalDataContents,_inputWS,_systFactoryTy
           elif f_central == 0: continue
           else:
             # Add weights to counter
-            systYields[s] += w*(f/f_central)
+            #systYields[s] += w*(f/f_central)
+            # See comments above
+            systYields[s] += w
             if not skipCOWCorr:
               if f_COWCorr != 0:
                 systYields["%s_COWCorr"%s] += w*(f_NNLOPS/f_COWCorr)*(f/f_central)
