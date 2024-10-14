@@ -80,6 +80,8 @@ signalScriptCfg_2022_preEE:
   scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
+  doPlots: True
+
   beamspotWidthData: '3.2'
   beamspotWidthMC: '3.732'
 
@@ -103,6 +105,8 @@ signalScriptCfg_2022_postEE:
   scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
+  doPlots: True
+
   
   beamspotWidthData: '3.5'
   beamspotWidthMC: '3.732'
@@ -110,3 +114,9 @@ signalScriptCfg_2022_postEE:
   # Job submission options
   batch: 'local' # ['condor_lxplus','condor','SGE','IC','local']
   queue: 'microcentury' # use hep.q for IC
+
+packaged_2022:
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+  mergeYears: True # Merges the eras
+  ext: ''
