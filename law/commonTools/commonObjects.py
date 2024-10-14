@@ -64,6 +64,15 @@ outputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':'','scalesGlobal':'
 # Bkg output WS objects
 bkgWSName__ = "multipdf"
 
+
+
+# Define an array of eras
+TwentyTwentyTwoEras = ["preEE", "postEE"]
+
+allErasMap = {
+    '2022': TwentyTwentyTwoEras
+}
+
 conversionTable_ = {
     "GluGluHtoGG": "ggh",
     "ttHtoGG": "tth",

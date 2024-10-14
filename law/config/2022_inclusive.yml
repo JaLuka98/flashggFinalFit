@@ -120,3 +120,43 @@ packaged_2022:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
+
+datacard_yields:
+  cats: 'auto'
+  procs: 'auto'
+  ext: 'earlyAnalysis'
+  inputWSDirMap: '2022preEE,2022postEE'
+  sigModelWSDir: './Models/signal'
+  bkgModelWSDir: './Models/background'
+  bkgModelExt: 'multipdf'
+  doSystematics: True
+  mergeYears: True
+  skipZeroes: True
+  ignore_warnings: True
+  mass: '125'
+  skipBkg: False
+  bkgScaler: 1.
+  skipCOWCorr: False
+
+datacard:
+  # For pruning processes
+  prune: True
+  pruneThreshold: 0.001
+  doTrueYield: False
+  analysis: 'STXS'
+  # For yield/systematics:
+  skipCOWCorr: False
+  doSystematics: True
+  doMCStatUncertainty: True
+  doSTXSMerging: False
+  doSTXSScaleCorrelationScheme: False
+  # For output:
+  saveDataFrame: False
+  output: 'Datacard_2022'
+
+datacard_clean:
+  factor: 10000
+  removeDoubleSided: False
+  removeNonDiagonal: False
+  symmetrizeNuisance: 'CMS_hgg_SigmaEOverEShift,CMS_hgg_scale_0_shape,CMS_hgg_scale_1_shape,CMS_hgg_scale_3_shape'
+  verbose: False

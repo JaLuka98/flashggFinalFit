@@ -41,13 +41,6 @@ lumiMap = {
     '2022': 34.70
 }
 
-# Define an array of eras
-TwentyTwentyTwoEras = ["preEE", "postEE"]
-
-allErasMap = {
-    '2022': TwentyTwentyTwoEras
-}
-
 # Helper function to import a module from a file path
 def import_module_from_path(file_path):
     module_name = re.sub(r'\.py$', '', file_path.replace(os.sep, '.'))

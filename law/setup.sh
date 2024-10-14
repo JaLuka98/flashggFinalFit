@@ -24,6 +24,8 @@ action() {
     # export PYTHONPATH="${this_dir}/Signal/SignalTools:${PYTHONPATH}"
     export PYTHONPATH="${this_dir}/Signal/tools:${PYTHONPATH}"
     export PYTHONPATH="${this_dir}/commonTools:${PYTHONPATH}"
+    export PYTHONPATH="${this_dir}/Datacard:${PYTHONPATH}"
+    export PYTHONPATH="${this_dir}/Datacard/tools:${PYTHONPATH}"
     export LAW_HOME="${this_dir}/.law"
     export LAW_CONFIG_FILE="${this_dir}/law.cfg"
 
