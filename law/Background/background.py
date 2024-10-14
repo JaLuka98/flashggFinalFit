@@ -137,7 +137,7 @@ class BackgroundCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
             "--fTest"
         ]
         command = [script_path] + arguments
-        print("Output:", command)
+        # print("Output:", command)
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)

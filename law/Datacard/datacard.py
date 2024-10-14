@@ -116,18 +116,13 @@ class MakeYieldsCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
         return {i: num for i, num in enumerate(range(0, self.nCats + 1))}
 
     def output(self):
-        
-        # outputFileTargets = []
-        
-        # output_paths = [self.output_dir + f'/yields_{self.ext}/{self.cat}.pkl']
-                        
-        # for _, current_output_path in enumerate(output_paths):
-        #     outputFileTargets.append(law.LocalFileTarget(current_output_path))
 
         return [law.LocalFileTarget(self.output_dir + f'/Datacards/yields_{self.ext}/{self.cat}.pkl')]
 
     def run(self):
         safe_mkdir(self.output_dir)
+        safe_mkdir(self.output_dir + "/Datacards")
+        safe_mkdir(self.output_dir + f"/Datacards/yields_{self.ext}")
         
         script_path = os.environ["ANALYSIS_PATH"] + "/Datacard/makeYields.py"
         arguments = [
@@ -155,7 +150,7 @@ class MakeYieldsCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
 
     
         command = arguments
-        print("Output:", command)
+        # print("Output:", command)
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)
@@ -232,9 +227,6 @@ class MakeYields(law.Task):
                 else:
                     inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
         
-        print(inputWSDirMap)
-        
-            
         tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cat=datacard_config['cats'].split(",")[categoryIndex], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable) for categoryIndex in range(datacard_config['nCats'])]
         
         return tasks
@@ -417,7 +409,7 @@ class MakeDatacard(law.Task):
         if datacard_config["saveDataFrame"]: arguments.append("--saveDataFrame")
     
         command = arguments
-        print("Output:", command)
+        # print("Output:", command)
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)
@@ -445,7 +437,7 @@ class MakeDatacard(law.Task):
             if clean_config["verbose"]: arguments.append("--verbose")
         
             command = arguments
-            print("Output:", command)
+            # print("Output:", command)
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
                 print("Script output:", result.stdout)
