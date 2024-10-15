@@ -166,7 +166,7 @@ if( not opt.skipBkg)&( opt.cat != "NOTAG" ):
 # Yields: for each signal row in dataFrame extract the yield
 print(" ..........................................................................................")
 #   * if systematics=True: also extract reweighted yields for each uncertainty source
-from tools.calcSystematics import factoryType, calcSystYields
+from datacardTools.calcSystematics import factoryType, calcSystYields
 
 # Create columns in dataFrame to store yields
 data['nominal_yield'] = '-'
@@ -175,7 +175,7 @@ if not opt.skipCOWCorr: data['nominal_yield_COWCorr'] = '-'
 
 # Add columns in dataFrame for systematic yield variations
 if opt.doSystematics:
-  # Extract type of systematic using factoryType function (defined in tools.calcSystematics)
+  # Extract type of systematic using factoryType function (defined in datacardTools.calcSystematics)
   #  * a_h: anti-symmetric RooDataHist (2 columns in dataframe)
   #  * a_w: anti-symmetric weight in nominal RooDataSet (2 columns in dataframe)
   #  * s_w: symmetric (single) weight in nominal RooDataSet (1 column in dataframe)

@@ -320,15 +320,16 @@ class MakeDatacard(law.Task):
         output_paths = []
         
         if self.variable == '': 
-            output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
-            output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
+            # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
             if datacard_config['saveDataFrame']:
+                # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.year}.pkl"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.year}_unsymmetrized.pkl"))
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.year}.txt"))
         else:
-            output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
+            # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
             if datacard_config['saveDataFrame']:
+                # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl"))
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.variable}_{self.year}.txt"))
@@ -356,12 +357,14 @@ class MakeDatacard(law.Task):
             output_dir = self.output_dir
             
         safe_mkdir(output_dir)
-        output_dir = output_dir + "/Datacards"
+        output_dir = output_dir + "/Datacards/"
         safe_mkdir(output_dir)
         
         datacard_config = config["datacard"]
         yields_config = config["datacard_yields"]
         pklInputFiles = output_dir
+        
+        yields_config["ext"] = yields_config["ext"]+'_'+self.variable
         
         # Create years string
         years = ''

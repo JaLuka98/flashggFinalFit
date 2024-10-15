@@ -86,15 +86,16 @@ class EarlyRun3(law.Task):
         output_paths = []
         
         if self.variable == '': 
-            output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
-            output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
+            # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
             if datacard_config['saveDataFrame']:
+                output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.year}.pkl"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.year}_unsymmetrized.pkl"))
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.year}.txt"))
         else:
-            output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
+            # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
             if datacard_config['saveDataFrame']:
+                output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl"))
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.variable}_{self.year}.txt"))

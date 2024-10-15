@@ -68,6 +68,14 @@ def extractListOfCatsFromHiggsDNAAllData( _fileName ):
   f.Close()
   return ",".join(cats)
 
+
+def getBinNameByHiggsDNANumber(key, myNumber):
+    # Loop through the list of tuples in the specified key
+    for entry in differentialProcTable_[key]:
+        if entry[0] == myNumber:
+            return entry[1]
+    return None  # If myNumber isn't found
+
 def extractListOfProcsFromHiggsDNASignal(_listOfSubDirectories, _variable, _inoutSplitting):
   procs = [] # ggh_in, ggh_out, etc.
   main_procs = [] # ggh, etc.
@@ -82,16 +90,15 @@ def extractListOfProcsFromHiggsDNASignal(_listOfSubDirectories, _variable, _inou
         procs.append(p+'_out')
       if (_inoutSplitting) and (_variable != ''):
         # differential case
-        for i, currentTuple in enumerate(differentialProcTable_[_variable][0]):
+        for i, currentTuple in enumerate(differentialProcTable_[_variable]):
           currentBin = currentTuple[1]
           procs.append(p+'_'+currentBin)
-
       if not (_inoutSplitting) and (_variable == ''):
         # inclusive case with no inout splitting
         procs.append(p)
       if not (_inoutSplitting) and (_variable != ''):
         # differential case
-        for i, currentTuple in enumerate(differentialProcTable_[_variable][0]):
+        for i, currentTuple in enumerate(differentialProcTable_[_variable]):
           # Remove in/out label
           currentBin = "_".join(currentTuple[1].split("_")[:-1])
           procs.append(p+'_'+currentBin)

@@ -62,6 +62,9 @@ def safe_mkdir(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
+
+def count_files_in_directory(directory='.'):
+    return len([name for name in os.listdir(directory) if os.path.isfile(os.path.join(directory, name))])
                 
 
 class FTestCategory(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
@@ -107,7 +110,7 @@ class FTestCategory(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalW
         safe_mkdir(self.output_dir)
 
         ftest_output = [self.output_dir + f'/outdir_{self.ext}/fTest/json/nGauss_{self.cat}.json']
-        ftest_output += glob.glob(self.output_dir + f'/outdir_{self.ext}/fTest/Plots/fTest_{self.cat}*')
+        # ftest_output += glob.glob(self.output_dir + f'/outdir_{self.ext}/fTest/Plots/fTest_{self.cat}*')
                 
         outputFileTargets = []
         
@@ -181,7 +184,7 @@ class FTest(law.Task):
             
         # Use allData.root from HiggsDNA to automatically determine categories
         data_input_path = config['inputFiles']['Trees2WSData']  
-        inOutSplittingFlag = config['trees2wsCfg']['doInOutSplitting']
+        inOutSplittingFlag = config['trees2wsCfg']['doInOutSplitting'] or config['trees2wsCfg']['doDiffSplitting'] # We do the in out splitting for the differentials in HIG-23-014
         signal_input_path = glob.glob(config['inputFiles']['Trees2WS']+'/*')
 
 
@@ -387,7 +390,7 @@ class CalcPhotonSyst(law.Task):
             
         # Use allData.root from HiggsDNA to automatically determine categories
         data_input_path = config['inputFiles']['Trees2WSData']  
-        doInOutSplitting = config['trees2wsCfg']['doInOutSplitting']
+        inOutSplittingFlag = config['trees2wsCfg']['doInOutSplitting'] or config['trees2wsCfg']['doDiffSplitting']
         
         signal_input_path = glob.glob(config['inputFiles']['Trees2WS']+'/*')
 
@@ -403,7 +406,7 @@ class CalcPhotonSyst(law.Task):
         config['nCats'] = len(config['cats'].split(","))
         
         if config['procs'] == "auto":
-            config['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, doInOutSplitting)
+            config['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
         config['nProcs'] = len(config['procs'].split(","))
         
         # Extract low and high MH values
@@ -413,7 +416,7 @@ class CalcPhotonSyst(law.Task):
                     
         config['batch'] = 'local'
         config['queue'] = 'none'
-        
+                
         tasks = []
         
         for categoryIndex in range(config['nCats']):
@@ -520,8 +523,11 @@ class SignalFitCategoryProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, 
         # Loop over a years era
         for currentEra in allErasMap[f"{year}"]:
             
-            input_path = config["outputFolder"] + f"/input_output_{year}{currentEra}/ws_signal"
-
+            
+            if self.variable == '':
+                input_path = config["outputFolder"] + f"/input_output_{year}{currentEra}/ws_signal"
+            else:
+                input_path = config["outputFolder"] + f"/input_output_{self.variable}_{year}{currentEra}/ws_signal"
 
             currentConfig = config[f"signalScriptCfg_{year}_{currentEra}"]
 
@@ -598,7 +604,7 @@ class SignalFitCategoryProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, 
         if self.doPlots:
             arguments += ["--doPlots"]
         command = arguments
-        # print(command)
+        print(command)
         # result = subprocess.run(command, check=True, text=True, capture_output=True)
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
@@ -608,11 +614,9 @@ class SignalFitCategoryProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, 
             print("Error executing script:", e.stderr)
 
 class SignalFit(law.Task):
-    # input_path = law.Parameter(default = '', description="Path to the WS from Trees2WS.")
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
-    # ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
     
     def requires(self):
         
@@ -637,14 +641,18 @@ class SignalFit(law.Task):
             output_dir = self.output_dir
             
         signal_input_path = glob.glob(config['inputFiles']['Trees2WS']+'/*')
+        
+        inOutSplittingFlag = config['trees2wsCfg']['doInOutSplitting']  or config['trees2wsCfg']['doDiffSplitting']
             
         tasks = []
             
         # Loop over a years era
         for currentEra in allErasMap[f"{self.year}"]:
             
-            input_path = config["outputFolder"] + f"/input_output_{self.year}{currentEra}/ws_signal"
-
+            if self.variable == "":
+                input_path = config["outputFolder"] + f"/input_output_{self.year}{currentEra}/ws_signal"
+            else:
+                input_path = config["outputFolder"] + f"/input_output_{self.variable}_{self.year}{currentEra}/ws_signal"
 
             currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
 
@@ -657,7 +665,7 @@ class SignalFit(law.Task):
             currentConfig['nCats'] = len(currentConfig['cats'].split(","))
 
             if currentConfig['procs'] == "auto":
-                currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, config['trees2wsCfg']['doInOutSplitting'])
+                currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
             currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
             
             # Extract low and high MH values
@@ -673,7 +681,7 @@ class SignalFit(law.Task):
                     # processCategoryIndex = processIndex*config['nCats']+categoryIndex
                     category = currentConfig['cats'].split(",")[categoryIndex]
                     process = currentConfig['procs'].split(",")[processIndex]
-                    tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cat=category, proc=process, scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots']))
+                    tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cat=category, proc=process, scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable))
                 
         return tasks
 
@@ -709,11 +717,18 @@ class SignalFit(law.Task):
             output_dir = self.output_dir
             
         output_paths = []
-                    
+        
+        inOutSplittingFlag = config['trees2wsCfg']['doInOutSplitting']  or config['trees2wsCfg']['doDiffSplitting']
+        
+        signal_input_path = glob.glob(config['inputFiles']['Trees2WS']+'/*')
+        
+        data_input_path = config['inputFiles']['Trees2WSData']  
+
         # Loop over a years era
         for currentEra in allErasMap[f"{self.year}"]:
 
             currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+            
             # returns output folder
             
             # output_paths.append(law.LocalFileTarget(self.output_dir + f"/outdir_{self.ext}"))
@@ -721,11 +736,22 @@ class SignalFit(law.Task):
             output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/output"))
             output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/Plots"))
             
-            output_paths += glob.glob(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/output/CMS-HGG_sigfit*.root")
-            output_paths += glob.glob(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/Plots/*")
             
-            # output_paths.append(law.LocalFileTarget(self.output_dir + f'/outdir_{self.ext}/bkgfTest-Data/fTestResults.txt'))
-                        
+            if currentConfig['cats'] == "auto":
+                currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
+            currentConfig['nCats'] = len(currentConfig['cats'].split(","))
+
+            if currentConfig['procs'] == "auto":
+                currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
+            currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+
+            for processIndex in range(currentConfig['nProcs']):
+                for categoryIndex in range(currentConfig['nCats']):
+                    # processCategoryIndex = processIndex*config['nCats']+categoryIndex
+                    category = currentConfig['cats'].split(",")[categoryIndex]
+                    process = currentConfig['procs'].split(",")[processIndex]
+                    output_paths += [law.LocalFileTarget(output_dir + f"/outdir_{currentConfig['ext']}/signalFit/output/CMS-HGG_sigfit_{currentConfig['ext']}_{process}_{currentConfig['year']}_{category}.root")]
+            
         return output_paths
                 
     def run(self):
@@ -772,42 +798,44 @@ class SignalPackagingCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, l
         signal_input_path = glob.glob(config['inputFiles']['Trees2WS']+'/*')
             
         tasks = []
+        
+        tasks.append(SignalFit(variable=self.variable, output_dir=output_dir, year=year))
             
-        # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
+        # # Loop over a years era
+        # for currentEra in allErasMap[f"{self.year}"]:
             
-            input_path = config["outputFolder"] + f"/input_output_{self.year}{currentEra}/ws_signal"
+        #     input_path = config["outputFolder"] + f"/input_output_{self.year}{currentEra}/ws_signal"
 
 
-            currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+        #     currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
 
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # If proc/cat == auto. Extract processes and categories
-            # Use allData.root from HiggsDNA to automatically determine categories
-            data_input_path = config['inputFiles']['Trees2WSData']  
-            if currentConfig['cats'] == "auto":
-                currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
-            currentConfig['nCats'] = len(currentConfig['cats'].split(","))              
+        #     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #     # If proc/cat == auto. Extract processes and categories
+        #     # Use allData.root from HiggsDNA to automatically determine categories
+        #     data_input_path = config['inputFiles']['Trees2WSData']  
+        #     if currentConfig['cats'] == "auto":
+        #         currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
+        #     currentConfig['nCats'] = len(currentConfig['cats'].split(","))              
 
-            if currentConfig['procs'] == "auto":
-                currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, config['trees2wsCfg']['doInOutSplitting'])
-            currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+        #     if currentConfig['procs'] == "auto":
+        #         currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, config['trees2wsCfg']['doInOutSplitting'])
+        #     currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
                        
-            # Extract low and high MH values
-            mps = []
-            for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
-            currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+        #     # Extract low and high MH values
+        #     mps = []
+        #     for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+        #     currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
                         
-            currentConfig['batch'] = 'local'
-            currentConfig['queue'] = 'none'
+        #     currentConfig['batch'] = 'local'
+        #     currentConfig['queue'] = 'none'
             
                         
-            for processIndex in range(currentConfig['nProcs']):
-                process = currentConfig['procs'].split(",")[processIndex]
-                tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cat=self.cat, proc=process, scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots']))
+        #     for processIndex in range(currentConfig['nProcs']):
+        #         process = currentConfig['procs'].split(",")[processIndex]
+        #         tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cat=self.cat, proc=process, scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots']))
 
                     
-            return tasks
+        return tasks
     
     
     def create_branch_map(self):
@@ -971,14 +999,6 @@ class SignalPackaging(law.Task):
 
     
     def output(self):
-        
-        # #Path should be somewhere centrally...
-        # configYamlPath = "/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/config/"
-        # if "2022" in self.year:
-        #     year = "2022"
-        # else:
-        #     year = self.year
-        # configYamlPath += f"{year}_{self.variable}.yml"
         
         # Path should be somewhere centrally...
         if self.variable == '':

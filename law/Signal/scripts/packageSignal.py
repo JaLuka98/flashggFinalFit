@@ -76,7 +76,7 @@ for ext, fNames_by_ext in fNames.items():
       else: packagedWS.imp(_data)
 
 # Save to file
-if not os.path.isdir("%s/outdir_%s"%(opt.outputDir,opt.outputExt)): os.system("mkdir %s/outdir_%s"%(opt.outputDir,opt.outputExt))
+if not os.path.isdir("%s/outdir_packaged%s"%(opt.outputDir,opt.outputExt)): os.system("mkdir %s/outdir_packaged%s"%(opt.outputDir,opt.outputExt))
 if opt.mergeYears:
   print(" --> Writing to: %s/outdir_packaged%s/CMS-HGG_sigfit_packaged%s_%s.root"%(opt.outputDir,opt.outputExt,opt.outputExt,opt.cat))
   f = ROOT.TFile("%s/outdir_packaged%s/CMS-HGG_sigfit_packaged%s_%s.root"%(opt.outputDir,opt.outputExt,opt.outputExt,opt.cat),"RECREATE")
