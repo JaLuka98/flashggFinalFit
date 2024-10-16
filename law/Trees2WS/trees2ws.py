@@ -316,7 +316,9 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
             df = pandas.concat(dfs.values(), axis=1)
 
             # Add STXS splitting var if splitting necessary
-            if self.doSTXSSplitting: df[stxsVar] = t.arrays(stxsVar, library='pd')
+            if self.doSTXSSplitting: 
+                pass
+                # df[stxsVar] = t.arrays(stxsVar, library='pd')
 
             # For experimental phase space
             df['type'] = 'nominal'
@@ -343,7 +345,9 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                         sdf = st.arrays(systematicsVars, library='pd')
                         sdf['type'] = "%s%s"%(s,direction)
                         # Add STXS splitting var if splitting necessary
-                        if self.doSTXSSplitting: sdf[stxsVar] = st.arrays(stxsVar, library='pd')
+                        if self.doSTXSSplitting: 
+                            pass
+                            # sdf[stxsVar] = st.arrays(stxsVar, library='pd')
                     
                         # Add column specifying category and add to systematics dataframe
                         sdf['cat'] = cat
@@ -389,7 +393,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                 outputWSDir = self.output_dir+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag) # Multiple slashes are normalised away, no worries ("../test/" and "../test" are equivalent)
             else:
                 outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag)
-            if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
+            if not os.path.exists(outputWSDir): os.system("mkdir -p %s"%outputWSDir)
             outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(self.productionMode), fidTag),self.input_path.split("/")[-1])
             print(" --> Creating output workspace: (%s)"%outputWSFile)
             
@@ -420,7 +424,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
 
                 # Define output workspace file
                 outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s"%stxsBin
-                if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
+                if not os.path.exists(outputWSDir): os.system("mkdir -p %s"%outputWSDir)
                 outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%stxsBin,self.input_path.split("/")[-1])
                 print(" --> Creating output workspace for STXS bin: %s (%s)"%(stxsBin,outputWSFile))
 
@@ -450,7 +454,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                     outputWSDir = self.output_dir + "/ws_%s"%diffBin
                 else:
                     outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s"%diffBin
-                if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
+                if not os.path.exists(outputWSDir): os.system("mkdir -p %s"%outputWSDir)
                 outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%diffBin,self.input_path.split("/")[-1])
                 print(" --> Creating output workspace for differential bin: %s (%s)"%(diffBin,outputWSFile))
 
@@ -459,16 +463,9 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                 create_workspace(df, sdf, outputWSFile, productionMode_string)
 
 class Trees2WS(law.Task):
-    # input_paths = law.Parameter(description="Path to the data input ROOT file")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default='', description="Variable to be used for output folder naming")
-    doSTXSSplitting = law.Parameter(default=False, description="Split output WS per STXS bin")
-    doDiffSplitting = law.Parameter(default=False, description="Split output WS per differential bin")
-    doInOutSplitting = law.Parameter(default=False, description="Split output WS into in/out fiducial based on some variable in the input trees (to be improved).")
-    doSystematics = law.Parameter(default=True, description="Add systematics datasets to output WS")
     year = law.Parameter(default='2022', description="Year")
-    mass_cut = law.Parameter(default=False, description="Apply mass cut")
-    mass_cut_r = law.Parameter(default='100,180', description="Mass cut range")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
@@ -518,7 +515,7 @@ class Trees2WS(law.Task):
                     current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
                                 
                 input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
-                tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var))#, version="v1", workflow="htcondor")
+                tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var))#, version="v1", workflow="htcondor"))
         
         return tasks    
     def output(self):
@@ -589,7 +586,7 @@ class Trees2WS(law.Task):
                         outputWSDir = current_output_path+"/ws_%s_%s"%(dataToProc(mode), fidTag) # Multiple slashes are normalised away, no worries ("../test/" and "../test" are equivalent)
                     else:
                         outputWSDir = "/".join(input_path.split("/")[:-1])+"/ws_%s_%s"%(dataToProc(mode), fidTag)
-                    if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
+                    if not os.path.exists(outputWSDir): os.system("mkdir -p %s"%outputWSDir)
                     outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(mode), fidTag),input_path.split("/")[-1])
                     outputFolders.append(law.LocalFileTarget(outputWSFile))
                     
