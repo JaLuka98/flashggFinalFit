@@ -269,8 +269,8 @@ if opt.doBands:
       # Savin toy yields dataframe to pickle file
       if opt.saveToyYields:
         print("      * Saving toy yields to: SplusBModels%s/toyYields_%s.pkl"%(opt.ext,opt.xvar.split(",")[0]))
-        with open("SplusBModels%s/toyYields_%s.pkl"%(opt.ext,opt.xvar.split(",")[0]),"wb") as fD: pickle.dump(df_bands,fD)
-
+        with open("SplusBModels%s/toyYields_%s.pkl" % (opt.ext, opt.xvar.split(",")[0]), "wb") as fD:
+          pickle.dump(df_bands, fD)
 
 
 # Process each category separately
