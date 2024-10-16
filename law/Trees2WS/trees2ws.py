@@ -24,68 +24,6 @@ from T2WSTools.diff_tools import *
 # from framework import Task
 # from framework import HTCondorWorkflow
 
-# Centre of mass energy string
-sqrts__ = "13TeV"
-
-# Luminosity map in fb^-1: for using UL 2018
-lumiMap = {
-    '2016':36.33, 
-    '2017':41.48, 
-    '2018':59.83, 
-    'combined':137.65, 
-    'merged':137.65,
-    '2022preEE':8.00,
-    '2022postEE':26.70,
-    '2022': 34.70
-}
-
-varBins = {
-    "PTH": ["PTH_0p0_15p0_in", "PTH_15p0_30p0_in", "PTH_30p0_45p0_in", "PTH_45p0_80p0_in", "PTH_80p0_120p0_in", "PTH_120p0_200p0_in", "PTH_200p0_350p0_in", "PTH_350p0_10000p0_in", "PTH_0p0_10000p0_out"],
-    "rapidity": ["YH_0p0_0p15_in", "YH_0p15_0p3_in", "YH_0p3_0p6_in", "YH_0p6_0p9_in", "YH_0p9_2p5_in", "YH_0p0_2p5_out"],
-    "Njets2p5": ["NJ_0p0_1p0_in", "NJ_1p0_2p0_in", "NJ_2p0_3p0_in", "NJ_3p0_100p0_in", "NJ_0p0_100p0_out"],
-    "ptJ0": ["PTJ0_0p0_30p0_in", "PTJ0_30p0_75p0_in", "PTJ0_75p0_120p0_in", "PTJ0_120p0_200p0_in", "PTJ0_200p0_10000p0_in", "PTJ0_0p0_10000p0_out"]
-}
-
-# Define an array of input masses
-input_masses = [120, 125, 130]
-
-# Define an array of eras
-TwentyTwentyTwoEras = ["preEE", "postEE"]
-
-allErasMap = {
-    '2022': TwentyTwentyTwoEras
-}
-
-# Define an array of production modes and corresponding process strings
-production_modes = [
-    ("ggh", "GluGluHtoGG"),
-    ("vbf", "VBFHtoGG"),
-    ("vh", "VHtoGG"),
-    ("tth", "ttHtoGG")
-]
-
-# input_masses = [120, 125, 130]
-
-# production_modes = [
-#     ("tth", "ttHtoGG")
-# ]
-# flashgg input WS objects
-inputWSName__ = "tagsDumper/cms_hgg_13TeV"
-
-# Helper function to import a module from a file path
-def import_module_from_path(file_path):
-    module_name = re.sub(r'\.py$', '', file_path.replace(os.sep, '.'))
-    if not os.path.isfile(file_path):
-        raise FileNotFoundError(f"The file {file_path} does not exist.")
-    
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    if spec is None:
-        raise ImportError(f"Could not load the spec for module {module_name} from {file_path}.")
-    
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module  
-
 # Function to safely create a directory
 def safe_mkdir(path):
     try:
@@ -122,7 +60,8 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
     
     def create_branch_map(self):
         # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
-        return varBins[self.variable]
+        varBins = [entry[1] for entry in differentialProcTable_[self.variable]]
+        return varBins
 
     def output(self):
         
@@ -156,20 +95,19 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
             pass
                 
         if self.doDiffSplitting:
-            for currentBin in varBins[self.variable]:
+            varBins = [entry[1] for entry in differentialProcTable_[self.variable]]
+            for currentBin in varBins:
 
                 # Extract diffBin
                 diffBin = self.productionMode + "_" + currentBin
 
                 # Define output workspace file
                 if self.output_dir is not None:
-                    # outputWSDir = self.outputWSDir+"/ws_%s"%(dataToProc(self.productionMode)) + "/ws_%s"%diffBin
                     outputWSDir = self.output_dir + "/ws_%s"%diffBin
                 else:
                     outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s"%diffBin
                 outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%diffBin,self.input_path.split("/")[-1])
                 outputFileTargets.append(law.LocalFileTarget(outputWSFile))
-                # outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(self.productionMode), fidTag),self.input_path.split("/")[-1])
 
         return outputFileTargets
 
@@ -181,10 +119,8 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
         modesToSkipTheoryWeights = ['bbh','thq','thw']
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year[:4]}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year[:4]}_{self.variable}.yml"
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -301,15 +237,12 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                             
                             h = ROOT.RooDataHist(hName,hName,aset)
                             for row, weight in zip(sdf[mask][systematicsVarsDropWeight].to_numpy(),sdf[mask]["weight"].to_numpy()):
-                                #if (weight == "weight") or ('fiducial' in weight) or ("diff" in weight): continue # TODO: Test this line
                                 for i, val in enumerate(row):
                                     aset[i].setVal(val)
                                 h.add(aset,weight)
                             
                             # Add to workspace
                             getattr(ws,'import')(h)
-
-            # sdf = sdf.drop(columns=['fiducialGeometricTagger_20', 'diffVariable_pt'])
 
             # Write WS to file
             ws.Write()
@@ -508,20 +441,17 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                 if int(diffId) == 0: continue
 
                 # Extract diffBin
-                # diffBin = diffDict[int(diffId)]
                 diffBin = getBinNameByHiggsDNANumber(self.variable, int(diffId))
                 diffBin = self.productionMode + "_" + diffBin
                 print("diffBin", diffBin)
 
                 # Define output workspace file
                 if self.output_dir is not None:
-                    # outputWSDir = self.output_dir+"/ws_%s"%(dataToProc(self.productionMode)) + "/ws_%s"%diffBin
                     outputWSDir = self.output_dir + "/ws_%s"%diffBin
                 else:
                     outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s"%diffBin
                 if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
                 outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%diffBin,self.input_path.split("/")[-1])
-                # outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(self.productionMode), fidTag),self.input_path.split("/")[-1])
                 print(" --> Creating output workspace for differential bin: %s (%s)"%(diffBin,outputWSFile))
 
                 productionMode_string = self.productionMode
@@ -546,10 +476,8 @@ class Trees2WS(law.Task):
         
         # Load the input configuration
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         with open(input_config, 'r') as file:
@@ -584,15 +512,12 @@ class Trees2WS(law.Task):
         for mode, process in proc_list:
             
             for mass, era, var, path_to_root_files in mass_era_list:
-                # print(mass, era, var, path_to_root_files)
                 if var == '':
                     current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
                 else:
                     current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
                                 
                 input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
-                # print(current_output_path)
-                #IDK what this version parameter means
                 tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var))#, version="v1", workflow="htcondor")
         
         return tasks    
@@ -600,10 +525,8 @@ class Trees2WS(law.Task):
         
         # returns output folder
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         with open(input_config, 'r') as file:
@@ -676,7 +599,8 @@ class Trees2WS(law.Task):
                     pass
                         
                 if config['trees2wsCfg']["doDiffSplitting"]:
-                    for currentBin in varBins[self.variable]:
+                    varBins = [entry[1] for entry in differentialProcTable_[self.variable]]
+                    for currentBin in varBins:
 
                         # Extract diffBin
                         diffBin = mode + "_" + currentBin
@@ -696,10 +620,8 @@ class Trees2WS(law.Task):
         print("Trees2WS ran through. Moving output to the subdirectory ./ws_signal")
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             input_config = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         with open(input_config, 'r') as file:

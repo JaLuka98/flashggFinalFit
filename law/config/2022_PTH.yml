@@ -11,7 +11,7 @@ backgroundScriptCfg:
   # Setup
   cats: 'auto' # auto: automatically inferred from input ws
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
-  ext: 'earlyAnalysis_PTH' # extension to add to output directory
+  ext: 'backgroundEarlyAnalysis_PTH' # extension to add to output directory
   # year: '2022' # Use combined when merging all years in category (for plots)
 
 trees2wsCfg:
@@ -70,7 +70,7 @@ signalScriptCfg_2022_preEE:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'earlyAnalysis_PTH_2022preEE' # output directory extension
+  ext: 'signalEarlyAnalysis_PTH_2022preEE' # output directory extension
   analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
   year: '2022preEE' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
@@ -95,7 +95,7 @@ signalScriptCfg_2022_postEE:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'earlyAnalysis_PTH_2022postEE' # output directory extension
+  ext: 'signalEarlyAnalysis_PTH_2022postEE' # output directory extension
   analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
   year: '2022postEE' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary

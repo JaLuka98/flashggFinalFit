@@ -26,33 +26,6 @@ from Trees2WS.trees2ws_data import *
 # from framework import Task
 # from framework import HTCondorWorkflow
 
-
-# Luminosity map in fb^-1: for using UL 2018
-lumiMap = {
-    '2016':36.33, 
-    '2017':41.48, 
-    '2018':59.83, 
-    'combined':137.65, 
-    'merged':137.65,
-    '2022preEE':8.00,
-    '2022postEE':26.70,
-    '2022': 34.70
-}
-
-# Helper function to import a module from a file path
-def import_module_from_path(file_path):
-    module_name = re.sub(r'\.py$', '', file_path.replace(os.sep, '.'))
-    if not os.path.isfile(file_path):
-        raise FileNotFoundError(f"The file {file_path} does not exist.")
-    
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    if spec is None:
-        raise ImportError(f"Could not load the spec for module {module_name} from {file_path}.")
-    
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module  
-
 # Function to safely create a directory
 def safe_mkdir(path):
     try:
@@ -77,10 +50,8 @@ class BackgroundCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
     def requires(self):
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file
@@ -149,17 +120,14 @@ class Background(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
-    # ext = law.Parameter(default="earlyAnalysis", description="Descriptor of the background output folder.")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file
@@ -198,10 +166,8 @@ class Background(law.Task):
         # returns output folder
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file

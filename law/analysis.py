@@ -21,6 +21,7 @@ from commonTools import *
 from commonObjects import *
 
 from Datacard.datacard import *
+from Background.background import *
 
 # from framework import Task
 # from framework import HTCondorWorkflow
@@ -58,7 +59,7 @@ class EarlyRun3(law.Task):
         else:
             output_dir = self.output_dir
         
-        tasks = [MakeDatacard(variable=self.variable, output_dir=output_dir, year=self.year)]
+        tasks = [MakeDatacard(variable=self.variable, output_dir=output_dir, year=self.year), Background(variable=self.variable, output_dir=output_dir, year=self.year)]
         
         return tasks    
 
@@ -82,24 +83,34 @@ class EarlyRun3(law.Task):
             output_dir = self.output_dir
             
         datacard_config = config["datacard"]
+        background_config = config["backgroundScriptCfg"]   
         
         output_paths = []
         
         if self.variable == '': 
-            # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
+            # Signal+Datacard output
             if datacard_config['saveDataFrame']:
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.year}.pkl"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.year}_unsymmetrized.pkl"))
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.year}.txt"))
+            
+            # Background output
+            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{background_config['ext']}"))     
+            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{background_config['ext']}/bkgfTest-Data/fTestResults.txt"))
         else:
-            # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
+            # Signal+Datacard output
             if datacard_config['saveDataFrame']:
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl"))
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.variable}_{self.year}.txt"))
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.variable}_{self.year}_unsymmetrized.txt"))
+            
+            # Background output
+            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{background_config['ext']}_{self.variable}"))
+            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{background_config['ext']}_{self.variable}/bkgfTest-Data/fTestResults.txt"))
+            
         return output_paths
                 
     

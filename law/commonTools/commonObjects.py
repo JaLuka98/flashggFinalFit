@@ -64,7 +64,16 @@ outputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':'','scalesGlobal':'
 # Bkg output WS objects
 bkgWSName__ = "multipdf"
 
+# Define an array of input masses
+input_masses = [120, 125, 130]
 
+# Define an array of production modes and corresponding process strings
+production_modes = [
+    ("ggh", "GluGluHtoGG"),
+    ("vbf", "VBFHtoGG"),
+    ("vh", "VHtoGG"),
+    ("tth", "ttHtoGG")
+]
 
 # Define an array of eras
 TwentyTwentyTwoEras = ["preEE", "postEE"]

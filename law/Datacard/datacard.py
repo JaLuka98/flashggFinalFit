@@ -25,33 +25,6 @@ from Signal.signal_tasks import *
 # from framework import Task
 # from framework import HTCondorWorkflow
 
-
-# Luminosity map in fb^-1: for using UL 2018
-lumiMap = {
-    '2016':36.33, 
-    '2017':41.48, 
-    '2018':59.83, 
-    'combined':137.65, 
-    'merged':137.65,
-    '2022preEE':8.00,
-    '2022postEE':26.70,
-    '2022': 34.70
-}
-
-# Helper function to import a module from a file path
-def import_module_from_path(file_path):
-    module_name = re.sub(r'\.py$', '', file_path.replace(os.sep, '.'))
-    if not os.path.isfile(file_path):
-        raise FileNotFoundError(f"The file {file_path} does not exist.")
-    
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    if spec is None:
-        raise ImportError(f"Could not load the spec for module {module_name} from {file_path}.")
-    
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module  
-
 # Function to safely create a directory
 def safe_mkdir(path):
     try:
@@ -91,10 +64,8 @@ class MakeYieldsCategory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Lo
     def requires(self):
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file
@@ -168,10 +139,8 @@ class MakeYields(law.Task):
         # common between the required task and the instance (self)
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file
@@ -196,9 +165,7 @@ class MakeYields(law.Task):
     
         if self.year == 'combined': datacard_config['year'] = 'all'
         else: datacard_config['year'] = self.year        
-        
-        #  2022preEE=../input_output_PTH_2022preEE/ws_signal,2022postEE=../input_output_PTH_2022postEE/ws_signal
-        
+              
         inputWSDirMap = ''
         
         # Create inputWSDirMap
@@ -237,10 +204,8 @@ class MakeYields(law.Task):
         # returns output folder
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file
@@ -277,10 +242,8 @@ class MakeDatacard(law.Task):
         # common between the required task and the instance (self)
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file
@@ -300,10 +263,8 @@ class MakeDatacard(law.Task):
         # returns output folder
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file
@@ -320,16 +281,12 @@ class MakeDatacard(law.Task):
         output_paths = []
         
         if self.variable == '': 
-            # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
             if datacard_config['saveDataFrame']:
-                # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.year}.pkl"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.year}_unsymmetrized.pkl"))
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.year}.txt"))
         else:
-            # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards"))
             if datacard_config['saveDataFrame']:
-                # output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl"))
                 output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl"))
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.variable}_{self.year}.txt"))
@@ -341,10 +298,8 @@ class MakeDatacard(law.Task):
         
         
         if self.variable == '':
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_inclusive.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
         else:
-            # configYamlPath = os.path.dirname(os.path.abspath(__file__)) + f"/../config/{self.year}_{self.variable}.yml"
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
         #Load central config file
