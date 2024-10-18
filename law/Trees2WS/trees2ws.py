@@ -21,8 +21,8 @@ from commonObjects import *
 from T2WSTools.STXS_tools import *
 from T2WSTools.diff_tools import *
 
-# from framework import Task
-# from framework import HTCondorWorkflow
+from framework import Task
+from framework import HTCondorWorkflow
 
 # Function to safely create a directory
 def safe_mkdir(path):
@@ -35,83 +35,129 @@ def safe_mkdir(path):
 def leave():
   print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ HGG TREES 2 WS (END) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
   exit(0)
+  
+def convert_boolean_string(string):
+    if (string == "True") or (string == "true") or (string == True):
+        return True
+    else:
+        return False
 
-                
-
-class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
-    input_path = law.Parameter(description="Path to the data input ROOT file")
+class Trees2WSSingleProcess(Task, HTCondorWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    input_paths = law.Parameter(description="Paths to the data input ROOT files")
+    era = law.Parameter(description="Current era.")
     output_dir = law.Parameter(description="Path to the output directory")
     variable = law.Parameter(default='', description="Variable to be used for output folder naming")
     year = law.Parameter(default='2022', description="Year")
     apply_mass_cut = law.Parameter(default=False, description="Apply mass cut")
     mass_cut_range = law.Parameter(default='100,180', description="Mass cut range")
-    input_mass = law.Parameter(default='125', description="Input mass")
-    productionMode = law.Parameter(default='ggh', description="Production mode [ggh,vbf,vh,wh,zh,tth,thq,ggzh,bbh]")
+    # input_mass = law.Parameter(default='125', description="Input mass")
+    # productionMode = law.Parameter(default='ggh', description="Production mode [ggh,vbf,vh,wh,zh,tth,thq,ggzh,bbh]")
     decayExt = law.Parameter(default='', description="Decay extension")
     doNNLOPS = law.Parameter(default=False, description="Add NNLOPS weight variable: NNLOPSweight")
     doSystematics = law.Parameter(default=False, description="Add systematics datasets to output WS")
     doSTXSSplitting = law.Parameter(default=False, description="Split output WS per STXS bin")
     doDiffSplitting = law.Parameter(default=False, description="Split output WS per differential bin")
     doInOutSplitting = law.Parameter(default=False, description="Split output WS into in/out fiducial based on some variable in the input trees (to be improved).")
-    
 
-    # htcondor_job_kwargs_submit = {"spool": True}
+    htcondor_job_kwargs_submit = {"spool": True}  
     
+    # def create_branch_map(self):
+    #     # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
+    #     if self.variable == '':
+    #         test = [str(i) for i in range(0,(3*4*2))]
+    #     else:
+    #         test = [entry[1] for entry in differentialProcTable_[self.variable]]
+            
+    #     varBins = {i: num for i, num in enumerate(range(0, len(test) + 1))}
+    #     return varBins
     
     def create_branch_map(self):
         # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
-        varBins = [entry[1] for entry in differentialProcTable_[self.variable]]
-        return varBins
+        mode_proc_mass_list = [
+            (mode, mass, input_path)
+            for mode, process in production_modes
+            for mass in input_masses
+            for input_path in glob.glob(f"{self.input_paths}/{process}_M-{mass}_{self.era}/*.root")
+        ]
+        branch_map = {i: mode_proc_mass for i, mode_proc_mass in enumerate(mode_proc_mass_list)}
+        return branch_map
+    
+    # def create_branch_map(self):
+    #     return {i: num for i, num in enumerate(range(0,1))}
 
     def output(self):
         
+        current_mode_proc_mass = self.branch_data
+        
+        productionMode = current_mode_proc_mass[0]
+        input_mass = current_mode_proc_mass[1]
+        input_path = current_mode_proc_mass[2]
+               
+        apply_mass_cut = convert_boolean_string(self.apply_mass_cut)
+        doNNLOPS = convert_boolean_string(self.doNNLOPS)
+        doSystematics = convert_boolean_string(self.doSystematics)
+        doSTXSSplitting = convert_boolean_string(self.doSTXSSplitting)
+        doDiffSplitting = convert_boolean_string(self.doDiffSplitting)
+        doInOutSplitting = convert_boolean_string(self.doInOutSplitting)
+        
         outputFileTargets = []
-        if self.doInOutSplitting: fiducialIds = [True, False]
+        if doInOutSplitting: fiducialIds = [True, False]
         else: fiducialIds = [0] # If we do not perform in/out splitting, we want to have one inclusive (for particle-level) process definition, our code int for that is zero
 
-        for fiducialId in fiducialIds:
-        
-            if self.doDiffSplitting: continue
+        if doInOutSplitting:
 
-            # In the end, the STXS and fiducial in/out splitting should maybe be harmonised, this looks a bit ugly
-            if (self.doSTXSSplitting): continue
+            for fiducialId in fiducialIds:
+                
+                # In the end, the STXS and fiducial in/out splitting should maybe be harmonised, this looks a bit ugly
+                
+                if fiducialId == True: fidTag = "in"
+                elif fiducialId == False: fidTag = "out"
+                else: fidTag = "incl"
 
-            if fiducialId == True: fidTag = "in"
-            elif fiducialId == False: fidTag = "out"
-            else: fidTag = "incl"
-
-            # Define output workspace file
-            if self.output_dir is not None:
-                outputWSDir = self.output_dir+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag) # Multiple slashes are normalised away, no worries ("../test/" and "../test" are equivalent)
-            else:
-                outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag)
-            if not os.path.exists(outputWSDir): os.system("mkdir %s"%outputWSDir)
-            outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(self.productionMode), fidTag),self.input_path.split("/")[-1])
-            outputFileTargets.append(law.LocalFileTarget(outputWSFile))
+                # Define output workspace file
+                if self.output_dir is not None:
+                    outputWSDir = self.output_dir+"/ws_%s_%s"%(dataToProc(productionMode), fidTag) # Multiple slashes are normalised away, no worries ("../test/" and "../test" are equivalent)
+                else:
+                    outputWSDir = "/".join(input_path.split("/")[:-1])+"/ws_%s_%s"%(dataToProc(productionMode), fidTag)
+                if not os.path.exists(outputWSDir): os.system("mkdir -p %s"%outputWSDir)
+                outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(productionMode), fidTag),input_path.split("/")[-1])
+                outputFileTargets.append(law.LocalFileTarget(outputWSFile))
             
             
-        if self.doSTXSSplitting:
+        elif doSTXSSplitting:
             #STXS currently not implemented
             pass
                 
-        if self.doDiffSplitting:
+        elif doDiffSplitting and not (self.variable == ''):
             varBins = [entry[1] for entry in differentialProcTable_[self.variable]]
             for currentBin in varBins:
 
                 # Extract diffBin
-                diffBin = self.productionMode + "_" + currentBin
+                diffBin = productionMode + "_" + currentBin
 
                 # Define output workspace file
                 if self.output_dir is not None:
                     outputWSDir = self.output_dir + "/ws_%s"%diffBin
                 else:
-                    outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s"%diffBin
-                outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%diffBin,self.input_path.split("/")[-1])
-                outputFileTargets.append(law.LocalFileTarget(outputWSFile))
-
+                    outputWSDir = "/".join(input_path.split("/")[:-1])+"/ws_%s"%diffBin
+                outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%diffBin,input_path.split("/")[-1])
+                outputFileTargets.append(law.LocalFileTarget(outputWSFile))        
         return outputFileTargets
 
     def run(self):
+        current_mode_proc_mass = self.branch_data
+        
+        productionMode = current_mode_proc_mass[0]
+        input_mass = current_mode_proc_mass[1]
+        input_path = current_mode_proc_mass[2]
+        
+        apply_mass_cut = convert_boolean_string(self.apply_mass_cut)
+        doNNLOPS = convert_boolean_string(self.doNNLOPS)
+        doSystematics = convert_boolean_string(self.doSystematics)
+        doSTXSSplitting = convert_boolean_string(self.doSTXSSplitting)
+        doDiffSplitting = convert_boolean_string(self.doDiffSplitting)
+        doInOutSplitting = convert_boolean_string(self.doInOutSplitting)
+                
         # Create output path if it does not exist
         os.makedirs(self.output_dir, exist_ok=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,7 +247,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                 mask = (df['cat']==cat)
 
                 # Define RooDataSet
-                dName = "%s_%s_%s_%s"%(productionMode_string,self.input_mass,sqrts__,cat)
+                dName = "%s_%s_%s_%s"%(productionMode_string,input_mass,sqrts__,cat)
                 
                 # Make argset
                 aset = make_argset(ws,varNames)
@@ -226,7 +272,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                             mask = (sdf['type']=='%s%s'%(s,direction))&(sdf['cat']==cat)
                             
                             # Define RooDataHist
-                            hName = "%s_%s_%s_%s_%s%s01sigma"%(productionMode_string,self.input_mass,sqrts__,cat,s,direction)
+                            hName = "%s_%s_%s_%s_%s%s01sigma"%(productionMode_string,input_mass,sqrts__,cat,s,direction)
 
                             # Make argset: drop weight column for histogrammed observables
                             systematicsVarsDropWeight = []
@@ -260,7 +306,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # UPROOT file
-        f = uproot.open(self.input_path)
+        f = uproot.open(input_path)
         if inputTreeDir == '': listOfTreeNames == f.keys()
         else: listOfTreeNames = f[inputTreeDir].keys()
         # If cats = 'auto' then determine from list of trees
@@ -275,13 +321,13 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
         # 1) Convert tree to pandas dataframe
         # Create dataframe to store all events in file
         data = pandas.DataFrame()
-        if self.doSystematics: sdata = pandas.DataFrame()
+        if doSystematics: sdata = pandas.DataFrame()
 
         # Loop over categories: fill dataframe
         for cat in cats:
             print( " --> Extracting events from category: %s"%cat)
-            if inputTreeDir == '': treeName = "%s_%s_%s_%s"%(self.productionMode,self.input_mass,sqrts__,cat)
-            else: treeName = "%s/%s_%s_%s_%s"%(inputTreeDir,self.productionMode,self.input_mass,sqrts__,cat)
+            if inputTreeDir == '': treeName = "%s_%s_%s_%s"%(productionMode,input_mass,sqrts__,cat)
+            else: treeName = "%s/%s_%s_%s_%s"%(inputTreeDir,productionMode,input_mass,sqrts__,cat)
             print("    * tree: %s"%treeName)
             # Extract tree from uproot
             t = f[treeName]
@@ -292,7 +338,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
             
             # Theory weights
             for ts, tsColumns in theoryWeightColumns.items():
-                if self.productionMode in modesToSkipTheoryWeights: 
+                if productionMode in modesToSkipTheoryWeights: 
                     dfs[ts] = pandas.DataFrame(np.ones(shape=(t.num_entries,theoryWeightContainers[ts])))
                 else:
                     dfs[ts] = pandas.DataFrame(np.reshape(np.array(t[ts].array()),(t.num_entries,len(tsColumns))))
@@ -316,15 +362,16 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
             df = pandas.concat(dfs.values(), axis=1)
 
             # Add STXS splitting var if splitting necessary
-            if self.doSTXSSplitting: 
+            if doSTXSSplitting: 
                 pass
                 # df[stxsVar] = t.arrays(stxsVar, library='pd')
 
             # For experimental phase space
             df['type'] = 'nominal'
+            
             # Add NNLOPS variable
-            if(self.doNNLOPS):
-                if self.productionMode == 'ggh': df['NNLOPSweight'] = t.arrays(['NNLOPSweight'], library='pd')
+            if (doNNLOPS):
+                if productionMode == 'ggh': df['NNLOPSweight'] = t.arrays(['NNLOPSweight'], library='pd')
                 else: df['NNLOPSweight'] = 1.
 
             # Add columns specifying category add to overall dataframe
@@ -332,7 +379,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
             data = pandas.concat([data,df], ignore_index=True, axis=0, sort=False)
 
             # For systematics trees: only for events in experimental phase space
-            if self.doSystematics:
+            if doSystematics:
                 sdf = pandas.DataFrame()
                 for s in systematics:
                     print("    --> Systematic: %s"%re.sub("YEAR",self.year,s))
@@ -345,7 +392,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                         sdf = st.arrays(systematicsVars, library='pd')
                         sdf['type'] = "%s%s"%(s,direction)
                         # Add STXS splitting var if splitting necessary
-                        if self.doSTXSSplitting: 
+                        if doSTXSSplitting: 
                             pass
                             # sdf[stxsVar] = st.arrays(stxsVar, library='pd')
                     
@@ -354,7 +401,7 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
                         sdata = pandas.concat([sdata,sdf], ignore_index=True, axis=0, sort=False)
             
         # If not splitting by STXS bin then add dummy column to dataframe
-        if not self.doSTXSSplitting:
+        if not doSTXSSplitting:
             data[stxsVar] = 'nosplit'  
             if self.doSystematics: sdata[stxsVar] = 'nosplit'
 
@@ -363,102 +410,99 @@ class Trees2WSSingleProcess(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # 2) Convert pandas dataframe to RooWorkspace
 
-        if self.doInOutSplitting: fiducialIds = data['fiducialGeometricFlag'].unique()
+        if doInOutSplitting: fiducialIds = data['fiducialGeometricFlag'].unique()
         else: fiducialIds = [0] # If we do not perform in/out splitting, we want to have one inclusive (for particle-level) process definition, our code int for that is zero
-
-        for fiducialId in fiducialIds:
         
-            if self.doDiffSplitting: continue
+        if doInOutSplitting:
 
-            # In the end, the STXS and fiducial in/out splitting should maybe be harmonised, this looks a bit ugly
-            if (stxsVar != '') or (self.doSTXSSplitting): continue
-
-            if fiducialId == True: fidTag = "in"
-            elif fiducialId == False: fidTag = "out"
-            else: fidTag = "incl"
-
-            if self.doInOutSplitting:
-                fiducial_mask = data['fiducialGeometricFlag'] == fiducialId
-                fiducial_mask_syst = sdata['fiducialGeometricFlag'] == fiducialId
-            else:
-                fiducial_mask = data['CMS_hgg_mass'] > 0 # Basically a true mask because we are all inclusive
-                fiducial_mask_syst = sdata['CMS_hgg_mass'] > 0
-
-            df = data[fiducial_mask]
-            if self.doSystematics: 
-                sdf = sdata[fiducial_mask_syst]
-
-            # Define output workspace file
-            if self.output_dir is not None:
-                outputWSDir = self.output_dir+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag) # Multiple slashes are normalised away, no worries ("../test/" and "../test" are equivalent)
-            else:
-                outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s_%s"%(dataToProc(self.productionMode), fidTag)
-            if not os.path.exists(outputWSDir): os.system("mkdir -p %s"%outputWSDir)
-            outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(self.productionMode), fidTag),self.input_path.split("/")[-1])
-            print(" --> Creating output workspace: (%s)"%outputWSFile)
+            for fiducialId in fiducialIds:
             
-            productionMode_string = self.productionMode + "_" + fidTag # This is, for example, "ggh_in"
+                if fiducialId == True: fidTag = "in"
+                elif fiducialId == False: fidTag = "out"
+                else: fidTag = "incl"
 
-            create_workspace(df, sdf, outputWSFile, productionMode_string)
+                if doInOutSplitting:
+                    fiducial_mask = data['fiducialGeometricFlag'] == fiducialId
+                    fiducial_mask_syst = sdata['fiducialGeometricFlag'] == fiducialId
+                else:
+                    fiducial_mask = data['CMS_hgg_mass'] > 0 # Basically a true mask because we are all inclusive
+                    fiducial_mask_syst = sdata['CMS_hgg_mass'] > 0
 
-        if self.doSTXSSplitting:
+                df = data[fiducial_mask]
+                if doSystematics: 
+                    sdf = sdata[fiducial_mask_syst]
 
+                # Define output workspace file
+                if self.output_dir is not None:
+                    outputWSDir = self.output_dir+"/ws_%s_%s"%(dataToProc(productionMode), fidTag) # Multiple slashes are normalised away, no worries ("../test/" and "../test" are equivalent)
+                else:
+                    outputWSDir = "/".join(input_path.split("/")[:-1])+"/ws_%s_%s"%(dataToProc(productionMode), fidTag)
+                if not os.path.exists(outputWSDir): os.system("mkdir -p %s"%outputWSDir)
+                outputWSFile = outputWSDir+"/"+re.sub(".root","_%s_%s.root"%(dataToProc(productionMode), fidTag),input_path.split("/")[-1])
+                print(" --> Creating output workspace: (%s)"%outputWSFile)
+                
+                productionMode_string = productionMode + "_" + fidTag # This is, for example, "ggh_in"
+
+                create_workspace(df, sdf, outputWSFile, productionMode_string)
+
+        elif (doSTXSSplitting):
+            
             for stxsId in data[stxsVar].unique():
                 df = data[data[stxsVar]==stxsId]
                 sdf = None
-                if self.doSystematics: sdf = sdata[sdata[stxsVar]==stxsId]
+                if doSystematics: sdf = sdata[sdata[stxsVar]==stxsId]
 
                 # Extract stxsBin
                 stxsBin = flashggSTXSDict[int(stxsId)]
-                if self.productionMode == "wh": 
+                if productionMode == "wh": 
                     if "QQ2HQQ" in stxsBin: stxsBin = re.sub("QQ2HQQ","WH2HQQ",stxsBin)
-                elif self.productionMode == "zh": 
+                elif productionMode == "zh": 
                     if "QQ2HQQ" in stxsBin: stxsBin = re.sub("QQ2HQQ","ZH2HQQ",stxsBin)
                 # ggZH: split by decay mode
-                elif self.productionMode == "ggzh":
+                elif productionMode == "ggzh":
                     if self.decayExt == "_ZToQQ": stxsBin = re.sub("GG2H","GG2HQQ",stxsBin)
                     elif self.decayExt == "_ZToNuNu": stxsBin = re.sub("GG2HLL","GG2HNUNU",stxsBin)
                 # For tHL split into separate bins for tHq and tHW
-                elif self.productionMode == "thq": stxsBin = re.sub("TH","THQ",stxsBin)
-                elif self.productionMode == 'thw': stxsBin = re.sub("TH","THW",stxsBin)
+                elif productionMode == "thq": stxsBin = re.sub("TH","THQ",stxsBin)
+                elif productionMode == 'thw': stxsBin = re.sub("TH","THW",stxsBin)
 
                 # Define output workspace file
-                outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s"%stxsBin
+                outputWSDir = "/".join(input_path.split("/")[:-1])+"/ws_%s"%stxsBin
                 if not os.path.exists(outputWSDir): os.system("mkdir -p %s"%outputWSDir)
-                outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%stxsBin,self.input_path.split("/")[-1])
+                outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%stxsBin,input_path.split("/")[-1])
                 print(" --> Creating output workspace for STXS bin: %s (%s)"%(stxsBin,outputWSFile))
 
-                productionMode_string = self.productionMode
+                productionMode_string = productionMode
 
                 create_workspace(df, sdf, outputWSFile, productionMode_string)
 
 
-        if self.doDiffSplitting:
+        elif doDiffSplitting:
             
             for diffId in data[diffVar].unique():
                 # diffId should be a gen-level pt bin
                 df = data[data[diffVar]==diffId]
                 sdf = None
-                if self.doSystematics: sdf = sdata[sdata[diffVar]==diffId]
+                if doSystematics: sdf = sdata[sdata[diffVar]==diffId]
 
                 # For the moment, skip these events (as their count is usually very small)
                 if int(diffId) == 0: continue
 
                 # Extract diffBin
                 diffBin = getBinNameByHiggsDNANumber(self.variable, int(diffId))
-                diffBin = self.productionMode + "_" + diffBin
+                diffBin = productionMode + "_" + diffBin
                 print("diffBin", diffBin)
 
                 # Define output workspace file
                 if self.output_dir is not None:
                     outputWSDir = self.output_dir + "/ws_%s"%diffBin
                 else:
-                    outputWSDir = "/".join(self.input_path.split("/")[:-1])+"/ws_%s"%diffBin
+                    outputWSDir = "/".join(input_path.split("/")[:-1])+"/ws_%s"%diffBin
                 if not os.path.exists(outputWSDir): os.system("mkdir -p %s"%outputWSDir)
-                outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%diffBin,self.input_path.split("/")[-1])
+                outputWSFile = outputWSDir+"/"+re.sub(".root","_%s.root"%diffBin,input_path.split("/")[-1])
                 print(" --> Creating output workspace for differential bin: %s (%s)"%(diffBin,outputWSFile))
 
-                productionMode_string = self.productionMode
+                productionMode_string = productionMode
 
                 create_workspace(df, sdf, outputWSFile, productionMode_string)
 
@@ -486,36 +530,51 @@ class Trees2WS(law.Task):
         input_paths = config["inputFiles"]["Trees2WS"]
         
         config = config["trees2wsCfg"]
-        
-        doSTXSSplitting = config["doSTXSSplitting"]
-        doDiffSplitting = config["doDiffSplitting"]
-        doInOutSplitting = config["doInOutSplitting"]
-        doSystematics = config["doSystematics"]
-        mass_cut = config["apply_mass_cut"]
+                
+        doSTXSSplitting = convert_boolean_string(config["doSTXSSplitting"])
+        doDiffSplitting = convert_boolean_string(config["doDiffSplitting"])
+        doInOutSplitting = convert_boolean_string(config["doInOutSplitting"])
+        doSystematics = convert_boolean_string(config["doSystematics"])
+        mass_cut = convert_boolean_string(config["apply_mass_cut"])
         mass_cut_r = config["mass_cut_range"]
-        
+                       
         tasks = []
-        mass_era_list = [
-        (mass, era, self.variable, input_paths)
+        # mass_era_list = [
+        # (mass, era, self.variable, input_paths)
+        # for era in allErasMap[f"{self.year}"]
+        # for mass in input_masses
+        # ]
+    
+        # proc_list = [
+        #     (mode, process)
+        #     for mode, process in production_modes
+        # ]
+        
+        # for mode, process in proc_list:
+            
+        #     for mass, era, var, path_to_root_files in mass_era_list:
+        #         if var == '':
+        #             current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+        #         else:
+        #             current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
+                                
+        #         input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
+        #         tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version="v1", workflow="htcondor"))
+        
+        era_list = [
+        (era, self.variable, input_paths)
         for era in allErasMap[f"{self.year}"]
-        for mass in input_masses
         ]
     
-        proc_list = [
-            (mode, process)
-            for mode, process in production_modes
-        ]
-        
-        for mode, process in proc_list:
-            
-            for mass, era, var, path_to_root_files in mass_era_list:
-                if var == '':
-                    current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
-                else:
-                    current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
-                                
-                input_path = glob.glob(f"{path_to_root_files}/{process}_M-{mass}_{era}/*.root")[0]
-                tasks.append(Trees2WSSingleProcess(input_path=input_path, input_mass=mass, productionMode=mode, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var))#, version="v1", workflow="htcondor"))
+        i = 1
+        for era, var, path_to_root_files in era_list:
+            if var == '':
+                current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+            else:
+                current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
+                            
+            tasks.append(Trees2WSSingleProcess(input_paths=path_to_root_files, era=era, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version=f"v{i}", workflow="htcondor"))
+            i += 1
         
         return tasks    
     def output(self):
