@@ -87,6 +87,9 @@ class HTCondorWorkflow(law.htcondor.HTCondorWorkflow):
 
         # copy the entire environment
         config.custom_content.append(("getenv", "false"))
+        
+        # config.custom_content.append(("+AccountingGroup", "'group_u_CMS.u_zh.users'"))
+        config.custom_content.append(("+AccountingGroup", '"group_u_CMS.u_zh.users"'))
 
         # the CERN htcondor setup requires a "log" config, but we can safely set it to /dev/null
         # if you are interested in the logs of the batch system itself, set a meaningful value here
