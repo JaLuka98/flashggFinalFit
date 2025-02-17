@@ -13,7 +13,7 @@ backgroundScriptCfg:
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
   ext: 'earlyAnalysis_PTH' # extension to add to output directory
   # year: '2023' # Use combined when merging all years in category (for plots)
-  execution: 'local'
+  execution: 'slurm'
 
 trees2wsCfg:
   inputTreeDir: 'DiphotonTree' # Name of RooDirectory storing input tree
@@ -39,7 +39,7 @@ trees2wsCfg:
   dataVars:
     - "CMS_hgg_mass"
     - "weight" # Vars to be added for data
-    - "weight_bootstrap*"
+    - "weight_bootstrap"
     
   stxsVar: ''
   diffVar: 'diffVariable_GenPTH'
