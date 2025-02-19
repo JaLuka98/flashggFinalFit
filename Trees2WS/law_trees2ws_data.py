@@ -8,17 +8,40 @@ import yaml
 from commonTools import *
 from commonObjects import *
 
+from framework import Task
+from framework import HTCondorWorkflow, SlurmWorkflow
 
-class Trees2WSData(law.Task):
+def convert_boolean_string(string):
+    if (string == "True") or (string == "true") or (string == True):
+        return True
+    else:
+        return False
+
+class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
     # input_path = law.Parameter(description="Path to the data input ROOT file")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default='', description="Variable to be used for output folder naming")
     year = law.Parameter(default='2022', description="Year")
     apply_mass_cut = law.Parameter(default=False, description="Apply mass cut")
     mass_cut_range = law.Parameter(default='100,180', description="Mass cut range")
-    
+    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
+    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+
+    def create_branch_map(self):
+        if convert_boolean_string(self.bootstrap_flag) == False:
+            branch_map = {i: val for i, val in enumerate(range(1))}
+            return branch_map
+        else:
+            # map branch indexes from 0 to 999
+            branch_map = {i: bootstrap_index for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))}
+
+            return branch_map
 
     def output(self):
+
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            bootstrap_index = self.branch_data
+
         # Load the input configuration
         if self.variable == '':
             input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -36,14 +59,24 @@ class Trees2WSData(law.Task):
             output_dir = config["outputFolder"]
         else:
             output_dir = self.output_dir
-            
+
         if self.variable == '':
-            ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}/ws/")
+            if convert_boolean_string(self.bootstrap_flag) == False:
+                ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}/ws/")
+            else:
+                ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}_{bootstrap_index}/ws/")
         else:
-            ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/")
+            if convert_boolean_string(self.bootstrap_flag) == False:
+                ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/")
+            else:
+                ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
         return law.LocalFileTarget(os.path.join(ws_dir, "allData.root"))
 
     def run(self):
+
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            bootstrap_index = self.branch_data
+
         # Load the input configuration
         if self.variable == '':
             input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -64,24 +97,16 @@ class Trees2WSData(law.Task):
             
         # Step 1: Create the output directory if it doesn't exist
         if self.variable == '':
-            ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}/ws/")
+            if convert_boolean_string(self.bootstrap_flag) == False:
+                ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}/ws/")
+            else:
+                ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}_{bootstrap_index}/ws/")
         else:
-            ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/")
+            if convert_boolean_string(self.bootstrap_flag) == False:
+                ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/")
+            else:
+                ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
         os.makedirs(ws_dir, exist_ok=True)
-
-        # Load the input configuration
-        if self.variable == '':
-            input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
-        else:
-            input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
-
-        if not os.path.exists(input_config):
-            print(f"[ERROR] {input_config} does not exist. Exiting...")
-            return
-
-        # Import the configuration options from the config file
-        with open(input_config, 'r') as file:
-            config = yaml.safe_load(file)
             
         input_path = config["inputFiles"]["Trees2WSData"]
         
@@ -127,13 +152,22 @@ class Trees2WSData(law.Task):
                 elif var == "dZ":
                     _vars[var] = ROOT.RooRealVar(var, var, 0., -20., 20.)
                     _vars[var].setBins(40)
-                elif var == "weight":
+                elif (var == "weight"):
                     _vars[var] = ROOT.RooRealVar(var, var, 0.)
+                elif (convert_boolean_string(self.bootstrap_flag) == True):
+                    if var == "weight_bootstrap_%s"%bootstrap_index:
+                        _vars[var] = ROOT.RooRealVar(var, var, 0.)
                 else:
                     _vars[var] = ROOT.RooRealVar(var, var, 1., -999999, 999999)
                     _vars[var].setBins(1)
                 getattr(_ws, 'import')(_vars[var], ROOT.RooFit.Silence())
             return _vars.keys()
+    
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            # Rename the weight columns for bootstrapping        
+            data_vars = [f"weight_bootstrap_{bootstrap_index}" if "weight_bootstrap" in item else item for item in data_vars]
+            data_vars.remove("weight")
+            print("data_vars", data_vars)
 
         # Add variables to the workspace
         var_names = add_vars_to_workspace(ws, data_vars)
@@ -147,7 +181,7 @@ class Trees2WSData(law.Task):
 
         # Make the argument set
         aset = make_argset(ws, var_names)
-
+        
         # Loop over categories and extract data
         for cat in categories:
             print(" --> Extracting events from category: %s"%cat)
@@ -158,7 +192,10 @@ class Trees2WSData(law.Task):
 
             # Define dataset for the category
             dname = "Data_%s_%s"%(sqrts__,cat)  
-            d = ROOT.RooDataSet(dname, dname, aset, 'weight')
+            if convert_boolean_string(self.bootstrap_flag) == True:
+                d = ROOT.RooDataSet(dname, dname, aset, 'weight_bootstrap_%s'%bootstrap_index)
+            else:
+                d = ROOT.RooDataSet(dname, dname, aset, 'weight')
 
             # Loop over events in the tree and add to the dataset
             for ev in t:
@@ -166,8 +203,13 @@ class Trees2WSData(law.Task):
                     if(getattr(ev,"CMS_hgg_mass") < float(massCutRange.split(",")[0])) | (getattr(ev,"CMS_hgg_mass") > float(massCutRange.split(",")[1])): continue
                 for var in data_vars: 
                     if var == "weight": continue
+                    # if convert_boolean_string(self.bootstrap_flag) == True:
+                    #     if var == "weight_bootstrap_%s"%bootstrap_index: continue
                     ws.var(var).setVal(getattr(ev,var))
-                d.add(aset,1.)
+                if convert_boolean_string(self.bootstrap_flag) == True:
+                    d.add(aset,aset.getRealValue("weight_bootstrap_%s"%bootstrap_index))
+                else:
+                    d.add(aset,1.)
 
             # Add dataset to the workspace
             getattr(ws, 'import')(d)

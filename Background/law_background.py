@@ -20,7 +20,12 @@ def safe_mkdir(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
-                
+        
+def convert_boolean_string(string):
+    if (string == "True") or (string == "true") or (string == True):
+        return True
+    else:
+        return False
 
 class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_path = law.Parameter(description="Path to the alldata input ROOT file")
@@ -30,6 +35,8 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     cats = law.Parameter(description="List of categories separated by a comma.")
     cat_offset = law.Parameter(description="Category offset")
     variable = law.Parameter(default="", description="Variable to be used")
+    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
+    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
     
     htcondor_job_kwargs_submit = {"spool": True}
     
@@ -49,10 +56,9 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         else:
             output_dir = self.output_dir
             
-        tasks = [Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year)]
+        tasks = [Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, version='v1', workflow='local')]
         
         return tasks
-    
     
     def create_branch_map(self):
         # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
@@ -61,20 +67,32 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         cat_list = [
             (self.cats.split(",")[categoryIndex], str(int(self.cat_offset)+categoryIndex))
             for categoryIndex in range(nCats)
-        ]
-        
-        branch_map = {i: cat_catOffset for i, cat_catOffset in enumerate(cat_list)}
+        ]        
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            branch_map = {
+                i * int(self.number_of_bootstraps) + j: (cat_catOffset, bootstrap_index)
+                for i, cat_catOffset in enumerate(cat_list)
+                for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+            }
+        else:
+            branch_map = {i: cat_catOffset for i, cat_catOffset in enumerate(cat_list)}
         return branch_map
 
     def output(self):
-        cat, cat_offset = self.branch_data
-        bkg_plots = glob.glob(os.path.join(self.output_dir, f'outdir_{self.ext}/bkgfTest-Data/*_cat{cat_offset}.png'))
-        bkg_plots += glob.glob(os.path.join(self.output_dir, f'outdir_{self.ext}/bkgfTest-Data/*_cat{cat_offset}.pdf'))
-        bkg_plots += glob.glob(os.path.join(self.output_dir, f'outdir_{self.ext}/bkgfTest-Data/*_cat{cat_offset}.pdf_gofTest.pdf'))
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            cat_cat_offset, bootstrap_index = self.branch_data
+            cat, cat_offset = cat_cat_offset
+            outdir_ext = os.path.join(self.output_dir, f'outdir_{self.ext}_{bootstrap_index}')
+        else:
+            cat, cat_offset = self.branch_data
+            outdir_ext = os.path.join(self.output_dir, f'outdir_{self.ext}')
+        bkg_plots = glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.png'))
+        bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf'))
+        bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf_gofTest.pdf'))
         
         outputFileTargets = []
         
-        output_paths = [os.path.join(self.output_dir, f'outdir_{self.ext}/CMS-HGG_multipdf_{cat}.root'), os.path.join(self.output_dir, f'outdir_{self.ext}/bkgfTest-Data/multipdf_{cat}.pdf'), os.path.join(self.output_dir, f'outdir_{self.ext}/bkgfTest-Data/multipdf_{cat}.png')]
+        output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.pdf'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.png')]
         
         output_paths += bkg_plots
                 
@@ -84,7 +102,16 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         return outputFileTargets
 
     def run(self):
-        cat, cat_offset = self.branch_data
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            cat_cat_offset, bootstrap_index = self.branch_data
+            print("cat_cat_offset", cat_cat_offset)
+            cat, cat_offset = cat_cat_offset
+            # In this case self.input_path is self.output_path/input_output_data_{self.year}
+            # Have to add the _{bootstrap_index}/ws/allData.root to the path manually, since we need the bootstrap index
+            input_path = os.path.join(self.input_path+f"_{bootstrap_index}", "ws/allData.root")
+        else:
+            cat, cat_offset = self.branch_data
+            input_path = self.input_path
         
         safe_mkdir(self.output_dir)
         
@@ -94,11 +121,11 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Background/runBackgroundScripts.sh")
         arguments = [
-            "-i", self.input_path,
+            "-i", input_path,
             "-p", "none",
             "-f", cat,
             "--outputFolder", f"{output_dir}",
-            "--ext", self.ext,
+            "--ext", f'{self.ext}_{bootstrap_index}' if convert_boolean_string(self.bootstrap_flag) == True else f'{self.ext}',
             "--catOffset", cat_offset,
             "--intLumi", f"{lumiMap[self.year]}",
             "--year", f"{self.year}",
@@ -127,6 +154,8 @@ class Background(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
+    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
@@ -148,11 +177,6 @@ class Background(law.Task):
             
         
         input_path = config['inputFiles']['Trees2WSData']
-        
-        if self.variable == '':
-            all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.year}/ws/allData.root")
-        else:
-            all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/allData.root")
                     
         config = config["backgroundScriptCfg"]
         
@@ -166,13 +190,23 @@ class Background(law.Task):
         config['batch'] = 'local'
         config['queue'] = 'none'
         if self.year == 'combined': config['year'] = 'all'
-        else: config['year'] = self.year        
+        else: config['year'] = self.year     
+        config['intLumi'] = lumiMap[self.year]
+                
+        if self.variable == '':
+            if convert_boolean_string(self.bootstrap_flag) == False:
+                all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.year}/ws/allData.root")
+            else:
+                all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.year}")
+        else:
+            if convert_boolean_string(self.bootstrap_flag) == False:
+                all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/allData.root")
+            else:
+                all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}")
             
-        tasks = [BackgroundCategory(input_path=all_data_input_path, output_dir=output_dir, year=self.year, cats=config['cats'], cat_offset=config['catOffset'], variable=self.variable, ext=config['ext'], version='v1', workflow=config['execution'])]
+        tasks = [BackgroundCategory(input_path=all_data_input_path, output_dir=output_dir, year=self.year, cats=config['cats'], cat_offset=config['catOffset'], variable=self.variable, ext=config['ext'], version='v1', workflow=config['execution'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)]
         return tasks
-        
 
-    
     def output(self):
         # returns output folder
         
@@ -195,15 +229,28 @@ class Background(law.Task):
         
         output_paths = []
         
-        if self.variable == '': 
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}")))
-            
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}/bkgfTest-Data/fTestResults.txt')))
+        if (convert_boolean_string(self.bootstrap_flag) == True):
+            for i in range(int(self.number_of_bootstraps)):
+                if self.variable == '': 
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}")))
+                    
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}/bkgfTest-Data/fTestResults.txt')))
+                else:
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}_{self.variable}")))
+                    
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}_{self.variable}/bkgfTest-Data/fTestResults.txt')))
+
         else:
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}_{self.variable}")))
-            
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}_{self.variable}/bkgfTest-Data/fTestResults.txt')))
+            if self.variable == '': 
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}")))
+                
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}/bkgfTest-Data/fTestResults.txt')))
+            else:
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}_{self.variable}")))
+                
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}_{self.variable}/bkgfTest-Data/fTestResults.txt')))
                         
+
         return output_paths
                 
     
