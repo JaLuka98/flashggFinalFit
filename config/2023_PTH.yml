@@ -1,6 +1,6 @@
 # Config file: options for signal fitting
 
-outputFolder: '/t3home/niharrin/devel/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/2025_01_20_intermediateNTuples_2023/PTH_bootstrap'
+outputFolder: '/work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/2025_01_20_intermediateNTuples_2023/PTH_bootstrap'
 
 inputFiles:
   # Trees2WS
