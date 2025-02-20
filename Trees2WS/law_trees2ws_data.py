@@ -167,7 +167,6 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             # Rename the weight columns for bootstrapping        
             data_vars = [f"weight_bootstrap_{bootstrap_index}" if "weight_bootstrap" in item else item for item in data_vars]
             data_vars.remove("weight")
-            print("data_vars", data_vars)
 
         # Add variables to the workspace
         var_names = add_vars_to_workspace(ws, data_vars)
