@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/2025_01_20_intermediateNTuples_2023/PTH/'
+outputFolder: '/work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/2025_01_20_intermediateNTuples_2023/PTH_bootstrap'
 
 inputFiles:
   # Trees2WS
   Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/variables/PTH/merge_root/data/root/Data/allData.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/variables/PTH/merge_root/signal/root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/variables/PTH/merge_root/signal/root/'
 
 backgroundScriptCfg:
   # Setup
@@ -13,7 +13,7 @@ backgroundScriptCfg:
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
   ext: 'earlyAnalysis_PTH' # extension to add to output directory
   # year: '2023' # Use combined when merging all years in category (for plots)
-  execution: 'local'
+  execution: 'slurm'
 
 trees2wsCfg:
   inputTreeDir: 'DiphotonTree' # Name of RooDirectory storing input tree
@@ -39,7 +39,8 @@ trees2wsCfg:
   dataVars:
     - "CMS_hgg_mass"
     - "weight" # Vars to be added for data
-  
+    - "weight_bootstrap"
+    
   stxsVar: ''
   diffVar: 'diffVariable_GenPTH'
   notagVars: [] # Vars to add to NOTAG RooDataset
@@ -53,7 +54,6 @@ trees2wsCfg:
   theoryWeightContainers:
     weight_LHEPdf: 101
     weight_LHEScale: 9
-
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
@@ -76,15 +76,14 @@ signalScriptCfg_2023_preBPix:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'earlyAnalysis_PTH_2023preBPix' # output directory extension
   analysis: 'earlyAnalysisDiffPt23' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
-  replacementThreshold: '50'
   year: '2023preBPix' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
   # scalesCorr: 'FNUF,Material' # correlated across years
-  scalesCorr: ''
   # scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scalesCorr: ''
   scalesGlobal: ''
   smears: 'Smearing' # separate nuisance per year
 
@@ -103,15 +102,14 @@ signalScriptCfg_2023_postBPix:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'earlyAnalysis_PTH_2023postBPix' # output directory extension
   analysis: 'earlyAnalysisDiffPt23' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
-  replacementThreshold: '50'
   year: '2023postBPix' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
   # scalesCorr: 'FNUF,Material' # correlated across years
-  scalesCorr: ''
   # scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scalesCorr: ''
   scalesGlobal: ''
   smears: 'Smearing' # separate nuisance per year
 
@@ -128,7 +126,6 @@ packaged_2023:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
-  execution: 'local'
 
 datacard_yields:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
