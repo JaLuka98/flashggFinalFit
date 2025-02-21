@@ -15,11 +15,15 @@ def get_options():
   parser.add_option('--queue', dest='queue', default='workday', help="Condor queue")
   parser.add_option('--ncpus', dest='ncpus', default=4, type='int', help="Number of cpus")
   parser.add_option('--dryRun', dest='dryRun', action="store_true", default=False, help="Only create submission files")
+  parser.add_option('--bootstrapping', dest='bootstrapping', action="store_true", default=False, help="Activating bootstrapping x law mode")
   return parser.parse_args()
 (opt,args) = get_options()
 
 if opt.outputDir != '.':
-  outputDir = opt.outputDir + "/Combine"
+  if opt.bootstrapping:
+    outputDir = opt.outputDir
+  else:
+    outputDir = opt.outputDir + "/Combine"
 else:
   outputDir = opt.outputDir
 
@@ -48,17 +52,29 @@ else:
   else:
     print(" --> Input: %s.txt --> Output: %s.root"%(opt.outputName,opt.outputName))
 
-if not os.path.isdir(f"{outputDir}/t2w_jobs"): os.system(f"mkdir {outputDir}/t2w_jobs")
-
-if opt.ext != "":
-  t2w_file_path = "%s/t2w_jobs/t2w_%s"%(outputDir,opt.ext)
+if opt.bootstrapping:
+  if not os.path.isdir(f"{outputDir}/../t2w_jobs"): os.system(f"mkdir {outputDir}/../t2w_jobs")
 else:
-  t2w_file_path = "%s/t2w_jobs/t2w_%s"%(outputDir,opt.mode)
-  
+  if not os.path.isdir(f"{outputDir}/t2w_jobs"): os.system(f"mkdir {outputDir}/t2w_jobs")
+
+if opt.bootstrapping:
+  if opt.ext != "":
+    t2w_file_path = "%s/../t2w_jobs/t2w_%s"%(outputDir,opt.ext)
+  else:
+    t2w_file_path = "%s/../t2w_jobs/t2w_%s"%(outputDir,opt.mode)
+else:
+    if opt.ext != "":
+      t2w_file_path = "%s/t2w_jobs/t2w_%s"%(outputDir,opt.ext)
+    else:
+      t2w_file_path = "%s/t2w_jobs/t2w_%s"%(outputDir,opt.mode)
+
 # Open submission file to write to
 fsub = open(t2w_file_path+".sh","w")
 fsub.write("#!/bin/bash\n\n")
-fsub.write("cd %s\n\n"%os.environ['PWD'])
+if opt.bootstrapping:
+  fsub.write("cd %s\n\n"%outputDir)
+else:  
+  fsub.write("cd %s\n\n"%os.environ['PWD'])
 fsub.write("eval `scramv1 runtime -sh`\n\n")
 if opt.ext != "":
   if opt.outputName == "Datacard":

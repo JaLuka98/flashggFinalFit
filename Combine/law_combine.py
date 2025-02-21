@@ -118,8 +118,15 @@ class PrepareTheDirectory(Task, law.LocalWorkflow):#(law.Task): #(Task, HTCondor
             
             output_data.append(os.path.join(output_dir, 'Combine', background_model_folder_name))
             output_data.append(os.path.join(output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix))
+            
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            output_data.append(os.path.join(output_dir, 'Combine', f'Datacards'))
+            if self.variable == '':
+                output_data.append(os.path.join(output_dir, 'Combine', 'Datacards', f'Datacard_{self.year}_{bootstrap_index}.txt'))
+            else:
+                output_data.append(os.path.join(output_dir, 'Combine', 'Datacards', f'Datacard_{self.variable}_{self.year}_{bootstrap_index}.txt'))
         
-        if convert_boolean_string(self.bootstrap_flag) == False:
+        else:
             # Define the file paths
             if self.variable == '':
                 output_data.append(os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.txt'))
@@ -205,8 +212,19 @@ class PrepareTheDirectory(Task, law.LocalWorkflow):#(law.Task): #(Task, HTCondor
                 
                 print(f"Renamed {file_path} to {new_name}")
 
-        if convert_boolean_string(self.bootstrap_flag) == False:
-
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            # Define the file paths
+            safe_mkdir(os.path.join(output_dir, 'Combine', 'Datacards'))
+            if self.variable == '':
+                datacard_file_cleaned = os.path.join(output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.year}_cleaned.txt')
+                datacard_file = os.path.join(output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.year}.txt')
+                destination_file = os.path.join(output_dir, 'Combine', 'Datacards', f'Datacard_{self.year}_{bootstrap_index}.txt')
+            else:
+                datacard_file_cleaned = os.path.join(output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.variable}_{self.year}_cleaned.txt')
+                datacard_file = os.path.join(output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.variable}_{self.year}.txt')
+                destination_file = os.path.join(output_dir, 'Combine', 'Datacards', f'Datacard_{self.variable}_{self.year}_{bootstrap_index}.txt')
+        
+        else:
             # Define the file paths
             if self.variable == '':
                 datacard_file_cleaned = os.path.join(output_dir, 'Datacards', f'Datacard_{self.year}_cleaned.txt')
@@ -217,21 +235,23 @@ class PrepareTheDirectory(Task, law.LocalWorkflow):#(law.Task): #(Task, HTCondor
                 datacard_file = os.path.join(output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}.txt')
                 destination_file = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt')
 
-            # Check if the cleaned file exists
-            if os.path.exists(datacard_file_cleaned):
-                # Copy the cleaned file if it exists
-                shutil.copy2(datacard_file_cleaned, destination_file)
-            else:
-                # Otherwise, copy the uncleaned file
-                shutil.copy2(datacard_file, destination_file)
+        # Check if the cleaned file exists
+        if os.path.exists(datacard_file_cleaned):
+            # Copy the cleaned file if it exists
+            shutil.copy2(datacard_file_cleaned, destination_file)
+        else:
+            # Otherwise, copy the uncleaned file
+            shutil.copy2(datacard_file, destination_file)
             
         print("Combine directory sucessfully prepared.")
         
         
-class RunText2Workspace(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class RunText2Workspace(Task, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
+    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
+    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
     
     # htcondor_job_kwargs_submit = {"spool": True}
     
@@ -251,19 +271,26 @@ class RunText2Workspace(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Lo
         else:
             output_dir = self.output_dir
             
-        tasks = [PrepareTheDirectory(output_dir=output_dir, variable=self.variable, year=self.year)]
+        tasks = [PrepareTheDirectory(output_dir=output_dir, variable=self.variable, year=self.year, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, version="v1")]
         
         return tasks
     
     def create_branch_map(self):
         # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")        
-        branch_list = [0]
-        
-        branch_map = {i: branch for i, branch in enumerate(branch_list)}
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            branch_map = {
+                i: bootstrap_index
+                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+            }
+        else:
+            branch_map = {i: i for i in range(1)}
         return branch_map
 
     def output(self):
-        
+
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            bootstrap_index = self.branch_data
+
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
         else:
@@ -277,19 +304,28 @@ class RunText2Workspace(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Lo
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-
-        # output = [os.path.join(output_dir, 'Combine', f'')]
+            
+        if convert_boolean_string(self.bootstrap_flag) == True:
         
-        # Define the file paths
-        if self.variable == '':
-            output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')]
-            output += [os.path.join(output_dir, 'Combine', f't2w_jobs', 't2w_mu_fiducial.sh')]
+            # Define the file paths
+            if self.variable == '':
+                output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'Datacard_{self.year}_{bootstrap_index}.root')]
+                output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_mu_fiducial_{bootstrap_index}.sh')]
+            else:
+                output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.year}_{bootstrap_index}.root')]
+                output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}_{bootstrap_index}.sh')]
+            output += [os.path.join(output_dir, 'Combine', f'Workspaces')]
         else:
-            output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
-            output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}.sh')]
+            # Define the file paths
+            if self.variable == '':
+                output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')]
+                output += [os.path.join(output_dir, 'Combine', f't2w_jobs', 't2w_mu_fiducial.sh')]
+            else:
+                output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
+                output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}.sh')]
             
         output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
-                
+        
         outputFileTargets = []
                 
         for _, current_output_path in enumerate(output):
@@ -300,15 +336,21 @@ class RunText2Workspace(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Lo
         return outputFileTargets
 
     def run(self):      
-        
+
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            bootstrap_index = self.branch_data
+            bootstrap_suffix = f"_{bootstrap_index}"
+        else:
+            bootstrap_suffix = ""
+
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
             mode = "mu_fiducial"
-            datacard_name = f"Datacard_{self.year}"
+            datacard_name = f"Datacard_{self.year}"+bootstrap_suffix
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
             mode = self.variable
-            datacard_name = f"Datacard_{self.variable}_{self.year}"
+            datacard_name = f"Datacard_{self.variable}_{self.year}"+bootstrap_suffix
         
         #Load central config file
         with open(configYamlPath, 'r') as file:
@@ -317,30 +359,65 @@ class RunText2Workspace(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Lo
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
-            output_dir = self.output_dir  
+            output_dir = self.output_dir
             
         script_path = os.path.join(os.environ["ANALYSIS_PATH"],"Combine/RunText2Workspace.py")
-        # script_path = "RunText2Workspace.py"
-        arguments = [
-            "python3",
-            script_path,
-            "--outputDir", output_dir,
-            "--outputName", datacard_name,
-            "--mode", mode,
-            "--common_opts", "-m 125.38 higgsMassRange=122,128",
-            "--batch", "local"
-        ]
-        if self.variable != '':
-            arguments.append("--ext")
-            arguments.append(f"{self.variable}")
-        command = arguments
-        # print(command)
-        try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
-            print("Script output:", result.stdout)
-            print("Script executed successfully.")
-        except subprocess.CalledProcessError as e:
-            print("Error executing script:", e.stderr)
+            
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            current_dir = os.getcwd()
+            os.chdir(output_dir)
+            safe_mkdir(os.path.join(output_dir, 'Combine', 'Workspaces'))
+            safe_mkdir(os.path.join(output_dir, 'Combine', 't2w_jobs'))
+            # Create Workspaces in Datacard folder
+            datacards_dir = os.path.join(output_dir, 'Combine', 'Datacards')
+            arguments = [
+                "python3",
+                script_path,
+                "--outputDir", datacards_dir,
+                "--outputName", datacard_name,
+                "--mode", mode,
+                "--common_opts", "-m 125.38 higgsMassRange=122,128",
+                "--batch", "local",
+                "--bootstrapping"
+            ]
+            if self.variable != '':
+                arguments.append("--ext")
+                arguments.append(f"{self.variable}"+bootstrap_suffix)
+            command = arguments
+            print(command)
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print("Error executing script:", e.stderr)
+                
+            # Copy workspaces to workspaces folder
+            shutil.move(os.path.join(datacards_dir, f"{datacard_name}.root"), os.path.join(output_dir, 'Combine', 'Workspaces', f"{datacard_name}.root"))
+
+            os.chdir(current_dir)
+        
+        else:
+            arguments = [
+                "python3",
+                script_path,
+                "--outputDir", output_dir,
+                "--outputName", datacard_name,
+                "--mode", mode,
+                "--common_opts", "-m 125.38 higgsMassRange=122,128",
+                "--batch", "local"
+            ]
+            if self.variable != '':
+                arguments.append("--ext")
+                arguments.append(f"{self.variable}")
+            command = arguments
+            # print(command)
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print("Error executing script:", e.stderr)
         
 class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")

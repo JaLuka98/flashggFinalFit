@@ -133,8 +133,8 @@ datacard_yields:
   procs: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'earlyAnalysis' # Extension for saving
   # inputWSDirMap: '2023preBPix,2023postBPix'
-  sigModelWSDir: './Models_PTH/signal' # Input signal model WS directory
-  bkgModelWSDir: './Models_PTH/background' # Input background model WS directory
+  sigModelWSDir: '../Models_PTH/signal' # Input signal model WS directory
+  bkgModelWSDir: '../Models_PTH/background' # Input background model WS directory
   bkgModelExt: 'multipdf' # Extension used when saving background model
   doSystematics: True # Include systematics calculations and add to datacard
   mergeYears: True # Merge category across years
