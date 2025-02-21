@@ -104,7 +104,6 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     def run(self):
         if convert_boolean_string(self.bootstrap_flag) == True:
             cat_cat_offset, bootstrap_index = self.branch_data
-            print("cat_cat_offset", cat_cat_offset)
             cat, cat_offset = cat_cat_offset
             # In this case self.input_path is self.output_path/input_output_data_{self.year}
             # Have to add the _{bootstrap_index}/ws/allData.root to the path manually, since we need the bootstrap index
