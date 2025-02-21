@@ -48,6 +48,8 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     # For systematics:
     doSystematics = law.Parameter(default=False, description="Include systematics calculations and add to datacard")
     ignore_warnings = law.Parameter(default=False, description="Skip errors for missing systematics. Instead output warning message")
+    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
+    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
     
     mass = law.Parameter(default='125', description="Input workspace mass")
     nCats = law.Parameter(description="Number of Categories")
@@ -85,21 +87,41 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             for categoryIndex in range(nCats)
         ]
         
-        branch_map = {i: cat for i, cat in enumerate(cat_list)}
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            branch_map = {
+                i * int(self.number_of_bootstraps) + j: (cat, bootstrap_index)
+                for i, cat in enumerate(cat_list)
+                for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+            }
+        else:
+            branch_map = {i: cat for i, cat in enumerate(cat_list)}
         return branch_map
 
     def output(self):
         
-        cat = self.branch_data
-
-        return [law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}/{cat}.pkl'))]
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            cat, bootstrap_index = self.branch_data
+            output = [law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}_{bootstrap_index}/{cat}.pkl'))]
+        else:
+            cat = self.branch_data
+            output = [law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}/{cat}.pkl'))]
+        return output
 
     def run(self):
-        cat = self.branch_data
-        
-        safe_mkdir(self.output_dir)
-        safe_mkdir(os.path.join(self.output_dir, "Datacards"))
-        safe_mkdir(os.path.join(self.output_dir, f"Datacards/yields_{self.ext}"))
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            cat, bootstrap_index = self.branch_data
+            safe_mkdir(self.output_dir)
+            safe_mkdir(os.path.join(self.output_dir, "Datacards"))
+            safe_mkdir(os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}"))
+            ext = self.ext + f"_{bootstrap_index}"
+            bkgModelWSDir = self.bkgModelWSDir + f"_{bootstrap_index}"
+        else:
+            cat = self.branch_data
+            safe_mkdir(self.output_dir)
+            safe_mkdir(os.path.join(self.output_dir, "Datacards"))
+            safe_mkdir(os.path.join(self.output_dir, f"Datacards/yields_{self.ext}"))
+            ext = self.ext
+            bkgModelWSDir = self.bkgModelWSDir
         
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Datacard/makeYields.py")
         arguments = [
@@ -108,13 +130,13 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             "--inputWSDirMap", f"{self.inputWSDirMap}",
             "--cat", cat,
             "--outputDir", f"{self.output_dir}",
-            "--ext", self.ext,
+            "--ext", ext,
             "--procs", f"{self.procs}",
             "--mass", f"{self.mass}",
             "--bkgScaler", f"{self.bkgScaler}",
             "--sigModelWSDir", f"{self.sigModelWSDir}",
             "--sigModelExt", f"{self.sigModelExt}",
-            "--bkgModelWSDir", f"{self.bkgModelWSDir}",
+            "--bkgModelWSDir", f"{bkgModelWSDir}",
             "--bkgModelExt", f"{self.bkgModelExt}"
             ]
         if self.variable != '':
@@ -128,7 +150,6 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         if convert_boolean_string(self.skipBkg): arguments.append("--skipBkg")
         if convert_boolean_string(self.skipCOWCorr): arguments.append("--skipCOWCorr")
 
-    
         command = arguments
         # print("Output:", command)
         try:
@@ -142,6 +163,8 @@ class MakeYields(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
+    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
@@ -201,7 +224,7 @@ class MakeYields(law.Task):
                 else:
                     inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
         
-        tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version='v1', workflow=datacard_config['execution'])]
+        tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version='v1', workflow=datacard_config['execution'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)]
         
         return tasks
         
@@ -228,14 +251,23 @@ class MakeYields(law.Task):
         
         output_paths = []
         
-        output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}")))
+        if (convert_boolean_string(self.bootstrap_flag) == True): # iterating over bootstraps
+            for i in range(int(self.number_of_bootstraps)):
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}_{i}")))
+        else:
+            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}")))
         
         if datacard_config['cats'] == 'auto':
             datacard_config['cats'] = (extractListOfCatsFromHiggsDNAAllData(input_path))
         datacard_config['nCats'] = len(datacard_config['cats'].split(","))
         
-        for cat in datacard_config['cats'].split(","):
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}/{cat}.pkl")))
+        if (convert_boolean_string(self.bootstrap_flag) == True): # iterating over bootstraps
+            for i in range(int(self.number_of_bootstraps)):
+                for cat in datacard_config['cats'].split(","):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}_{i}/{cat}.pkl")))
+        else:
+            for cat in datacard_config['cats'].split(","):
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}/{cat}.pkl")))
                                   
         return output_paths
                 
