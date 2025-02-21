@@ -159,7 +159,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
 
-class MakeYields(law.Task):
+class MakeYields(law.Task): #law.Task
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
@@ -276,10 +276,25 @@ class MakeYields(law.Task):
         
         return True
     
-class MakeDatacard(law.Task):
+class MakeDatacard(Task, law.LocalWorkflow): #law.Task
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
+    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    
+    
+    def create_branch_map(self):
+        # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
+                    
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            branch_map = {
+                i: bootstrap_index
+                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+            }
+        else:
+            branch_map = {i: i for i in range(1)}
+        return branch_map
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
@@ -299,12 +314,16 @@ class MakeDatacard(law.Task):
         else:
             output_dir = self.output_dir
         
-        tasks = [MakeYields(variable=self.variable, output_dir=output_dir, year=self.year)]
+        tasks = [MakeYields(variable=self.variable, output_dir=output_dir, year=self.year, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)]
         
         return tasks    
 
     def output(self):
         # returns output folder
+
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            bootstrap_index = self.branch_data
+        
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -325,21 +344,36 @@ class MakeDatacard(law.Task):
         output_paths = []
         
         if self.variable == '': 
-            if datacard_config['saveDataFrame']:
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}.pkl")))
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}_unsymmetrized.pkl")))
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.year}.txt")))
+            if convert_boolean_string(self.bootstrap_flag) == True:
+                if datacard_config['saveDataFrame']:
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Dataframe/Datacard_{self.year}.pkl")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Dataframe/Datacard_{self.year}_unsymmetrized.pkl")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Datacard_{self.year}.txt")))
+            else:
+                if datacard_config['saveDataFrame']:
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}.pkl")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}_unsymmetrized.pkl")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.year}.txt")))
         else:
-            if datacard_config['saveDataFrame']:
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl")))
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl")))
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}.txt")))
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
+            if convert_boolean_string(self.bootstrap_flag) == True:
+                if datacard_config['saveDataFrame']:
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Dataframe/Datacard_{self.variable}_{self.year}.pkl")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Datacard_{self.variable}_{self.year}.txt")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
+            else:
+                if datacard_config['saveDataFrame']:
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}.txt")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
         return output_paths
                 
     
     def run(self):
-        
+
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            bootstrap_index = self.branch_data
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -349,19 +383,30 @@ class MakeDatacard(law.Task):
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
+            
+        datacard_config = config["datacard"]
+        yields_config = config["datacard_yields"]
         
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-            
-        safe_mkdir(output_dir)
-        output_dir = os.path.join(output_dir,"Datacards/")
-        safe_mkdir(output_dir)
+
+        if convert_boolean_string(self.bootstrap_flag) == True: # Account for bootstrapping index
+            safe_mkdir(output_dir)
+            pklInputFiles = os.path.join(output_dir,f"Datacards")
+            ext = yields_config["ext"] + f"_{bootstrap_index}"
+            output_dir = os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}")
+            safe_mkdir(output_dir)
+        else:
+            safe_mkdir(output_dir)
+            output_dir = os.path.join(output_dir,"Datacards/")
+            safe_mkdir(output_dir)
+            pklInputFiles = output_dir
+            ext = yields_config["ext"]
         
-        datacard_config = config["datacard"]
-        yields_config = config["datacard_yields"]
-        pklInputFiles = output_dir
+
+        
         
         # if self.variable != '':
         #     yields_config["ext"] = yields_config["ext"]+'_'+self.variable
@@ -372,7 +417,6 @@ class MakeDatacard(law.Task):
         else: datacard_config['year'] = self.year   
         
         if datacard_config['year'] == 'all':
-            allYears = list(allErasMap.keys())
             for i, currentYear in enumerate(allErasMap.keys()):
                 for j, currentEra in enumerate(allErasMap[currentYear]):
                     currentYearEra = currentYear + currentEra
@@ -394,7 +438,7 @@ class MakeDatacard(law.Task):
             script_path,
             "--inputFiles", f"{pklInputFiles}",
             "--outputDir", f"{output_dir}",
-            "--ext", yields_config["ext"],
+            "--ext", ext,
             "--years", f"{years}",
             "--mass", f"{yields_config['mass']}",
             "--pruneThreshold", f"{datacard_config['pruneThreshold']}",
