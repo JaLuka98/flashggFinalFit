@@ -34,10 +34,12 @@ def convert_boolean_string(string):
     else:
         return False
     
-class PrepareTheDirectory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class PrepareTheDirectory(Task, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
+    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
+    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
     
     # htcondor_job_kwargs_submit = {"spool": True}
     
@@ -57,19 +59,28 @@ class PrepareTheDirectory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.L
         else:
             output_dir = self.output_dir
             
-        tasks = [MakeDatacard(output_dir=output_dir, variable=self.variable, year=self.year)]
+        tasks = [MakeDatacard(output_dir=output_dir, variable=self.variable, year=self.year, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, version="v1")]
         
         return tasks
     
-    
     def create_branch_map(self):
-        # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")        
-        branch_list = [0]
-        
-        branch_map = {i: branch for i, branch in enumerate(branch_list)}
+        # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")    
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            branch_map = {
+                i: bootstrap_index
+                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+            }
+        else:
+            branch_map = {i: i for i in range(1)}
         return branch_map
 
     def output(self):
+        
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            bootstrap_index = self.branch_data
+            background_suffix = f"_{bootstrap_index}"
+        else:
+            background_suffix = ""
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -99,20 +110,21 @@ class PrepareTheDirectory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.L
         if signal_model_folder_name == background_model_folder_name:
             model_folder_name = signal_model_folder_name
             output_data.append(os.path.join(output_dir, 'Combine', model_folder_name))
-            output_data.append(os.path.join(output_dir, 'Combine', model_folder_name, 'background'))
+            output_data.append(os.path.join(output_dir, 'Combine', model_folder_name, 'background'+background_suffix))
             output_data.append(os.path.join(output_dir, 'Combine', model_folder_name, 'signal'))
         else:
             output_data.append(os.path.join(output_dir, 'Combine', signal_model_folder_name))
             output_data.append(os.path.join(output_dir, 'Combine', signal_model_folder_name, 'signal'))
             
             output_data.append(os.path.join(output_dir, 'Combine', background_model_folder_name))
-            output_data.append(os.path.join(output_dir, 'Combine', background_model_folder_name, 'background'))
-            
-        # Define the file paths
-        if self.variable == '':
-            output_data.append(os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.txt'))
-        else:
-            output_data.append(os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt'))
+            output_data.append(os.path.join(output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix))
+        
+        if convert_boolean_string(self.bootstrap_flag) == False:
+            # Define the file paths
+            if self.variable == '':
+                output_data.append(os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.txt'))
+            else:
+                output_data.append(os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt'))
             
         for i, output in enumerate(output_data):
             output_data[i] = law.LocalFileTarget(output)
@@ -120,6 +132,11 @@ class PrepareTheDirectory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.L
         return output_data
 
     def run(self):
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            bootstrap_index = self.branch_data
+            background_suffix = f"_{bootstrap_index}"
+        else:
+            background_suffix = f""
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -147,7 +164,7 @@ class PrepareTheDirectory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.L
         if signal_model_folder_name == background_model_folder_name:
             model_folder_name = signal_model_folder_name
             Model_dst_path = os.path.join(output_dir, 'Combine', model_folder_name)
-            background_dst_path = os.path.join(output_dir, 'Combine', model_folder_name, 'background')
+            background_dst_path = os.path.join(output_dir, 'Combine', model_folder_name, 'background'+background_suffix)
             signal_dst_path = os.path.join(output_dir, 'Combine', model_folder_name, 'signal')
             safe_mkdir(Model_dst_path)
         else:
@@ -156,18 +173,23 @@ class PrepareTheDirectory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.L
             safe_mkdir(signalModel_dst_path)
             
             backgroundModel_dst_path = os.path.join(output_dir, 'Combine', background_model_folder_name)
-            background_dst_path = os.path.join(output_dir, 'Combine', background_model_folder_name, 'background')
+            background_dst_path = os.path.join(output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix)
             safe_mkdir(backgroundModel_dst_path)
                 
         safe_mkdir(signal_dst_path)
         safe_mkdir(background_dst_path)
             
         # Copying relevant files in Models directory
-        background_src_path = os.path.join(output_dir, f"outdir_{config['backgroundScriptCfg']['ext']}/")
+        background_src_path = os.path.join(output_dir, f"outdir_{config['backgroundScriptCfg']['ext']}"+background_suffix)
         signal_src_path = os.path.join(output_dir, f"outdir_packaged{config[f'packaged_{self.year}']['ext']}/")
                 
         shutil.copytree(background_src_path, background_dst_path, dirs_exist_ok=True)
-        shutil.copytree(signal_src_path, signal_dst_path, dirs_exist_ok=True)
+        
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            if bootstrap_index == 0: # Copy the signal model only once (it is always the same)
+                shutil.copytree(signal_src_path, signal_dst_path, dirs_exist_ok=True)
+        else:
+            shutil.copytree(signal_src_path, signal_dst_path, dirs_exist_ok=True)
         
         # IDK for what that is useful
         path_pattern = f"{signal_model_folder_name}/signal/*_{self.year}.root"
@@ -183,23 +205,25 @@ class PrepareTheDirectory(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.L
                 
                 print(f"Renamed {file_path} to {new_name}")
 
-        # Define the file paths
-        if self.variable == '':
-            datacard_file_cleaned = os.path.join(output_dir, 'Datacards', f'Datacard_{self.year}_cleaned.txt')
-            datacard_file = os.path.join(output_dir, 'Datacards', f'Datacard_{self.year}.txt')
-            destination_file = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.txt')
-        else:
-            datacard_file_cleaned = os.path.join(output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}_cleaned.txt')
-            datacard_file = os.path.join(output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}.txt')
-            destination_file = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt')
+        if convert_boolean_string(self.bootstrap_flag) == False:
 
-        # Check if the cleaned file exists
-        if os.path.exists(datacard_file_cleaned):
-            # Copy the cleaned file if it exists
-            shutil.copy2(datacard_file_cleaned, destination_file)
-        else:
-            # Otherwise, copy the uncleaned file
-            shutil.copy2(datacard_file, destination_file)
+            # Define the file paths
+            if self.variable == '':
+                datacard_file_cleaned = os.path.join(output_dir, 'Datacards', f'Datacard_{self.year}_cleaned.txt')
+                datacard_file = os.path.join(output_dir, 'Datacards', f'Datacard_{self.year}.txt')
+                destination_file = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.txt')
+            else:
+                datacard_file_cleaned = os.path.join(output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}_cleaned.txt')
+                datacard_file = os.path.join(output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}.txt')
+                destination_file = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt')
+
+            # Check if the cleaned file exists
+            if os.path.exists(datacard_file_cleaned):
+                # Copy the cleaned file if it exists
+                shutil.copy2(datacard_file_cleaned, destination_file)
+            else:
+                # Otherwise, copy the uncleaned file
+                shutil.copy2(datacard_file, destination_file)
             
         print("Combine directory sucessfully prepared.")
         
