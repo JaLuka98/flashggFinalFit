@@ -126,6 +126,7 @@ packaged_2023:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
+  execution: 'slurm'
 
 datacard_yields:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
