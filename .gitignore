@@ -71,7 +71,7 @@ jobs*
 
 install_dir
 .law
-law/output
+law/remote
 
 htcondor
 
