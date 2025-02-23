@@ -21,6 +21,16 @@ def safe_mkdir(path):
         if exception.errno != errno.EEXIST:
             raise
         
+def execute_command(command, return_output=False, shell=False):
+    try:
+        result = subprocess.run(command, check=True, text=True, capture_output=True, shell=shell, env=os.environ)
+        print("Script output:", result.stdout)
+        print("Script executed successfully.")
+        if return_output:
+            return (result.stdout).split("\n")[0]
+    except subprocess.CalledProcessError as e:
+        print("Error executing script:", e.stderr)
+        
 def convert_boolean_string(string):
     if (string == "True") or (string == "true") or (string == True):
         return True
@@ -50,6 +60,8 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     ignore_warnings = law.Parameter(default=False, description="Skip errors for missing systematics. Instead output warning message")
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    # batch_username = law.Parameter(default="niharrin", description="Username for batch system. Currently only used when batch_flavor is slurm/psi.")
     
     mass = law.Parameter(default='125', description="Input workspace mass")
     nCats = law.Parameter(description="Number of Categories")
@@ -113,6 +125,20 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             safe_mkdir(self.output_dir)
             safe_mkdir(os.path.join(self.output_dir, "Datacards"))
             safe_mkdir(os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}"))
+
+            if self.batch_flavor == "slurm/psi":
+                # Have to use /scratch/batch_username/ for slurm/psi
+                os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+                mkdir_command = [
+                    'mkdir', '-p', "$TARGET_PATH"
+                ]
+                execute_command(mkdir_command)
+                temp_output_dir = os.environ["TARGET_PATH"]
+                safe_mkdir(temp_output_dir)
+                safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
+                safe_mkdir(os.path.join(temp_output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}"))
+            else:
+                temp_output_dir = self.output_dir
             ext = self.ext + f"_{bootstrap_index}"
             bkgModelWSDir = self.bkgModelWSDir + f"_{bootstrap_index}"
         else:
@@ -120,16 +146,29 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             safe_mkdir(self.output_dir)
             safe_mkdir(os.path.join(self.output_dir, "Datacards"))
             safe_mkdir(os.path.join(self.output_dir, f"Datacards/yields_{self.ext}"))
+            if self.batch_flavor == "slurm/psi":
+                # Have to use /scratch/batch_username/ for slurm/psi
+                os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+                mkdir_command = [
+                    'mkdir', '-p', "$TARGET_PATH"
+                ]
+                execute_command(mkdir_command)
+                temp_output_dir = os.environ["TARGET_PATH"]
+                safe_mkdir(temp_output_dir)
+                safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
+                safe_mkdir(os.path.join(temp_output_dir, f"Datacards/yields_{self.ext}"))
+            else:
+                temp_output_dir = self.output_dir
             ext = self.ext
             bkgModelWSDir = self.bkgModelWSDir
-        
+                
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Datacard/makeYields.py")
         arguments = [
             "python3",
             script_path,
             "--inputWSDirMap", f"{self.inputWSDirMap}",
             "--cat", cat,
-            "--outputDir", f"{self.output_dir}",
+            "--outputDir", f"{temp_output_dir}",
             "--ext", ext,
             "--procs", f"{self.procs}",
             "--mass", f"{self.mass}",
@@ -152,19 +191,31 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
 
         command = arguments
         # print("Output:", command)
-        try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
-            print("Script output:", result.stdout)
-            print("Script executed successfully.")
-        except subprocess.CalledProcessError as e:
-            print("Error executing script:", e.stderr)
+        execute_command(command)
+        
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            slurm_copy_command = [
+                'xrdcp', '-r',
+                f"{temp_output_dir+'/Datacards'}",
+                'root://t3dcachedb.psi.ch:1094//'+self.output_dir
+            ]
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(temp_output_dir)
+            
 
 class MakeYields(law.Task): #law.Task
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    # batch_username = law.Parameter(default="niharrin", description="Username for batch system. Currently only used when batch_flavor is slurm/psi.")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
@@ -224,7 +275,7 @@ class MakeYields(law.Task): #law.Task
                 else:
                     inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
         
-        tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version='v1', workflow=datacard_config['execution'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)]
+        tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version='v1', workflow=datacard_config['execution'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, batch_flavor=self.batch_flavor)]
         
         return tasks
         
