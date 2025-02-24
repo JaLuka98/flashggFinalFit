@@ -60,6 +60,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     ignore_warnings = law.Parameter(default=False, description="Skip errors for missing systematics. Instead output warning message")
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     # batch_username = law.Parameter(default="niharrin", description="Username for batch system. Currently only used when batch_flavor is slurm/psi.")
     
@@ -122,41 +123,28 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     def run(self):
         if convert_boolean_string(self.bootstrap_flag) == True:
             cat, bootstrap_index = self.branch_data
-            safe_mkdir(self.output_dir)
-            safe_mkdir(os.path.join(self.output_dir, "Datacards"))
-            safe_mkdir(os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}"))
+            execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}")}'], shell=True)
 
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-                mkdir_command = [
-                    'mkdir', '-p', "$TARGET_PATH"
-                ]
-                execute_command(mkdir_command)
+                execute_command([f'mkdir -p $TARGET_PATH/Datacards/yields_{self.ext}_{bootstrap_index}'], shell=True)
                 temp_output_dir = os.environ["TARGET_PATH"]
-                safe_mkdir(temp_output_dir)
-                safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
-                safe_mkdir(os.path.join(temp_output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}"))
             else:
                 temp_output_dir = self.output_dir
             ext = self.ext + f"_{bootstrap_index}"
             bkgModelWSDir = self.bkgModelWSDir + f"_{bootstrap_index}"
         else:
             cat = self.branch_data
-            safe_mkdir(self.output_dir)
-            safe_mkdir(os.path.join(self.output_dir, "Datacards"))
-            safe_mkdir(os.path.join(self.output_dir, f"Datacards/yields_{self.ext}"))
+            execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-                mkdir_command = [
-                    'mkdir', '-p', "$TARGET_PATH"
-                ]
-                execute_command(mkdir_command)
+                execute_command([f'mkdir -p $TARGET_PATH/Datacards/yields_{self.ext}'], shell=True)
                 temp_output_dir = os.environ["TARGET_PATH"]
-                safe_mkdir(temp_output_dir)
-                safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
-                safe_mkdir(os.path.join(temp_output_dir, f"Datacards/yields_{self.ext}"))
+                # safe_mkdir(temp_output_dir)
+                # safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
+                # safe_mkdir(os.path.join(temp_output_dir, f"Datacards/yields_{self.ext}"))
             else:
                 temp_output_dir = self.output_dir
             ext = self.ext
@@ -331,9 +319,12 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
     
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+
     
     def create_branch_map(self):
         # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
@@ -365,7 +356,7 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
         else:
             output_dir = self.output_dir
         
-        tasks = [MakeYields(variable=self.variable, output_dir=output_dir, year=self.year, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)]
+        tasks = [MakeYields(variable=self.variable, output_dir=output_dir, year=self.year, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, batch_flavor=self.batch_flavor)]
         
         return tasks    
 
@@ -449,18 +440,33 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
             ext = yields_config["ext"] + f"_{bootstrap_index}"
             output_dir = os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}")
             safe_mkdir(output_dir)
+            if self.batch_flavor == "slurm/psi":
+                # Have to use /scratch/batch_username/ for slurm/psi
+                # Since we run this script locally, we have to use the local scratch space. (SLURM_JOB_ID is not available)
+                os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/MakeDatacard_{bootstrap_index}"
+                execute_command(['mkdir -p $TARGET_PATH'], shell=True)
+                temp_output_dir = os.environ["TARGET_PATH"]
+                # safe_mkdir(temp_output_dir)
+                # safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
+                # safe_mkdir(os.path.join(temp_output_dir, f"Datacards/Datacard_{bootstrap_index}"))
+            else:
+                temp_output_dir = output_dir
         else:
             safe_mkdir(output_dir)
             output_dir = os.path.join(output_dir,"Datacards/")
             safe_mkdir(output_dir)
+            if self.batch_flavor == "slurm/psi":
+                # Have to use /scratch/batch_username/ for slurm/psi
+                os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/MakeDatacard"
+                execute_command(['mkdir -p $TARGET_PATH'], shell=True)
+                temp_output_dir = os.environ["TARGET_PATH"]
+                safe_mkdir(temp_output_dir)
+                # safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
+            else:
+                temp_output_dir = output_dir
+            # In this case, the Pickle input files are already in the final output directory
             pklInputFiles = output_dir
             ext = yields_config["ext"]
-        
-
-        
-        
-        # if self.variable != '':
-        #     yields_config["ext"] = yields_config["ext"]+'_'+self.variable
                     
         # Create years string
         years = ''
@@ -488,7 +494,7 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
             "python3",
             script_path,
             "--inputFiles", f"{pklInputFiles}",
-            "--outputDir", f"{output_dir}",
+            "--outputDir", f"{temp_output_dir}",
             "--ext", ext,
             "--years", f"{years}",
             "--mass", f"{yields_config['mass']}",
@@ -510,7 +516,7 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
         if convert_boolean_string(datacard_config["saveDataFrame"]): arguments.append("--saveDataFrame")
     
         command = arguments
-        # print("Output:", command)
+        print("Output:", command)
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)
@@ -523,7 +529,7 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
             
             clean_config = config["datacard_clean"]
             
-            datacard_path = os.path.join(output_dir, datacard_config["output"] + ".txt")
+            datacard_path = os.path.join(temp_output_dir, datacard_config["output"] + ".txt")
             script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Datacard/cleanDatacard.py")
             arguments = [
                 "python3",
@@ -547,6 +553,22 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
                 print("Error executing script:", e.stderr)
                 
             
-            shutil.move(datacard_path, os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt"))
-            shutil.move(os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt"), os.path.join(output_dir, datacard_config["output"] + ".txt"))
+            # Move the datacard to the final directory
+            if self.batch_flavor == "slurm/psi":
+                # Have to copy over the output to the final directory
+                # Don't forget to VOMS!
+                execute_command([f'ls -al {temp_output_dir}'], shell=True)
+                slurm_copy_command = [
+                    f'xrdcp -r {temp_output_dir}/* root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+                print(slurm_copy_command)
+                execute_command(slurm_copy_command, shell=True)
+                # Clean up the temporary directory
+                shutil.rmtree(temp_output_dir)
+            
+                # After datacard has been moved to pnfs, the datacard_path has to be changed.
+                datacard_path = os.path.join(output_dir, datacard_config["output"] + ".txt")
+            
+            execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
+            execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
         
