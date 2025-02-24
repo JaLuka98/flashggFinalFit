@@ -4,6 +4,8 @@ import ROOT
 import uproot
 from collections import OrderedDict as od
 import yaml
+import subprocess
+import shutil
 
 from commonTools import *
 from commonObjects import *
@@ -17,6 +19,16 @@ def convert_boolean_string(string):
     else:
         return False
 
+def execute_command(command, return_output=False, shell=False):
+    try:
+        result = subprocess.run(command, check=True, text=True, capture_output=True, shell=shell, env=os.environ)
+        print("Script output:", result.stdout)
+        print("Script executed successfully.")
+        if return_output:
+            return (result.stdout).split("\n")[0]
+    except subprocess.CalledProcessError as e:
+        print("Error executing script:", e.stderr)
+
 class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
     # input_path = law.Parameter(description="Path to the data input ROOT file")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
@@ -24,8 +36,11 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
     year = law.Parameter(default='2022', description="Year")
     apply_mass_cut = law.Parameter(default=False, description="Apply mass cut")
     mass_cut_range = law.Parameter(default='100,180', description="Mass cut range")
+
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
 
     def create_branch_map(self):
         if convert_boolean_string(self.bootstrap_flag) == False:
@@ -38,7 +53,6 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             return branch_map
 
     def output(self):
-
         if convert_boolean_string(self.bootstrap_flag) == True:
             bootstrap_index = self.branch_data
 
@@ -62,14 +76,14 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
 
         if self.variable == '':
             if convert_boolean_string(self.bootstrap_flag) == False:
-                ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}/ws/")
+                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
             else:
-                ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
         else:
             if convert_boolean_string(self.bootstrap_flag) == False:
-                ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/")
+                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
             else:
-                ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
         return law.LocalFileTarget(os.path.join(ws_dir, "allData.root"))
 
     def run(self):
@@ -94,19 +108,40 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             output_dir = config["outputFolder"]
         else:
             output_dir = self.output_dir
+        
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            temp_output_dir = os.environ["TARGET_PATH"]
+        else:
+            temp_output_dir = output_dir
             
         # Step 1: Create the output directory if it doesn't exist
         if self.variable == '':
             if convert_boolean_string(self.bootstrap_flag) == False:
-                ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}/ws/")
+                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
             else:
-                ws_dir = os.path.join(output_dir, f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+                temp_ws_dir = os.path.join(temp_output_dir, f"input_output_data_{self.year}_{bootstrap_index}/ws/")
         else:
             if convert_boolean_string(self.bootstrap_flag) == False:
-                ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/")
+                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
             else:
-                ws_dir = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
-        os.makedirs(ws_dir, exist_ok=True)
+                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+        if self.batch_flavor == "slurm/psi":
+            if self.variable == '':
+                if convert_boolean_string(self.bootstrap_flag) == False:
+                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
+                else:
+                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+            else:
+                if convert_boolean_string(self.bootstrap_flag) == False:
+                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
+                else:
+                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+            # Have to use the xrdfs for the pnfs file system while on PSI Tier 3.
+            execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {final_ws_dir}'], shell=True)
+
+        os.makedirs(temp_ws_dir, exist_ok=True)
             
         input_path = config["inputFiles"]["Trees2WSData"]
         
@@ -133,7 +168,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         f = ROOT.TFile(input_path)
 
         # Create ROOT output workspace
-        output_ws_file = os.path.join(ws_dir, f"allData_{self.year}.root")
+        output_ws_file = os.path.join(temp_ws_dir, f"allData_{self.year}.root")
         fout = ROOT.TFile(output_ws_file, "RECREATE")
         foutdir = fout.mkdir(inputWSName__.split("/")[0])
         foutdir.cd()
@@ -218,6 +253,18 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         fout.Close()
 
         # Step 3: Rename the output file
-        all_data_file = os.path.join(ws_dir, "allData.root")
+        all_data_file = os.path.join(temp_ws_dir, "allData.root")
         os.rename(output_ws_file, all_data_file)
         print(f"Workspace written and renamed to {all_data_file}")
+        
+        if self.batch_flavor == "slurm/psi":
+            # Copying output files to final destination on the /pnfs.
+            slurm_copy_command = [
+                'xrdcp', '-rf',
+                f'{all_data_file}',
+                'root://t3dcachedb.psi.ch:1094//' + f'{final_ws_dir}' + 'allData.root'
+            ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Cleaning up scratch space.
+            shutil.rmtree(temp_output_dir)

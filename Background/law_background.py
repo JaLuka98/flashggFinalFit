@@ -4,6 +4,8 @@ import subprocess
 import glob
 import yaml
 import errno
+import subprocess
+import shutil
 
 from commonTools import *
 from commonObjects import *
@@ -27,6 +29,16 @@ def convert_boolean_string(string):
     else:
         return False
 
+def execute_command(command, return_output=False, shell=False):
+    try:
+        result = subprocess.run(command, check=True, text=True, capture_output=True, shell=shell, env=os.environ)
+        print("Script output:", result.stdout)
+        print("Script executed successfully.")
+        if return_output:
+            return (result.stdout).split("\n")[0]
+    except subprocess.CalledProcessError as e:
+        print("Error executing script:", e.stderr)
+
 class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_path = law.Parameter(description="Path to the alldata input ROOT file")
     output_dir = law.Parameter(description="Path to the output directory")
@@ -35,9 +47,12 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     cats = law.Parameter(description="List of categories separated by a comma.")
     cat_offset = law.Parameter(description="Category offset")
     variable = law.Parameter(default="", description="Variable to be used")
+
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
-    
+
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+
     htcondor_job_kwargs_submit = {"spool": True}
     
     def requires(self):
@@ -56,7 +71,7 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         else:
             output_dir = self.output_dir
             
-        tasks = [Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, version='v1', workflow='local')]
+        tasks = [Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, version='v1', workflow='local', batch_flavor=self.batch_flavor)]
         
         return tasks
     
@@ -82,10 +97,10 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         if convert_boolean_string(self.bootstrap_flag) == True:
             cat_cat_offset, bootstrap_index = self.branch_data
             cat, cat_offset = cat_cat_offset
-            outdir_ext = os.path.join(self.output_dir, f'outdir_{self.ext}_{bootstrap_index}')
+            outdir_ext = os.path.join(self.output_dir, 'Background', f'outdir_{self.ext}_{bootstrap_index}')
         else:
             cat, cat_offset = self.branch_data
-            outdir_ext = os.path.join(self.output_dir, f'outdir_{self.ext}')
+            outdir_ext = os.path.join(self.output_dir, 'Background', f'outdir_{self.ext}')
         bkg_plots = glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.png'))
         bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf'))
         bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf_gofTest.pdf'))
@@ -112,18 +127,29 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             cat, cat_offset = self.branch_data
             input_path = self.input_path
         
-        safe_mkdir(self.output_dir)
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            temp_output_dir = os.environ["TARGET_PATH"]
+            execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/Background'], shell=True)
+            if convert_boolean_string(self.bootstrap_flag) == True:
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/Background/outdir_{self.ext}_{bootstrap_index}'], shell=True)
+            else:
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/Background/outdir_{self.ext}'], shell=True)
+            safe_mkdir(temp_output_dir)
+        else:
+            temp_output_dir = self.output_dir
+            safe_mkdir(temp_output_dir)
         
-        output_dir = self.output_dir
-        if output_dir[-1] != "/":
-            output_dir += "/"
+        if temp_output_dir[-1] != "/":
+            temp_output_dir += "/"
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Background/runBackgroundScripts.sh")
         arguments = [
             "-i", input_path,
             "-p", "none",
             "-f", cat,
-            "--outputFolder", f"{output_dir}",
+            "--outputFolder", f"{temp_output_dir}",
             "--ext", f'{self.ext}_{bootstrap_index}' if convert_boolean_string(self.bootstrap_flag) == True else f'{self.ext}',
             "--catOffset", cat_offset,
             "--intLumi", f"{lumiMap[self.year]}",
@@ -135,7 +161,7 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             "--fTest"
         ]
         command = [script_path] + arguments
-        print("Output:", command)
+        # print("Output:", command)
         
         # Move to background folder
         original_dir = os.getcwd()
@@ -147,14 +173,34 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
         os.chdir(original_dir)
+
+        if self.batch_flavor == "slurm/psi":
+            if convert_boolean_string(self.bootstrap_flag) == True:
+                bkg_folder = f"outdir_{self.ext}_{bootstrap_index}"
+            else:
+                bkg_folder = f"outdir_{self.ext}"
+            execute_command([f"ls -al {temp_output_dir}/*"], shell=True)
+            # Copying output files to final destination on the /pnfs.
+            slurm_copy_command = [
+                'xrdcp', '-rf',
+                f'{temp_output_dir}/{bkg_folder}',
+                'root://t3dcachedb.psi.ch:1094//'+ f'{self.output_dir}/Background/'
+            ]
+            execute_command(slurm_copy_command)
+            # Cleaning up scratch space.
+            shutil.rmtree(temp_output_dir)
+        
         
 
 class Background(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
@@ -194,16 +240,16 @@ class Background(law.Task):
                 
         if self.variable == '':
             if convert_boolean_string(self.bootstrap_flag) == False:
-                all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.year}/ws/allData.root")
+                all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.year}/ws/allData.root")
             else:
-                all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.year}")
+                all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.year}")
         else:
             if convert_boolean_string(self.bootstrap_flag) == False:
-                all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}/ws/allData.root")
+                all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.variable}_{self.year}/ws/allData.root")
             else:
-                all_data_input_path = os.path.join(output_dir, f"input_output_data_{self.variable}_{self.year}")
+                all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.variable}_{self.year}")
             
-        tasks = [BackgroundCategory(input_path=all_data_input_path, output_dir=output_dir, year=self.year, cats=config['cats'], cat_offset=config['catOffset'], variable=self.variable, ext=config['ext'], version='v1', workflow=config['execution'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)]
+        tasks = [BackgroundCategory(input_path=all_data_input_path, output_dir=output_dir, year=self.year, cats=config['cats'], cat_offset=config['catOffset'], variable=self.variable, ext=config['ext'], version='v1', workflow=config['execution'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, batch_flavor=self.batch_flavor)]
         return tasks
 
     def output(self):
@@ -231,23 +277,23 @@ class Background(law.Task):
         if (convert_boolean_string(self.bootstrap_flag) == True):
             for i in range(int(self.number_of_bootstraps)):
                 if self.variable == '': 
-                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Background", f"outdir_{ext}")))
                     
-                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}/bkgfTest-Data/fTestResults.txt')))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Background", f'outdir_{ext}/bkgfTest-Data/fTestResults.txt')))
                 else:
-                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}_{self.variable}")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Background", f"outdir_{ext}_{self.variable}")))
                     
-                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}_{self.variable}/bkgfTest-Data/fTestResults.txt')))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Background", f'outdir_{ext}_{self.variable}/bkgfTest-Data/fTestResults.txt')))
 
         else:
             if self.variable == '': 
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Background", f"outdir_{ext}")))
                 
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}/bkgfTest-Data/fTestResults.txt')))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Background", f'outdir_{ext}/bkgfTest-Data/fTestResults.txt')))
             else:
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{ext}_{self.variable}")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Background", f"outdir_{ext}_{self.variable}")))
                 
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f'outdir_{ext}_{self.variable}/bkgfTest-Data/fTestResults.txt')))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Background", f'outdir_{ext}_{self.variable}/bkgfTest-Data/fTestResults.txt')))
                         
 
         return output_paths

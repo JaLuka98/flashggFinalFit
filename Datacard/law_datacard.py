@@ -123,14 +123,15 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     def run(self):
         if convert_boolean_string(self.bootstrap_flag) == True:
             cat, bootstrap_index = self.branch_data
-            execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}")}'], shell=True)
 
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}")}'], shell=True)
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
                 execute_command([f'mkdir -p $TARGET_PATH/Datacards/yields_{self.ext}_{bootstrap_index}'], shell=True)
                 temp_output_dir = os.environ["TARGET_PATH"]
             else:
+                execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}")}'], shell=True)
                 temp_output_dir = self.output_dir
             ext = self.ext + f"_{bootstrap_index}"
             bkgModelWSDir = self.bkgModelWSDir + f"_{bootstrap_index}"
@@ -435,12 +436,12 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
             output_dir = self.output_dir
 
         if convert_boolean_string(self.bootstrap_flag) == True: # Account for bootstrapping index
-            safe_mkdir(output_dir)
-            pklInputFiles = os.path.join(output_dir,f"Datacards")
-            ext = yields_config["ext"] + f"_{bootstrap_index}"
-            output_dir = os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}")
-            safe_mkdir(output_dir)
             if self.batch_flavor == "slurm/psi":
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                pklInputFiles = os.path.join(output_dir,f"Datacards")
+                ext = yields_config["ext"] + f"_{bootstrap_index}"
+                output_dir = os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}")
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 # Have to use /scratch/batch_username/ for slurm/psi
                 # Since we run this script locally, we have to use the local scratch space. (SLURM_JOB_ID is not available)
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/MakeDatacard_{bootstrap_index}"
@@ -450,12 +451,19 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
                 # safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
                 # safe_mkdir(os.path.join(temp_output_dir, f"Datacards/Datacard_{bootstrap_index}"))
             else:
+                safe_mkdir(output_dir)
+                pklInputFiles = os.path.join(output_dir,f"Datacards")
+                ext = yields_config["ext"] + f"_{bootstrap_index}"
+                output_dir = os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}")
+                safe_mkdir(output_dir)
+
                 temp_output_dir = output_dir
         else:
-            safe_mkdir(output_dir)
-            output_dir = os.path.join(output_dir,"Datacards/")
-            safe_mkdir(output_dir)
+
             if self.batch_flavor == "slurm/psi":
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                output_dir = os.path.join(output_dir,"Datacards/")
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 # Have to use /scratch/batch_username/ for slurm/psi
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/MakeDatacard"
                 execute_command(['mkdir -p $TARGET_PATH'], shell=True)
@@ -463,6 +471,9 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
                 safe_mkdir(temp_output_dir)
                 # safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
             else:
+                safe_mkdir(output_dir)
+                output_dir = os.path.join(output_dir,"Datacards/")
+                safe_mkdir(output_dir)
                 temp_output_dir = output_dir
             # In this case, the Pickle input files are already in the final output directory
             pklInputFiles = output_dir
@@ -557,11 +568,9 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
             if self.batch_flavor == "slurm/psi":
                 # Have to copy over the output to the final directory
                 # Don't forget to VOMS!
-                execute_command([f'ls -al {temp_output_dir}'], shell=True)
                 slurm_copy_command = [
                     f'xrdcp -r {temp_output_dir}/* root://t3dcachedb.psi.ch:1094//'+output_dir
                 ]
-                print(slurm_copy_command)
                 execute_command(slurm_copy_command, shell=True)
                 # Clean up the temporary directory
                 shutil.rmtree(temp_output_dir)
