@@ -56,7 +56,7 @@ def find_crossings(x_vals, y_vals, threshold=1.0):
     return crossings
 
 # Define the base directory path
-base_dir = "/work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/2025_01_20_intermediateNTuples_2023/PTH_bootstrap/Combine/runFits_PTH/dataFit"
+base_dir = "/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH_bootstrap/Combine/runFits_PTH/dataFit"
 
 r_high_name = "r_PTH_80p0_120p0"
 r_low_name = "r_PTH_120p0_200p0"
@@ -75,18 +75,26 @@ for i in range(len(glob.glob(os.path.join(base_dir, "bootstrap_*")))):
     #     continue
 
     # Find all MultiDimFit ROOT files in this directory
-    root_files_high = uproot.open(f"{base_dir}/bootstrap_{i}/higgsCombineDataPostFitBestFit_{r_high_name}.MultiDimFit.mH125.38.root")
-    root_files_low = uproot.open(f"{base_dir}/bootstrap_{i}/higgsCombineDataPostFitBestFit_{r_low_name}.MultiDimFit.mH125.38.root")
+    try:
+        root_files_high = uproot.open(f"{base_dir}/bootstrap_{i}/higgsCombineDataPostFitBestFit_{r_high_name}.MultiDimFit.mH125.38.root")
+        root_files_low = uproot.open(f"{base_dir}/bootstrap_{i}/higgsCombineDataPostFitBestFit_{r_low_name}.MultiDimFit.mH125.38.root")
+    except:
+        print(f"Skipping fit_{i}: Required scan files not found")
+        continue
 
     tree_high = root_files_high["limit"]
     tree_low = root_files_low["limit"]
 
     limit_values_high = tree_high[r_high_name].array()
     limit_values_low = tree_low[r_low_name].array()
-
-    if limit_values_low[0]<-4:
-        print(limit_values_low[0])
-        print(i)
+    
+    try:
+        if limit_values_low[0]<-4:
+            print(limit_values_low[0])
+            print(i)
+    except:
+        print("Empty ROOT file for bootstrap: ", i)
+        continue
 
     r_high.append(limit_values_high[0])
     r_low.append(limit_values_low[0])

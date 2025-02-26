@@ -249,7 +249,7 @@ class Background(law.Task):
             else:
                 all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.variable}_{self.year}")
             
-        tasks = [BackgroundCategory(input_path=all_data_input_path, output_dir=output_dir, year=self.year, cats=config['cats'], cat_offset=config['catOffset'], variable=self.variable, ext=config['ext'], version='v1', workflow=config['execution'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, batch_flavor=self.batch_flavor)]
+        tasks = [BackgroundCategory(input_path=all_data_input_path, output_dir=output_dir, year=self.year, cats=config['cats'], cat_offset=config['catOffset'], variable=self.variable, ext=config['ext'], version='v1', workflow=config['execution'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, batch_flavor=self.batch_flavor, slurm_partition="short", slurm_max_runtime=1)]
         return tasks
 
     def output(self):

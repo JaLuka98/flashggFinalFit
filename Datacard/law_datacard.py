@@ -316,7 +316,7 @@ class MakeYields(law.Task): #law.Task
         
         return True
     
-class MakeDatacard(Task, law.LocalWorkflow): #law.Task
+class MakeDatacard(Task, SlurmWorkflow, law.LocalWorkflow): #law.Task
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
@@ -569,7 +569,7 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
                 # Have to copy over the output to the final directory
                 # Don't forget to VOMS!
                 slurm_copy_command = [
-                    f'xrdcp -r {temp_output_dir}/* root://t3dcachedb.psi.ch:1094//'+output_dir
+                    f'xrdcp -rf {temp_output_dir}/* root://t3dcachedb.psi.ch:1094//'+output_dir
                 ]
                 execute_command(slurm_copy_command, shell=True)
                 # Clean up the temporary directory
@@ -578,6 +578,9 @@ class MakeDatacard(Task, law.LocalWorkflow): #law.Task
                 # After datacard has been moved to pnfs, the datacard_path has to be changed.
                 datacard_path = os.path.join(output_dir, datacard_config["output"] + ".txt")
             
-            execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
-            execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+            else:
+                execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
+                execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
         

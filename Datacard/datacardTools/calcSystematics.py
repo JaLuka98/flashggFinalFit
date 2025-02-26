@@ -66,6 +66,7 @@ def factoryType(d,s):
 
   # Loop over rows in dataframe: until syst is found
   for ir, r in d[d['type']=='sig'].iterrows():
+    print('d', d)
     f = ROOT.TFile(r.inputWSFile)
     ws = f.Get(inputWSName__)
     dataHistUp = "%s_%sUp01sigma"%(r.nominalDataName,s['name'])
