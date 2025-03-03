@@ -56,7 +56,9 @@ def find_crossings(x_vals, y_vals, threshold=1.0):
     return crossings
 
 # Define the base directory path
-base_dir = "/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH_bootstrap/Combine/runFits_PTH/dataFit"
+# base_dir = "/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH_bootstrap/Combine/runFits_PTH/dataFit"
+
+base_dir = "/t3home/niharrin/devel/work/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/Combine/runFits_PTH/toyFit"
 
 r_high_name = "r_PTH_80p0_120p0"
 r_low_name = "r_PTH_120p0_200p0"
@@ -65,7 +67,9 @@ r_high = []
 r_low = []
 
 # Loop through all fit directories (fit_0, fit_1, etc.)
-for i in range(len(glob.glob(os.path.join(base_dir, "bootstrap_*")))):
+# for i in range(len(glob.glob(os.path.join(base_dir, "bootstrap_*")))):
+for i in range(len(glob.glob(os.path.join(base_dir, "toy_*")))):
+
 
     # Check if both required files exist
     # high_scan_file = f"{base_dir}/bootstrap_{i}/scan_ggH_high_{i}.root"
@@ -75,9 +79,18 @@ for i in range(len(glob.glob(os.path.join(base_dir, "bootstrap_*")))):
     #     continue
 
     # Find all MultiDimFit ROOT files in this directory
+    # try:
+    #     root_files_high = uproot.open(f"{base_dir}/bootstrap_{i}/higgsCombineDataPostFitBestFit_{r_high_name}.MultiDimFit.mH125.38.root")
+    #     root_files_low = uproot.open(f"{base_dir}/bootstrap_{i}/higgsCombineDataPostFitBestFit_{r_low_name}.MultiDimFit.mH125.38.root")
+    # except:
+    #     print(f"Skipping fit_{i}: Required scan files not found")
+    #     continue
+    
+    seed = 123456 + i
+    
     try:
-        root_files_high = uproot.open(f"{base_dir}/bootstrap_{i}/higgsCombineDataPostFitBestFit_{r_high_name}.MultiDimFit.mH125.38.root")
-        root_files_low = uproot.open(f"{base_dir}/bootstrap_{i}/higgsCombineDataPostFitBestFit_{r_low_name}.MultiDimFit.mH125.38.root")
+        root_files_high = uproot.open(f"{base_dir}/toy_{i}/higgsCombinehiggsCombineToyBestFit_{r_high_name}.MultiDimFit.mH125.38.{seed}.root")
+        root_files_low = uproot.open(f"{base_dir}/toy_{i}/higgsCombinehiggsCombineToyBestFit_{r_low_name}.MultiDimFit.mH125.38.{seed}.root")
     except:
         print(f"Skipping fit_{i}: Required scan files not found")
         continue

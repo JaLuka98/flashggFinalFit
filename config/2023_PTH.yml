@@ -144,7 +144,7 @@ datacard_yields:
   skipBkg: False # Only add signal processes to datacard
   bkgScaler: 1. # Add overall scale factor for background
   skipCOWCorr: False # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
-  execution: 'slurm'
+  execution: 'local'
 
 datacard:
   # For pruning processes
