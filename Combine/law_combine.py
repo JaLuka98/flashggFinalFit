@@ -575,11 +575,13 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                 execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
                 shutil.rmtree(temp_output_dir)
         
-class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
     cats = law.Parameter(description="Current category")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
     htcondor_job_kwargs_submit = {"spool": True}
     
@@ -599,7 +601,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
         else:
             output_dir = self.output_dir
             
-        tasks = [RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year)]
+        tasks = [RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, bootstrap_flag=False, number_of_bootstraps=1000, version='v1', batch_flavor=self.batch_flavor)]
         
         return tasks
 
@@ -681,12 +683,22 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
         else:
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
             
-        # safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName))
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
-        
         cwd = os.getcwd()
-        os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
                     
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/asimov'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'asimov'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
+            
         if self.variable != '':
             arguments = [
                 "combine",
@@ -718,6 +730,27 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+        
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
             
         os.chdir(cwd)
         
@@ -725,6 +758,8 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
         
     def requires(self):
         
@@ -750,7 +785,7 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
             cats = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'])
             version = f"{self.variable}_v1"
         
-        tasks += [AsimovFitCategoryFirstStep(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats, version=version, workflow="local")]
+        tasks += [AsimovFitCategoryFirstStep(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats, version=version, workflow="slurm", batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=4000, slurm_max_runtime="01:00:00")]
         
         return tasks
     
@@ -805,6 +840,8 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     cat = law.Parameter(description="Current category")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
     
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    
     htcondor_job_kwargs_submit = {"spool": True}
     
     def requires(self):
@@ -823,7 +860,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         else:
             output_dir = self.output_dir
                
-        tasks = [CreateAsimovFitFirstStep(output_dir=output_dir, variable=self.variable, year=self.year)]
+        tasks = [CreateAsimovFitFirstStep(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)]
         
         return tasks
     
@@ -892,15 +929,26 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         else:
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
             
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName))
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
-        
         cwd = os.getcwd()
-        os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/asimov'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'asimov'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
+
+        first_output = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')
 
         def check_pdf_idx(param):
             # Run the ROOT command
-            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
             
             # Execute the command and capture the output
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -993,6 +1041,27 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
             
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
+            
         os.chdir(cwd)
         
 class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
@@ -1001,6 +1070,8 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     year = law.Parameter(default='2022', description="Year")
     cat = law.Parameter(description="Current category")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
     htcondor_job_kwargs_submit = {"spool": True}
     
@@ -1020,7 +1091,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         else:
             output_dir = self.output_dir
                 
-        tasks = [CreateAsimovFitFirstStep(output_dir=output_dir, variable=self.variable, year=self.year)]
+        tasks = [CreateAsimovFitFirstStep(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)]
         
         return tasks
     
@@ -1083,16 +1154,27 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir  
-            
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName))
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
         
         cwd = os.getcwd()
-        os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
 
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/asimov'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'asimov'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
+            
+        first_output = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')
+        
         def check_pdf_idx(param):
             # Run the ROOT command
-            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
             
             # Execute the command and capture the output
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -1188,7 +1270,27 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
-                
+        
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
         
         os.chdir(cwd)
         
@@ -1196,6 +1298,8 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
     # htcondor_job_kwargs_submit = {"spool": True}
     
@@ -1218,11 +1322,11 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
         tasks = []
         if self.variable == '':
             cat = "r"
-            tasks += [AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"]), AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"])]
+            tasks += [AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=4000, slurm_max_runtime="01:00:00"), AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=4000, slurm_max_runtime="01:00:00")]
         else:
             version_index = 1
             for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
-                tasks += [AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"]), AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"])]
+                tasks += [AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=4000, slurm_max_runtime="01:00:00"), AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=4000, slurm_max_runtime="01:00:00")]
                 version_index += 1
         
         return tasks
@@ -1303,15 +1407,45 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
             output_dir = self.output_dir  
             
         safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', 'scans'))
-            
-
+        
         cwd = os.getcwd()
-        os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
+        
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov/scans'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov/scans'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/asimov/scans'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'asimov'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov/scans'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
         
         if self.variable == '':
             cats = ["r"]
         else:
             cats = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+        
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the input to the JOB directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    output_dir,
+                    f"{os.environ['TARGET_PATH']}/Combine/"
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir,
+                    f"{os.environ['TARGET_PATH']}/Combine/"
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
         
         for cat in cats:
         
@@ -1321,6 +1455,13 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
             ]
             for i in range(config["combine_fit"]["asimov_numPoints"]):
                 arguments.append(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
+            if self.batch_flavor == "slurm/psi":
+                arguments = [
+                    "hadd",
+                    f"{os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')}"
+                ]
+                for i in range(config["combine_fit"]["asimov_numPoints"]):
+                    arguments.append(os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
             command = arguments
             # print(command)
             try:
@@ -1337,6 +1478,13 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
             ]
             for i in range(config["combine_fit"]["asimov_numPoints"]):
                 arguments.append(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
+            if self.batch_flavor == "slurm/psi":
+                arguments = [
+                    "hadd",
+                    f"{os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')}"
+                ]
+                for i in range(config["combine_fit"]["asimov_numPoints"]):
+                    arguments.append(os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
             command = arguments
             # print(command)
             try:
@@ -1355,6 +1503,16 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
                 "--main-label", "Expected",
                 "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
             ]
+            if self.batch_flavor == "slurm/psi":
+                arguments = [
+                    "plot1DScan.py",
+                    os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root'),
+                    "-o", f"scans/scan_{cat}",
+                    "--POI", f"{cat}",
+                    "--others", os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')+":stat-only:2",
+                    "--main-label", "Expected",
+                    "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
+                ]
             command = arguments
             # print(command)
             try:
@@ -1363,6 +1521,27 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+    
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
             
         os.chdir(cwd)
         
@@ -2351,8 +2530,8 @@ class ToyFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWo
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "1",
-                "--toysFrequentist",
-                "--bypassFrequentistFit",
+                # "--toysFrequentist",
+                # "--bypassFrequentistFit",
                 "-s", f"{seed}",
                 "-P", f"{current_cat}",
                 "--saveFitResult",
@@ -2610,8 +2789,8 @@ class ToysFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
                 "-P", f"{current_cat}",
                 "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
                 "--saveFitResult",
-                "--toysFrequentist",
-                "--bypassFrequentistFit",
+                # "--toysFrequentist",
+                # "--bypassFrequentistFit",
                 "--snapshotName", "'MultiDimFit'",
                 "--saveToys",
                 "--floatOtherPOIs", "1",
