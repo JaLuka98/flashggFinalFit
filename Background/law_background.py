@@ -101,16 +101,21 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         else:
             cat, cat_offset = self.branch_data
             outdir_ext = os.path.join(self.output_dir, 'Background', f'outdir_{self.ext}')
-        bkg_plots = glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.png'))
-        bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf'))
-        bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf_gofTest.pdf'))
+
         
         outputFileTargets = []
         
-        output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.pdf'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.png')]
+        if convert_boolean_string(self.bootstrap_flag) == False:
+            bkg_plots = glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.png'))
+            bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf'))
+            bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf_gofTest.pdf'))
         
-        output_paths += bkg_plots
-                
+            output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.pdf'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.png')]
+            
+            output_paths += bkg_plots
+        else: # Skip the plots for the bootstrap case
+             output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root')]
+   
         for _, current_output_path in enumerate(output_paths):
             outputFileTargets.append(law.LocalFileTarget(current_output_path))
 
