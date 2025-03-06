@@ -1,6 +1,6 @@
 # Config file: options for signal fitting
 
-outputFolder: '/work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/output'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH'
 
 inputFiles:
   # Trees2WS
