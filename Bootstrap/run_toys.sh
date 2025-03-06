@@ -1,0 +1,2 @@
+law run ToyFitCategoryFirstStep --variable PTH --year 2023 --number-of-toys 1000 --batch-flavor slurm/psi --version v1 --slurm-partition short --slurm-max-runtime 01:00:00
+law run ToysFitSystSingle --variable PTH --year 2023 --number-of-toys 1000 --batch-flavor slurm/psi --version v1 --slurm-partition short --slurm-max-runtime 01:00:00
