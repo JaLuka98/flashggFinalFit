@@ -58,17 +58,6 @@ def chi_vector(x_exp, x_obs, _a, _b, _c):
     chi_diff = chi_obs - chi_exp
     return chi_diff
 
-# def chi(x, _a_high, _b_high, _c_high, _a_low, _b_low, _c_low, _rho):
-#     chi_high = (np.sqrt(_b_high**2 - 4*(_a_high-x[0])*_c_high) - _b_high) / (2*_c_high)
-#     chi_low = (np.sqrt(_b_low**2 - 4*(_a_low-x[1])*_c_low) - _b_low) / (2*_c_low)
-
-#     chi_high_meas = (np.sqrt(_b_high**2 - 4*(_a_high-1.821)*_c_high) - _b_high) / (2*_c_high)
-#     chi_low_meas = (np.sqrt(_b_low**2 - 4*(_a_low-0.803)*_c_low) - _b_low) / (2*_c_low)
-
-#     chi_vector = np.array([[chi_high_meas - chi_high],
-#                            [chi_low_meas - chi_low]])
-#     return chi_vector.T @ _rho @ chi_vector
-
 def chi(x, pois_, poi_list_, rho, abc_values):
     chi_vector_ = []
     
@@ -195,14 +184,7 @@ def produce_and_minimize_chi(pois_, poi_list_, folder=""):
         
         
         chi_x0_scan = np.array(chi_x0_scan)
-        
-        # Calculate chi values for x0 scan (keeping x1 fixed at optimal value)
-        # chi_x0_scan = np.array([float(chi(np.array([x0, optimal_x1]), 
-        #                         a_x, b_x, c_x, 
-        #                         a_y, b_y, c_y, 
-        #                         rho_x_y)) for x0 in x0_0_range])
 
-        print(chi_x0_scan)
         # Find crossing points at for 68% interval 
         crossings_x0 = find_crossings(x0_range, chi_x0_scan)
         print('crossings_x0', crossings_x0-optimal_values[i])
@@ -213,7 +195,7 @@ def produce_and_minimize_chi(pois_, poi_list_, folder=""):
     
     return x0_ranges, chi_x0_scans, optimal_values_list
 
-def produce_LLPlots(pois_, poi_list_, folder=""):
+def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder=""):
     
     x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_, folder)
     
@@ -225,19 +207,27 @@ def produce_LLPlots(pois_, poi_list_, folder=""):
 
         # Plot x0 scan
         ax1.plot(x0_ranges[i], chi_x0_scans[i], label='Simplified likelihood')
-        # with uproot.open("scan_ggH_x.root") as file:
-        #     # Get the TGraphs - note that uproot reads them as pairs of arrays
-        #     graph = file["scan_ggH_x"]  # Replace with your TGraph name
-        #     # Extract x and y values
-        #     x0_points = graph.member("fX")  # Gets x values
-        #     y0_points = graph.member("fY")  # Gets y values
-        # ax1.plot(x0_points, y0_points, 'r--', label='Combine likelihood')
+        with uproot.open(os.path.join(combineLL_dir_, "scans", f"scan_{current_poi}.root")) as file:
+            # Get the TGraphs - note that uproot reads them as pairs of arrays
+            # keys = file.keys()
+            # print("Available keys:", keys)
+            # matching_keys = [key for key in keys if key.startswith(f"scan_{current_poi}")]
+            # graph_key = matching_keys[0]  # Take the first match
+            # graph = file[graph_key]
+            graph = file[f"scan_{current_poi};1"]  # Replace with your TGraph name
+            # Extract x and y values
+            x0_points = graph.member("fX")  # Gets x values
+            y0_points = graph.member("fY")  # Gets y values
+        ax1.plot(x0_points, y0_points, 'r--', label='Combine likelihood')
         ax1.set_xlabel(translation[current_poi])
         ax1.set_ylabel('2ΔNLL')
         ax1.grid(True)
         # ax1.set_ylim(0, max(y0_points))
         ax1.axvline(optimal_values[i], color='grey', linestyle='--', label=f'Minimum: {optimal_values[i]:.3f}')
         ax1.legend()
+        
+        ax1.set_ylim(0, 10)
+        ax1.set_xlim(-1, 3)
         
         plt.tight_layout()
         plt.savefig(os.path.join(folder, f"chi_scan_{current_poi}.pdf"))
@@ -393,6 +383,7 @@ def create_poiJson(base_dir, poi_list):
 # base_dir = "/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH_bootstrap/Combine/runFits_PTH/dataFit"
 
 base_dir = "/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH/Combine/runFits_PTH/toyFit"
+combineLL_dir = "/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH/Combine/runFits_PTH/asimov"
 
 poi_list = ["r_PTH_0p0_15p0", "r_PTH_15p0_30p0", "r_PTH_30p0_45p0", "r_PTH_45p0_80p0", "r_PTH_80p0_120p0", "r_PTH_120p0_200p0", "r_PTH_200p0_350p0", "r_PTH_350p0_10000p0"]
 
@@ -418,7 +409,7 @@ for current_tuple in unique_pairings:
     
     # produce_simplifiedLL(pois[r_1], pois[r_2], r_1, r_2, folder="Plots/PTH/SL")
 
-produce_LLPlots(pois, poi_list, folder="Plots/PTH/SL")
+produce_LLPlots(pois, poi_list, combineLL_dir, folder="Plots/PTH/SL")
 
 
  
