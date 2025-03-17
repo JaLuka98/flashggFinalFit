@@ -388,25 +388,30 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
             if self.variable == '':
                 output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'Datacard_{self.year}_{bootstrap_index}.root')]
                 output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_mu_fiducial_{bootstrap_index}.sh')]
+                output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
             else:
                 output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.year}_{bootstrap_index}.root')]
                 output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}_{bootstrap_index}.sh')]
+                output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
             output += [os.path.join(output_dir, 'Combine', f'Workspaces')]
         else:
             # Define the file paths
             if self.variable == '':
                 output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')]
-                output += [os.path.join(output_dir, 'Combine', f't2w_jobs', 't2w_mu_fiducial.sh')]
+                # output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
+                # output += [os.path.join(output_dir, 'Combine', f't2w_jobs', 't2w_mu_fiducial.sh')]
             else:
                 output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
-                output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}.sh')]
+                # output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
+                # output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}.sh')]
 
-        output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
 
         outputFileTargets = []
 
         for _, current_output_path in enumerate(output):
             outputFileTargets.append(law.LocalFileTarget(current_output_path))
+        
+        # print(outputFileTargets)
 
         return outputFileTargets
 
@@ -480,10 +485,10 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                 execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/t2w_jobs'], shell=True)
             else:
                 temp_output_dir = output_dir
-                execute_command([f'mkdir -p {output_dir}/Combine/Workspaces'], shell=True)
-                execute_command([f'mkdir -p {output_dir}/Combine/Datacards'], shell=True)
+                execute_command([f'mkdir -p {temp_output_dir}/Combine/Workspaces'], shell=True)
+                execute_command([f'mkdir -p {temp_output_dir}/Combine/Datacards'], shell=True)
                 # Keep t2w_jobs for debugging purposes
-                execute_command([f'mkdir -p {output_dir}/Combine/t2w_jobs'], shell=True)
+                execute_command([f'mkdir -p {temp_output_dir}/Combine/t2w_jobs'], shell=True)
             
             os.chdir(temp_output_dir)
             # Create Workspaces in Datacard folder
@@ -581,8 +586,12 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                     execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
                     execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
                 else:
+                    list_command = ["xrdfs", "root://t3dcachedb.psi.ch", "ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
+                    file_list = subprocess.check_output(list_command).decode().splitlines()
+
+                    print(file_list)
                     execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/'], shell=True)
-                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
                 shutil.rmtree(temp_output_dir)
         
 class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
