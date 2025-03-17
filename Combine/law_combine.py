@@ -183,26 +183,26 @@ class PrepareTheDirectory(Task, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
             fitFolderName = f'runFits_{self.variable}'
-        
+
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-            
+
         # Creating the Combine directory alongside the Models dir
         if self.batch_flavor == "slurm/psi":
             execute_command([f"xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {os.path.join(output_dir, 'Combine', fitFolderName)}"], shell=True)
         else:
             safe_mkdir(os.path.join(output_dir, 'Combine'))
             safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName))
-        
+
         signal_model_folder_name = config['datacard_yields']['sigModelWSDir'].split('/')[-2]
         background_model_folder_name = config['datacard_yields']['bkgModelWSDir'].split('/')[-2]
-        
+
         if signal_model_folder_name == background_model_folder_name:
             model_folder_name = signal_model_folder_name
             Model_dst_path = os.path.join(output_dir, 'Combine', model_folder_name)
@@ -226,25 +226,28 @@ class PrepareTheDirectory(Task, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #
                 execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {backgroundModel_dst_path}'], shell=True)
             else:
                 safe_mkdir(backgroundModel_dst_path)
-        
+
         if self.batch_flavor == "slurm/psi":
             execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {signal_dst_path}'], shell=True)
             execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {background_dst_path}'], shell=True)
         else:
             safe_mkdir(signal_dst_path)
             safe_mkdir(background_dst_path)
-            
+
         # Copying relevant files in Models directory
-        background_src_path = os.path.join(output_dir, "Background", f"outdir_{config['backgroundScriptCfg']['ext']}"+background_suffix)
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            background_src_path = os.path.join(output_dir, "Background", f"outdir_{config['backgroundScriptCfg']['ext']}"+background_suffix)
+        else:
+            background_src_path = os.path.join(output_dir, f"outdir_{config['backgroundScriptCfg']['ext']}"+background_suffix)
         signal_src_path = os.path.join(output_dir, f"outdir_packaged{config[f'packaged_{self.year}']['ext']}/")
-        
+
         if self.batch_flavor == "slurm/psi":
             # print(f'xrdcp -rf root://t3dcachedb.psi.ch:1094/{background_src_path}/ root://t3dcachedb.psi.ch:1094/{background_dst_path}')
             manually_copy_t3(background_src_path, background_dst_path)
             # execute_command([f'xrdcp -rf root://t3dcachedb.psi.ch:1094/{background_src_path}/ root://t3dcachedb.psi.ch:1094/{background_dst_path}'], shell=True)
         else:
             shutil.copytree(background_src_path, background_dst_path, dirs_exist_ok=True)
-        
+
         if convert_boolean_string(self.bootstrap_flag) == True:
             if bootstrap_index == 0: # Copy the signal model only once (it is always the same)
                 if self.batch_flavor == "slurm/psi":
@@ -254,10 +257,12 @@ class PrepareTheDirectory(Task, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #
                     shutil.copytree(signal_src_path, signal_dst_path, dirs_exist_ok=True)
         else:
             if self.batch_flavor == "slurm/psi":
-                execute_command([f'xrdcp -rf root://t3dcachedb.psi.ch:1094/{signal_src_path} root://t3dcachedb.psi.ch:1094/{signal_dst_path}'], shell=True)
+                # execute_command([f'xrdcp -rf root://t3dcachedb.psi.ch:1094/{signal_src_path} root://t3dcachedb.psi.ch:1094/{signal_dst_path}'], shell=True)
+                # execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094 ls {signal_dst_path}'], shell=True)
+                manually_copy_t3(signal_src_path, signal_dst_path)
             else:
                 shutil.copytree(signal_src_path, signal_dst_path, dirs_exist_ok=True)
-        
+
         # IDK for what that is useful
         path_pattern = f"{signal_model_folder_name}/signal/*_{self.year}.root"
 
@@ -286,7 +291,7 @@ class PrepareTheDirectory(Task, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #
                 datacard_file_cleaned = os.path.join(output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.variable}_{self.year}_cleaned.txt')
                 datacard_file = os.path.join(output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.variable}_{self.year}.txt')
                 destination_file = os.path.join(output_dir, 'Combine', 'Datacards', f'Datacard_{self.variable}_{self.year}_{bootstrap_index}.txt')
-        
+
         else:
             # Define the file paths
             if self.variable == '':
@@ -313,8 +318,8 @@ class PrepareTheDirectory(Task, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #
                 shutil.copy2(datacard_file, destination_file)
             
         print("Combine directory sucessfully prepared.")
-        
-        
+
+
 class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
@@ -516,9 +521,8 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/Workspaces'], shell=True)
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/Datacards/{config["datacard_yields"]["sigModelWSDir"]}'], shell=True)
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/Datacards/{config["datacard_yields"]["bkgModelWSDir"]}'], shell=True)
+                execute_command([f'mkdir -p $TARGET_PATH/Combine/{config["datacard_yields"]["sigModelWSDir"]}'], shell=True)
+                execute_command([f'mkdir -p $TARGET_PATH/Combine/{config["datacard_yields"]["bkgModelWSDir"]}'], shell=True)
                 # Keep t2w_jobs for debugging purposes
                 execute_command([f'mkdir -p $TARGET_PATH/Combine/t2w_jobs'], shell=True)    
                 temp_output_dir = os.environ["TARGET_PATH"]
@@ -527,26 +531,28 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                 # Copying datacard...
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{datacard_name}.txt',
-                    f'{temp_output_dir}/Combine/Datacards/'
+                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{datacard_name}.txt',
+                    f'{temp_output_dir}/Combine'
                 ]
                 execute_command(slurm_copy_command)
                 # Copying Signal Model...
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["sigModelWSDir"]}',
-                    f'{temp_output_dir}/Combine'
+                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"]}',
+                    f'{temp_output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
                 ]
                 execute_command(slurm_copy_command)
                 # Copying Background Model...
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["bkgModelWSDir"]}',
-                    f'{temp_output_dir}/Combine'
+                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"]}',
+                    f'{temp_output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
                 ]
                 execute_command(slurm_copy_command)
             else:
                 temp_output_dir = output_dir
+            
+            datacards_dir = os.path.join(temp_output_dir, 'Combine')
 
             arguments = [
                 "python3",
@@ -571,8 +577,12 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
             
             if self.batch_flavor == "slurm/psi":
                 # Copy workspaces to workspaces folder
-                execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
-                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+                if convert_boolean_string(self.bootstrap_flag) == True:
+                    execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
+                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+                else:
+                    execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/'], shell=True)
+                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
                 shutil.rmtree(temp_output_dir)
         
 class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
@@ -1294,7 +1304,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         
         os.chdir(cwd)
         
-class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
@@ -1450,14 +1460,14 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
         for cat in cats:
         
             arguments = [
-                "hadd",
+                "hadd", "-f",
                 f"{os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')}"
             ]
             for i in range(config["combine_fit"]["asimov_numPoints"]):
                 arguments.append(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
             if self.batch_flavor == "slurm/psi":
                 arguments = [
-                    "hadd",
+                    "hadd", "-f",
                     f"{os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')}"
                 ]
                 for i in range(config["combine_fit"]["asimov_numPoints"]):
@@ -1473,20 +1483,20 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
                 
             
             arguments = [
-                "hadd",
+                "hadd", "-f",
                 f"{os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')}"
             ]
             for i in range(config["combine_fit"]["asimov_numPoints"]):
                 arguments.append(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
             if self.batch_flavor == "slurm/psi":
                 arguments = [
-                    "hadd",
+                    "hadd", "-f",
                     f"{os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')}"
                 ]
                 for i in range(config["combine_fit"]["asimov_numPoints"]):
                     arguments.append(os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
             command = arguments
-            # print(command)
+            print(command)
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
                 print("Script output:", result.stdout)
@@ -1494,10 +1504,12 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
 
+            # os.chdir('os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')')
             arguments = [
-                "plot1DScan.py",
+                "python3", f"{os.environ['CMSSW_BASE']}/bin/slc7_amd64_gcc12/plot1DScan.py",
+                # "plot1DScan.py",
                 os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root'),
-                "-o", f"scans/scan_{cat}",
+                "-o", f"scan_{cat}",
                 "--POI", f"{cat}",
                 "--others", os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')+":stat-only:2",
                 "--main-label", "Expected",
@@ -1505,16 +1517,17 @@ class CreateAsimovFit(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Loca
             ]
             if self.batch_flavor == "slurm/psi":
                 arguments = [
-                    "plot1DScan.py",
+                    "python3", f"{os.environ['CMSSW_BASE']}/bin/slc7_amd64_gcc12/plot1DScan.py",
+                    # "plot1DScan.py",
                     os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root'),
-                    "-o", f"scans/scan_{cat}",
+                    "-o", f"scan_{cat}",
                     "--POI", f"{cat}",
                     "--others", os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')+":stat-only:2",
                     "--main-label", "Expected",
                     "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
                 ]
             command = arguments
-            # print(command)
+            print(command)
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
                 print("Script output:", result.stdout)
@@ -2105,10 +2118,12 @@ class AsimovImpactThirdStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow, la
         os.chdir(cwd)
 
 
-class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
+
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
     htcondor_job_kwargs_submit = {"spool": True}
     
@@ -2128,7 +2143,7 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         else:
             output_dir = self.output_dir
             
-        tasks = [RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year)]
+        tasks = [RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version='v1', workflow='slurm')]
         
         return tasks
 
@@ -2199,12 +2214,22 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
         else:
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
-            
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName))
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse'))
         
         cwd = os.getcwd()
-        os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse'))
+        
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/hesse'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'hesse'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse'))
                     
         arguments = [
             "combine",
@@ -2235,15 +2260,37 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
+
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
             
         os.chdir(cwd)
         
-class AsimovCovCorr(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
     noPreliminary = law.Parameter(default=False, description="Flag, if final plot should bear the Preliminary.")
 
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
     # htcondor_job_kwargs_submit = {"spool": True}
     
@@ -2268,7 +2315,7 @@ class AsimovCovCorr(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalW
         else:
             version = self.variable
             
-        tasks = [AsimovCovCorrHesse(output_dir=output_dir, variable=self.variable, year=self.year, version=version, workflow=config["combine_hesse"]["execution"])]
+        tasks = [AsimovCovCorrHesse(output_dir=output_dir, variable=self.variable, year=self.year, version=version, workflow=config["combine_hesse"]["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=4000, slurm_max_runtime="01:00:00")]
         
         return tasks
 
@@ -2336,10 +2383,23 @@ class AsimovCovCorr(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalW
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
         else:
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+        
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse/Plots'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/hesse/Plots'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/hesse/Plots'], shell=True)
+            output_dir = os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'hesse', 'Plots')
+            # os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'hesse', 'Plots'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse/Plots'], shell=True)
+            output_dir = os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots')
+            # os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots'))
             
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName))
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse'))
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots'))
         
         cwd = os.getcwd()
         os.chdir(os.path.join(os.environ["ANALYSIS_PATH"], 'Plots'))
@@ -2350,7 +2410,7 @@ class AsimovCovCorr(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalW
             "--inputJson", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'inputs_robustHesse.json')}",
             "--mode", f"{self.variable}",
             "--input", f"{os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', f'robustHessefirstStep.root')}",
-            "--output", f"{os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots')}",
+            "--output", f"{output_dir}",
             "--translate", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'poi_differential_hesse.json')}"
         ]
         if convert_boolean_string(self.noPreliminary):
@@ -2370,7 +2430,7 @@ class AsimovCovCorr(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalW
             "--inputJson", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'inputs_robustHesse.json')}",
             "--mode", f"{self.variable}",
             "--input", f"{os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', f'robustHessefirstStep.root')}",
-            "--output", f"{os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots')}",
+            "--output", f"{output_dir}",
             "--translate", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'poi_differential_hesse.json')}",
             "--doCov"
         ]
@@ -2384,6 +2444,27 @@ class AsimovCovCorr(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalW
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
+        
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
             
         os.chdir(cwd)
         
