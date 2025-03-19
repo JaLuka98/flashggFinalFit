@@ -125,22 +125,28 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         if convert_boolean_string(self.bootstrap_flag) == True:
             cat_cat_offset, bootstrap_index = self.branch_data
             cat, cat_offset = cat_cat_offset
-            # In this case self.input_path is self.output_path/input_output_data_{self.year}
-            # Have to add the _{bootstrap_index}/ws/allData.root to the path manually, since we need the bootstrap index
-            input_path = os.path.join(self.input_path+f"_{bootstrap_index}", "ws/allData.root")
         else:
             cat, cat_offset = self.branch_data
-            input_path = self.input_path
+        input_path = os.path.join(self.input_path, "ws", "allData.root")
         
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             temp_output_dir = os.environ["TARGET_PATH"]
-            execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/Background'], shell=True)
-            if convert_boolean_string(self.bootstrap_flag) == True:
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/Background/outdir_{self.ext}_{bootstrap_index}'], shell=True)
+            if "/work" in self.output_dir:
+                execute_command([f'mkdir -p {self.output_dir}/Background'], shell=True)
             else:
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/Background/outdir_{self.ext}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/Background'], shell=True)
+            if convert_boolean_string(self.bootstrap_flag) == True:
+                if "/work" in self.output_dir:
+                    execute_command([f'mkdir -p {self.output_dir}/Background/outdir_{self.ext}_{bootstrap_index}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/Background/outdir_{self.ext}_{bootstrap_index}'], shell=True)
+            else:
+                if "/work" in self.output_dir:
+                    execute_command([f'mkdir -p {self.output_dir}/Background/outdir_{self.ext}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/Background/outdir_{self.ext}'], shell=True)
             safe_mkdir(temp_output_dir)
         else:
             temp_output_dir = self.output_dir
@@ -165,8 +171,10 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             "--isData",
             "--fTest"
         ]
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            arguments += ["--doBootstrap", "--bootstrapIndex", str(bootstrap_index)]
         command = [script_path] + arguments
-        # print("Output:", command)
+        print("Output:", command)
         
         # Move to background folder
         original_dir = os.getcwd()
@@ -186,11 +194,18 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 bkg_folder = f"outdir_{self.ext}"
             execute_command([f"ls -al {temp_output_dir}/*"], shell=True)
             # Copying output files to final destination on the /pnfs.
-            slurm_copy_command = [
-                'xrdcp', '-rf',
-                f'{temp_output_dir}/{bkg_folder}',
-                'root://t3dcachedb.psi.ch:1094//'+ f'{self.output_dir}/Background/'
-            ]
+            if "/work" in self.output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f'{temp_output_dir}/{bkg_folder}',
+                    f'{self.output_dir}/Background/'
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f'{temp_output_dir}/{bkg_folder}',
+                    'root://t3dcachedb.psi.ch:1094//'+ f'{self.output_dir}/Background/'
+                ]
             execute_command(slurm_copy_command)
             # Cleaning up scratch space.
             shutil.rmtree(temp_output_dir)

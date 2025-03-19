@@ -20,6 +20,8 @@ BATCH=""
 QUEUE=""
 YEAR="2016"
 CATOFFSET=0
+DOBOOTSTRAP=0
+BOOTSTRAPINDEX=0
 
 usage(){
 	echo "The script runs background scripts:"
@@ -37,6 +39,8 @@ echo "--pseudoDataOnly) "
 echo "--pseudoDataDat)"
 echo "--sigFile) "
 echo "--bkgPlotsOnly)"
+echo "--doBootstrap)"
+echo "--bootstrapIndex)"
 echo "--seed) for pseudodata random number gen seed (default $SEED)"
 echo "--intLumi) specified in fb^-{1} (default $INTLUMI)) "
 echo "--year) dataset year (default $YEAR)) "
@@ -51,7 +55,7 @@ echo "--queue) queue to submit jobs to (specific to batch))"
 
 
 # options may be followed by one colon to indicate they have a required argument
-if ! options=$(getopt -u -o hi:p:f: -l help,inputFile:,procs:,flashggCats:,outputFolder:,ext:,catOffset:,fTestOnly,pseudoDataOnly,bkgPlotsOnly,pseudoDataDat:,sigFile:,seed:,intLumi:,year:,unblind,isData,batch:,queue: -- "$@")
+if ! options=$(getopt -u -o hi:p:f: -l help,inputFile:,procs:,flashggCats:,outputFolder:,ext:,catOffset:,fTestOnly,pseudoDataOnly,bkgPlotsOnly,pseudoDataDat:,sigFile:,seed:,intLumi:,year:,unblind,isData,batch:,queue:,doBootstrap,bootstrapIndex: -- "$@")
 then
 # something went wrong, getopt will put out an error message for us
 exit 1
@@ -80,6 +84,9 @@ case $1 in
 --unblind) UNBLIND=1;;
 --batch) BATCH=$2; shift;;
 --queue) QUEUE=$2; shift;;
+--doBootstrap) DOBOOTSTRAP=1;;
+--bootstrapIndex) BOOTSTRAPINDEX=$2; shift;;
+
 
 (--) shift; break;;
 (-*) usage; echo "$0: error - unrecognized option $1" 1>&2; usage >> /dev/stderr; exit 1;;
@@ -88,6 +95,7 @@ esac
 shift
 done
 
+echo "BOOTSTRAPINDEX: $BOOTSTRAPINDEX"
 
 if [ -z "$OUTFOLDER" ]; then
   OUTDIR="outdir_${EXT}"
@@ -139,6 +147,10 @@ echo "--> Create fake data by fitting simulations, throwing toys and adding data
 echo "--> generating $INTLUMI fb^{-1} of pseudodata."
 echo "--------------------------------------"
 
+echo "--------------------------------------"
+echo "Bootstrapping currently only supported for the FTest"
+echo "--------------------------------------"
+
 
 if [ -z "$OUTFOLDER" ]; then
   echo " ./bin/pseudodataMaker -i $PSEUDODATADAT --pseudodata 1 --plotdir $OUTDIR/pseudoData -f $CATS --seed $SEED --intLumi $INTLUMI "
@@ -158,7 +170,7 @@ if [ $FTESTONLY == 1 ]; then
 
 echo "--------------------------------------"
 echo "Running Background F-Test"
-echo "-->Greate background model"
+echo "-->Create background model"
 echo "--------------------------------------"
 if [ $UNBLIND == 1 ]; then
 OPT=" --unblind"
@@ -169,14 +181,18 @@ fi
 if [ $ISDATA == 1 ]; then
 OPT=" --isData 1"
 fi
+if [ $DOBOOTSTRAP == 1 ]; then
+BOOTSTRAPOPT=" --doBootstrap 1 --bootstrapIndex $BOOTSTRAPINDEX"
+echo $BOOTSTRAPOPT
+fi
 
 
 if [ -z "$OUTFOLDER" ]; then
-  echo " ./bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET"
-  ./bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET
+  echo " ./bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET $BOOTSTRAPOPT"
+  ./bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET $BOOTSTRAPOPT
 else
-  echo " ${ANALYSIS_PATH}/Background/bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET"
-  $ANALYSIS_PATH/Background/bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET
+  echo " ${ANALYSIS_PATH}/Background/bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET $BOOTSTRAPOPT"
+  $ANALYSIS_PATH/Background/bin/fTest -i $FILE --saveMultiPdf $OUTDIR/CMS-HGG_multipdf_$EXT_$CATS.root  -D $OUTDIR/bkgfTest$DATAEXT -f $CATS $OPT --year $YEAR --catOffset $CATOFFSET $BOOTSTRAPOPT
 fi
 
 

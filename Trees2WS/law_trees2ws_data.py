@@ -43,19 +43,10 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
 
     def create_branch_map(self):
-        if convert_boolean_string(self.bootstrap_flag) == False:
-            branch_map = {i: val for i, val in enumerate(range(1))}
-            return branch_map
-        else:
-            # map branch indexes from 0 to 999
-            branch_map = {i: bootstrap_index for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))}
-
-            return branch_map
+        branch_map = {i: val for i, val in enumerate(range(1))}
+        return branch_map
 
     def output(self):
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            bootstrap_index = self.branch_data
-
         # Load the input configuration
         if self.variable == '':
             input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -75,22 +66,12 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             output_dir = self.output_dir
 
         if self.variable == '':
-            if convert_boolean_string(self.bootstrap_flag) == False:
-                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
-            else:
-                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+            ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
         else:
-            if convert_boolean_string(self.bootstrap_flag) == False:
-                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
-            else:
-                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+            ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
         return law.LocalFileTarget(os.path.join(ws_dir, "allData.root"))
 
     def run(self):
-
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            bootstrap_index = self.branch_data
-
         # Load the input configuration
         if self.variable == '':
             input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -118,26 +99,14 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             
         # Step 1: Create the output directory if it doesn't exist
         if self.variable == '':
-            if convert_boolean_string(self.bootstrap_flag) == False:
-                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
-            else:
-                temp_ws_dir = os.path.join(temp_output_dir, f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+            temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
         else:
-            if convert_boolean_string(self.bootstrap_flag) == False:
-                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
-            else:
-                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+            temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
         if self.batch_flavor == "slurm/psi":
             if self.variable == '':
-                if convert_boolean_string(self.bootstrap_flag) == False:
-                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
-                else:
-                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+                final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
             else:
-                if convert_boolean_string(self.bootstrap_flag) == False:
-                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
-                else:
-                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+                final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
             # Have to use the xrdfs for the pnfs file system while on PSI Tier 3.
             execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {final_ws_dir}'], shell=True)
 
@@ -190,7 +159,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 elif (var == "weight"):
                     _vars[var] = ROOT.RooRealVar(var, var, 0.)
                 elif (convert_boolean_string(self.bootstrap_flag) == True):
-                    if var == "weight_bootstrap_%s"%bootstrap_index:
+                    if "weight_bootstrap" in var:
                         _vars[var] = ROOT.RooRealVar(var, var, 0.)
                 else:
                     _vars[var] = ROOT.RooRealVar(var, var, 1., -999999, 999999)
@@ -200,8 +169,9 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
     
         if convert_boolean_string(self.bootstrap_flag) == True:
             # Rename the weight columns for bootstrapping        
-            data_vars = [f"weight_bootstrap_{bootstrap_index}" if "weight_bootstrap" in item else item for item in data_vars]
-            data_vars.remove("weight")
+            # data_vars = [f"weight_bootstrap_{i}" for i in range(int(self.number_of_bootstraps)) if "weight_bootstrap" in item else item for item in data_vars]
+            data_vars = [f"weight_bootstrap_{i}" for i in range(int(self.number_of_bootstraps))] + [item for item in data_vars if "weight_bootstrap" not in item]
+            # data_vars.remove("weight")
 
         # Add variables to the workspace
         var_names = add_vars_to_workspace(ws, data_vars)
@@ -226,10 +196,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
 
             # Define dataset for the category
             dname = "Data_%s_%s"%(sqrts__,cat)  
-            if convert_boolean_string(self.bootstrap_flag) == True:
-                d = ROOT.RooDataSet(dname, dname, aset, 'weight_bootstrap_%s'%bootstrap_index)
-            else:
-                d = ROOT.RooDataSet(dname, dname, aset, 'weight')
+            d = ROOT.RooDataSet(dname, dname, aset, 'weight')
 
             # Loop over events in the tree and add to the dataset
             for ev in t:
@@ -240,10 +207,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                     # if convert_boolean_string(self.bootstrap_flag) == True:
                     #     if var == "weight_bootstrap_%s"%bootstrap_index: continue
                     ws.var(var).setVal(getattr(ev,var))
-                if convert_boolean_string(self.bootstrap_flag) == True:
-                    d.add(aset,aset.getRealValue("weight_bootstrap_%s"%bootstrap_index))
-                else:
-                    d.add(aset,1.)
+                d.add(aset,1.)
 
             # Add dataset to the workspace
             getattr(ws, 'import')(d)

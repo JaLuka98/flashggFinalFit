@@ -612,6 +612,8 @@ int main(int argc, char* argv[]){
   bool is2011=false;
   bool verbose=false;
   bool saveMultiPdf=false;
+  bool doBootstrap_=false;
+  int bootstrapIndex_;
   int isFlashgg_ =1;
   string flashggCatsStr_;
   vector<string> flashggCats_;
@@ -635,6 +637,8 @@ int main(int argc, char* argv[]){
 		("flashggCats,f", po::value<string>(&flashggCatsStr_)->default_value("UntaggedTag_0,UntaggedTag_1,UntaggedTag_2,UntaggedTag_3,UntaggedTag_4,VBFTag_0,VBFTag_1,VBFTag_2,TTHHadronicTag,TTHLeptonicTag,VHHadronicTag,VHTightTag,VHLooseTag,VHEtTag"),       "Flashgg category names to consider")
     ("year", po::value<string>(&year_)->default_value("2016"),       "Dataset year")
     ("catOffset", po::value<int>(&catOffset)->default_value(0),       "Category numbering scheme offset")
+    ("doBootstrap", po::value<bool>(&doBootstrap_)->default_value(0),      "Run the F-test with bootstrapping")
+    ("bootstrapIndex", po::value<int>(&bootstrapIndex_)->default_value(0),      "Current bootstrap index")
     ("verbose,v",                                                                               "Run with more output")
   ;
   po::variables_map vm;
@@ -784,6 +788,11 @@ int main(int argc, char* argv[]){
 		if (verbose) std::cout << "[INFO] opened data for  "  << Form("data_mass_%s",catname.c_str()) <<" - " << dataFull <<std::endl;
     }
 
+    std::string weight_bootstrap = "weight_bootstrap_" + std::to_string(bootstrapIndex_);
+    std::cout << "[INFO] Using weight variable: " << weight_bootstrap << std::endl;
+    dataFull = new RooDataSet(Form("Data_13TeV_%s",catname.c_str()), Form("Data_13TeV_%s",catname.c_str()), dataFull, *dataFull->get(), nullptr, weight_bootstrap.c_str());
+
+    std::cout << "[INFO] opened data for  "  << Form("Data_13TeV_%s",catname.c_str()) <<" - " << dataFull <<std::endl;
 
 		mass->setBins(nBinsForMass);
 		RooDataSet *data;
