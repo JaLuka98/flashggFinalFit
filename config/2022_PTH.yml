@@ -1,11 +1,12 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/finalfits/PTH_bootstrapping/'
+# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/finalfits/PTH_bootstrapping_10k'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/finalfits/PTH_bootstrapping_10k'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/variables/PTH/data_bootstrapping/allData_2022.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/variables/PTH/signal/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/variables/PTH_1k/data_bootstrapping/allData_2022.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/variables/PTH_10k/signal/root'
 
 backgroundScriptCfg:
   # Setup
@@ -76,6 +77,7 @@ signalScriptCfg_2022_preEE:
   ext: 'earlyAnalysis_PTH_2022preEE' # output directory extension
   analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
   year: '2022preEE' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '50'
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
@@ -100,6 +102,7 @@ signalScriptCfg_2022_postEE:
   ext: 'earlyAnalysis_PTH_2022postEE' # output directory extension
   analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
   year: '2022postEE' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '50'
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
