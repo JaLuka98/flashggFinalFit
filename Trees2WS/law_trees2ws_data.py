@@ -239,7 +239,14 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                     if var == "weight": continue
                     # if convert_boolean_string(self.bootstrap_flag) == True:
                     #     if var == "weight_bootstrap_%s"%bootstrap_index: continue
-                    ws.var(var).setVal(getattr(ev,var))
+                    if "weight_bootstrap" in var:
+                        branch = t.GetBranch(var)
+                        leaf = branch.GetLeaf(var)
+                        branch.GetEntry(ev.GetReadEntry())
+                        value = int(leaf.GetValue())
+                    else:
+                        value = getattr(ev, var)
+                    ws.var(var).setVal(value)
                 if convert_boolean_string(self.bootstrap_flag) == True:
                     d.add(aset,aset.getRealValue("weight_bootstrap_%s"%bootstrap_index))
                 else:

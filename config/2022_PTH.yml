@@ -4,7 +4,7 @@ outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samp
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/variables/PTH/data_bootstrapping/allData_2022.root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/variables/PTH_10k/data_postprocessing/root/Data/allData_2022.root'
   Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2022_HIG_23_014/variables/PTH/signal/root'
 
 backgroundScriptCfg:
