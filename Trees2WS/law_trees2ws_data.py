@@ -197,7 +197,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             # Define dataset for the category
             dname = "Data_%s_%s"%(sqrts__,cat)  
             d = ROOT.RooDataSet(dname, dname, aset, 'weight')
-
+            
             # Loop over events in the tree and add to the dataset
             for ev in t:
                 if self.apply_mass_cut:
@@ -206,7 +206,20 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                     if var == "weight": continue
                     # if convert_boolean_string(self.bootstrap_flag) == True:
                     #     if var == "weight_bootstrap_%s"%bootstrap_index: continue
-                    ws.var(var).setVal(getattr(ev,var))
+                    # print(ev.Print())
+                    # for branch in t.GetListOfBranches():
+                    #     print(branch.GetName())
+                    # weight_value = getattr(ev, "weight_bootstrap_0")
+                    # print(f"weight_bootstrap_0: {weight_value}")
+                    if "weight_bootstrap" in var:
+
+                        branch = t.GetBranch(var)
+                        leaf = branch.GetLeaf(var)
+                        branch.GetEntry(ev.GetReadEntry())
+                        value = int(leaf.GetValue())
+                    else:
+                        value = getattr(ev, var)
+                    ws.var(var).setVal(value)
                 d.add(aset,1.)
 
             # Add dataset to the workspace
