@@ -230,7 +230,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 d = ROOT.RooDataSet(dname, dname, aset, 'weight_bootstrap_%s'%bootstrap_index)
             else:
                 d = ROOT.RooDataSet(dname, dname, aset, 'weight')
-
+                
             # Loop over events in the tree and add to the dataset
             for ev in t:
                 if self.apply_mass_cut:

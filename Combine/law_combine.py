@@ -586,7 +586,8 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                     execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
                     execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
                 else:
-                    list_command = ["xrdfs", "root://t3dcachedb.psi.ch", "ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
+                    # list_command = ["xrdfs", "root://t3dcachedb.psi.ch", "ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
+                    list_command = ["ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
                     file_list = subprocess.check_output(list_command).decode().splitlines()
 
                     print(file_list)
@@ -733,6 +734,7 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
                 "-t", "-1",
                 "-P", f"{current_branch}",
                 "--saveFitResult",
@@ -1041,6 +1043,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
                 "-t", "-1",
                 "-P", f"{self.cat}",
                 "--firstPoint", f"{current_point}",
@@ -1049,7 +1052,8 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--floatOtherPOIs", "1",
                 "--alignEdges", "1",
                 "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
-                "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
+                # "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""",
+                "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""", # According to Mauro: Try without profiling
             ]
             command = arguments
             # print(command)
@@ -1270,6 +1274,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
                 "-t", "-1",
                 "-P", f"{self.cat}",
                 "--firstPoint", f"{current_point}",
@@ -1279,7 +1284,8 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
                 "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
-                "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
+                # "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""",
+                "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""", # According to Mauro: Try without profiling
             ]
             command = arguments
             # print(command)
@@ -1337,7 +1343,7 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-            
+                        
         tasks = []
         if self.variable == '':
             cat = "r"
@@ -1425,8 +1431,6 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
         else:
             output_dir = self.output_dir  
             
-        safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', 'scans'))
-        
         cwd = os.getcwd()
         
         if self.batch_flavor == "slurm/psi":
@@ -2258,6 +2262,7 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             "--X-rtd", "MINIMIZER_multiMin_hideConstants",
             "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
             "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+            "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
             "-t", "-1",
             "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
         ]
@@ -2619,6 +2624,7 @@ class ToyFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWo
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
                 "-t", "1",
                 # "--toysFrequentist",
                 # "--bypassFrequentistFit",
@@ -2628,6 +2634,7 @@ class ToyFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWo
                 "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
                 "--floatOtherPOIs", "1",
                 "--saveToys",
+                "--toysNoSystematics", # According to Mauro: Try without systematics
             ]
             arguments.append("--setParameters")
             arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""")
@@ -2859,21 +2866,21 @@ class ToysFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
             
         else:
             ws_path = os.path.join(toy_output, f"higgsCombinefirstStep_{current_cat}.MultiDimFit.mH125.38.{seed}.root")
-            pdfIdx = check_pdf_idx(toy_output, current_cat, seed)        
+            # pdfIdx = check_pdf_idx(toy_output, current_cat, seed)        
             
             arguments = [
                 "combineTool.py",
                 "-M", "MultiDimFit",
                 ws_path,
-                "--freezeParameters", "MH",
                 "-m", "125.38",
                 "-n", f"ToyBestFit_{current_cat}",
                 "--cminDefaultMinimizerStrategy=0",
-                "--algo", "singles",
+                "--algo", "singles", # We dont need errors here
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
                 "-t", "1",
                 "-s", f"{seed}",
                 "-P", f"{current_cat}",
@@ -2886,7 +2893,11 @@ class ToysFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
                 "--floatOtherPOIs", "1",
                 "--saveWorkspace",
                 "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
-                "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
+                # "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
+                "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""",
+                "--freezeParameters", "MH",
+                "--toysNoSystematics", # According to Mauro: Try without systematics
+                # "--freezeParameters", f"""MH,{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""", # According to Mauro: Try without profiling
                 # "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
             ]
             command = arguments
