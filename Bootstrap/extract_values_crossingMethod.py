@@ -49,16 +49,10 @@ path_to_hesse = os.path.join(main_dir, 'hesse/robustHessefirstStep.root')
 base_dir = os.path.join(main_dir, "toyFit")
 combineLL_dir = os.path.join(main_dir, "asimov")
 
-def coefficients(_m1, _m2ii, _m3):
-    # Eq 2.9: coefficient c
-    c = -np.sign(_m3) * np.sqrt(2*_m2ii) * np.cos( (4*np.pi/3) + (1/3)*np.arctan( np.sqrt(8*_m2ii**3/_m3**2 - 1) ) )
-    
-    # c = 0
-    
-    # Eq 2.10: coefficient b
-    b = np.sqrt(_m2ii - 2*c**2)   
-    # Eq 2.11: coefficient a
-    a = (_m1 - c)
+def coefficients(z_hat, sigma_min, sigma_plus):
+    a = z_hat
+    b = (sigma_min + sigma_plus) / 2
+    c = (sigma_plus - sigma_min) / 2
         
     return a, b, c
 
@@ -135,13 +129,15 @@ def find_crossings(x_vals, y_vals, threshold=1.0):
                 crossings.append(x_cross)
     return crossings
 
-def extract_covariance_matrix(root_file_path, poi_list):
+def extract_covariance_matrix(root_file_path, poi_list, correlation=False):
     # Open the ROOT file
     root_file = ROOT.TFile.Open(root_file_path, "READ")
     
     # Retrieve the correlation matrix histogram
-    # h_correlation = root_file.Get("h_correlation")
-    h_covariance = root_file.Get("h_covariance") # SIC! This is the covariance matrix, not the correlation matrix. We have the Gaussian approximation, in which corr == cov
+    if correlation:
+        h_covariance = root_file.Get("h_correlation")
+    else:
+        h_covariance = root_file.Get("h_covariance") # SIC! This is the covariance matrix, not the correlation matrix. We have the Gaussian approximation, in which corr == cov
     
     floatParsFinal = root_file.Get("floatParsFinal")
     # Extract parameter names and values
@@ -189,6 +185,7 @@ def plot_individual_correlation(x_vals, y_vals, x_name, y_name, rho, folder=""):
     ax.text(0.1, 0.9, f"$\\rho = {rho:.3f}$", transform=ax.transAxes)
     plt.savefig(os.path.join(folder, f"{x_name}_vs_{y_name}.pdf"), bbox_inches='tight')
     plt.savefig(os.path.join(folder, f"{x_name}_vs_{y_name}.png"), bbox_inches='tight')
+    plt.close()
     # plt.show()
 
 def plot_covariance_matrix(rho, poi_list, folder="", title="Covariance Matrix", output_name="covariance_matrix.png"):
@@ -250,8 +247,6 @@ def produce_rho(pois_, poi_list_):
         third_moment = np.mean((r - mean)**3)
 
         a, b, c = coefficients(mean, cov_matrix[i,i], third_moment)
-        
-        # c = 0
         
         abc_values[current_poi] = [a, b, c]
 
@@ -357,7 +352,7 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
 
         # Find crossing points at for 68% interval 
         crossings_x0 = find_crossings(x0_range, chi_x0_scan)
-        print('crossings_x0', crossings_x0)
+        # print('crossings_x0', crossings_x0)
         
         x0_ranges.append(x0_range)
         chi_x0_scans.append(chi_x0_scan)
@@ -367,15 +362,97 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
 
 def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_order=False):
     
-    x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_)
-    print("Optimal values: ", optimal_values)
-    if print_first_order:
-        x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, first_order=True)
+    # x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_)
+    # print("Optimal values: ", optimal_values)
+    # if print_first_order:
+    #     x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, first_order=True)
     
     if (not os.path.exists(folder)) & (folder!=""):
         os.makedirs(folder)
-
+        
+    abc_values_crossingMethod = {}
+    rho_crossingMethod = []
     
+    cov_matrix = extract_covariance_matrix(path_to_hesse, poi_list_, correlation=False)
+    
+    print("Covariance matrix:", cov_matrix.to_numpy())
+    
+    for i, current_poi in enumerate(poi_list_):
+        
+        with uproot.open(os.path.join(combineLL_dir_, "scans", f"scan_{current_poi}.root")) as file:
+            # Get the TGraphs - note that uproot reads them as pairs of arrays
+            graph = file[f"scan_{current_poi};1"]  # Replace with your TGraph name
+            # Extract x and y values
+            x0_points = graph.member("fX")  # Gets x values
+            y0_points = graph.member("fY")  # Gets y values
+        
+        z_hat = x0_points[np.argmin(y0_points)] # Consider an Asimov dataset
+        crossing_minus, crossing_plus = find_crossings(x0_points, y0_points)
+        sigma_plus = crossing_plus - z_hat
+        sigma_minus = z_hat - crossing_minus
+        
+        a, b, c = coefficients(z_hat, sigma_minus, sigma_plus)
+        abc_values_crossingMethod[current_poi] = [a, b, c]
+        print(f"abc_values: {current_poi}: {abc_values_crossingMethod[current_poi]}")
+        
+        
+    for i, current_poi in enumerate(poi_list_):
+        reihe_i = []
+        for j, other_poi in enumerate(poi_list_):
+            reihe_i.append(compute_rho_ij(abc_values_crossingMethod[current_poi][2], abc_values_crossingMethod[other_poi][2], abc_values_crossingMethod[current_poi][1], abc_values_crossingMethod[other_poi][1], cov_matrix.to_numpy()[i,j]))
+        rho_crossingMethod.append(reihe_i)
+    
+    print("rho_crossingMethod", rho_crossingMethod)
+    
+    rho_crossingMethod = extract_covariance_matrix(path_to_hesse, poi_list_, correlation=True)
+    rho_crossingMethod = rho_crossingMethod.to_numpy()
+    
+    # for i, current_poi in enumerate(poi_list_):
+    #     for j, other_poi in enumerate(poi_list_):
+    #         rho_crossingMethod[i,j] = rho_crossingMethod[i,j] * (abc_values_crossingMethod[current_poi][1] * abc_values_crossingMethod[other_poi][1])
+    
+    x0 = np.array([1. for i in range(len(poi_list_))])
+    res = minimize(chi, x0, args=(pois_, poi_list_, rho_crossingMethod, abc_values_crossingMethod))
+    
+    # Get optimal values from minimization
+    optimal_values = res.x
+    
+    x0_ranges = []
+    chi_x0_scans = []
+    # optimal_values_list = []
+    
+    for i, current_poi in enumerate(poi_list_):
+        print(f"{current_poi}: {optimal_values[i]:.3f}")
+
+        # Create a grid of points
+        x0_range = np.linspace(-1, 3, 100)  # Adjust range as needed
+        
+        optimal_values_copy = optimal_values.copy()
+        
+        # for opt_value in opt_value_with_fixed_rest:
+        #     print("Chi2 evaluated at: ", opt_value)
+        #     print(float(chi(opt_value, pois_, poi_list_, rho, abc_values, first_order=True)))
+
+        chi_x0_scan = []
+        for x0 in x0_range:
+            for j in range(len(poi_list_)):
+                if j!=i:
+                    # if first_order:
+                    #     optimal_values_copy[j] = bf_first_order[j]
+                    # else:
+                    #     optimal_values_copy[j] = optimal_values[j]
+                    optimal_values_copy[j] = optimal_values[j]
+                if j == i:
+                    optimal_values_copy[j] = x0
+            chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho_crossingMethod, abc_values_crossingMethod, first_order=False)))
+        
+        chi_x0_scan = np.array(chi_x0_scan)
+
+        
+        x0_ranges.append(x0_range)
+        chi_x0_scans.append(chi_x0_scan)
+        # optimal_values_list.append(optimal_values[i])
+
     cov_matrix = np.cov([pois_[r] for r in poi_list_])
     
     for i, current_poi in enumerate(poi_list_):
@@ -395,21 +472,21 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
         plt.style.use(hep.style.CMS)
         _, ax1 = plt.subplots(1, 1, figsize=(12, 8))
 
-        # Plot x0 scan
-        ax1.plot(x0_ranges[i], chi_x0_scans[i], label='Simplified likelihood (ABC)')
-        ax1.axvline(optimal_values[i], color='grey', linestyle='--', label=f'Minimum: {optimal_values[i]:.3f}')
-        # print("Simplified likelihood (ABC): ", chi_x0_scans[i])
-        if print_first_order:
-            ax1.plot(x0_ranges_fo[i], chi_x0_scans_fo[i], label='Simplified likelihood (Hesse)')
-            # ax1.axvline(optimal_values_fo[i], color='grey', linestyle='--', label=f'Minimum: {optimal_values_fo[i]:.3f}')
-            # print(chi_x0_scans_fo[i])
+        # # Plot x0 scan
+        ax1.plot(x0_ranges[i], chi_x0_scans[i], label='Simplified likelihood (ABC, crossingMethod)')
+        # ax1.axvline(optimal_values[i], color='grey', linestyle='--', label=f'Minimum: {optimal_values[i]:.3f}')
+        # # print("Simplified likelihood (ABC): ", chi_x0_scans[i])
+        # if print_first_order:
+        #     ax1.plot(x0_ranges_fo[i], chi_x0_scans_fo[i], label='Simplified likelihood (Hesse)')
+        #     # ax1.axvline(optimal_values_fo[i], color='grey', linestyle='--', label=f'Minimum: {optimal_values_fo[i]:.3f}')
+        #     # print(chi_x0_scans_fo[i])
         with uproot.open(os.path.join(combineLL_dir_, "scans", f"scan_{current_poi}.root")) as file:
             # Get the TGraphs - note that uproot reads them as pairs of arrays
             graph = file[f"scan_{current_poi};1"]  # Replace with your TGraph name
             # Extract x and y values
             x0_points = graph.member("fX")  # Gets x values
             y0_points = graph.member("fY")  # Gets y values
-            
+                            
         # print("Element closest to 1 in x0_ranges", np.argmin(np.abs(x0_ranges[i] - 1)))
         # idx_closest = np.argmin(np.abs(x0_ranges[i] - 1))
         # x_at_peak = x0_ranges[i][idx_closest]
@@ -492,15 +569,15 @@ else:
     with open('pois.json', 'r') as f:
         pois = json.load(f)
     
-# unique_pairings = list(combinations(poi_list, 2))
+unique_pairings = list(combinations(poi_list, 2))
 
-# for current_tuple in unique_pairings:
-#     r_1, r_2 = current_tuple
+for current_tuple in unique_pairings:
+    r_1, r_2 = current_tuple
     
-#     plot_individual_correlation(pois[r_1], pois[r_2], r_1, r_2, np.corrcoef(pois[r_1], pois[r_2])[0,1], folder="Plots/PTH")
+    plot_individual_correlation(pois[r_1], pois[r_2], r_1, r_2, np.corrcoef(pois[r_1], pois[r_2])[0,1], folder="Plots/PTH_crossingMethod")
     
     
-# produce_LLPlots(pois, poi_list, combineLL_dir, folder="Plots/PTH/SL", print_first_order=False)
+produce_LLPlots(pois, poi_list, combineLL_dir, folder="Plots/PTH_crossingMethod/SL", print_first_order=True)
 
 
  
