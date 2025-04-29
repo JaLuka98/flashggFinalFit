@@ -251,11 +251,10 @@ def produce_rho(pois_, poi_list_):
         abc_values[current_poi] = [a, b, c]
 
         # Print results
-        print("\nMean values:")
-        print(f"{current_poi}: {mean:.3f}")
-
-        print("\nDiagonal components of third moment:")
-        print(f"{current_poi}: {third_moment:.3f}")
+        print(f"Current POI: {current_poi}")
+        print(f"Mean values: {mean:.3f}")
+        print(f"Diagonal components of third moment: {third_moment:.3f}")
+        print(f"ABC values: {a:.3f}, {b:.3f}, {c:.3f}\n")
 
     for i, current_poi in enumerate(poi_list_):
         reihe_i = []
@@ -392,6 +391,11 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
         sigma_minus = z_hat - crossing_minus
         
         a, b, c = coefficients(z_hat, sigma_minus, sigma_plus)
+        
+        print("CrossingMethod")
+        print(f"Current POI: {current_poi}")
+        print(f"ABC values: {a:.3f}, {b:.3f}, {c:.3f}\n")
+        
         abc_values_crossingMethod[current_poi] = [a, b, c]
         print(f"abc_values: {current_poi}: {abc_values_crossingMethod[current_poi]}")
         

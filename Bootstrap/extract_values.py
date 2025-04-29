@@ -112,8 +112,8 @@ def chi(x, pois_, poi_list_, rho_, abc_values=None, first_order=False):
             
             # print("((x[i] - mean) / b)**2", ((x[i] - mean) / b)**2)
 
-            # chi_vector_.append([chi_vector(x[i], mean, a, b, c)])
-            chi_vector_.append([chi_vector(x[i], 1.025, a, b, c)])
+            chi_vector_.append([chi_vector(x[i], mean, a, b, c)])
+            # chi_vector_.append([chi_vector(x[i], 1.025, a, b, c)])
 
     chi_vector_ = np.array(chi_vector_).flatten()
 
@@ -258,19 +258,36 @@ def produce_rho(pois_, poi_list_):
         # Diagonal components of the third moment
         # Computing E[(X - μ)³]
         third_moment = np.mean((r - mean)**3)
+        print((r - mean)**3)
 
         a, b, c = coefficients(mean, cov_matrix[i,i], third_moment)
         
         # c = 0
         
+        # if current_poi == "r_PTH_350p0_10000p0":
+            
+        #     # plt.figure()
+        #     # plt.hist(r, bins=50, edgecolor='black')
+        #     # plt.title('Distribution of r')
+        #     # plt.xlabel('Value')
+        #     # plt.ylabel('Frequency')
+        #     # plt.grid(True)
+        #     # plt.savefig("./Plots/PTH/SL/r_PTH_350p0_10000p0.png")
+        #     # plt.close()
+            
+        #     a = 0.998
+        #     # b = 0.851
+        #     b = 0.901
+        #     # c = -0.039
+        #     c = 0.092
+        
         abc_values[current_poi] = [a, b, c]
 
         # Print results
-        print("\nMean values:")
-        print(f"{current_poi}: {mean:.3f}")
-
-        print("\nDiagonal components of third moment:")
-        print(f"{current_poi}: {third_moment:.3f}")
+        print(f"Current POI: {current_poi}")
+        print(f"Mean values: {mean:.3f}")
+        print(f"Diagonal components of third moment: {third_moment:.3f}")
+        print(f"ABC values: {a:.3f}, {b:.3f}, {c:.3f}\n")
 
     for i, current_poi in enumerate(poi_list_):
         reihe_i = []
@@ -473,6 +490,8 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
         
         condition = (8*variance**3 >= third_moment**2)
         print(f"Condition for {current_poi}: {condition}")
+        print(f"Variance for {current_poi}: {variance}")
+        print(f"Third moment for {current_poi}: {third_moment}\n")
         if not condition:
             print(f"Skipping {current_poi} as condition is not satisfied")
             continue
@@ -541,7 +560,8 @@ def create_poiJson(base_dir, poi_list):
             seed = 123456 + i
             
             try:
-                current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombineToyBestFit_{current_poi}.MultiDimFit.mH125.38.{seed}.root")
+                # current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombineToyBestFit_{current_poi}.MultiDimFit.mH125.38.{seed}.root")
+                current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.38.{seed}.root")
             except:
                 print(f"Skipping fit_{i}: Required scan files not found")
                 continue
