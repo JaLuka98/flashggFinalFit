@@ -53,6 +53,8 @@ def coefficients(_m1, _m2ii, _m3):
     # Eq 2.9: coefficient c
     c = -np.sign(_m3) * np.sqrt(2*_m2ii) * np.cos( (4*np.pi/3) + (1/3)*np.arctan( np.sqrt(8*_m2ii**3/_m3**2 - 1) ) )
     
+    
+    # print("ACHTUNG: c == 0")
     # c = 0
     
     # Eq 2.10: coefficient b
@@ -79,7 +81,7 @@ def chi_vector(x_exp, x_obs, _a, _b, _c):
     chi_diff = (chi_obs - chi_exp) # Chi_Obs is very small compared to chi_exp
     return chi_diff
 
-def chi(x, pois_, poi_list_, rho, abc_values=None, first_order=False):
+def chi(x, pois_, poi_list_, rho_, abc_values=None, first_order=False):
     chi_vector_ = []
 
     if first_order:
@@ -107,8 +109,11 @@ def chi(x, pois_, poi_list_, rho, abc_values=None, first_order=False):
                 print("Provide abc_values")
                 return None
             a, b, c = abc_values[current_poi]
+            
+            # print("((x[i] - mean) / b)**2", ((x[i] - mean) / b)**2)
 
-            chi_vector_.append([chi_vector(x[i], mean, a, b, c)])
+            # chi_vector_.append([chi_vector(x[i], mean, a, b, c)])
+            chi_vector_.append([chi_vector(x[i], 1.025, a, b, c)])
 
     chi_vector_ = np.array(chi_vector_).flatten()
 
@@ -117,9 +122,13 @@ def chi(x, pois_, poi_list_, rho, abc_values=None, first_order=False):
     # if first_order:
     #     print("Ingredients: ", bf_first_order - x)
     #     print("chi2_vector: ", chi_vector_)
-    #     print("chi2:", chi_vector_.T @ np.linalg.inv(rho) @ chi_vector_)
+    #     print("chi2:", chi_vector_.T @ np.linalg.inv(rho) @ chi_vector_
+    
+    # if not first_order:
+    #     print("chi2_vector: ", chi_vector_)
+    #     print("matrix x chi_vector: ", np.linalg.inv(rho_) @ chi_vector_)
 
-    return chi_vector_.T @ np.linalg.inv(rho) @ chi_vector_
+    return chi_vector_.T @ np.linalg.inv(rho_) @ chi_vector_
 
 def find_crossings(x_vals, y_vals, threshold=1.0):
     # Find where the difference changes sign
@@ -177,7 +186,7 @@ def extract_covariance_matrix(root_file_path, poi_list):
             
     return df_filtered
 
-def plot_individual_correlation(x_vals, y_vals, x_name, y_name, rho, folder=""):
+def plot_individual_correlation(x_vals, y_vals, x_name, y_name, rho_, folder=""):
     # rho is here a number
     if (not os.path.exists(folder)) & (folder!=""):
         os.makedirs(folder)
@@ -186,12 +195,13 @@ def plot_individual_correlation(x_vals, y_vals, x_name, y_name, rho, folder=""):
     ax.scatter(x_vals, y_vals)
     ax.set_xlabel(translation[x_name])
     ax.set_ylabel(translation[y_name])
-    ax.text(0.1, 0.9, f"$\\rho = {rho:.3f}$", transform=ax.transAxes)
+    ax.text(0.1, 0.9, f"$\\rho = {rho_:.3f}$", transform=ax.transAxes)
     plt.savefig(os.path.join(folder, f"{x_name}_vs_{y_name}.pdf"), bbox_inches='tight')
     plt.savefig(os.path.join(folder, f"{x_name}_vs_{y_name}.png"), bbox_inches='tight')
     # plt.show()
+    plt.close()
 
-def plot_covariance_matrix(rho, poi_list, folder="", title="Covariance Matrix", output_name="covariance_matrix.png"):
+def plot_covariance_matrix(rho_, poi_list, folder="", title="Covariance Matrix", output_name="covariance_matrix.png"):
     # rho is here a matrix
     if (not os.path.exists(folder)) & (folder!=""):
         os.makedirs(folder)
@@ -203,7 +213,7 @@ def plot_covariance_matrix(rho, poi_list, folder="", title="Covariance Matrix", 
     
     # Create heatmap
     sns.heatmap(
-        rho, 
+        rho_, 
         annot=True, 
         fmt=".2f", 
         cmap="coolwarm", 
@@ -313,6 +323,7 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
         # rho = correlation_to_covariance(np.array(rho), np.sqrt(np.diag(np.cov([pois_[r] for r in poi_list_]))))
 
         x0 = np.array([1. for i in range(len(poi_list_))])
+        # x0 = np.array([bf_first_order[i] for i in range(len(poi_list_))])
         res = minimize(chi, x0, args=(pois_, poi_list_, rho, abc_values, first_order))
         
         # print(res.x)
@@ -335,6 +346,80 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
         # for opt_value in opt_value_with_fixed_rest:
         #     print("Chi2 evaluated at: ", opt_value)
         #     print(float(chi(opt_value, pois_, poi_list_, rho, abc_values, first_order=True)))
+        
+        # if (first_order==False) and (i == 0): 
+        #     print("abc_values", abc_values)
+        #     print("rho", rho)        
+        #     print("np.linalg.inv(rho) vorher", np.linalg.inv(rho))
+            
+        #     factor = -1
+            
+        #     # for i in range(len(rho)):
+        #     #     if i==7:
+        #     #         continue
+        #     #     rho[7][i] *= factor
+        #     #     rho[i][7] *= factor
+            
+        #     # for k in range(len(rho)):
+        #     #     # if k != 7:
+        #     #     #     continue
+        #     #     for l in range(len(rho)):
+        #     #         # if k==l:
+        #     #         #     continue
+        #     #         rho[k][l] *= factor
+        #     #         rho[l][k] *= factor
+            
+        #     # rho[7][0] *= -1
+        #     # rho[0][7] *= -1
+        #     # rho[7][1] *= 1
+        #     # rho[1][7] *= 1
+        #     # rho[7][2] *= 1
+        #     # rho[2][7] *= 1
+        #     # rho[7][3] *= -1
+        #     # rho[3][7] *= -1
+        #     # rho[7][4] *= -1
+        #     # rho[4][7] *= -1
+        #     # rho[7][5] *= 1
+        #     # rho[5][7] *= 1
+        #     # rho[7][6] *= -1
+        #     # rho[6][7] *= -1
+        #     # rho[7][7] *= -1
+        #     # rho[7][7] *= -1
+            
+        #     # rho[7][0] *= -1
+        #     # rho[0][7] *= -1
+        #     # rho[7][1] *= 1
+        #     # rho[1][7] *= 1
+        #     # rho[7][2] *= 1
+        #     # rho[2][7] *= 1
+        #     # rho[7][3] *= -1
+        #     # rho[3][7] *= -1
+        #     # rho[7][4] *= -1
+        #     # rho[4][7] *= -1
+        #     # rho[7][5] *= 1
+        #     # rho[5][7] *= 1
+        #     # rho[7][6] *= -1
+        #     # rho[6][7] *= -1
+            
+        #     # print("Ändere b für letzten Bin")
+        #     # abc_values["r_PTH_350p0_10000p0"][0] = 0.75
+        #     # abc_values["r_PTH_350p0_10000p0"][1] = 0.75
+            
+        #     # for k in range(len(rho)):
+        #     #     # if k != 7:
+        #     #     #     continue
+        #     #     for l in range(len(rho)):
+        #     #         if k==l:
+        #     #             rho[k][l] = 1
+        #     #             rho[l][k] = 1   
+        #     #             continue
+        #     #         rho[k][l] *= 0
+        #     #         rho[l][k] *= 0            
+        #     # print("ones_like(rho)", rho)
+            
+        #     # rho = np.identity(len(rho))
+            
+        #     print("np.linalg.inv(rho) nachher", np.linalg.inv(rho))
 
         chi_x0_scan = []
         for x0 in x0_range:
@@ -351,13 +436,14 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
                 # print("opt_value_with_fixed_rest", optimal_values_copy)
                 chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho, abc_values, first_order=True)))
             else:
+                print("opt_value_with_fixed_rest", optimal_values_copy)
                 chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho, abc_values, first_order=False)))
         
         chi_x0_scan = np.array(chi_x0_scan)
 
         # Find crossing points at for 68% interval 
         crossings_x0 = find_crossings(x0_range, chi_x0_scan)
-        print('crossings_x0', crossings_x0)
+        # print('crossings_x0', crossings_x0)
         
         x0_ranges.append(x0_range)
         chi_x0_scans.append(chi_x0_scan)
@@ -368,7 +454,7 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
 def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_order=False):
     
     x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_)
-    print("Optimal values: ", optimal_values)
+    # print("Optimal values: ", optimal_values)
     if print_first_order:
         x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, first_order=True)
     
@@ -492,15 +578,15 @@ else:
     with open('pois.json', 'r') as f:
         pois = json.load(f)
     
-# unique_pairings = list(combinations(poi_list, 2))
+unique_pairings = list(combinations(poi_list, 2))
 
-# for current_tuple in unique_pairings:
-#     r_1, r_2 = current_tuple
+for current_tuple in unique_pairings:
+    r_1, r_2 = current_tuple
     
-#     plot_individual_correlation(pois[r_1], pois[r_2], r_1, r_2, np.corrcoef(pois[r_1], pois[r_2])[0,1], folder="Plots/PTH")
+    plot_individual_correlation(pois[r_1], pois[r_2], r_1, r_2, np.corrcoef(pois[r_1], pois[r_2])[0,1], folder="Plots/PTH")
     
     
-# produce_LLPlots(pois, poi_list, combineLL_dir, folder="Plots/PTH/SL", print_first_order=False)
+produce_LLPlots(pois, poi_list, combineLL_dir, folder="Plots/PTH/SL", print_first_order=True)
 
 
  
