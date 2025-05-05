@@ -374,6 +374,7 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
     
     cov_matrix = extract_covariance_matrix(path_to_hesse, poi_list_, correlation=False)
     
+    print("CrossingMethod")
     print("Covariance matrix:", cov_matrix.to_numpy())
     
     for i, current_poi in enumerate(poi_list_):
@@ -392,12 +393,11 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
         
         a, b, c = coefficients(z_hat, sigma_minus, sigma_plus)
         
-        print("CrossingMethod")
         print(f"Current POI: {current_poi}")
         print(f"ABC values: {a:.3f}, {b:.3f}, {c:.3f}\n")
         
         abc_values_crossingMethod[current_poi] = [a, b, c]
-        print(f"abc_values: {current_poi}: {abc_values_crossingMethod[current_poi]}")
+        # print(f"abc_values: {current_poi}: {abc_values_crossingMethod[current_poi]}")
         
         
     for i, current_poi in enumerate(poi_list_):
@@ -521,25 +521,28 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
     
 def create_poiJson(base_dir, poi_list):
     pois = {}
-
+    
     for current_poi in poi_list:
-        
+            
         pois[current_poi] = []
+    
+    for i in range(len(glob.glob(os.path.join(base_dir, "toy_*")))):
+            
+        if i%100==0:
+            print(f"Processing fit_{i}")
         
-        print(f"Processing {current_poi}")
+        seed = 123456 + i
+        
+        try:
+            # current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombineToyBestFit_{current_poi}.MultiDimFit.mH125.38.{seed}.root")
+            current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root")
+        except:
+            print(f"Skipping fit_{i}: Required scan files not found")
+            continue
 
-        for i in range(len(glob.glob(os.path.join(base_dir, "toy_*")))):
+        for j, current_poi in enumerate(poi_list):
             
-            if i%100==0:
-                print(f"Processing fit_{i}")
-            
-            seed = 123456 + i
-            
-            try:
-                current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombineToyBestFit_{current_poi}.MultiDimFit.mH125.38.{seed}.root")
-            except:
-                print(f"Skipping fit_{i}: Required scan files not found")
-                continue
+            # print(f"Processing {current_poi}")
 
             current_tree = current_root_files["limit"]
             
@@ -550,7 +553,8 @@ def create_poiJson(base_dir, poi_list):
                     print(current_limit_values[0])
                     print(i)
             except:
-                print("Empty ROOT file for bootstrap: ", i)
+                if j == 0:
+                    print("Empty ROOT file for bootstrap: ", i)
                 continue
 
             pois[current_poi].append(float(current_limit_values[0]))

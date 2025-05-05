@@ -8,10 +8,13 @@ import ROOT
 import pandas as pd
 from scipy import stats
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, curve_fit
 from scipy.stats import moment
 import json
 from itertools import combinations  
+
+def gaus(x, amp, mu, sigma):
+    return amp * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
 translation = {
     "r_PTH_0p0_15p0": r"$r_{p_{T}^{\gamma\gamma} \in [0,15) \text{ GeV}}$",
@@ -52,6 +55,7 @@ combineLL_dir = os.path.join(main_dir, "asimov")
 def coefficients(_m1, _m2ii, _m3):
     # Eq 2.9: coefficient c
     c = -np.sign(_m3) * np.sqrt(2*_m2ii) * np.cos( (4*np.pi/3) + (1/3)*np.arctan( np.sqrt(8*_m2ii**3/_m3**2 - 1) ) )
+    # c = +np.sign(_m3) * np.sqrt(2*_m2ii) * np.cos( (4*np.pi/3) + (1/3)*np.arctan( np.sqrt(8*_m2ii**3/_m3**2 - 1) ) )
     
     
     # print("ACHTUNG: c == 0")
@@ -113,7 +117,9 @@ def chi(x, pois_, poi_list_, rho_, abc_values=None, first_order=False):
             # print("((x[i] - mean) / b)**2", ((x[i] - mean) / b)**2)
 
             chi_vector_.append([chi_vector(x[i], mean, a, b, c)])
-            # chi_vector_.append([chi_vector(x[i], 1.025, a, b, c)])
+            # mean_trim = stats.trim_mean(r, proportiontocut=0.1)
+            # chi_vector_.append([chi_vector(x[i], mean_trim, a, b, c)])
+            # chi_vector_.append([chi_vector(x[i], 1.025, a, b, c)]) # 1.025
 
     chi_vector_ = np.array(chi_vector_).flatten()
 
@@ -236,8 +242,9 @@ def plot_covariance_matrix(rho_, poi_list, folder="", title="Covariance Matrix",
 
 def produce_rho(pois_, poi_list_):
 
+
     # Covariance matrix
-    cov_matrix = np.cov([pois_[r] for r in poi_list_])
+    cov_matrix = np.cov([pois_[current_poi] for current_poi in poi_list_])
 
     print("\nCovariance matrix:")
     print(cov_matrix)
@@ -258,33 +265,65 @@ def produce_rho(pois_, poi_list_):
         # Diagonal components of the third moment
         # Computing E[(X - μ)³]
         third_moment = np.mean((r - mean)**3)
-        print((r - mean)**3)
+        # print((r - mean)**3)
+        proportiontocut = 0.01
+        mean_trim = stats.trim_mean(r, proportiontocut=proportiontocut)
+        thirdMoment_truncated = stats.trim_mean((r-mean_trim)**3, proportiontocut=proportiontocut)
+        
+        # print(r)
 
-        a, b, c = coefficients(mean, cov_matrix[i,i], third_moment)
+        a, b, c = coefficients(mean_trim, cov_matrix[i,i], thirdMoment_truncated)
+        # a, b, c = coefficients(mean, cov_matrix[i,i], third_moment)
         
         # c = 0
         
         # if current_poi == "r_PTH_350p0_10000p0":
             
-        #     # plt.figure()
-        #     # plt.hist(r, bins=50, edgecolor='black')
-        #     # plt.title('Distribution of r')
-        #     # plt.xlabel('Value')
-        #     # plt.ylabel('Frequency')
-        #     # plt.grid(True)
-        #     # plt.savefig("./Plots/PTH/SL/r_PTH_350p0_10000p0.png")
-        #     # plt.close()
+        #     plt.figure()
+        #     plt.hist(r, bins=50, edgecolor='black')
+        #     plt.title('Distribution of r')
+        #     plt.xlabel('Value')
+        #     plt.ylabel('Frequency')
+        #     plt.grid(True)
+        #     plt.savefig("./Plots/PTH/SL/r_PTH_350p0_10000p0.png")
+        #     plt.close()
             
         #     a = 0.998
         #     # b = 0.851
         #     b = 0.901
         #     # c = -0.039
         #     c = 0.092
-        
+    
+        plt.figure()
+        if current_poi == "r_PTH_350p0_10000p0":
+            # plt.hist((r - np.mean(r))**3, bins=50, edgecolor='black')
+            plt.hist(r, bins=50, edgecolor='black') # range=(-1, 3)
+        else:
+            # plt.hist((r - np.mean(r))**3, bins=50, edgecolor='black')
+            # plt.hist(r, bins=30, edgecolor='black', range=(-1, 3))
+            plt.hist(r, bins=50, edgecolor='black')
+        # plt.title('Distribution of the third moment')
+        plt.title('Distribution of r')
+        plt.xlabel('Value')
+        plt.ylabel('Frequency')
+        plt.grid(True)
+        # plt.savefig(f"./Plots/PTH/SL/thirdMoment/{current_poi}.png")
+        plt.savefig(f"./Plots/PTH/SL/{current_poi}.png")
+        plt.close()
+                
         abc_values[current_poi] = [a, b, c]
 
         # Print results
         print(f"Current POI: {current_poi}")
+        # print("thirdMoment_median", thirdMoment_median)
+        
+        # print(f"scipy.moment: {stats.moment(r, moment=3):.3f}")
+        # print(f"scipy.skewness: {stats.skew(r):.3f}")
+        
+        
+        # print(f"scipy truncated mean: {mean_trim:.3f}")
+        # print(f"scipy truncated mean third moment: {thirdMoment_truncated:.3f}")        
+        
         print(f"Mean values: {mean:.3f}")
         print(f"Diagonal components of third moment: {third_moment:.3f}")
         print(f"ABC values: {a:.3f}, {b:.3f}, {c:.3f}\n")
@@ -332,7 +371,7 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
         # first_order = False
         res = minimize(chi, x0, args=(pois_, poi_list_, rho, abc_values, first_order))
         
-        print("res.x", res.x)
+        # print("res.x for first order", res.x)
         
     else:
         rho, abc_values = produce_rho(pois_, poi_list_)
@@ -453,7 +492,7 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
                 # print("opt_value_with_fixed_rest", optimal_values_copy)
                 chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho, abc_values, first_order=True)))
             else:
-                print("opt_value_with_fixed_rest", optimal_values_copy)
+                # print("opt_value_with_fixed_rest", optimal_values_copy)
                 chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho, abc_values, first_order=False)))
         
         chi_x0_scan = np.array(chi_x0_scan)
@@ -543,28 +582,31 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
     covariance_df = extract_covariance_matrix(path_to_hesse, poi_list)
     plot_covariance_matrix(covariance_df, poi_list_, folder=folder, title="Covariance Matrix (Hessian)", output_name="covariance_matrix_hesse.png")
     
-def create_poiJson(base_dir, poi_list):
-    pois = {}
 
+def create_poiJson_untrimmed(base_dir, poi_list):
+    pois = {}
+    
     for current_poi in poi_list:
-        
+            
         pois[current_poi] = []
         
-        print(f"Processing {current_poi}")
-
-        for i in range(len(glob.glob(os.path.join(base_dir, "toy_*")))):
+    for i in range(len(glob.glob(os.path.join(base_dir, "toy_*")))):
             
-            if i%100==0:
-                print(f"Processing fit_{i}")
+        if i%100==0:
+            print(f"Processing fit_{i}")
+        
+        seed = 123456 + i
+        
+        try:
+            # current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombineToyBestFit_{current_poi}.MultiDimFit.mH125.38.{seed}.root")
+            current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root")
+        except:
+            print(f"Skipping fit_{i}: Required scan files not found")
+            continue
+        
+        for j, current_poi in enumerate(poi_list):
             
-            seed = 123456 + i
-            
-            try:
-                # current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombineToyBestFit_{current_poi}.MultiDimFit.mH125.38.{seed}.root")
-                current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.38.{seed}.root")
-            except:
-                print(f"Skipping fit_{i}: Required scan files not found")
-                continue
+            # print(f"Processing {current_poi}")
 
             current_tree = current_root_files["limit"]
             
@@ -575,7 +617,69 @@ def create_poiJson(base_dir, poi_list):
                     print(current_limit_values[0])
                     print(i)
             except:
-                print("Empty ROOT file for bootstrap: ", i)
+                if j == 0:
+                    print("Empty ROOT file for bootstrap: ", i)
+                continue
+
+            pois[current_poi].append(float(current_limit_values[0]))
+    return pois
+
+def create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_value_right):
+    pois = {}
+    
+    for current_poi in poi_list:
+            
+        pois[current_poi] = []
+        
+    for i in range(len(glob.glob(os.path.join(base_dir, "toy_*")))):
+            
+        if i%100==0:
+            print(f"Processing fit_{i}")
+        
+        seed = 123456 + i
+        
+        try:
+            # current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombineToyBestFit_{current_poi}.MultiDimFit.mH125.38.{seed}.root")
+            current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root")
+        except:
+            print(f"Skipping fit_{i}: Required scan files not found")
+            continue
+        
+        kill_event = False
+        
+        # First loop to check if there are outliers (outliers are events smaller than -4 and bigger than 4)
+        for j, current_poi in enumerate(poi_list):
+            current_tree = current_root_files["limit"]
+            current_limit_values = current_tree[current_poi].array()
+            
+            try:
+                if (current_limit_values[0] > trimming_value_right) or (current_limit_values[0] < trimming_value_left):
+                    kill_event = True
+                    break
+            except:
+                if j == 0:
+                    print("Empty ROOT file for bootstrap: ", i)
+                continue
+        
+        if kill_event:
+            print(f"Skipping fit_{i}: Outlier found")
+            continue
+
+        for j, current_poi in enumerate(poi_list):
+            
+            # print(f"Processing {current_poi}")
+
+            current_tree = current_root_files["limit"]
+            
+            current_limit_values = current_tree[current_poi].array()
+            
+            try:
+                if current_limit_values[0]<-4:
+                    print(current_limit_values[0])
+                    print(i)
+            except:
+                if j == 0:
+                    print("Empty ROOT file for bootstrap: ", i)
                 continue
 
             pois[current_poi].append(float(current_limit_values[0]))
@@ -586,16 +690,67 @@ poi_list = ["r_PTH_0p0_15p0", "r_PTH_15p0_30p0", "r_PTH_30p0_45p0", "r_PTH_45p0_
 # poi_list = ["r_PTH_0p0_15p0", "r_PTH_15p0_30p0", "r_PTH_30p0_45p0"]
 
 # Loop through all fit directories (fit_0, fit_1, etc.)
-# for i in range(len(glob.glob(os.path.join(base_dir, "bootstrap_*")))):
         
-if not os.path.exists('pois.json'):
-    pois = create_poiJson(base_dir, poi_list)
+if not os.path.exists('pois_untrimmed.json'):
+    pois_untrimmed = create_poiJson_untrimmed(base_dir, poi_list)
     # Save the POIs to a JSON file
-    with open('pois.json', 'w') as f:
+    with open('pois_untrimmed.json', 'w') as f:
+        json.dump(pois_untrimmed, f)
+else:
+    # Load the POIs from the JSON file
+    with open('pois_untrimmed.json', 'r') as f:
+        pois_untrimmed = json.load(f)
+
+# Now we have to fit a gaussian core to all the categories to get the values where we cut. z is the number of standard deviations we want to cut away
+trimming_value_left = 0
+trimming_value_right = 0
+largest_sigma = 0
+mu_to_largest_sigma = 0
+z = 5
+for i, current_poi in enumerate(poi_list):
+    r = np.array(pois_untrimmed[current_poi])
+    mean = np.mean(r)
+    s = np.std(r)
+    
+    counts, bin_edges = np.histogram(r, bins=50, density=True)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    
+    popt, _ = curve_fit(gaus, bin_centers, counts, p0=[1, mean, s])
+    amp_fit, mu_fit, sigma_fit = popt
+    # print(f"Fitted Parameters for {current_poi}:\nAmplitude = {amp_fit:.3f}\nMean = {mu_fit:.3f}\nSigma = {sigma_fit:.3f}")
+    
+    if i == 0:
+        largest_sigma = sigma_fit
+        mu_to_largest_sigma = mu_fit
+    else:
+        if (sigma_fit > largest_sigma):
+            largest_sigma = sigma_fit
+            mu_to_largest_sigma = mu_fit
+            
+    plt.figure()
+    plt.hist(r, bins=30, density=True, alpha=0.6, label='Histogram')
+    plt.plot(bin_centers, gaus(bin_centers, *popt), color='red', label='Fitted Gaussian')
+    plt.legend()
+    plt.xlabel('Value')
+    plt.ylabel('Density')
+    plt.title('Gaussian Fit to Data Histogram')
+    plt.savefig(f"./Plots/PTH/SL/gaussian_fit_{current_poi}.png")
+    plt.close()
+    
+trimming_value_left = mu_to_largest_sigma - z*largest_sigma
+trimming_value_right = mu_to_largest_sigma + z*largest_sigma
+
+print("Trimming values: ", trimming_value_left, trimming_value_right)
+
+
+if not os.path.exists('pois_trimmed.json'):
+    pois = create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_value_right)
+    # Save the POIs to a JSON file
+    with open('pois_trimmed.json', 'w') as f:
         json.dump(pois, f)
 else:
     # Load the POIs from the JSON file
-    with open('pois.json', 'r') as f:
+    with open('pois_trimmed.json', 'r') as f:
         pois = json.load(f)
     
 unique_pairings = list(combinations(poi_list, 2))
@@ -604,9 +759,17 @@ for current_tuple in unique_pairings:
     r_1, r_2 = current_tuple
     
     plot_individual_correlation(pois[r_1], pois[r_2], r_1, r_2, np.corrcoef(pois[r_1], pois[r_2])[0,1], folder="Plots/PTH")
-    
-    
-produce_LLPlots(pois, poi_list, combineLL_dir, folder="Plots/PTH/SL", print_first_order=True)
 
+# data = {}
 
- 
+# # Cut away the lowest and highest 1% of the data
+# proportiontocut = 0.005
+# for i, current_poi in enumerate(poi_list):
+#     # data[current_poi] = stats.trimboth(pois[current_poi], proportiontocut=proportiontocut)
+#     data[current_poi] = stats.trim1(pois[current_poi], proportiontocut=proportiontocut, tail="left")
+#     print(f"POI: {current_poi}. Cut away {100 - 100*(len(data[current_poi]) / len(pois[current_poi]))}% of the data with {len(pois[current_poi])} entries.")
+#     print(f"minimum: {min(data[current_poi])}")
+#     print(f"maximum: {max(data[current_poi])}")
+
+# produce_LLPlots(pois, poi_list, combineLL_dir, folder="Plots/PTH/SL", print_first_order=True)
+produce_LLPlots(pois, poi_list, combineLL_dir, folder="Plots/PTH/SL5p0", print_first_order=True)
