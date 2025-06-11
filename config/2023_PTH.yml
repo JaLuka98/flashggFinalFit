@@ -39,7 +39,7 @@ trees2wsCfg:
   dataVars:
     - "CMS_hgg_mass"
     - "weight" # Vars to be added for data
-  
+    
   stxsVar: ''
   diffVar: 'diffVariable_GenPTH'
   notagVars: [] # Vars to add to NOTAG RooDataset
@@ -59,8 +59,6 @@ trees2wsCfg:
     - "ScaleEB"
     - "ScaleEE"
     - "Smearing"
-    # - "Material"
-    # - "FNUF"
     - "energyErrShift"
     - "JerSyst"
     - "JecSystTotal"
@@ -74,17 +72,15 @@ signalScriptCfg_2023_preBPix:
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'earlyAnalysis_PTH_2023preBPix' # output directory extension
-  analysis: 'earlyAnalysisDiffPt23' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
-  replacementThreshold: '50'
+  analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
   year: '2023preBPix' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '50'
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  # scalesCorr: 'FNUF,Material' # correlated across years
-  scalesCorr: ''
-  # scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
-  scalesGlobal: ''
+  scalesCorr: '' # correlated across years
+  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
@@ -101,17 +97,15 @@ signalScriptCfg_2023_postBPix:
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'earlyAnalysis_PTH_2023postBPix' # output directory extension
-  analysis: 'earlyAnalysisDiffPt23' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
-  replacementThreshold: '50'
+  analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
   year: '2023postBPix' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '50'
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  # scalesCorr: 'FNUF,Material' # correlated across years
-  scalesCorr: ''
-  # scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
-  scalesGlobal: ''
+  scalesCorr: '' # correlated across years
+  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
