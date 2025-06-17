@@ -1,0 +1,34 @@
+law run Trees2WSData --variable PTJ0 --year 2023 --version PTJ0_v1 --workflow slurm --batch-flavor slurm/psi --slurm-partition short --slurm-max-runtime 01:00:00
+
+law run Background --variable PTJ0 --year 2023 --batch-flavor slurm/psi
+law run OneBackground --variable PTJ0 --year 2023 --batch-flavor slurm/psi --workflow slurm --slurm-partition short --slurm-max-runtime 01:00:00
+
+law run Trees2WS --variable PTJ0 --year 2023 --batch-flavor slurm/psi
+
+law run FTest --variable PTJ0 --year 2023; law run CalcPhotonSyst --variable PTJ0 --year 2023; law run SignalFit --variable PTJ0 --year 2023; law run SignalPackaging --variable PTJ0 --year 2023; law run MakeYields --variable PTJ0 --year 2023 --batch-flavor slurm/psi; law run MakeDatacard --variable PTJ0 --year 2023 --version PTJ0_v1 --batch-flavor slurm/psi --workflow slurm
+
+law run PrepareTheDirectory --year 2023 --variable PTJ0 --workflow local --version PTJ0_v1
+
+law run RunText2Workspace --variable PTJ0 --year 2023 --version PTJ0_v1 --batch-flavor local --workflow local
+
+law run AsimovCovCorrHesse --variable PTJ0 --year 2023 --batch-flavor slurm/psi --version PTJ0_v1 --slurm-partition short --slurm-max-runtime 01:00:00; law run AsimovCovCorr --year 2023 --variable PTJ0 --batch-flavor slurm/psi --version PTJ0_v1 --slurm-partition short --slurm-max-runtime 01:00:00; law run CreateAsimovFit --variable PTJ0 --year 2023 --workers 2 --batch-flavor slurm/psi --version PTJ0_v1 --slurm-partition standard --slurm-max-runtime 02:00:00; law run ToyFitCategoryOneFile --variable PTJ0 --year 2023 --number-of-toys 10000 --batch-flavor slurm/psi --version PTJ0_v1 --slurm-partition short --slurm-max-runtime 01:00:00
+
+hadd -f higgsCombineAsimovPostFitScanFit_r_PTJ0_0p0_30p0.root higgsCombineAsimovPostFitScanFit_r_PTJ0_0p0_30p0.POINTS.*; hadd -f higgsCombineAsimovPostFitScanFit_r_PTJ0_30p0_75p0.root higgsCombineAsimovPostFitScanFit_r_PTJ0_30p0_75p0.POINTS.*; hadd -f higgsCombineAsimovPostFitScanFit_r_PTJ0_75p0_120p0.root higgsCombineAsimovPostFitScanFit_r_PTJ0_75p0_120p0.POINTS.*; hadd -f higgsCombineAsimovPostFitScanFit_r_PTJ0_120p0_200p0.root higgsCombineAsimovPostFitScanFit_r_PTJ0_120p0_200p0.POINTS.*; hadd -f higgsCombineAsimovPostFitScanFit_r_PTJ0_200p0_10000p0.root higgsCombineAsimovPostFitScanFit_r_PTJ0_200p0_10000p0.POINTS.*
+
+python3 /work/niharrin/CMSSW_14_1_0_pre4/bin/slc7_amd64_gcc12/plot1DScan.py /pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/PTJ0/Combine/runFits_PTJ0/asimov/higgsCombineAsimovPostFitScanFit_r_PTJ0_0p0_30p0.root -o scan_r_PTJ0_0p0_30p0 --POI r_PTJ0_0p0_30p0 --main-label Expected --translate /work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/../Combine/pois.json; python3 /work/niharrin/CMSSW_14_1_0_pre4/bin/slc7_amd64_gcc12/plot1DScan.py /pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/PTJ0/Combine/runFits_PTJ0/asimov/higgsCombineAsimovPostFitScanFit_r_PTJ0_30p0_75p0.root -o scan_r_PTJ0_30p0_75p0 --POI r_PTJ0_30p0_75p0 --main-label Expected --translate /work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/../Combine/pois.json; python3 /work/niharrin/CMSSW_14_1_0_pre4/bin/slc7_amd64_gcc12/plot1DScan.py /pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/PTJ0/Combine/runFits_PTJ0/asimov/higgsCombineAsimovPostFitScanFit_r_PTJ0_75p0_120p0.root -o scan_r_PTJ0_75p0_120p0 --POI r_PTJ0_75p0_120p0 --main-label Expected --translate /work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/../Combine/pois.json; python3 /work/niharrin/CMSSW_14_1_0_pre4/bin/slc7_amd64_gcc12/plot1DScan.py /pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/PTJ0/Combine/runFits_PTJ0/asimov/higgsCombineAsimovPostFitScanFit_r_PTJ0_120p0_200p0.root -o scan_r_PTJ0_120p0_200p0 --POI r_PTJ0_120p0_200p0 --main-label Expected --translate /work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/../Combine/pois.json; python3 /work/niharrin/CMSSW_14_1_0_pre4/bin/slc7_amd64_gcc12/plot1DScan.py /pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/PTJ0/Combine/runFits_PTJ0/asimov/higgsCombineAsimovPostFitScanFit_r_PTJ0_200p0_10000p0.root -o scan_r_PTJ0_200p0_10000p0 --POI r_PTJ0_200p0_10000p0 --main-label Expected --translate /work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/../Combine/pois.json
+
+
+
+
+law run CreateAsimovFit --variable PTJ0 --year 2023 --workers 2 --batch-flavor slurm/psi --version PTJ0_v1 --slurm-partition standard --slurm-max-runtime 02:00:00
+
+
+
+
+
+
+## NJ
+
+hadd -f higgsCombineAsimovPostFitScanFit_r_NJ_0p0_1p0.root higgsCombineAsimovPostFitScanFit_r_NJ_0p0_1p0.POINTS.*; hadd -f higgsCombineAsimovPostFitScanFit_r_NJ_1p0_2p0.root higgsCombineAsimovPostFitScanFit_r_NJ_1p0_2p0.POINTS.*; hadd -f higgsCombineAsimovPostFitScanFit_r_NJ_2p0_3p0.root higgsCombineAsimovPostFitScanFit_r_NJ_2p0_3p0.POINTS.*; hadd -f higgsCombineAsimovPostFitScanFit_r_NJ_3p0_100p0.root higgsCombineAsimovPostFitScanFit_r_NJ_3p0_100p0.POINTS.*
+
+python3 /work/niharrin/CMSSW_14_1_0_pre4/bin/slc7_amd64_gcc12/plot1DScan.py /pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/NJ/Combine/runFits_NJ/asimov/higgsCombineAsimovPostFitScanFit_r_NJ_0p0_1p0.root -o scan_r_NJ_0p0_1p0 --POI r_NJ_0p0_1p0 --main-label Expected --translate /work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/../Combine/pois.json; python3 /work/niharrin/CMSSW_14_1_0_pre4/bin/slc7_amd64_gcc12/plot1DScan.py /pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/NJ/Combine/runFits_NJ/asimov/higgsCombineAsimovPostFitScanFit_r_NJ_1p0_2p0.root -o scan_r_NJ_1p0_2p0 --POI r_NJ_1p0_2p0 --main-label Expected --translate /work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/../Combine/pois.json; python3 /work/niharrin/CMSSW_14_1_0_pre4/bin/slc7_amd64_gcc12/plot1DScan.py /pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/NJ/Combine/runFits_NJ/asimov/higgsCombineAsimovPostFitScanFit_r_NJ_2p0_3p0.root -o scan_r_NJ_2p0_3p0 --POI r_NJ_2p0_3p0 --main-label Expected --translate /work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/../Combine/pois.json; python3 /work/niharrin/CMSSW_14_1_0_pre4/bin/slc7_amd64_gcc12/plot1DScan.py /pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/NJ/Combine/runFits_NJ/asimov/higgsCombineAsimovPostFitScanFit_r_NJ_3p0_100p0.root -o scan_r_NJ_3p0_100p0 --POI r_NJ_3p0_100p0 --main-label Expected --translate /work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/../Combine/pois.json
