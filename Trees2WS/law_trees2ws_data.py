@@ -121,7 +121,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             if convert_boolean_string(self.bootstrap_flag) == False:
                 temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
             else:
-                temp_ws_dir = os.path.join(temp_output_dir, f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
         else:
             if convert_boolean_string(self.bootstrap_flag) == False:
                 temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
@@ -265,12 +265,19 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         print(f"Workspace written and renamed to {all_data_file}")
         
         if self.batch_flavor == "slurm/psi":
-            # Copying output files to final destination on the /pnfs.
-            slurm_copy_command = [
-                'xrdcp', '-rf',
-                f'{all_data_file}',
-                'root://t3dcachedb.psi.ch:1094//' + f'{final_ws_dir}' + 'allData.root'
-            ]
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f'{all_data_file}',
+                    f'{final_ws_dir}/allData.root'
+                ]
+            else:
+                # Copying output files to final destination on the /pnfs.
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f'{all_data_file}',
+                    'root://t3dcachedb.psi.ch:1094//' + f'{final_ws_dir}' + 'allData.root'
+                ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
             # Cleaning up scratch space.
