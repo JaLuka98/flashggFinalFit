@@ -39,7 +39,7 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
     cats = law.Parameter(description="Category string")
     procs = law.Parameter(description="Processes")
     variable = law.Parameter(default="", description="Variable to be used")
-    year = law.Parameter(description="Year")    
+    year = law.Parameter(description="Year")
     
     era = law.Parameter(description="Current Era")    
 
