@@ -55,12 +55,17 @@ def manually_copy_t3(src, dst):
     for file_path in file_list:
         filename = file_path.split("/")[-1]
         if "bkgfTest-Data" in filename: continue
-        src_file = f"root://t3dcachedb.psi.ch:1094/{file_path}"
-        dest_file = f"root://t3dcachedb.psi.ch:1094/{dst}/{filename}"
-        
-        print(f"Copying {filename}...")
-        print(f"xrdcp -rf {src_file} {dest_file}")
-        execute_command([f"xrdcp -rf {src_file} {dest_file}"], shell=True)
+        if "/pnfs" in file_path: 
+            src_file = f"root://t3dcachedb.psi.ch:1094/{file_path}"
+            dest_file = f"root://t3dcachedb.psi.ch:1094/{dst}/{filename}"
+            
+            print(f"Copying {filename}...")
+            print(f"xrdcp -rf {src_file} {dest_file}")
+            execute_command([f"xrdcp -rf {src_file} {dest_file}"], shell=True)
+        else:
+            print(f"Copying {filename}...")
+            print(f"cp -rf {file_path} {dst}/{filename}")
+            execute_command([f"cp -rf {file_path} {dst}/{filename}"], shell=True)
     
 class PrepareTheDirectory(Task, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
@@ -70,7 +75,7 @@ class PrepareTheDirectory(Task, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
     
-    batch_flavor = law.Parameter(default="slurm/psi", description="Batch system to use")
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
 
     
     # htcondor_job_kwargs_submit = {"spool": True}
@@ -238,7 +243,7 @@ class PrepareTheDirectory(Task, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #
         if convert_boolean_string(self.bootstrap_flag) == True:
             background_src_path = os.path.join(output_dir, "Background", f"outdir_{config['backgroundScriptCfg']['ext']}"+background_suffix)
         else:
-            background_src_path = os.path.join(output_dir, f"outdir_{config['backgroundScriptCfg']['ext']}"+background_suffix)
+            background_src_path = os.path.join(output_dir, "Background", f"outdir_{config['backgroundScriptCfg']['ext']}"+background_suffix)
         signal_src_path = os.path.join(output_dir, f"outdir_packaged{config[f'packaged_{self.year}']['ext']}/")
 
         if self.batch_flavor == "slurm/psi":
@@ -2481,7 +2486,190 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
             shutil.rmtree(os.environ["TARGET_PATH"])
             
         os.chdir(cwd)
+
+class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    variable = law.Parameter(default="", description="Variable to be used")
+    year = law.Parameter(default='2022', description="Year")
+
+    number_of_toys = law.Parameter(default=1000, description="Number of toys")
+    starting_value = law.Parameter(default=0, description="Starting toy computation from this index. This can be useful for preventing overloading schedds.")
+    seed = law.Parameter(default=123456, description="Seed for the toy generation")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    
+    htcondor_job_kwargs_submit = {"spool": True}
+    
+    def requires(self):
         
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+               
+        tasks = [RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, bootstrap_flag=False, number_of_bootstraps=1000, version='v1', batch_flavor=self.batch_flavor)]
+        
+        return tasks
+    
+    def create_branch_map(self):
+        branch_map = {
+            j: toy_index
+            for j, toy_index in enumerate(range(int(self.starting_value), (int(self.starting_value) + int(self.number_of_toys))))
+        }
+        return branch_map
+
+    def output(self):
+        toy_index = self.branch_data
+        
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        if self.variable == '':
+            fitFolderName = f'runFits_mu_fiducial'
+        else:
+            fitFolderName = f'runFits_{self.variable}'
+        
+        output = []
+        
+        seed = int(self.seed) + int(toy_index)
+        
+        if self.variable != '':
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'toyFit', f'toy_{toy_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'toyFit', f'toy_{toy_index}', f'multidimfitfirstStep.root')]
+        
+        outputFileTargets = []
+                
+        for _, current_output_path in enumerate(output):
+            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+            
+        # print("AsimovFitCategorySyst", outputFileTargets)
+
+        return outputFileTargets
+
+    def run(self):
+        toy_index = self.branch_data
+        
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
+            fitFolderName = f'runFits_mu_fiducial'
+            
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+            fitFolderName = f'runFits_{self.variable}'
+                    
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+        
+        cwd = os.getcwd()
+            
+        if self.variable == '':
+            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+        else:
+            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+        
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/toyFit/toy_{toy_index}'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/toyFit/toy_{toy_index}'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/toyFit/toy_{toy_index}'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'toyFit', f'toy_{toy_index}'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/toyFit/toy_{toy_index}'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'toyFit', f'toy_{toy_index}'))
+
+        seed = int(self.seed) + int(toy_index)
+        
+        print("Generating Toy with seed {}".format(seed))
+
+        if self.variable != '':
+            arguments = [
+                "combine",
+                "-M", "MultiDimFit",
+                ws_path,
+                "-m", "125.38",
+                "-n", f"firstStep",
+                "--cminDefaultMinimizerStrategy=0",
+                "--saveWorkspace",
+                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
+                "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+                "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+                "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+                "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
+                "-t", "1",
+                "-s", f"{seed}",
+                "--saveFitResult",
+                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+                # "--freezeParameters", f"""MH,{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""", # According to Mauro: Try without profiling
+                "--freezeParameters", f"""MH""",
+                "--floatOtherPOIs", "1",
+                # "--toysNoSystematics", # According to Mauro: Try without profiling
+                "--saveToys",
+            ]
+            arguments.append("--setParameters")
+            arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""")
+            command = arguments
+            print(command)
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print("Error executing script:", e.stderr)
+
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
+
+        os.chdir(cwd)
+
 class ToyFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
@@ -2880,7 +3068,7 @@ class ToysFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
+                # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
                 "-t", "1",
                 "-s", f"{seed}",
                 "-P", f"{current_cat}",
@@ -2896,7 +3084,7 @@ class ToysFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
                 # "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
                 "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""",
                 "--freezeParameters", "MH",
-                "--toysNoSystematics", # According to Mauro: Try without systematics
+                # "--toysNoSystematics", # According to Mauro: Try without systematics
                 # "--freezeParameters", f"""MH,{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""", # According to Mauro: Try without profiling
                 # "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
             ]

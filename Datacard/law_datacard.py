@@ -183,13 +183,20 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         execute_command(command)
         
         if self.batch_flavor == "slurm/psi":
+            if "/work" in self.output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f'{temp_output_dir}/Datacards',
+                    self.output_dir
+                ]
             # Have to copy over the output to the final directory
             # Don't forget to VOMS!
-            slurm_copy_command = [
-                'xrdcp', '-r',
-                f"{temp_output_dir+'/Datacards'}",
-                'root://t3dcachedb.psi.ch:1094//'+self.output_dir
-            ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-r',
+                    f"{temp_output_dir+'/Datacards'}",
+                    'root://t3dcachedb.psi.ch:1094//'+self.output_dir
+                ]
             execute_command(slurm_copy_command)
             # Clean up the temporary directory
             shutil.rmtree(temp_output_dir)
@@ -316,7 +323,7 @@ class MakeYields(law.Task): #law.Task
         
         return True
     
-class MakeDatacard(Task, SlurmWorkflow, law.LocalWorkflow): #law.Task
+class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #law.Task
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
@@ -437,11 +444,17 @@ class MakeDatacard(Task, SlurmWorkflow, law.LocalWorkflow): #law.Task
 
         if convert_boolean_string(self.bootstrap_flag) == True: # Account for bootstrapping index
             if self.batch_flavor == "slurm/psi":
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                if "/work" in output_dir:
+                    execute_command([f'mkdir -p {output_dir}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 pklInputFiles = os.path.join(output_dir,f"Datacards")
                 ext = yields_config["ext"] + f"_{bootstrap_index}"
                 output_dir = os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}")
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                if "/work" in output_dir:
+                    execute_command([f'mkdir -p {output_dir}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 # Have to use /scratch/batch_username/ for slurm/psi
                 # Since we run this script locally, we have to use the local scratch space. (SLURM_JOB_ID is not available)
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/MakeDatacard_{bootstrap_index}"
@@ -461,14 +474,20 @@ class MakeDatacard(Task, SlurmWorkflow, law.LocalWorkflow): #law.Task
         else:
 
             if self.batch_flavor == "slurm/psi":
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                if "/work" in output_dir:
+                    execute_command([f'mkdir -p {output_dir}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 output_dir = os.path.join(output_dir,"Datacards/")
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                if "/work" in output_dir:
+                    execute_command([f'mkdir -p {output_dir}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 # Have to use /scratch/batch_username/ for slurm/psi
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/MakeDatacard"
                 execute_command(['mkdir -p $TARGET_PATH'], shell=True)
                 temp_output_dir = os.environ["TARGET_PATH"]
-                safe_mkdir(temp_output_dir)
+                # safe_mkdir(temp_output_dir)
                 # safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
             else:
                 safe_mkdir(output_dir)
@@ -534,7 +553,6 @@ class MakeDatacard(Task, SlurmWorkflow, law.LocalWorkflow): #law.Task
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
-            
         
         if self.variable != '':
             
@@ -562,24 +580,33 @@ class MakeDatacard(Task, SlurmWorkflow, law.LocalWorkflow): #law.Task
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
-                
-            
+                            
             # Move the datacard to the final directory
             if self.batch_flavor == "slurm/psi":
+                if "/work" in output_dir:
+                    slurm_copy_command = [
+                        f'cp -rf {temp_output_dir}/* {output_dir}'
+                    ]
                 # Have to copy over the output to the final directory
                 # Don't forget to VOMS!
-                slurm_copy_command = [
-                    f'xrdcp -rf {temp_output_dir}/* root://t3dcachedb.psi.ch:1094//'+output_dir
-                ]
+                else:
+                    slurm_copy_command = [
+                        f'xrdcp -rf {temp_output_dir}/* root://t3dcachedb.psi.ch:1094//'+output_dir
+                    ]
+                print("Copy command:", slurm_copy_command)
                 execute_command(slurm_copy_command, shell=True)
                 # Clean up the temporary directory
-                shutil.rmtree(temp_output_dir)
+                # shutil.rmtree(temp_output_dir)
             
                 # After datacard has been moved to pnfs, the datacard_path has to be changed.
                 datacard_path = os.path.join(output_dir, datacard_config["output"] + ".txt")
             
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                if "/work" in output_dir:
+                    execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
+                    execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
             else:
                 execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
                 execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
