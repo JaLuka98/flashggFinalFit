@@ -1,7 +1,7 @@
 # Config file: options for signal fitting
 
 outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH'
-# outputFolder: '/work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/2025_01_20_intermediateNTuples_2023/PTH'
+# outputFolder: '/work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/2025_05_12_intermediateNTuples_2023/finalfits/PTH'
 
 inputFiles:
   # Trees2WS
@@ -178,7 +178,7 @@ combine_fit:
   cminApproxPreFitTolerance: 0.01
   # setParameterRange: "r=0,3"
   setParameterRange: "r=-8,8"
-  execution: 'slurm'
+  execution: 'local'
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
