@@ -48,9 +48,9 @@ translation = {
 # bf_first_order_initial = [1.01193511, 1.0320153, 1.01647957, 1.04631383, 1.04529894, 0.97435069, 0.99224993, 0.98527168]
 
 # The paths
-# main_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH/Combine/runFits_PTH'
+main_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/January/2025_01_20_intermediateNTuples_2023/finalfits/PTH/Combine/runFits_PTH'
 # main_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/NJ/Combine/runFits_NJ'
-main_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/PTJ0/Combine/runFits_PTJ0'
+# main_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_05_12_intermediateNTuples_2023/finalfits/PTJ0/Combine/runFits_PTJ0'
 # main_dir = '/work/niharrin/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/2025_05_12_intermediateNTuples_2023/finalfits/PTH/Combine/runFits_PTH'
 path_to_hesse = os.path.join(main_dir, 'hesse/robustHessefirstStep.root')
 base_dir = os.path.join(main_dir, "toyFit")
@@ -676,7 +676,12 @@ def create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_val
         
         # First loop to check if there are outliers (outliers are events smaller than -4 and bigger than 4)
         for j, current_poi in enumerate(poi_list):
-            current_tree = current_root_files["limit"]
+            try: 
+                current_tree = current_root_files["limit"]
+            except:
+                print(f"Skipping fit_{i}: Tree 'limit' not found in ROOT file")
+                continue
+            
             current_limit_values = current_tree[current_poi].array()
             
             try:
