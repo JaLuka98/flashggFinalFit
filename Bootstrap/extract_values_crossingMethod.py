@@ -606,19 +606,20 @@ def create_poiJson_untrimmed(base_dir, poi_list):
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             continue
-        
-        for j, current_poi in enumerate(poi_list):
-            
-            # print(f"Processing {current_poi}")
 
-            current_tree = current_root_files["limit"]
-            
+        for j, current_poi in enumerate(poi_list):
+
+            try: 
+                current_tree = current_root_files["limit"]
+            except:
+                print(f"Skipping fit_{i}: Tree 'limit' not found in ROOT file")
+                continue
+
             current_limit_values = current_tree[current_poi].array()
-            
+
             try:
                 if current_limit_values[0]<-4:
-                    print(current_limit_values[0])
-                    print(i)
+                    print("Value out of boundary", current_limit_values[0], i)
             except:
                 if j == 0:
                     print("Empty ROOT file for bootstrap: ", i)
@@ -669,17 +670,18 @@ def create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_val
             continue
 
         for j, current_poi in enumerate(poi_list):
-            
-            # print(f"Processing {current_poi}")
 
-            current_tree = current_root_files["limit"]
-            
+            try: 
+                current_tree = current_root_files["limit"]
+            except:
+                print(f"Skipping fit_{i}: Tree 'limit' not found in ROOT file")
+                continue
+
             current_limit_values = current_tree[current_poi].array()
-            
+
             try:
                 if current_limit_values[0]<-4:
-                    print(current_limit_values[0])
-                    print(i)
+                    print("Value out of boundary", current_limit_values[0], i)
             except:
                 if j == 0:
                     print("Empty ROOT file for bootstrap: ", i)
