@@ -328,6 +328,7 @@ class PrepareTheDirectory(Task, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #
 class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
+    eft_variable = law.Parameter(default="", description="EFT Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
@@ -395,8 +396,12 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                 output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_mu_fiducial_{bootstrap_index}.sh')]
                 output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
             else:
-                output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.year}_{bootstrap_index}.root')]
-                output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}_{bootstrap_index}.sh')]
+                if self.eft_variable == '':
+                    output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.year}_{bootstrap_index}.root')]
+                    output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}_{bootstrap_index}.sh')]
+                else:
+                    output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'EFT_Datacard_{self.variable}_{self.year}_{bootstrap_index}.root')]
+                    output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f'EFT_t2w_{self.variable}_{bootstrap_index}.sh')]
                 output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
             output += [os.path.join(output_dir, 'Combine', f'Workspaces')]
         else:
@@ -406,7 +411,10 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                 # output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
                 # output += [os.path.join(output_dir, 'Combine', f't2w_jobs', 't2w_mu_fiducial.sh')]
             else:
-                output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
+                if self.eft_variable == '':
+                    output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
+                else:
+                    output = [os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.year}.root')]
                 # output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
                 # output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}.sh')]
 
@@ -6055,4 +6063,819 @@ class PValueCalculation(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.Lo
         else:
             print("Failed to calculate the p-value.")
 
+        os.chdir(cwd)
+
+
+class AsimovEFTFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    variable = law.Parameter(default="PTH", description="Variable to be used (either PTH or PTHvsDPhiJ0J1)")
+    eft_variable = law.Parameter(default="chg", description="EFT Variable to be used")
+    year = law.Parameter(default='2023', description="Year")
+    cats = law.Parameter(description="Current category")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    
+    htcondor_job_kwargs_submit = {"spool": True}
+    
+    def requires(self):
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+            
+        # TODO: Implement EFT RunText2Workspace
+        tasks = [RunText2Workspace(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, bootstrap_flag=False, number_of_bootstraps=1000, version='v1', batch_flavor=self.batch_flavor)]
+        
+        return tasks
+
+    def create_branch_map(self):
+
+        nCats = len(self.cats.split(","))
+        
+        cat_list = [
+            self.cats.split(",")[categoryIndex]
+            for categoryIndex in range(nCats)
+        ]
+        
+        branch_map = {i: cat for i, cat in enumerate(cat_list)}
+        return branch_map
+
+    def output(self):
+        current_branch = self.branch_data
+
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        fitFolderName = f'runFits_{self.eft_variable}'
+            
+        # output = [os.path.join(output_dir, 'Combine', fitFolderName)]
+        output = [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov')]
+
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombinefirstStep_{current_branch}.MultiDimFit.mH125.38.root')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'multidimfitfirstStep_{current_branch}.root')]
+        
+        outputFileTargets = []
+                
+        for _, current_output_path in enumerate(output):
+            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+
+        return outputFileTargets
+
+    def run(self):
+        current_branch = self.branch_data
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        fitFolderName = f'runFits_{self.eft_variable}'
+                  
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir  
+            
+        datacard_path = os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.year}.root')
+            
+        cwd = os.getcwd()
+                    
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/eft_asimov'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'eft_asimov'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov'))
+            
+        if self.variable != '':
+            arguments = [
+                "combine",
+                "-M", "MultiDimFit",
+                datacard_path,
+                "--freezeParameters", "MH",
+                "-m", "125.38",
+                "-n", f"firstStep_{current_branch}",
+                "--cminDefaultMinimizerStrategy=0",
+                "--expectSignal", "1",
+                "--saveWorkspace",
+                "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+                "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+                "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+                "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
+                "-t", "-1",
+                "-P", f"{current_branch}",
+                "--saveFitResult",
+                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+                "--floatOtherPOIs", "1"
+            ]
+            arguments.append("--setParameters")
+            arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""")
+            command = arguments
+            print(command)
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print("Error executing script:", e.stderr)
+        
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
+            
+        os.chdir(cwd)
+        
+class CreateAsimovEFTFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    variable = law.Parameter(default="PTH", description="Variable to be used (either PTH or PTHvsDPhiJ0J1)")
+    eft_variable = law.Parameter(default="chg", description="EFT Variable to be used")
+    year = law.Parameter(default='2022', description="Year")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+        
+    def requires(self):
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+            
+        tasks = []
+        cats = ",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStrNoZero'])
+        version = f"{self.eft_variable}_v1"
+        
+        tasks += [AsimovEFTFitCategoryFirstStep(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, cats=cats, version=version, workflow="slurm", batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=4000, slurm_max_runtime="01:00:00")]
+        
+        return tasks
+    
+    def create_branch_map(self):
+        branch_list = [0]
+        
+        branch_map = {i: branch for i, branch in enumerate(branch_list)}
+        return branch_map
+
+    def output(self):
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        fitFolderName = f'runFits_{self.eft_variable}'
+            
+        output = []
+            
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov')]
+                
+        outputFileTargets = []
+        
+        for _, current_output_path in enumerate(output):
+            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+            
+        # print(outputFileTargets)
+
+        return outputFileTargets
+
+    def run(self):
+        
+        return True
+
+class AsimovEFTFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    variable = law.Parameter(default="PTH", description="Variable to be used (either PTH or PTHvsDPhiJ0J1)")
+    eft_variable = law.Parameter(default="chg", description="EFT Variable to be used")
+    year = law.Parameter(default='2022', description="Year")
+    cat = law.Parameter(description="Current category")
+    nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    
+    htcondor_job_kwargs_submit = {"spool": True}
+    
+    def requires(self):
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+               
+        tasks = [CreateAsimovEFTFitFirstStep(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, batch_flavor=self.batch_flavor)]
+        
+        return tasks
+    
+    def create_branch_map(self):
+        branch_map = {i: current_point for i, current_point in enumerate(range(int(self.nPoints)))}
+        return branch_map
+
+    def output(self):
+        current_point = self.branch_data
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        fitFolderName = f'runFits_{self.eft_variable}'
+            
+        # output = [os.path.join(output_dir, 'Combine', fitFolderName)]
+        output = [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov')]
+        
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
+        
+        outputFileTargets = []
+                
+        for _, current_output_path in enumerate(output):
+            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+            
+        # print("AsimovFitCategorySyst", outputFileTargets)
+
+        return outputFileTargets
+
+    def run(self):
+        current_point = self.branch_data
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        fitFolderName = f'runFits_{self.eft_variable}'
+                    
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir  
+            
+        datacard_path = os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.year}.root')
+            
+        cwd = os.getcwd()
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/eft_asimov'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'eft_asimov'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov'))
+
+        first_output = os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov')
+
+        def check_pdf_idx(param):
+            # Run the ROOT command
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
+            
+            # Execute the command and capture thce output
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            
+            # Get the output and check for errors
+            pdfIdx = result.stdout.strip()
+            
+            if result.returncode != 0:
+                print("Error executing the command:", result.stderr)
+                return None
+            
+            if pdfIdx.startswith("Processing"):
+                pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
+            
+            # Remove the last comma
+            pdfIdx = pdfIdx.rstrip(',')
+
+            # Print the final result
+            print(pdfIdx)
+            return pdfIdx
+
+        pdfIdx = check_pdf_idx(self.cat)        
+        
+        arguments = [
+            "combineTool.py",
+            "-M", "MultiDimFit",
+            datacard_path,
+            "--freezeParameters", "MH",
+            "-m", "125.38",
+            "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
+            "--cminDefaultMinimizerStrategy=0",
+            "--algo", "grid",
+            "--points", f"{int(self.nPoints)}",
+            "--expectSignal", "1",
+            "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+            "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+            "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+            "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+            "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
+            "-t", "-1",
+            "-P", f"{self.cat}",
+            "--firstPoint", f"{current_point}",
+            "--lastPoint", f"{current_point}",
+            "--saveFitResult",
+            "--floatOtherPOIs", "1",
+            "--alignEdges", "1",
+            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+            "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""",
+        ]
+        command = arguments
+        print(command)
+        try:
+            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            print("Script output:", result.stdout)
+            print("Script executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Error executing script:", e.stderr)
+            
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
+            
+        os.chdir(cwd)
+        
+class AsimovEFTFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    variable = law.Parameter(default="PTH", description="Variable to be used (either PTH or PTHvsDPhiJ0J1)")
+    eft_variable = law.Parameter(default="chg", description="EFT Variable to be used")
+    year = law.Parameter(default='2022', description="Year")
+    cat = law.Parameter(description="Current category")
+    nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    
+    htcondor_job_kwargs_submit = {"spool": True}
+    
+    def requires(self):
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+                
+        tasks = [CreateAsimovEFTFitFirstStep(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, batch_flavor=self.batch_flavor)]
+        
+        return tasks
+    
+    def create_branch_map(self):
+        branch_map = {i: current_point for i, current_point in enumerate(range(int(self.nPoints)))}
+        return branch_map
+
+    def output(self):
+        current_point = self.branch_data
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        fitFolderName = f'runFits_{self.eft_variable}'
+            
+        # output = [os.path.join(output_dir, 'Combine', fitFolderName)]
+        output = [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov')]
+        
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
+        
+        outputFileTargets = []
+                
+        for _, current_output_path in enumerate(output):
+            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+            
+        # print("AsimovFitCategoryStat", outputFileTargets)
+        
+        return outputFileTargets
+
+    def run(self):
+        current_point = self.branch_data
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        fitFolderName = f'runFits_{self.eft_variable}'
+                    
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir  
+        
+        cwd = os.getcwd()
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/eft_asimov'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'eft_asimov'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov'))
+            
+        first_output = os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov')
+        
+        def check_pdf_idx(param):
+            # Run the ROOT command
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
+            
+            # Execute the command and capture the output
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            
+            # Get the output and check for errors
+            pdfIdx = result.stdout.strip()
+            
+            if result.returncode != 0:
+                print("Error executing the command:", result.stderr)
+                return None
+            
+            if pdfIdx.startswith("Processing"):
+                pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
+            
+            # Remove the last comma
+            pdfIdx = pdfIdx.rstrip(',')
+
+            # Print the final result
+            print(pdfIdx)
+            return pdfIdx
+        
+        pdfIdx = check_pdf_idx(self.cat)        
+    
+        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f"higgsCombinefirstStep_{self.cat}.MultiDimFit.mH125.38.root")
+        
+        arguments = [
+            "combineTool.py",
+            "-M", "MultiDimFit",
+            firstStepPath,
+            "--freezeParameters", "allConstrainedNuisances,MH",
+            "-m", "125.38",
+            "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
+            "--cminDefaultMinimizerStrategy=0",
+            "--algo", "grid",
+            "--points", f"{int(self.nPoints)}",
+            "--expectSignal", "1",
+            "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+            "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+            "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+            "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+            "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
+            "-t", "-1",
+            "-P", f"{self.cat}",
+            "--firstPoint", f"{current_point}",
+            "--lastPoint", f"{current_point}",
+            "--saveFitResult",
+            "--floatOtherPOIs", "1",
+            "--alignEdges", "1",
+            "--snapshotName", "MultiDimFit",
+            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+            "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""",
+            # "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""", # According to Mauro: Try without profiling
+        ]
+        command = arguments
+        print(command)
+        try:
+            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            print("Script output:", result.stdout)
+            print("Script executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Error executing script:", e.stderr)
+        
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
+        
+        os.chdir(cwd)
+        
+class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    variable = law.Parameter(default="PTH", description="Variable to be used (either PTH or PTHvsDPhiJ0J1)")
+    eft_variable = law.Parameter(default="chg", description="EFT Variable to be used")
+    year = law.Parameter(default='2022', description="Year")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    
+    # htcondor_job_kwargs_submit = {"spool": True}
+    
+    def requires(self):
+        
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+                        
+        tasks = []
+        version_index = 1
+        for cat in combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStrNoZero']:
+            tasks += [AsimovEFTFitCategorySyst(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.eft_variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=4000, slurm_max_runtime="01:00:00"), AsimovEFTFitCategoryStat(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.eft_variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=4000, slurm_max_runtime="01:00:00")]
+            version_index += 1
+        
+        return tasks
+    
+    def create_branch_map(self):
+        # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")        
+        branch_list = [0]
+        
+        branch_map = {i: branch for i, branch in enumerate(branch_list)}
+        return branch_map
+
+    def output(self):
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        fitFolderName = f'runFits_{self.eft_variable}'
+            
+        output = []
+            
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', 'scans')]
+        
+        for cat in combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStrNoZero']:
+            
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', 'scans', f'scan_{cat}.root')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', 'scans', f'scan_{cat}.pdf')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', 'scans', f'scan_{cat}.png')]
+
+        outputFileTargets = []
+                
+        for _, current_output_path in enumerate(output):
+            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+            
+        # print(outputFileTargets)
+
+        return outputFileTargets
+
+    def run(self):
+    
+        configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        fitFolderName = f'runFits_{self.eft_variable}'
+            
+                    
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir  
+            
+        cwd = os.getcwd()
+        
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov/scans'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov/scans'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/eft_asimov/scans'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'eft_asimov'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov/scans'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov'))
+        
+        cats = combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStrNoZero']
+        
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the input to the JOB directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    output_dir,
+                    f"{os.environ['TARGET_PATH']}/Combine/"
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir,
+                    f"{os.environ['TARGET_PATH']}/Combine/"
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+        
+        for cat in cats:
+        
+            arguments = [
+                "hadd", "-f",
+                f"{os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')}"
+            ]
+            for i in range(config["combine_fit"]["asimov_numPoints"]):
+                arguments.append(os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
+            if self.batch_flavor == "slurm/psi":
+                arguments = [
+                    "hadd", "-f",
+                    f"{os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')}"
+                ]
+                for i in range(config["combine_fit"]["asimov_numPoints"]):
+                    arguments.append(os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
+            command = arguments
+            print(command)
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print("Error executing script:", e.stderr)
+                
+            
+            arguments = [
+                "hadd", "-f",
+                f"{os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')}"
+            ]
+            for i in range(config["combine_fit"]["asimov_numPoints"]):
+                arguments.append(os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
+            if self.batch_flavor == "slurm/psi":
+                arguments = [
+                    "hadd", "-f",
+                    f"{os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')}"
+                ]
+                for i in range(config["combine_fit"]["asimov_numPoints"]):
+                    arguments.append(os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'))
+            command = arguments
+            print(command)
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print("Error executing script:", e.stderr)
+
+            # os.chdir('os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov')')
+            arguments = [
+                "python3", f"{os.environ['CMSSW_BASE']}/bin/slc7_amd64_gcc12/plot1DScan.py",
+                # "plot1DScan.py",
+                os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root'),
+                "-o", f"scan_{cat}",
+                "--POI", f"{cat}",
+                "--others", os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')+":stat-only:2",
+                "--main-label", "Expected",
+                "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
+            ]
+            if self.batch_flavor == "slurm/psi":
+                arguments = [
+                    "python3", f"{os.environ['CMSSW_BASE']}/bin/slc7_amd64_gcc12/plot1DScan.py",
+                    # "plot1DScan.py",
+                    os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root'),
+                    "-o", f"scan_{cat}",
+                    "--POI", f"{cat}",
+                    "--others", os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')+":stat-only:2",
+                    "--main-label", "Expected",
+                    "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
+                ]
+            command = arguments
+            print(command)
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print("Error executing script:", e.stderr)
+    
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
+            
         os.chdir(cwd)
