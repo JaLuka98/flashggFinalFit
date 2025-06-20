@@ -400,8 +400,8 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                     output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.year}_{bootstrap_index}.root')]
                     output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}_{bootstrap_index}.sh')]
                 else:
-                    output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'EFT_Datacard_{self.variable}_{self.year}_{bootstrap_index}.root')]
-                    output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f'EFT_t2w_{self.variable}_{bootstrap_index}.sh')]
+                    output = [os.path.join(output_dir, 'Combine', 'Workspaces', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}_{bootstrap_index}.root')]
+                    output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f'EFT_t2w_{self.variable}_{self.eft_variable}_{bootstrap_index}.sh')]
                 output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
             output += [os.path.join(output_dir, 'Combine', f'Workspaces')]
         else:
@@ -414,7 +414,7 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                 if self.eft_variable == '':
                     output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
                 else:
-                    output = [os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.year}.root')]
+                    output = [os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')]
                 # output += [os.path.join(output_dir, 'Combine', f't2w_jobs')]
                 # output += [os.path.join(output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}.sh')]
 
@@ -444,7 +444,11 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
             mode = self.variable
             datacard_name = f"Datacard_{self.variable}_{self.year}"+bootstrap_suffix
-        
+            if self.eft_variable != '':
+                workspace_name = f"EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}"+bootstrap_suffix
+            else:
+                workspace_name = datacard_name
+
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
@@ -457,6 +461,9 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
         script_path = os.path.join(os.environ["ANALYSIS_PATH"],"Combine/RunText2Workspace.py")
             
         if convert_boolean_string(self.bootstrap_flag) == True:
+            if self.eft_variable != '':
+                print("EFT variable is not supported for bootstrapping yet.")
+                exit(1)
             current_dir = os.getcwd()
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
@@ -509,8 +516,9 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
             arguments = [
                 "python3",
                 script_path,
+                "--inputName", datacard_name,
                 "--outputDir", datacards_dir,
-                "--outputName", datacard_name,
+                "--outputName", workspace_name,
                 "--mode", mode,
                 "--common_opts", "-m 125.38 higgsMassRange=122,128",
                 "--batch", "local",
@@ -575,8 +583,9 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
             arguments = [
                 "python3",
                 script_path,
+                "--inputName", datacard_name,
                 "--outputDir", temp_output_dir,
-                "--outputName", datacard_name,
+                "--outputName", workspace_name,
                 "--mode", mode,
                 "--common_opts", "-m 125.38 higgsMassRange=122,128",
                 "--batch", "local"
@@ -584,6 +593,10 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
             if self.variable != '':
                 arguments.append("--ext")
                 arguments.append(f"{self.variable}")
+
+            if self.eft_variable != '':
+                arguments.append("--eft-mode")
+                arguments.append(self.eft_variable)
             command = arguments
             # print(command)
             try:
