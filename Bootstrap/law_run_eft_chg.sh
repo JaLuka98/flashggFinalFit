@@ -1,17 +1,10 @@
+law run RunText2Workspace --variable PTH --year 2023 --version PTH_v1 --batch-flavor local --workflow local --eft-variable chg
+
+
 law run CreateAsimovEFTFitFirstStep --workers 2 --variable PTH --eft-variable chg --year 2023 --batch-flavor slurm/psi
 
 
 law run CreateAsimovEFTFit --variable PTH --eft-variable chg --year 2023 --batch-flavor slurm/psi --version chg_v1 --slurm-partition standard --slurm-max-runtime 12:00:00
-
-
-
-
-
-
-
-
-
-
 
 hadd higgsCombineAsimovPostFitScanFit_chg_0p0_15p0.root higgsCombineAsimovPostFitScanFit_chg_0p0_15p0.POINTS*; hadd higgsCombineAsimovPostFitScanFit_chg_15p0_30p0.root higgsCombineAsimovPostFitScanFit_chg_15p0_30p0.POINTS*; hadd higgsCombineAsimovPostFitScanFit_chg_30p0_45p0.root higgsCombineAsimovPostFitScanFit_chg_30p0_45p0.POINTS*; hadd higgsCombineAsimovPostFitScanFit_chg_45p0_80p0.root higgsCombineAsimovPostFitScanFit_chg_45p0_80p0.POINTS*; hadd higgsCombineAsimovPostFitScanFit_chg_80p0_120p0.root higgsCombineAsimovPostFitScanFit_chg_80p0_120p0.POINTS*; hadd higgsCombineAsimovPostFitScanFit_chg_120p0_200p0.root higgsCombineAsimovPostFitScanFit_chg_120p0_200p0.POINTS*; hadd higgsCombineAsimovPostFitScanFit_chg_200p0_350p0.root higgsCombineAsimovPostFitScanFit_chg_200p0_350p0.POINTS*; hadd higgsCombineAsimovPostFitScanFit_chg_350p0_10000p0.root higgsCombineAsimovPostFitScanFit_chg_350p0_10000p0.POINTS*; hadd higgsCombineAsimovPostFitScanStat_chg_0p0_15p0.root higgsCombineAsimovPostFitScanStat_chg_0p0_15p0.POINTS*; hadd higgsCombineAsimovPostFitScanStat_chg_15p0_30p0.root higgsCombineAsimovPostFitScanStat_chg_15p0_30p0.POINTS*; hadd higgsCombineAsimovPostFitScanStat_chg_30p0_45p0.root higgsCombineAsimovPostFitScanStat_chg_30p0_45p0.POINTS*; hadd higgsCombineAsimovPostFitScanStat_chg_45p0_80p0.root higgsCombineAsimovPostFitScanStat_chg_45p0_80p0.POINTS*; hadd higgsCombineAsimovPostFitScanStat_chg_80p0_120p0.root higgsCombineAsimovPostFitScanStat_chg_80p0_120p0.POINTS*; hadd higgsCombineAsimovPostFitScanStat_chg_120p0_200p0.root higgsCombineAsimovPostFitScanStat_chg_120p0_200p0.POINTS*; hadd higgsCombineAsimovPostFitScanStat_chg_200p0_350p0.root higgsCombineAsimovPostFitScanStat_chg_200p0_350p0.POINTS*; hadd higgsCombineAsimovPostFitScanStat_chg_350p0_10000p0.root higgsCombineAsimovPostFitScanStat_chg_350p0_10000p0.POINTS*
 

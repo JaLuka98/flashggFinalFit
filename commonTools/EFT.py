@@ -1,6 +1,6 @@
 from HiggsAnalysis.CombinedLimit.PhysicsModel import PhysicsModel
 
-class SMEFT_chg(PhysicsModel):
+class SMEFT_chg_individual_bins(PhysicsModel):
     def doParametersOfInterest(self):
         """Create POI and other parameters, and define the POI set."""
         self.modelBuilder.doVar("A_0p0_15p0[15.08]")
@@ -44,11 +44,11 @@ class SMEFT_chg(PhysicsModel):
         self.modelBuilder.out.var("B_350p0_10000p0").setConstant(True)
 
         # First approximation
-        self.modelBuilder.doVar("chg_0p0_15p0[0,-0.2,0.2]")
-        self.modelBuilder.factory_( "expr::ggh_scaling_chg_0p0_15p0(\"1+@1*@0+@2*@0*@0\", chg_0p0_15p0, A_0p0_15p0, B_0p0_15p0)")
-        self.modelBuilder.factory_( "expr::tth_scaling_chg_0p0_15p0(\"1+@1*@0+@2*@0*@0\", chg_0p0_15p0, A_0p0_15p0, B_0p0_15p0)") 
-        self.modelBuilder.factory_( "expr::vbf_scaling_chg_0p0_15p0(\"1+@1*@0+@2*@0*@0\", chg_0p0_15p0, A_0p0_15p0, B_0p0_15p0)")
-        self.modelBuilder.factory_( "expr::vh_scaling_chg_0p0_15p0(\"1+@1*@0+@2*@0*@0\", chg_0p0_15p0, A_0p0_15p0, B_0p0_15p0)")
+        self.modelBuilder.doVar("chg[0,-0.2,0.2]")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A_0p0_15p0, B_0p0_15p0)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A_0p0_15p0, B_0p0_15p0)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A_0p0_15p0, B_0p0_15p0)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A_0p0_15p0, B_0p0_15p0)")
 
         self.modelBuilder.doVar("chg_15p0_30p0[0,-0.2,0.2]")
         self.modelBuilder.factory_( "expr::ggh_scaling_chg_15p0_30p0(\"1+@1*@0+@2*@0*@0\", chg_15p0_30p0, A_15p0_30p0, B_15p0_30p0)")
@@ -92,17 +92,17 @@ class SMEFT_chg(PhysicsModel):
         self.modelBuilder.factory_( "expr::vbf_scaling_chg_350p0_10000p0(\"1+@1*@0+@2*@0*@0\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0)")
         self.modelBuilder.factory_( "expr::vh_scaling_chg_350p0_10000p0(\"1+@1*@0+@2*@0*@0\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0)")
 
-        self.modelBuilder.doSet("POI", ",".join(["chg_0p0_15p0", "chg_15p0_30p0", "chg_30p0_45p0",
+        self.modelBuilder.doSet("POI", ",".join(["chg", "chg_15p0_30p0", "chg_30p0_45p0",
                                                   "chg_45p0_80p0", "chg_80p0_120p0", "chg_120p0_200p0",
                                                   "chg_200p0_350p0", "chg_350p0_10000p0"]))
 
     def getYieldScale(self, bin, process):
         string = "%s/%s" % (bin, process)
         
-        if "ggh_PTH_0p0_15p0_in" in process: poi = "ggh_scaling_chg_0p0_15p0"
-        elif "tth_PTH_0p0_15p0_in" in process: poi = "tth_scaling_chg_0p0_15p0"
-        elif "vbf_PTH_0p0_15p0_in" in process: poi = "vbf_scaling_chg_0p0_15p0"
-        elif "vh_PTH_0p0_15p0_in" in process: poi = "vh_scaling_chg_0p0_15p0"
+        if "ggh_PTH_0p0_15p0_in" in process: poi = "ggh_scaling_chg"
+        elif "tth_PTH_0p0_15p0_in" in process: poi = "tth_scaling_chg"
+        elif "vbf_PTH_0p0_15p0_in" in process: poi = "vbf_scaling_chg"
+        elif "vh_PTH_0p0_15p0_in" in process: poi = "vh_scaling_chg"
 
         elif "ggh_PTH_15p0_30p0_in" in process: poi = "ggh_scaling_chg_15p0_30p0"
         elif "tth_PTH_15p0_30p0_in" in process: poi = "tth_scaling_chg_15p0_30p0"
@@ -144,7 +144,74 @@ class SMEFT_chg(PhysicsModel):
         print("Will scale ", string, " by ", poi)
         
         return poi
+
+
+class SMEFT_chg(PhysicsModel):
+    def doParametersOfInterest(self):
+        """Create POI and other parameters, and define the POI set."""
+        self.modelBuilder.doVar("A[15.08]")
+        self.modelBuilder.doVar("B[172.55]")
+        self.modelBuilder.out.var("A").setConstant(True) 
+        self.modelBuilder.out.var("B").setConstant(True)
+
+        # First approximation
+        self.modelBuilder.doVar("chg[0,-0.2,0.2]")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A, B)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A, B)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A, B)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A, B)")
+
+        self.modelBuilder.doSet("POI", ",".join(["chg"]))
+
+    def getYieldScale(self, bin, process):
+        string = "%s/%s" % (bin, process)
+        
+        if "ggh_PTH_0p0_15p0_in" in process: poi = "ggh_scaling_chg"
+        elif "tth_PTH_0p0_15p0_in" in process: poi = "tth_scaling_chg"
+        elif "vbf_PTH_0p0_15p0_in" in process: poi = "vbf_scaling_chg"
+        elif "vh_PTH_0p0_15p0_in" in process: poi = "vh_scaling_chg"
+
+        elif "ggh_PTH_15p0_30p0_in" in process: poi = "ggh_scaling_chg"
+        elif "tth_PTH_15p0_30p0_in" in process: poi = "tth_scaling_chg"
+        elif "vbf_PTH_15p0_30p0_in" in process: poi = "vbf_scaling_chg"
+        elif "vh_PTH_15p0_30p0_in" in process: poi = "vh_scaling_chg"
+
+        elif "ggh_PTH_30p0_45p0_in" in process: poi = "ggh_scaling_chg"
+        elif "tth_PTH_30p0_45p0_in" in process: poi = "tth_scaling_chg"
+        elif "vbf_PTH_30p0_45p0_in" in process: poi = "vbf_scaling_chg"
+        elif "vh_PTH_30p0_45p0_in" in process: poi = "vh_scaling_chg"
+
+        elif "ggh_PTH_45p0_80p0_in" in process: poi = "ggh_scaling_chg"
+        elif "tth_PTH_45p0_80p0_in" in process: poi = "tth_scaling_chg"
+        elif "vbf_PTH_45p0_80p0_in" in process: poi = "vbf_scaling_chg"
+        elif "vh_PTH_45p0_80p0_in" in process: poi = "vh_scaling_chg"
+
+        elif "ggh_PTH_80p0_120p0_in" in process: poi = "ggh_scaling_chg"
+        elif "tth_PTH_80p0_120p0_in" in process: poi = "tth_scaling_chg"
+        elif "vbf_PTH_80p0_120p0_in" in process: poi = "vbf_scaling_chg"
+        elif "vh_PTH_80p0_120p0_in" in process: poi = "vh_scaling_chg"
+
+        elif "ggh_PTH_120p0_200p0_in" in process: poi = "ggh_scaling_chg"
+        elif "tth_PTH_120p0_200p0_in" in process: poi = "tth_scaling_chg"
+        elif "vbf_PTH_120p0_200p0_in" in process: poi = "vbf_scaling_chg"
+        elif "vh_PTH_120p0_200p0_in" in process: poi = "vh_scaling_chg"
+
+        elif "ggh_PTH_200p0_350p0_in" in process: poi = "ggh_scaling_chg"
+        elif "tth_PTH_200p0_350p0_in" in process: poi = "tth_scaling_chg"
+        elif "vbf_PTH_200p0_350p0_in" in process: poi = "vbf_scaling_chg"
+        elif "vh_PTH_200p0_350p0_in" in process: poi = "vh_scaling_chg"
+
+        elif "ggh_PTH_350p0_10000p0_in" in process: poi = "ggh_scaling_chg"
+        elif "tth_PTH_350p0_10000p0_in" in process: poi = "tth_scaling_chg"
+        elif "vbf_PTH_350p0_10000p0_in" in process: poi = "vbf_scaling_chg"
+        elif "vh_PTH_350p0_10000p0_in" in process: poi = "vh_scaling_chg"
+
+        else: poi = 1
+        
+        print("Will scale ", string, " by ", poi)
+        
+        return poi
         
 
 smeft_chg = SMEFT_chg()
-
+smeft_chg_individual = SMEFT_chg_individual_bins()

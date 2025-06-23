@@ -49,8 +49,12 @@ def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW, procs
     if (procs is not None) and (eft_variable is not None):
         # eftParamStr = [f"{proc}_scaling_{eft_variable}_{bin}=0" for proc in procs for bin in bins]
         # eftParamStrNoZero = [f"{proc}_scaling_{eft_variable}_{bin}" for proc in procs for bin in bins]
-        eftParamStr = [f"{eft_variable}_{bin}=0" for bin in bins]
-        eftParamStrNoZero = [f"{eft_variable}_{bin}" for bin in bins]
+        
+        # eftParamStr = [f"{eft_variable}_{bin}=0" for bin in bins]
+        # eftParamStrNoZero = [f"{eft_variable}_{bin}" for bin in bins]
+
+        eftParamStr = [f"{eft_variable}=0"]
+        eftParamStrNoZero = [f"{eft_variable}"]
         VariableDict["eftParamStr"] = eftParamStr
         VariableDict["eftParamStrNoZero"] = eftParamStrNoZero
     
