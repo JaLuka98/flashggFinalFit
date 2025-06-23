@@ -90,14 +90,14 @@ if opt.ext != "":
   if opt.inputName == "Datacard":
     if opt.eft_mode != "":
       fsub.write("export PYTHON3PATH=${PYTHON3PATH}:%s\n\n"%os.path.join(os.environ['ANALYSIS_PATH'], 'commonTools'))
-      eft_model = " --P EFT:smeft_%s"%opt.eft_mode
+      eft_model = " -P EFT:smeft_%s"%opt.eft_mode
       fsub.write("text2workspace.py %s/Datacard_%s.txt -o %s/Datacard_%s.root %s %s"%(outputDir,opt.ext,outputDir,opt.ext,opt.common_opts,eft_model))
     else:
       fsub.write("text2workspace.py %s/Datacard_%s.txt -o %s/Datacard_%s.root %s %s"%(outputDir,opt.ext,outputDir,opt.ext,opt.common_opts,models[opt.mode]))
   else:
     if opt.eft_mode != "":
       fsub.write("export PYTHON3PATH=${PYTHON3PATH}:%s\n\n"%os.path.join(os.environ['ANALYSIS_PATH'], 'commonTools'))
-      eft_model = " --P EFT:smeft_%s"%opt.eft_mode
+      eft_model = " -P EFT:smeft_%s"%opt.eft_mode
       fsub.write("text2workspace.py %s/%s.txt -o %s/%s.root %s %s"%(outputDir,opt.inputName,outputDir,opt.outputName,opt.common_opts,eft_model))
     else:
       fsub.write("text2workspace.py %s/%s.txt -o %s/%s.root %s %s"%(outputDir,opt.inputName,outputDir,opt.outputName,opt.common_opts,models[opt.mode]))
@@ -105,14 +105,14 @@ else:
   if opt.inputName == "Datacard":
     if opt.eft_mode != "":
       fsub.write("export PYTHON3PATH=${PYTHON3PATH}:%s\n\n"%os.path.join(os.environ['ANALYSIS_PATH'], 'commonTools'))
-      eft_model = " --P EFT:smeft_%s"%opt.eft_mode
+      eft_model = " -P EFT:smeft_%s"%opt.eft_mode
       fsub.write("text2workspace.py %s/Datacard%s.txt -o %s/Datacard%s_%s.root %s %s"%(outputDir,opt.ext,outputDir,opt.ext,opt.mode,opt.common_opts,eft_model))
     else:
       fsub.write("text2workspace.py %s/Datacard%s.txt -o %s/Datacard%s_%s.root %s %s"%(outputDir,opt.ext,outputDir,opt.ext,opt.mode,opt.common_opts,models[opt.mode]))
   else:
     if opt.eft_mode != "":
       fsub.write("export PYTHON3PATH=${PYTHON3PATH}:%s\n\n"%os.path.join(os.environ['ANALYSIS_PATH'], 'commonTools'))
-      eft_model = " --P EFT:smeft_%s"%opt.eft_mode
+      eft_model = " -P EFT:smeft_%s"%opt.eft_mode
       fsub.write("text2workspace.py %s/%s.txt -o %s/%s.root %s %s"%(outputDir,opt.inputName,outputDir,opt.outputName,opt.common_opts,eft_model))
     else:
       fsub.write("text2workspace.py %s/%s.txt -o %s/%s.root %s %s"%(outputDir,opt.inputName,outputDir,opt.outputName,opt.common_opts,models[opt.mode]))

@@ -1484,14 +1484,14 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             if "/work" in output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
-                    output_dir,
-                    f"{os.environ['TARGET_PATH']}/Combine/"
+                    f'{output_dir}/Combine/{fitFolderName}/asimov',
+                    f"{os.environ['TARGET_PATH']}/Combine/{fitFolderName}"
                 ]
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir,
-                    f"{os.environ['TARGET_PATH']}/Combine/"
+                    'root://t3dcachedb.psi.ch:1094//'+f'{output_dir}/Combine/{fitFolderName}/asimov',
+                    f"{os.environ['TARGET_PATH']}/Combine/{fitFolderName}"
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -6164,7 +6164,7 @@ class AsimovEFTFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.L
         else:
             output_dir = self.output_dir  
             
-        datacard_path = os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.year}.root')
+        datacard_path = os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')
             
         cwd = os.getcwd()
                     
@@ -6382,7 +6382,7 @@ class AsimovEFTFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         else:
             output_dir = self.output_dir  
             
-        datacard_path = os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.year}.root')
+        datacard_path = os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')
             
         cwd = os.getcwd()
         if self.batch_flavor == "slurm/psi":
@@ -6780,14 +6780,14 @@ class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             if "/work" in output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
-                    output_dir,
-                    f"{os.environ['TARGET_PATH']}/Combine/"
+                    f'{output_dir}/Combine/{fitFolderName}/eft_asimov',
+                    f"{os.environ['TARGET_PATH']}/Combine/{fitFolderName}"
                 ]
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir,
-                    f"{os.environ['TARGET_PATH']}/Combine/"
+                    'root://t3dcachedb.psi.ch:1094//'+f'{output_dir}/Combine/{fitFolderName}/eft_asimov',
+                    f"{os.environ['TARGET_PATH']}/Combine/{fitFolderName}"
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
