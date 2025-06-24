@@ -485,24 +485,44 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                 ]
                 execute_command(slurm_copy_command)
                 # Copying Signal Model...
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["sigModelWSDir"]}',
+                if "/work" in output_dir:
+                    slurm_copy_command = [
+                    'cp', '-rf',
+                    f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["sigModelWSDir"]}',
                     f'{temp_output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
                 ]
+                else:
+                    slurm_copy_command = [
+                        'xrdcp', '-rf',
+                        'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["sigModelWSDir"]}',
+                        f'{temp_output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
+                    ]
                 execute_command(slurm_copy_command)
                 # Copying Background Model...
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["bkgModelWSDir"]}' + bootstrap_suffix,
+                if "/work" in output_dir:
+                    slurm_copy_command = [
+                    'cp', '-rf',
+                    f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["bkgModelWSDir"]}' + bootstrap_suffix,
                     f'{temp_output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
                 ]
+                else:
+                    slurm_copy_command = [
+                        'xrdcp', '-rf',
+                        'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["bkgModelWSDir"]}' + bootstrap_suffix,
+                        f'{temp_output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
+                    ]
                 execute_command(slurm_copy_command)
                 
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/Workspaces'], shell=True)
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/Datacards'], shell=True)
-                # Keep t2w_jobs for debugging purposes
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/t2w_jobs'], shell=True)
+                if "/work" in output_dir:
+                    execute_command([f'mkdir -p {output_dir}/Combine/Workspaces'], shell=True)
+                    execute_command([f'mkdir -p {output_dir}/Combine/Datacards'], shell=True)
+                    # Keep t2w_jobs for debugging purposes
+                    execute_command([f'mkdir -p {output_dir}/Combine/t2w_jobs'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/Workspaces'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/Datacards'], shell=True)
+                    # Keep t2w_jobs for debugging purposes
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/t2w_jobs'], shell=True)
             else:
                 temp_output_dir = output_dir
                 execute_command([f'mkdir -p {temp_output_dir}/Combine/Workspaces'], shell=True)
@@ -537,8 +557,12 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                 print("Error executing script:", e.stderr)
                 
             # Copy workspaces to workspaces folder
-            execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
-            execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+            if "/work" in output_dir:
+                execute_command([f'cp -rf {datacards_dir}/{datacard_name}.root {output_dir}/Combine/Workspaces/'], shell=True)
+                execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {output_dir}/Combine/t2w_jobs/"], shell=True)
+            else:
+                execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
+                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
             shutil.rmtree(temp_output_dir)
 
             os.chdir(current_dir)
@@ -555,25 +579,46 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
                 
                 # Copy concerning datacard + Model to scratch dir, cause of how RunText2Workspace works..
                 # Copying datacard...
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{datacard_name}.txt',
-                    f'{temp_output_dir}/Combine'
-                ]
+                if "/work" in output_dir:
+                    slurm_copy_command = [
+                        'cp', '-rf',
+                        f'{output_dir}/Combine/{datacard_name}.txt',
+                        f'{temp_output_dir}/Combine'
+                    ]
+                else:
+                    slurm_copy_command = [
+                        'xrdcp', '-rf',
+                        'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{datacard_name}.txt',
+                        f'{temp_output_dir}/Combine'
+                    ]
                 execute_command(slurm_copy_command)
                 # Copying Signal Model...
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"]}',
-                    f'{temp_output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
-                ]
+                if "/work" in output_dir:
+                    slurm_copy_command = [
+                        'cp', '-rf',
+                        f'{output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"]}',
+                        f'{temp_output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
+                    ]
+                else:
+                    slurm_copy_command = [
+                        'xrdcp', '-rf',
+                        'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"]}',
+                        f'{temp_output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
+                    ]
                 execute_command(slurm_copy_command)
                 # Copying Background Model...
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"]}',
-                    f'{temp_output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
-                ]
+                if "/work" in output_dir:
+                    slurm_copy_command = [
+                        'cp', '-rf',
+                        f'{output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"]}',
+                        f'{temp_output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
+                    ]
+                else:
+                    slurm_copy_command = [
+                        'xrdcp', '-rf',
+                        'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"]}',
+                        f'{temp_output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
+                    ]
                 execute_command(slurm_copy_command)
             else:
                 temp_output_dir = output_dir
@@ -609,16 +654,25 @@ class RunText2Workspace(Task, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(
             if self.batch_flavor == "slurm/psi":
                 # Copy workspaces to workspaces folder
                 if convert_boolean_string(self.bootstrap_flag) == True:
-                    execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
-                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+                    if "/work" in output_dir:
+                        execute_command([f'cp -rf {datacards_dir}/{workspace_name}.root {output_dir}/Combine/Workspaces/'], shell=True)
+                        # execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {output_dir}/Combine/t2w_jobs/"], shell=True)
+                        execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {output_dir}/Combine/"], shell=True)
+                    else:
+                        execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
+                        execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
                 else:
                     # list_command = ["xrdfs", "root://t3dcachedb.psi.ch", "ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
                     list_command = ["ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
                     file_list = subprocess.check_output(list_command).decode().splitlines()
 
                     print(file_list)
-                    execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/'], shell=True)
-                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+                    if "/work" in output_dir:
+                        execute_command([f'cp -rf {datacards_dir}/{workspace_name}.root {output_dir}/Combine/'], shell=True)
+                        execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/')} {output_dir}/Combine/t2w_jobs/"], shell=True)
+                    else:
+                        execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/'], shell=True)
+                        execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
                 shutil.rmtree(temp_output_dir)
         
 class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
