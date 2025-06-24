@@ -906,7 +906,7 @@ class SignalPackaging(law.Task):
             
                         
         return output_paths
-                
+            
     def run(self):
         return True
     
