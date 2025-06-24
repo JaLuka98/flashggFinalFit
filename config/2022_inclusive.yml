@@ -1,6 +1,6 @@
 # Config file: options for signal fitting
 
-outputFolder: '/eos/cms/store/group/phys_higgs/cmshgg/niharrin/2024/finalfit/forPaper_24_10_14/law_output/'
+outputFolder: '/.automount/net_rw/net__data_cms3a-1/spaeh/private/PhD/analyses/partial_Run3_differential/Hgg-PartialRun3-3A-ETH-Analysis/fitting/CMSSW_14_1_0_pre4/src/flashggFinalFit/test_law_branch_2022'
 
 inputFiles:
   # Trees2WS
@@ -63,7 +63,7 @@ trees2wsCfg:
 
   cats: 'auto'
 
-  execution: 'local'
+  execution: 'htcondor'
 
 signalScriptCfg_2022_preEE:
   # Setup
@@ -87,7 +87,7 @@ signalScriptCfg_2022_preEE:
 
 
   # Job submission options
-  execution: 'local'
+  execution: 'htcondor'
 
 signalScriptCfg_2022_postEE:
   # Setup
@@ -111,14 +111,14 @@ signalScriptCfg_2022_postEE:
   beamspotWidthMC: '3.732'
 
   # Job submission options
-  execution: 'local'
+  execution: 'htcondor'
 
 packaged_2022:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
-  execution: 'local'
+  execution: 'htcondor'
 
 datacard_yields:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
@@ -136,7 +136,7 @@ datacard_yields:
   skipBkg: False # Only add signal processes to datacard
   bkgScaler: 1. # Add overall scale factor for background
   skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
-  execution: 'local'
+  execution: 'htcondor'
 
 datacard:
   # For pruning processes
@@ -170,7 +170,7 @@ combine_fit:
   cminApproxPreFitTolerance: 0.01
   rMin: 0.7
   rMax: 1.6
-  execution: 'local'
+  execution: 'htcondor'
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
