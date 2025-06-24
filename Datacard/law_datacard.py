@@ -204,9 +204,9 @@ class MakeYields(law.Task):
                     inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
         
         tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version='v1', workflow=datacard_config['execution'])]
-        
+
         return tasks
-        
+
     def output(self):
         # returns output folder
         
@@ -238,7 +238,7 @@ class MakeYields(law.Task):
         
         for cat in datacard_config['cats'].split(","):
             output_paths.append(law.LocalFileTarget(output_dir + f"/Datacards/yields_{datacard_config['ext']}/{cat}.pkl"))
-                                  
+
         return output_paths
                 
     
