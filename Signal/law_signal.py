@@ -908,8 +908,10 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
     def run(self):
         cat = self.branch_data
         sys.path.append(os.path.dirname(os.path.abspath(__file__))+ "/tools")
+        
+        on_slurm_node = os.environ.get("SLURM_JOB_ID", False)
 
-        if self.batch_flavor == "slurm/psi":
+        if self.batch_flavor == "slurm/psi" and on_slurm_node:
             # Have to use /scratch/batch_username/ for slurm/psi
             if "/work" in self.output_dir:
                 execute_command([f'mkdir -p {self.output_dir}/outdir_packaged{self.outputExt}/packageSignal'], shell=True)
@@ -925,23 +927,33 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
             output_dir = self.output_dir
             # os.chdir(os.path.join(self.output_dir, 'Combine', fitFolderName, 'impact'))
         
-        if self.batch_flavor == "slurm/psi":
-            # Have to copy over the input to the JOB directory
-            # Don't forget to VOMS!
-            if "/work" in self.output_dir:
-                slurm_copy_command = [
-                    'cp', '-rf',
-                    f'{self.output_dir}/outdir_*',
-                    f"{os.environ['TARGET_PATH']}/"
-                ]
+        if self.batch_flavor == "slurm/psi" and on_slurm_node:
+            if self.variable == '':
+                configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
             else:
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+f'{self.output_dir}/outdir_*',
-                    f"{os.environ['TARGET_PATH']}/"
-                ]
-            print(slurm_copy_command)
-            execute_command(slurm_copy_command)
+                configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
+            
+            #Load central config file
+            with open(configYamlPath, 'r') as file:
+                config = yaml.safe_load(file)
+            for currentEra in allErasMap[f"{self.year}"]:
+                signalScriptCfg = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+                # Have to copy over the input to the JOB directory
+                # Don't forget to VOMS!
+                if "/work" in self.output_dir:
+                    slurm_copy_command = [
+                        'cp', '-rf',
+                        f"{self.output_dir}/outdir_{signalScriptCfg['ext']}",
+                        f"{os.environ['TARGET_PATH']}/"
+                    ]
+                else:
+                    slurm_copy_command = [
+                        'xrdcp', '-rf',
+                        'root://t3dcachedb.psi.ch:1094//'+f"{self.output_dir}/outdir_{signalScriptCfg['ext']}",
+                        f"{os.environ['TARGET_PATH']}/"
+                    ]
+                print(slurm_copy_command)
+                execute_command(slurm_copy_command)
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Signal/scripts/packageSignal.py")
         arguments = [
@@ -965,7 +977,7 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
             print("Error executing script:", e.stderr)
 
         # Copy the files back to pnfs if we are on slurm/psi
-        if self.batch_flavor == "slurm/psi":
+        if self.batch_flavor == "slurm/psi" and on_slurm_node:
             # Have to copy over the output to the final directory
             # Don't forget to VOMS!
             if "/work" in self.output_dir:
