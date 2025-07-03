@@ -59,8 +59,10 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-            
-        tasks = [Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year, version='v1', workflow='local', batch_flavor=self.batch_flavor)]
+        
+        config = config["backgroundScriptCfg"]
+        
+        tasks = [Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year, version='v1', workflow='local', batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime'])]
         
         return tasks
     
@@ -197,7 +199,7 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
         
         config = config["backgroundScriptCfg"]
             
-        tasks["Trees2WSData"] = Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year, version='v1', workflow=config['execution'], batch_flavor=self.batch_flavor)
+        tasks["Trees2WSData"] = Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime'])
         
         return tasks
     
