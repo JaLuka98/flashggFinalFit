@@ -66,7 +66,14 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     nCats = law.Parameter(description="Number of Categories")
     variable = law.Parameter(default="", description="Variable to be used")
 
-    def requires(self):
+    # def requires(self):
+    def workflow_requires(self):
+        workflow_reqs = super().workflow_requires()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -82,7 +89,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         else:
             output_dir = self.output_dir
             
-        tasks = [SignalPackaging(output_dir=output_dir, variable=self.variable, year=self.year)]
+        tasks["SignalPackaging"] = SignalPackaging(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)
         
         return tasks
     
@@ -296,9 +303,16 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
         branch_map = {i: i for i in range(1)}
         return branch_map
     
-    def requires(self):
+    # def requires(self):
+    def workflow_requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)
+        workflow_reqs = super().workflow_requires()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -314,7 +328,7 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
         else:
             output_dir = self.output_dir
         
-        tasks = [MakeYields(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor)]
+        tasks["MakeYields"] = MakeYields(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor)
         
         return tasks    
 

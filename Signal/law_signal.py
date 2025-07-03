@@ -47,7 +47,14 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
 
     htcondor_job_kwargs_submit = {"spool": True}
     
-    def requires(self):
+    # def requires(self):
+    def workflow_requires(self):
+        workflow_reqs = super().workflow_requires()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -63,7 +70,7 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
         else:
             output_dir = self.output_dir
             
-        tasks = [Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)]
+        tasks["Trees2WS"] = Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)
         
         return tasks
     
@@ -299,7 +306,15 @@ class CalcPhotonSystCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
     
     htcondor_job_kwargs_submit = {"spool": True}
-    def requires(self):
+
+    # def requires(self):
+    def workflow_requires(self):
+        workflow_reqs = super().workflow_requires()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -315,7 +330,7 @@ class CalcPhotonSystCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         else:
             output_dir = self.output_dir
             
-        tasks = [Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year)]
+        tasks["Trees2WS"] = Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)
         
         return tasks
     
@@ -559,7 +574,14 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
     
     htcondor_job_kwargs_submit = {"spool": True}
       
-    def requires(self):
+    # def requires(self):
+    def workflow_requires(self):
+        workflow_reqs = super().workflow_requires()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
         
         year = self.year[:4]
         
@@ -578,10 +600,8 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         else:
             output_dir = self.output_dir
             
-        tasks = []
-            
-        tasks.append(FTest(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor))
-        tasks.append(CalcPhotonSyst(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor))
+        tasks["FTest"] = FTest(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor)
+        tasks["CalcPhotonSyst"] = CalcPhotonSyst(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor)
 
         return tasks
     
@@ -830,8 +850,15 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
     
     htcondor_job_kwargs_submit = {"spool": True}
     
-    def requires(self):
-        
+    # def requires(self):
+    def workflow_requires(self):
+        workflow_reqs = super().workflow_requires()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
+
         year = self.year[:4]
         
         # Path should be somewhere centrally...
@@ -848,10 +875,8 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
             output_dir = config["outputFolder"]
         else:
             output_dir = self.output_dir
-                        
-        tasks = []
-        
-        tasks.append(SignalFit(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor))
+                                
+        tasks["SignalFit"] = SignalFit(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor)
                     
         return tasks
     
