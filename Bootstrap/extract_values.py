@@ -94,6 +94,13 @@ def coefficients(_m1, _m2ii, _m3):
         
     return a, b, c
 
+def coefficients_crossingMethod(z_hat, sigma_min, sigma_plus):
+    a = z_hat
+    b = (sigma_min + sigma_plus) / 2
+    c = (sigma_plus - sigma_min) / 2
+        
+    return a, b, c
+
 def compute_rho_ij(_ci, _cj, _bi, _bj, _m2ij):
     if _ci==0 or _cj==0:
         return _m2ij / (_bi*_bj)
@@ -437,6 +444,64 @@ def covariance_to_correlation(cov_matrix):
 
     return corr_matrix
 
+def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_):
+    abc_values_crossingMethod = {}
+    
+    cov_matrix = np.cov([pois_[r] for r in poi_list_])
+
+    for i, current_poi in enumerate(poi_list_):
+                
+        with uproot.open(os.path.join(combineLL_dir_, "scans", f"scan_{current_poi}.root")) as file:
+            # Get the TGraphs - note that uproot reads them as pairs of arrays
+            graph = file[f"scan_{current_poi};1"]  # Replace with your TGraph name
+            # Extract x and y values
+            x0_points = graph.member("fX")  # Gets x values
+            y0_points = graph.member("fY")  # Gets y values
+        
+        z_hat = x0_points[np.argmin(y0_points)] # Consider an Asimov dataset
+        crossing_minus, crossing_plus = find_crossings(x0_points, y0_points)
+        sigma_plus = crossing_plus - z_hat
+        sigma_minus = z_hat - crossing_minus
+        
+        a, b, c = coefficients_crossingMethod(z_hat, sigma_minus, sigma_plus)
+                    
+        abc_values_crossingMethod[current_poi] = [a, b, c]
+    
+    rho_crossingMethod = covariance_to_correlation(np.array(cov_matrix))
+
+    x0 = np.array([1. for i in range(len(poi_list_))])
+    res = minimize(chi, x0, args=(pois_, poi_list_, rho_crossingMethod, abc_values_crossingMethod))
+
+    # Get optimal values from minimization
+    optimal_values = res.x
+    
+    x0_ranges = []
+    chi_x0_scans = []
+    
+    for i, current_poi in enumerate(poi_list_):
+        print(f"{current_poi}: {optimal_values[i]:.3f}")
+
+        # Create a grid of points
+        x0_range = np.linspace(-1, 3, 100)  # Adjust range as needed
+        
+        optimal_values_copy = optimal_values.copy()
+        
+        chi_x0_scan = []
+        for x0 in x0_range:
+            for j in range(len(poi_list_)):
+                if j!=i:
+                    optimal_values_copy[j] = optimal_values[j]
+                if j == i:
+                    optimal_values_copy[j] = x0
+            chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho_crossingMethod, abc_values_crossingMethod, first_order=False)))
+        
+        chi_x0_scan = np.array(chi_x0_scan)
+
+        
+        x0_ranges.append(x0_range)
+        chi_x0_scans.append(chi_x0_scan)
+    
+    return x0_ranges, chi_x0_scans, optimal_values
 
 def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
     
@@ -517,7 +582,7 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
     
     return x0_ranges, chi_x0_scans, optimal_values
 
-def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_order=False):
+def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_order=False, with_crossingMethod=False):
     
     x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_)
     
@@ -525,15 +590,17 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
     if print_first_order:
         x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, first_order=True)
     
+    if with_crossingMethod:
+        x0_ranges_cm, chi_x0_scans_cm, optimal_values_cm = produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_)
+    
     if (not os.path.exists(folder)) & (folder!=""):
         os.makedirs(folder)
-
     
     cov_matrix = np.cov([pois_[r] for r in poi_list_])
     # cov_matrix = compute_covariance_mode([pois_[current_poi] for current_poi in poi_list_])
     
     for i, current_poi in enumerate(poi_list_):
-        
+         
         # Check if condition is satisfied
         mean = np.mean(pois_[current_poi])
         variance = cov_matrix[i,i]
@@ -553,13 +620,13 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
         _, ax1 = plt.subplots(1, 1, figsize=(12, 8))
 
         # Plot x0 scan
-        ax1.plot(x0_ranges[i], chi_x0_scans[i], label='Simplified likelihood (ABC)')
-        ax1.axvline(optimal_values[i], color='grey', linestyle='--', label=f'Minimum: {optimal_values[i]:.3f}')
-        # print("Simplified likelihood (ABC): ", chi_x0_scans[i])
+        ax1.plot(x0_ranges[i], chi_x0_scans[i], label='Simplified likelihood', color="green")
+        ax1.axvline(optimal_values[i], color='red', linestyle='--', label=f'Minimum: {optimal_values[i]:.3f}')
         if print_first_order:
-            ax1.plot(x0_ranges_fo[i], chi_x0_scans_fo[i], label='Simplified likelihood (Hesse)')
-            # ax1.axvline(optimal_values_fo[i], color='grey', linestyle='--', label=f'Minimum: {optimal_values_fo[i]:.3f}')
-            # print(chi_x0_scans_fo[i])
+            ax1.plot(x0_ranges_fo[i], chi_x0_scans_fo[i], label='Gaussian likelihood', color="teal")
+
+        if with_crossingMethod:
+            ax1.plot(x0_ranges_cm[i], chi_x0_scans_cm[i], label='Crossing Method', color="darkmagenta")
         with uproot.open(os.path.join(combineLL_dir_, "scans", f"scan_{current_poi}.root")) as file:
             # Get the TGraphs - note that uproot reads them as pairs of arrays
             graph = file[f"scan_{current_poi};1"]  # Replace with your TGraph name
@@ -581,7 +648,7 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
         # print("current_shift", shift)
         # ax1.plot(x0_ranges_centered, chi_x0_scans[i], label='Simplified likelihood (ABC)')
         
-        ax1.plot(x0_points, y0_points, 'r--', label='Combine likelihood')
+        ax1.plot(x0_points, y0_points, 'r--', label='Full likelihood', color="black")
         
         print(f"SL Minimum and Crossings: {optimal_values[i]:.3f}, {find_crossings(x0_ranges[i], chi_x0_scans[i])}") 
         if print_first_order:
@@ -802,4 +869,4 @@ for current_tuple in unique_pairings:
 #     print(f"minimum: {min(data[current_poi])}")
 #     print(f"maximum: {max(data[current_poi])}")
 
-produce_LLPlots(pois, poi_list, combineLL_dir, folder=f"Plots/{variable}/{subfolder}", print_first_order=True)
+produce_LLPlots(pois, poi_list, combineLL_dir, folder=f"Plots/{variable}/{subfolder}", print_first_order=True, with_crossingMethod=True)
