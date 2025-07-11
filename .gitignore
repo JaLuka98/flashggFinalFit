@@ -69,7 +69,7 @@ Plots/pkl
 jobs/*.sh
 jobs*
 
-install_dir
+install_dir*
 .law
 law/output
 law/remote
