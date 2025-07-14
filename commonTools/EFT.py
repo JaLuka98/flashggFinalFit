@@ -3,6 +3,12 @@ from HiggsAnalysis.CombinedLimit.PhysicsModel import PhysicsModel
 class SMEFT_chg_individual_bins(PhysicsModel):
     def doParametersOfInterest(self):
         """Create POI and other parameters, and define the POI set."""
+
+        self.modelBuilder.doVar("A_tot[3.232]")
+        self.modelBuilder.doVar("B_tot[36.08]")
+        self.modelBuilder.out.var("A_tot").setConstant(True) 
+        self.modelBuilder.out.var("B_tot").setConstant(True) 
+
         self.modelBuilder.doVar("A_0p0_15p0[15.08]")
         self.modelBuilder.doVar("B_0p0_15p0[172.55]")
         self.modelBuilder.out.var("A_0p0_15p0").setConstant(True) 
@@ -44,65 +50,65 @@ class SMEFT_chg_individual_bins(PhysicsModel):
         self.modelBuilder.out.var("B_350p0_10000p0").setConstant(True)
 
         # First approximation
-        self.modelBuilder.doVar("chg[0,-0.2,0.2]")
-        self.modelBuilder.factory_( "expr::ggh_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A_0p0_15p0, B_0p0_15p0)")
-        self.modelBuilder.factory_( "expr::tth_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A_0p0_15p0, B_0p0_15p0)") 
-        self.modelBuilder.factory_( "expr::vbf_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A_0p0_15p0, B_0p0_15p0)")
-        self.modelBuilder.factory_( "expr::vh_scaling_chg(\"1+@1*@0+@2*@0*@0\", chg, A_0p0_15p0, B_0p0_15p0)")
+        self.modelBuilder.doVar("chg_0p0_15p0[0,-0.2,0.2]")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg_0p0_15p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_0p0_15p0, A_0p0_15p0, B_0p0_15p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg_0p0_15p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_0p0_15p0, A_0p0_15p0, B_0p0_15p0, A_tot, B_tot)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg_0p0_15p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_0p0_15p0, A_0p0_15p0, B_0p0_15p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg_0p0_15p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_0p0_15p0, A_0p0_15p0, B_0p0_15p0, A_tot, B_tot)")
 
         self.modelBuilder.doVar("chg_15p0_30p0[0,-0.2,0.2]")
-        self.modelBuilder.factory_( "expr::ggh_scaling_chg_15p0_30p0(\"1+@1*@0+@2*@0*@0\", chg_15p0_30p0, A_15p0_30p0, B_15p0_30p0)")
-        self.modelBuilder.factory_( "expr::tth_scaling_chg_15p0_30p0(\"1+@1*@0+@2*@0*@0\", chg_15p0_30p0, A_15p0_30p0, B_15p0_30p0)") 
-        self.modelBuilder.factory_( "expr::vbf_scaling_chg_15p0_30p0(\"1+@1*@0+@2*@0*@0\", chg_15p0_30p0, A_15p0_30p0, B_15p0_30p0)")
-        self.modelBuilder.factory_( "expr::vh_scaling_chg_15p0_30p0(\"1+@1*@0+@2*@0*@0\", chg_15p0_30p0, A_15p0_30p0, B_15p0_30p0)")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg_15p0_30p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_15p0_30p0, A_15p0_30p0, B_15p0_30p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg_15p0_30p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_15p0_30p0, A_15p0_30p0, B_15p0_30p0, A_tot, B_tot)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg_15p0_30p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_15p0_30p0, A_15p0_30p0, B_15p0_30p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg_15p0_30p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_15p0_30p0, A_15p0_30p0, B_15p0_30p0, A_tot, B_tot)")
 
         self.modelBuilder.doVar("chg_30p0_45p0[0,-0.2,0.2]")
-        self.modelBuilder.factory_( "expr::ggh_scaling_chg_30p0_45p0(\"1+@1*@0+@2*@0*@0\", chg_30p0_45p0, A_30p0_45p0, B_30p0_45p0)")
-        self.modelBuilder.factory_( "expr::tth_scaling_chg_30p0_45p0(\"1+@1*@0+@2*@0*@0\", chg_30p0_45p0, A_30p0_45p0, B_30p0_45p0)") 
-        self.modelBuilder.factory_( "expr::vbf_scaling_chg_30p0_45p0(\"1+@1*@0+@2*@0*@0\", chg_30p0_45p0, A_30p0_45p0, B_30p0_45p0)")
-        self.modelBuilder.factory_( "expr::vh_scaling_chg_30p0_45p0(\"1+@1*@0+@2*@0*@0\", chg_30p0_45p0, A_30p0_45p0, B_30p0_45p0)")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg_30p0_45p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_30p0_45p0, A_30p0_45p0, B_30p0_45p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg_30p0_45p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_30p0_45p0, A_30p0_45p0, B_30p0_45p0, A_tot, B_tot)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg_30p0_45p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_30p0_45p0, A_30p0_45p0, B_30p0_45p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg_30p0_45p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_30p0_45p0, A_30p0_45p0, B_30p0_45p0, A_tot, B_tot)")
 
         self.modelBuilder.doVar("chg_45p0_80p0[0,-0.2,0.2]")
-        self.modelBuilder.factory_( "expr::ggh_scaling_chg_45p0_80p0(\"1+@1*@0+@2*@0*@0\", chg_45p0_80p0, A_45p0_80p0, B_45p0_80p0)")
-        self.modelBuilder.factory_( "expr::tth_scaling_chg_45p0_80p0(\"1+@1*@0+@2*@0*@0\", chg_45p0_80p0, A_45p0_80p0, B_45p0_80p0)") 
-        self.modelBuilder.factory_( "expr::vbf_scaling_chg_45p0_80p0(\"1+@1*@0+@2*@0*@0\", chg_45p0_80p0, A_45p0_80p0, B_45p0_80p0)")
-        self.modelBuilder.factory_( "expr::vh_scaling_chg_45p0_80p0(\"1+@1*@0+@2*@0*@0\", chg_45p0_80p0, A_45p0_80p0, B_45p0_80p0)")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg_45p0_80p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_45p0_80p0, A_45p0_80p0, B_45p0_80p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg_45p0_80p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_45p0_80p0, A_45p0_80p0, B_45p0_80p0, A_tot, B_tot)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg_45p0_80p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_45p0_80p0, A_45p0_80p0, B_45p0_80p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg_45p0_80p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_45p0_80p0, A_45p0_80p0, B_45p0_80p0, A_tot, B_tot)")
 
         self.modelBuilder.doVar("chg_80p0_120p0[0,-0.2,0.2]")
-        self.modelBuilder.factory_( "expr::ggh_scaling_chg_80p0_120p0(\"1+@1*@0+@2*@0*@0\", chg_80p0_120p0, A_80p0_120p0, B_80p0_120p0)")
-        self.modelBuilder.factory_( "expr::tth_scaling_chg_80p0_120p0(\"1+@1*@0+@2*@0*@0\", chg_80p0_120p0, A_80p0_120p0, B_80p0_120p0)") 
-        self.modelBuilder.factory_( "expr::vbf_scaling_chg_80p0_120p0(\"1+@1*@0+@2*@0*@0\", chg_80p0_120p0, A_80p0_120p0, B_80p0_120p0)")
-        self.modelBuilder.factory_( "expr::vh_scaling_chg_80p0_120p0(\"1+@1*@0+@2*@0*@0\", chg_80p0_120p0, A_80p0_120p0, B_80p0_120p0)")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg_80p0_120p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_80p0_120p0, A_80p0_120p0, B_80p0_120p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg_80p0_120p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_80p0_120p0, A_80p0_120p0, B_80p0_120p0, A_tot, B_tot)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg_80p0_120p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_80p0_120p0, A_80p0_120p0, B_80p0_120p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg_80p0_120p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_80p0_120p0, A_80p0_120p0, B_80p0_120p0, A_tot, B_tot)")
 
         self.modelBuilder.doVar("chg_120p0_200p0[0,-0.2,0.2]")
-        self.modelBuilder.factory_( "expr::ggh_scaling_chg_120p0_200p0(\"1+@1*@0+@2*@0*@0\", chg_120p0_200p0, A_120p0_200p0, B_120p0_200p0)")
-        self.modelBuilder.factory_( "expr::tth_scaling_chg_120p0_200p0(\"1+@1*@0+@2*@0*@0\", chg_120p0_200p0, A_120p0_200p0, B_120p0_200p0)") 
-        self.modelBuilder.factory_( "expr::vbf_scaling_chg_120p0_200p0(\"1+@1*@0+@2*@0*@0\", chg_120p0_200p0, A_120p0_200p0, B_120p0_200p0)")
-        self.modelBuilder.factory_( "expr::vh_scaling_chg_120p0_200p0(\"1+@1*@0+@2*@0*@0\", chg_120p0_200p0, A_120p0_200p0, B_120p0_200p0)")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg_120p0_200p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_120p0_200p0, A_120p0_200p0, B_120p0_200p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg_120p0_200p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_120p0_200p0, A_120p0_200p0, B_120p0_200p0, A_tot, B_tot)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg_120p0_200p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_120p0_200p0, A_120p0_200p0, B_120p0_200p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg_120p0_200p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_120p0_200p0, A_120p0_200p0, B_120p0_200p0, A_tot, B_tot)")
 
         self.modelBuilder.doVar("chg_200p0_350p0[0,-0.2,0.2]")
-        self.modelBuilder.factory_( "expr::ggh_scaling_chg_200p0_350p0(\"1+@1*@0+@2*@0*@0\", chg_200p0_350p0, A_200p0_350p0, B_200p0_350p0)")
-        self.modelBuilder.factory_( "expr::tth_scaling_chg_200p0_350p0(\"1+@1*@0+@2*@0*@0\", chg_200p0_350p0, A_200p0_350p0, B_200p0_350p0)") 
-        self.modelBuilder.factory_( "expr::vbf_scaling_chg_200p0_350p0(\"1+@1*@0+@2*@0*@0\", chg_200p0_350p0, A_200p0_350p0, B_200p0_350p0)")
-        self.modelBuilder.factory_( "expr::vh_scaling_chg_200p0_350p0(\"1+@1*@0+@2*@0*@0\", chg_200p0_350p0, A_200p0_350p0, B_200p0_350p0)")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg_200p0_350p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_200p0_350p0, A_200p0_350p0, B_200p0_350p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg_200p0_350p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_200p0_350p0, A_200p0_350p0, B_200p0_350p0, A_tot, B_tot)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg_200p0_350p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_200p0_350p0, A_200p0_350p0, B_200p0_350p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg_200p0_350p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_200p0_350p0, A_200p0_350p0, B_200p0_350p0, A_tot, B_tot)")
 
         self.modelBuilder.doVar("chg_350p0_10000p0[0,-0.2,0.2]")
-        self.modelBuilder.factory_( "expr::ggh_scaling_chg_350p0_10000p0(\"1+@1*@0+@2*@0*@0\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0)")
-        self.modelBuilder.factory_( "expr::tth_scaling_chg_350p0_10000p0(\"1+@1*@0+@2*@0*@0\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0)") 
-        self.modelBuilder.factory_( "expr::vbf_scaling_chg_350p0_10000p0(\"1+@1*@0+@2*@0*@0\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0)")
-        self.modelBuilder.factory_( "expr::vh_scaling_chg_350p0_10000p0(\"1+@1*@0+@2*@0*@0\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0)")
+        self.modelBuilder.factory_( "expr::ggh_scaling_chg_350p0_10000p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::tth_scaling_chg_350p0_10000p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0, A_tot, B_tot)") 
+        self.modelBuilder.factory_( "expr::vbf_scaling_chg_350p0_10000p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0, A_tot, B_tot)")
+        self.modelBuilder.factory_( "expr::vh_scaling_chg_350p0_10000p0(\"(1+@1*@0+@2*@0*@0) * (1 / (1 + @3*@0 + @4*@0*@0))\", chg_350p0_10000p0, A_350p0_10000p0, B_350p0_10000p0, A_tot, B_tot)")
 
-        self.modelBuilder.doSet("POI", ",".join(["chg", "chg_15p0_30p0", "chg_30p0_45p0",
+        self.modelBuilder.doSet("POI", ",".join(["chg_0p0_15p0", "chg_15p0_30p0", "chg_30p0_45p0",
                                                   "chg_45p0_80p0", "chg_80p0_120p0", "chg_120p0_200p0",
                                                   "chg_200p0_350p0", "chg_350p0_10000p0"]))
 
     def getYieldScale(self, bin, process):
         string = "%s/%s" % (bin, process)
         
-        if "ggh_PTH_0p0_15p0_in" in process: poi = "ggh_scaling_chg"
-        elif "tth_PTH_0p0_15p0_in" in process: poi = "tth_scaling_chg"
-        elif "vbf_PTH_0p0_15p0_in" in process: poi = "vbf_scaling_chg"
-        elif "vh_PTH_0p0_15p0_in" in process: poi = "vh_scaling_chg"
+        if "ggh_PTH_0p0_15p0_in" in process: poi = "ggh_scaling_chg_0p0_15p0"
+        elif "tth_PTH_0p0_15p0_in" in process: poi = "tth_scaling_chg_0p0_15p0"
+        elif "vbf_PTH_0p0_15p0_in" in process: poi = "vbf_scaling_chg_0p0_15p0"
+        elif "vh_PTH_0p0_15p0_in" in process: poi = "vh_scaling_chg_0p0_15p0"
 
         elif "ggh_PTH_15p0_30p0_in" in process: poi = "ggh_scaling_chg_15p0_30p0"
         elif "tth_PTH_15p0_30p0_in" in process: poi = "tth_scaling_chg_15p0_30p0"

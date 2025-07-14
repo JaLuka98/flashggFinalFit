@@ -50,11 +50,12 @@ def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW, procs
         # eftParamStr = [f"{proc}_scaling_{eft_variable}_{bin}=0" for proc in procs for bin in bins]
         # eftParamStrNoZero = [f"{proc}_scaling_{eft_variable}_{bin}" for proc in procs for bin in bins]
         
-        # eftParamStr = [f"{eft_variable}_{bin}=0" for bin in bins]
-        # eftParamStrNoZero = [f"{eft_variable}_{bin}" for bin in bins]
+        # Individual bins
+        eftParamStr = [f"{eft_variable}_{bin}=0" for bin in bins]
+        eftParamStrNoZero = [f"{eft_variable}_{bin}" for bin in bins]
 
-        eftParamStr = [f"{eft_variable}=0"]
-        eftParamStrNoZero = [f"{eft_variable}"]
+        # eftParamStr = [f"{eft_variable}=0"]
+        # eftParamStrNoZero = [f"{eft_variable}"]
         VariableDict["eftParamStr"] = eftParamStr
         VariableDict["eftParamStrNoZero"] = eftParamStrNoZero
     
@@ -108,6 +109,8 @@ production_modes = [
 ]
 
 short_production_modes = ["ggh", "vbf", "vh", "tth"]
+
+eft_variables = ["chg", "chw"]
 
 # Define an array of eras
 # JLS 22th of Jan 2025: This syntax looks pretty criminal and should be improved at some point

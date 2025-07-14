@@ -56,6 +56,12 @@
         "fits":"robustHesse:syst:r_PTJ0_30p0_75p0",
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
+    },
+    "chg":{
+        "pois":"chg_0p0_15p0,chg_15p0_30p0,chg_30p0_45p0,chg_45p0_80p0,chg_80p0_120p0,chg_120p0_200p0,chg_200p0_350p0,chg_350p0_10000p0",
+        "fits":"robustHesse:syst:chg_30p0_45p0",
+        "points":"",
+        "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     }
 
 }

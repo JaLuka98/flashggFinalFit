@@ -679,6 +679,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 print(file_list)
                 execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/'], shell=True)
                 execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+            # time.sleep(19999)
             shutil.rmtree(temp_output_dir)
         
 class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
@@ -2370,6 +2371,7 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
 class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
+    eft_variable = law.Parameter(default="", description="EFT Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
@@ -2400,7 +2402,7 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         else:
             output_dir = self.output_dir
         
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, workflow=hesseConfig["execution"], version=self.variable, slurm_partition=hesseConfig['batchPartition'], slurm_memory=hesseConfig['batchMemory'], slurm_max_runtime=hesseConfig['batchMaxRuntime'], htcondor_partition=hesseConfig['batchPartition'], htcondor_memory=hesseConfig['batchMemory'], htcondor_max_runtime=hesseConfig['batchMaxRuntime'])
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, workflow=hesseConfig["execution"], version=self.variable, slurm_partition=hesseConfig['batchPartition'], slurm_memory=hesseConfig['batchMemory'], slurm_max_runtime=hesseConfig['batchMaxRuntime'], htcondor_partition=hesseConfig['batchPartition'], htcondor_memory=hesseConfig['batchMemory'], htcondor_max_runtime=hesseConfig['batchMaxRuntime'], eft_variable=self.eft_variable)
         
         return tasks
 
@@ -2427,18 +2429,24 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         if self.variable == '':
             fitFolderName = f'runFits_mu_fiducial'
         else:
-            fitFolderName = f'runFits_{self.variable}'
+            if self.eft_variable == "":
+                fitFolderName = f'runFits_{self.variable}'
+            else:
+                fitFolderName = f'runFits_{self.eft_variable}'
             
         if self.variable == "":
             output = []
+            if self.eft_variable != "":
+                print("Running AsimovCovCorrHesse for inclusive does not make sense. Please specify a variable.")
+                exit(1)
         else:
             # output = [os.path.join(output_dir, 'Combine', fitFolderName)]
-            output = [os.path.join(output_dir, 'Combine', fitFolderName, 'hesse')]
+            hesseDir = 'eft_hesse' if self.eft_variable != "" else 'hesse'
+            output = [os.path.join(output_dir, 'Combine', fitFolderName, hesseDir)]
             
-            
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', f'robustHessefirstStep.root')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', f'multidimfitfirstStep.root')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', f'higgsCombinefirstStep.MultiDimFit.mH125.38.root')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, f'robustHessefirstStep.root')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, f'multidimfitfirstStep.root')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, f'higgsCombinefirstStep.MultiDimFit.mH125.38.root')]
         
         outputFileTargets = []
                 
@@ -2457,7 +2465,10 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
-            fitFolderName = f'runFits_{self.variable}'
+            if self.eft_variable == "":
+                fitFolderName = f'runFits_{self.variable}'
+            else:
+                fitFolderName = f'runFits_{self.eft_variable}'
                   
         #Load central config file
         with open(configYamlPath, 'r') as file:
@@ -2469,25 +2480,32 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             output_dir = self.output_dir  
             
         if self.variable == '':
+            if self.eft_variable != "":
+                print("Running AsimovCovCorrHesse for inclusive does not make sense. Please specify a variable.")
+                exit(1)
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
         else:
-            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+            if self.eft_variable == "":
+                datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+            else:
+                datacard_path = os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')
         
         cwd = os.getcwd()
         
         if self.batch_flavor == "slurm/psi":
+            hesseDir = 'eft_hesse' if self.eft_variable != "" else 'hesse'
             # Have to use /scratch/batch_username/ for slurm/psi
             if "/work" in output_dir:
-                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/hesse'], shell=True)
-            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'hesse'))
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/{hesseDir}'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, f'{hesseDir}'))
         else:
-            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
-            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse'))
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, f'{hesseDir}'))
                     
         arguments = [
             "combine",
@@ -2507,7 +2525,7 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             "--X-rtd", "MINIMIZER_multiMin_hideConstants",
             "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
             "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-            "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
+            # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
             "-t", "-1",
             "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
         ]
@@ -2546,12 +2564,11 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
+    eft_variable = law.Parameter(default="", description="EFT Variable to be used")
     year = law.Parameter(default='2022', description="Year")
     noPreliminary = law.Parameter(default=False, description="Flag, if final plot should bear the Preliminary.")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
-
-
 
     def workflow_requires(self):
         workflow_reqs = super().workflow_requires()
@@ -2580,7 +2597,7 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
             exit(1)
         else:
             version = self.variable
-            tasks["AsimovCovCorrHesse"] = AsimovCovCorrHesse(output_dir=output_dir, variable=self.variable, year=self.year, version=version, workflow=config["combine_hesse"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_hesse"]['batchPartition'], slurm_memory=config["combine_hesse"]['batchMemory'], slurm_max_runtime=config["combine_hesse"]['batchMaxRuntime'], htcondor_partition=config["combine_hesse"]['batchPartition'], htcondor_memory=config["combine_hesse"]['batchMemory'], htcondor_max_runtime=config["combine_hesse"]['batchMaxRuntime'])
+            tasks["AsimovCovCorrHesse"] = AsimovCovCorrHesse(output_dir=output_dir, variable=self.variable, year=self.year, version=version, workflow=config["combine_hesse"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_hesse"]['batchPartition'], slurm_memory=config["combine_hesse"]['batchMemory'], slurm_max_runtime=config["combine_hesse"]['batchMaxRuntime'], htcondor_partition=config["combine_hesse"]['batchPartition'], htcondor_memory=config["combine_hesse"]['batchMemory'], htcondor_max_runtime=config["combine_hesse"]['batchMaxRuntime'], eft_variable=self.eft_variable)
         
         return tasks
 
@@ -2607,15 +2624,19 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
         if self.variable == '':
             fitFolderName = f'runFits_mu_fiducial'
         else:
-            fitFolderName = f'runFits_{self.variable}'
+            if self.eft_variable == "":
+                fitFolderName = f'runFits_{self.variable}'
+            else:
+                fitFolderName = f'runFits_{self.eft_variable}'
             
         # output = [os.path.join(output_dir, 'Combine', fitFolderName)]
-        output = [os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots')]
+        hesseDir = 'eft_hesse' if self.eft_variable != "" else 'hesse'
+        output = [os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, 'Plots')]
 
-        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots', f'corrMatrix_{self.variable}_syst.pdf')]
-        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots', f'corrMatrix_{self.variable}_syst.png')]
-        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots', f'covMatrix_{self.variable}_syst.pdf')]
-        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots', f'covMatrix_{self.variable}_syst.png')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, 'Plots', f'corrMatrix_{self.variable}_syst.pdf')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, 'Plots', f'corrMatrix_{self.variable}_syst.png')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, 'Plots', f'covMatrix_{self.variable}_syst.pdf')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, 'Plots', f'covMatrix_{self.variable}_syst.png')]
         
         outputFileTargets = []
                 
@@ -2630,11 +2651,15 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
        
         if self.variable == '':
             # Does not make sense inclusively
-            return True
-            
+            print("Running AsimovCovCorr for inclusive does not make sense. Please specify a variable.")
+            exit(1)
+           
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
-            fitFolderName = f'runFits_{self.variable}'
+            if self.eft_variable == "":
+                fitFolderName = f'runFits_{self.variable}'
+            else:
+                fitFolderName = f'runFits_{self.eft_variable}'
                   
         #Load central config file
         with open(configYamlPath, 'r') as file:
@@ -2649,34 +2674,34 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
         #     datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
         # else:
         #     datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
-        
+        hesseDir = 'eft_hesse' if self.eft_variable != "" else 'hesse'
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
             if "/work" in output_dir:
-                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse/Plots'], shell=True)
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}/Plots'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/hesse/Plots'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}/Plots'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/hesse/Plots'], shell=True)
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/{hesseDir}/Plots'], shell=True)
 
             if "/work" in output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
-                    f'{output_dir}/Combine/{fitFolderName}/hesse',
+                    f'{output_dir}/Combine/{fitFolderName}/{hesseDir}',
                     f'{os.environ["TARGET_PATH"]}/Combine/{fitFolderName}/'
                 ]
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/hesse',
+                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/{hesseDir}',
                     f'{os.environ["TARGET_PATH"]}/Combine/{fitFolderName}/'
                 ]
             execute_command(slurm_copy_command)
             temp_output_dir = os.environ["TARGET_PATH"]
             # output_dir = os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'hesse', 'Plots')
         else:
-            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse/Plots'], shell=True)
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}/Plots'], shell=True)
             temp_output_dir = output_dir
             # output_dir = os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', 'Plots')            
         
@@ -2687,9 +2712,9 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
             "python3",
             f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeCorrMatrix.py')}",
             "--inputJson", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'inputs_robustHesse.json')}",
-            "--mode", f"{self.variable}",
-            "--input", f"{os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', f'robustHessefirstStep.root')}",
-            "--output", f"{os.path.join(temp_output_dir, 'Combine', fitFolderName, 'hesse', 'Plots')}",
+            "--mode", f"{self.variable}" if self.eft_variable == "" else f"{self.eft_variable}",
+            "--input", f"{os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, f'robustHessefirstStep.root')}",
+            "--output", f"{os.path.join(temp_output_dir, 'Combine', fitFolderName, hesseDir, 'Plots')}",
             "--translate", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'poi_differential_hesse_noLabels.json')}"
         ]
         if convert_boolean_string(self.noPreliminary):
@@ -2708,8 +2733,8 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
             f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeCorrMatrix.py')}",
             "--inputJson", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'inputs_robustHesse.json')}",
             "--mode", f"{self.variable}",
-            "--input", f"{os.path.join(output_dir, 'Combine', fitFolderName, 'hesse', f'robustHessefirstStep.root')}",
-            "--output", f"{os.path.join(temp_output_dir, 'Combine', fitFolderName, 'hesse', 'Plots')}",
+            "--input", f"{os.path.join(output_dir, 'Combine', fitFolderName, hesseDir, f'robustHessefirstStep.root')}",
+            "--output", f"{os.path.join(temp_output_dir, 'Combine', fitFolderName, hesseDir, 'Plots')}",
             "--translate", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'poi_differential_hesse_noLabels.json')}",
             "--doCov"
         ]
@@ -7021,8 +7046,12 @@ class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
-            
-            os.chdir("./scans")
+                        
+            # change to the scans directory
+            if self.batch_flavor == "slurm/psi":
+                os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'eft_asimov', 'scans'))
+            else:
+                os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', 'scans'))
 
             arguments = [
                 "python3", f"{os.environ['CMSSW_BASE']}/bin/{os.environ['SCRAM_ARCH']}/plot1DScan.py",
@@ -7074,13 +7103,13 @@ class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             shutil.rmtree(os.environ["TARGET_PATH"])
             
         os.chdir(cwd)
-
+        
 
 class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
-    eft_variable = law.Parameter(default="chg", description="EFT Variable to be used")
+    eft_variable = law.Parameter(default="", description="EFT Variable to be used")
 
     number_of_toys = law.Parameter(default=1000, description="Number of toys")
     starting_value = law.Parameter(default=0, description="Starting toy computation from this index. This can be useful for preventing overloading schedds.")
@@ -7143,7 +7172,10 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         if self.variable == '':
             fitFolderName = f'runFits_mu_fiducial'
         else:
-            fitFolderName = f'runFits_{self.variable}'
+            if self.eft_variable == '':
+                fitFolderName = f'runFits_{self.variable}'
+            else:
+                fitFolderName = f'runFits_{self.eft_variable}'
         
         output = []
         
@@ -7205,17 +7237,18 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                     
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
+            toyFit_eftVariable = f"toyFit_{self.eft_variable}" if self.eft_variable != '' else 'toyFit'
             if "/work" in output_dir:
-                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/toyFit_{self.eft_variable}/toy_{toy_index}'], shell=True)
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/toyFit_{self.eft_variable}/toy_{toy_index}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/toyFit_{self.eft_variable}/toy_{toy_index}'], shell=True)
-            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, f'toyFit_{self.eft_variable}', f'toy_{toy_index}'))
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, f'{toyFit_eftVariable}', f'toy_{toy_index}'))
         else:
-            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/toyFit_{self.eft_variable}/toy_{toy_index}'], shell=True)
-            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit_{self.eft_variable}', f'toy_{toy_index}'))
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, f'{toyFit_eftVariable}', f'toy_{toy_index}'))
 
         seed = int(self.seed) + int(toy_index)
         

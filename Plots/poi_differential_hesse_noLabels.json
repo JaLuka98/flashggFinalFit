@@ -24,5 +24,14 @@
   "r_PTJ0_30p0_75p0":"#sigma_{[30,75) GeV}^{fid}",
   "r_PTJ0_75p0_120p0":"#sigma_{[75,120) GeV}^{fid}",
   "r_PTJ0_120p0_200p0":"#sigma_{[120,200) GeV}^{fid}",
-  "r_PTJ0_200p0_10000p0":"#sigma_{[200,+inf) GeV}^{fid}"
+  "r_PTJ0_200p0_10000p0":"#sigma_{[200,+inf) GeV}^{fid}",
+  "chg":"#font[52]{c}_{HG}",
+  "chg_0p0_15p0":"c_{HG,[0,15) GeV}",
+  "chg_15p0_30p0":"c_{HG,[15,30) GeV}",
+  "chg_30p0_45p0":"c_{HG,[30,45) GeV}",
+  "chg_45p0_80p0":"c_{HG,[45,80) GeV}",
+  "chg_80p0_120p0":"c_{HG,[80,120) GeV}",
+  "chg_120p0_200p0":"c_{HG,[120,200) GeV}",
+  "chg_200p0_350p0":"c_{HG,[200,350) GeV}",
+  "chg_350p0_10000p0":"c_{HG,[350,+inf) GeV}"
 }

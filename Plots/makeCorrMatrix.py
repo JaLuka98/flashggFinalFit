@@ -22,7 +22,7 @@ def get_options():
   parser.add_option('--noPreliminary', dest='noPreliminary', default=False, action="store_true", help='Flag, if final plot should bear the Preliminary.')
   parser.add_option('--year', dest='year', default='2022', help='Considered year (necessary for correct integrated luminosity.)')
   return parser.parse_args()
-(opt,args) = get_options() 
+(opt,args) = get_options()
 
 def LoadTranslations(jsonfilename):
     with open(jsonfilename) as jsonfile:
@@ -62,7 +62,7 @@ for mode,pois in modes.items():
   pars = od()
   for iPar,par in enumerate(theList):
     if iPar==len(theList)-1: break
-    if not par.GetName().startswith('r_'): continue
+    if (not par.GetName().startswith('r_')) and (not any(par.GetName().startswith(var) for var in eft_variables)): continue
     pars[par.GetName()] = iPar
   nPars = len(list(pars.keys()))
   print('Procesing the following %g parameters:'%nPars)
