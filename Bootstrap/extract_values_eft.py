@@ -66,37 +66,16 @@ with open(decayFilePath) as decayFile:
 with open(productionFilePath) as productionFile:
     production = json.load(productionFile)
 
-# The paths
-main_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH/Combine/runFits_PTH'
-main_eftDir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH/Combine/runFits_chg'
-path_to_hesse = os.path.join(main_dir, "hesse", 'robustHessefirstStep.root')
-base_dir = os.path.join(main_dir, "toyFit")
-combineLL_dir = os.path.join(main_dir, "asimov")
-combineLL_eftDir = os.path.join(main_eftDir, "eft_asimov")
+def produce_bf_combine(poi_list_, combineLL_dir_):
+    bf_combine = []
+    for i, current_poi in enumerate(poi_list):
 
-variable = (main_dir.split("/")[-1]).split("_")[-1]
-eft_variable = "chg"
-
-if variable == "PTH":
-    poi_list = ["r_PTH_0p0_15p0", "r_PTH_15p0_30p0", "r_PTH_30p0_45p0", "r_PTH_45p0_80p0", "r_PTH_80p0_120p0", "r_PTH_120p0_200p0", "r_PTH_200p0_350p0", "r_PTH_350p0_10000p0"]
-elif variable == "NJ":
-    poi_list = ["r_NJ_0p0_1p0", "r_NJ_1p0_2p0", "r_NJ_2p0_3p0", "r_NJ_3p0_100p0"]
-elif variable == "PTJ0":
-    poi_list = ["r_PTJ0_0p0_30p0", "r_PTJ0_30p0_75p0", "r_PTJ0_75p0_120p0", "r_PTJ0_120p0_200p0", "r_PTJ0_200p0_10000p0"]
-elif variable == "chg":
-    poi_list = ['chg']
-
-
-subfolder = "SL_chg_withXS"
-
-bf_combine = []
-for i, current_poi in enumerate(poi_list):
-
-    with uproot.open(os.path.join(combineLL_dir, f"higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.38.root")) as file:
-        # Get the TGraphs - note that uproot reads them as pairs of arrays
-        tree = file[f"limit;1"]
-        # Extract minimum value
-        bf_combine.append(tree[current_poi].array(library="np")[0])
+        with uproot.open(os.path.join(combineLL_dir, f"higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.38.root")) as file:
+            # Get the TGraphs - note that uproot reads them as pairs of arrays
+            tree = file[f"limit;1"]
+            # Extract minimum value
+            bf_combine.append(tree[current_poi].array(library="np")[0])
+    return bf_combine
 
 def coefficients(_m1, _m2ii, _m3):
     # Eq 2.9: coefficient c
@@ -160,13 +139,15 @@ def chi_vector(wc_exp, mu_obs, _a, _b, _c, _current_poi, _eft_variable):
     chi_diff = (chi_obs - chi_exp) # Chi_Obs is very small compared to chi_exp
     return chi_diff
 
-def chi(wc, pois_, poi_list_, rho_, abc_values=None, first_order=False):
+def chi(wc, pois_, poi_list_, rho_, eft_variable_, abc_values=None, first_order=False, bf_combine_=None):
     chi_vector_ = []
 
     if first_order:
+        if bf_combine_ is None:
+            print("Provide bf_combine")
+            exit(1)
         for i, current_poi in enumerate(poi_list_):
-            
-            chi_vector_.append([(bf_combine[i] - WCToMu(wc[i], current_poi, eft_variable))])
+            chi_vector_.append([(bf_combine_[i] - WCToMu(wc[i], current_poi, eft_variable_))])
 
     else:
         for i, current_poi in enumerate(poi_list_):
@@ -181,7 +162,7 @@ def chi(wc, pois_, poi_list_, rho_, abc_values=None, first_order=False):
                 return None
             a, b, c = abc_values[current_poi]
             
-            chi_vector_.append([chi_vector(wc[i], mean, a, b, c, current_poi, eft_variable)])
+            chi_vector_.append([chi_vector(wc[i], mean, a, b, c, current_poi, eft_variable_)])
 
     chi_vector_ = np.array(chi_vector_).flatten()
 
@@ -201,7 +182,7 @@ def find_crossings(x_vals, y_vals, threshold=1.0):
                 crossings.append(x_cross)
     return crossings
 
-def extract_covariance_matrix(root_file_path, poi_list):
+def extract_covariance_matrix(root_file_path, poi_list_):
     # Open the ROOT file
     root_file = ROOT.TFile.Open(root_file_path, "READ")
 
@@ -236,7 +217,7 @@ def extract_covariance_matrix(root_file_path, poi_list):
     df_covariance = pd.DataFrame(covariance_matrix, index=floatParsFinal, columns=floatParsFinal)
 
     # Filter only the POI rows/columns
-    df_filtered = df_covariance.loc[poi_list, poi_list]
+    df_filtered = df_covariance.loc[poi_list_, poi_list_]
 
     root_file.Close()
 
@@ -256,7 +237,7 @@ def plot_individual_correlation(x_vals, y_vals, x_name, y_name, rho_, folder="")
     plt.savefig(os.path.join(folder, f"{x_name}_vs_{y_name}.png"), bbox_inches='tight')
     plt.close()
 
-def plot_covariance_matrix(rho_, poi_list, folder="", title="Covariance Matrix", output_name="covariance_matrix.png"):
+def plot_covariance_matrix(rho_, poi_list_, folder="", title="Covariance Matrix", output_name="covariance_matrix.png"):
     # rho is here a matrix
     if (not os.path.exists(folder)) & (folder!=""):
         os.makedirs(folder)
@@ -264,7 +245,7 @@ def plot_covariance_matrix(rho_, poi_list, folder="", title="Covariance Matrix",
     plt.style.use(hep.style.CMS)
     _, ax = plt.subplots(figsize=(10, 6))
 
-    labels = [translation[poi] for poi in poi_list]
+    labels = [translation[poi] for poi in poi_list_]
 
     # Create heatmap
     sns.heatmap(
@@ -289,7 +270,7 @@ def plot_covariance_matrix(rho_, poi_list, folder="", title="Covariance Matrix",
 
     plt.show()
 
-def produce_rho(pois_, poi_list_):
+def produce_rho(pois_, poi_list_, subfolder_):
 
     # Covariance matrix
     cov_matrix = np.cov([pois_[current_poi] for current_poi in poi_list_])
@@ -327,7 +308,10 @@ def produce_rho(pois_, poi_list_):
         plt.xlabel('Value')
         plt.ylabel('Frequency')
         plt.grid(True)
-        plt.savefig(f"./Plots/{variable}/{subfolder}/{current_poi}.png")
+        rho_plot_path = f"./Plots/{variable}/{subfolder_}"
+        if (not os.path.exists(rho_plot_path)) & (rho_plot_path!=""):
+            os.makedirs(rho_plot_path)
+        plt.savefig(f"{rho_plot_path}/{current_poi}.png")
         plt.close()
 
         abc_values[current_poi] = [a, b, c]
@@ -396,7 +380,7 @@ def covariance_to_correlation(cov_matrix):
 
     return corr_matrix
 
-def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_):
+def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, eft_variable_):
     abc_values_crossingMethod = {}
 
     if len(poi_list_) == 1:
@@ -434,7 +418,7 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_):
         rho_crossingMethod = covariance_to_correlation(np.array(cov_matrix))
 
     x0 = np.array([0. for i in range(len(poi_list_))])
-    res = minimize(chi, x0, args=(pois_, poi_list_, rho_crossingMethod, abc_values_crossingMethod))
+    res = minimize(chi, x0, args=(pois_, poi_list_, rho_crossingMethod, eft_variable_, abc_values_crossingMethod))
 
     # Get optimal values from minimization
     optimal_values = res.x
@@ -459,7 +443,7 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_):
                     # optimal_values_copy[j] = x0
                 if j == i:
                     optimal_values_copy[j] = x0
-            chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho_crossingMethod, abc_values_crossingMethod, first_order=False)))
+            chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho_crossingMethod, eft_variable_, abc_values_crossingMethod, first_order=False)))
 
         chi_x0_scan = np.array(chi_x0_scan)
 
@@ -468,26 +452,26 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_):
 
     return x0_ranges, chi_x0_scans, optimal_values
 
-def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
+def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=False, bf_combine_=None):
 
     cov_matrix = np.cov([pois_[r] for r in poi_list_])   
 
     if first_order:
-        rho = extract_covariance_matrix(path_to_hesse, poi_list_)
+        rho = extract_covariance_matrix(path_to_hesse_, poi_list_)
 
         x0 = np.array([0. for i in range(len(poi_list_))])
         abc_values = None
 
-        res = minimize(chi, x0, args=(pois_, poi_list_, rho, abc_values, first_order))
+        res = minimize(chi, x0, args=(pois_, poi_list_, rho, eft_variable_, abc_values, first_order, bf_combine_))
 
         print("res.x for first order", res.x)
 
     else:
         print("cov_matrix", cov_matrix)
-        rho, abc_values = produce_rho(pois_, poi_list_)
+        rho, abc_values = produce_rho(pois_, poi_list_, subfolder_)
 
         x0 = np.array([0. for i in range(len(poi_list_))])
-        res = minimize(chi, x0, args=(pois_, poi_list_, rho, abc_values, first_order))
+        res = minimize(chi, x0, args=(pois_, poi_list_, rho, eft_variable_, abc_values, first_order))
 
     # Get optimal values from minimization
     optimal_values = res.x
@@ -515,9 +499,9 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
                 if j == i:
                     optimal_values_copy[j] = x0
             if first_order:
-                chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho, abc_values, first_order=True)))
+                chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho, eft_variable_, abc_values, first_order=True, bf_combine_=bf_combine_)))
             else:
-                chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho, abc_values, first_order=False)))
+                chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho, eft_variable_, abc_values, first_order=False)))
 
         chi_x0_scan = np.array(chi_x0_scan)
 
@@ -526,15 +510,15 @@ def produce_and_minimize_chi(pois_, poi_list_, first_order=False):
 
     return x0_ranges, chi_x0_scans, optimal_values
 
-def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_order=False, with_crossingMethod=False):
+def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_eftDir_, path_to_hesse_, folder="", subfolder_="", print_first_order=False, bf_combine_=None, with_crossingMethod=False):
 
-    x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_)
+    x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_)
 
     if print_first_order:
-        x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, first_order=True)
+        x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=True, bf_combine_=bf_combine_)
 
     if with_crossingMethod:
-        x0_ranges_cm, chi_x0_scans_cm, optimal_values_cm = produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_)
+        x0_ranges_cm, chi_x0_scans_cm, optimal_values_cm = produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, eft_variable_)
 
     if (not os.path.exists(folder)) & (folder!=""):
         os.makedirs(folder)
@@ -568,11 +552,12 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
 
         if with_crossingMethod:
             ax1.plot(x0_ranges_cm[i], chi_x0_scans_cm[i], label='Crossing Method', color="darkmagenta")
-        with uproot.open(f"/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH/Combine/runFits_chg/eft_asimov/scans/scan_{current_poi}.root") as file:
+        # with uproot.open(f"/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH/Combine/runFits_chg/eft_asimov/scans/scan_{current_poi}.root") as file:
+        with uproot.open(os.path.join(combineLL_eftDir_, "scans", f"scan_{current_poi}.root")) as file:
         # with uproot.open("/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH/Combine/runFits_chg_v1/eft_asimov/scans/scan_chg.root") as file:
             # Get the TGraphs - note that uproot reads them as pairs of arrays
             # graph = file[f"scan_{current_poi};1"]  # Replace with your TGraph name
-            graph = file[f"scan_{eft_variable}_{'_'.join(current_poi.split('_')[-2:])};1"]  # Replace with your TGraph name
+            graph = file[f"scan_{eft_variable_}_{'_'.join(current_poi.split('_')[-2:])};1"]  # Replace with your TGraph name
             # graph = file[f"scan_chg;1"]  # Replace with your TGraph name
             # Extract x and y values
             x0_points = graph.member("fX")  # Gets x values
@@ -603,20 +588,20 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, folder="", print_first_ord
         plt.savefig(os.path.join(folder, f"chi_scan_{current_poi}.pdf"))
         plt.savefig(os.path.join(folder, f"chi_scan_{current_poi}.png"))
 
-    rho, _ = produce_rho(pois_, poi_list_)
+    rho, _ = produce_rho(pois_, poi_list_, subfolder_)
     plot_covariance_matrix(rho, poi_list_, folder=folder, title="Covariance Matrix (Simplified Likelihood)", output_name="covariance_matrix_sl.png")
 
-    covariance_df = extract_covariance_matrix(path_to_hesse, poi_list)
+    covariance_df = extract_covariance_matrix(path_to_hesse_, poi_list_)
     plot_covariance_matrix(covariance_df, poi_list_, folder=folder, title="Covariance Matrix (Hessian)", output_name="covariance_matrix_hesse.png")
 
-def create_poiJson_untrimmed(base_dir, poi_list):
+def pois_untrimmed(toyDir_, poi_list_):
     pois = {}
 
-    for current_poi in poi_list:
+    for current_poi in poi_list_:
 
         pois[current_poi] = []
 
-    for i in range(len(glob.glob(os.path.join(base_dir, "toy_*")))):
+    for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
 
         if i%100==0:
             print(f"Processing fit_{i}")
@@ -624,12 +609,12 @@ def create_poiJson_untrimmed(base_dir, poi_list):
         seed = 123456 + i
 
         try:
-            current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root")
+            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             continue
 
-        for j, current_poi in enumerate(poi_list):
+        for j, current_poi in enumerate(poi_list_):
 
             try: 
                 current_tree = current_root_files["limit"]
@@ -650,14 +635,14 @@ def create_poiJson_untrimmed(base_dir, poi_list):
             pois[current_poi].append(float(current_limit_values[0]))
     return pois
 
-def create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_value_right):
+def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_):
     pois = {}
 
-    for current_poi in poi_list:
+    for current_poi in poi_list_:
 
         pois[current_poi] = []
 
-    for i in range(len(glob.glob(os.path.join(base_dir, "toy_*")))):
+    for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
 
         if i%100==0:
             print(f"Processing fit_{i}")
@@ -665,7 +650,7 @@ def create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_val
         seed = 123456 + i
 
         try:
-            current_root_files = uproot.open(f"{base_dir}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root")
+            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             continue
@@ -673,7 +658,7 @@ def create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_val
         kill_event = False
 
         # First loop to check if there are outliers (outliers are events smaller than -4 and bigger than 4)
-        for j, current_poi in enumerate(poi_list):
+        for j, current_poi in enumerate(poi_list_):
             try: 
                 current_tree = current_root_files["limit"]
             except:
@@ -683,7 +668,7 @@ def create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_val
             current_limit_values = current_tree[current_poi].array()
 
             try:
-                if (current_limit_values[0] > trimming_value_right) or (current_limit_values[0] < trimming_value_left):
+                if (current_limit_values[0] > trimming_value_right_) or (current_limit_values[0] < trimming_value_left_):
                     kill_event = True
                     break
             except:
@@ -695,7 +680,7 @@ def create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_val
             print(f"Skipping fit_{i} with {current_limit_values}: Outlier found")
             continue
 
-        for j, current_poi in enumerate(poi_list):
+        for j, current_poi in enumerate(poi_list_):
 
             try: 
                 current_tree = current_root_files["limit"]
@@ -716,89 +701,135 @@ def create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_val
             pois[current_poi].append(float(current_limit_values[0]))
     return pois
 
-# Loop through all fit directories (fit_0, fit_1, etc.)
-if not os.path.exists(f'pois_untrimmed_{variable}.json'):
-    pois_untrimmed = create_poiJson_untrimmed(base_dir, poi_list)
-    # Save the POIs to a JSON file
-    with open(f'pois_untrimmed_{variable}.json', 'w') as f:
-        json.dump(pois_untrimmed, f)
-else:
-    # Load the POIs from the JSON file
-    with open(f'pois_untrimmed_{variable}.json', 'r') as f:
-        pois_untrimmed = json.load(f)
-
-# Now we have to fit a gaussian core to all the categories to get the values where we cut. z is the number of standard deviations we want to cut away
-trimming_value_left = 0
-trimming_value_right = 0
-largest_sigma = 0
-mu_to_largest_sigma = 0
-z = 4
-for i, current_poi in enumerate(poi_list):
-    r = np.array(pois_untrimmed[current_poi])
-    mean = np.mean(r)
-    s = np.std(r)
-
-    counts, bin_edges = np.histogram(r, bins=50, density=True)
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-
-    popt, _ = curve_fit(gaus, bin_centers, counts, p0=[1, mean, s])
-    amp_fit, mu_fit, sigma_fit = popt
-    
-    if i == 0:
-        largest_sigma = sigma_fit
-        mu_to_largest_sigma = mu_fit
+def create_json_untrimmed(variable_, toyDir_, poi_list_):
+    # Loop through all fit directories (fit_0, fit_1, etc.)
+    if not os.path.exists(f'pois_untrimmed_{variable_}.json'):
+        pois_untrimmed = pois_untrimmed(toyDir_, poi_list_)
+        # Save the POIs to a JSON file
+        with open(f'pois_untrimmed_{variable_}.json', 'w') as f:
+            json.dump(pois_untrimmed, f)
     else:
-        if (sigma_fit > largest_sigma):
+        # Load the POIs from the JSON file
+        with open(f'pois_untrimmed_{variable_}.json', 'r') as f:
+            pois_untrimmed = json.load(f)
+
+    return pois_untrimmed
+
+def create_json_trimmed(variable_, toyDir_, pois_untrimmed_, poi_list_, subfolder_):
+
+    # Now we have to fit a gaussian core to all the categories to get the values where we cut. z is the number of standard deviations we want to cut away
+    trimming_value_left = 0
+    trimming_value_right = 0
+    largest_sigma = 0
+    mu_to_largest_sigma = 0
+    z = 4
+    for i, current_poi in enumerate(poi_list_):
+        r = np.array(pois_untrimmed[current_poi])
+        mean = np.mean(r)
+        s = np.std(r)
+
+        counts, bin_edges = np.histogram(r, bins=50, density=True)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+        popt, _ = curve_fit(gaus, bin_centers, counts, p0=[1, mean, s])
+        amp_fit, mu_fit, sigma_fit = popt
+
+        if i == 0:
             largest_sigma = sigma_fit
             mu_to_largest_sigma = mu_fit
+        else:
+            if (sigma_fit > largest_sigma):
+                largest_sigma = sigma_fit
+                mu_to_largest_sigma = mu_fit
 
-    if (not os.path.exists(f"./Plots/{variable}/{subfolder}")) & (f"./Plots/{variable}/{subfolder}"!=""):
-        os.makedirs(f"./Plots/{variable}/{subfolder}")
+        if (not os.path.exists(f"./Plots/{variable_}/{subfolder_}")) & (f"./Plots/{variable_}/{subfolder_}"!=""):
+            os.makedirs(f"./Plots/{variable_}/{subfolder_}")
 
-    plt.figure()
-    plt.hist(r, bins=30, density=True, alpha=0.6, label='Histogram')
-    plt.plot(bin_centers, gaus(bin_centers, *popt), color='red', label='Fitted Gaussian')
-    plt.legend()
-    plt.xlabel('Value')
-    plt.ylabel('Density')
-    plt.title('Gaussian Fit to Data Histogram')
-    plt.savefig(f"./Plots/{variable}/{subfolder}/gaussian_fit_{current_poi}.png")
-    plt.close()
+        plt.figure()
+        plt.hist(r, bins=30, density=True, alpha=0.6, label='Histogram')
+        plt.plot(bin_centers, gaus(bin_centers, *popt), color='red', label='Fitted Gaussian')
+        plt.legend()
+        plt.xlabel('Value')
+        plt.ylabel('Density')
+        plt.title('Gaussian Fit to Data Histogram')
+        plt.savefig(f"./Plots/{variable_}/{subfolder_}/gaussian_fit_{current_poi}.png")
+        plt.close()
 
-trimming_value_left = mu_to_largest_sigma - z*largest_sigma
-trimming_value_right = mu_to_largest_sigma + z*largest_sigma
+    trimming_value_left = mu_to_largest_sigma - z*largest_sigma
+    trimming_value_right = mu_to_largest_sigma + z*largest_sigma
 
-print("Trimming values: ", trimming_value_left, trimming_value_right)
+    print("Trimming values: ", trimming_value_left, trimming_value_right)
 
-if trimming_value_left > trimming_value_right:
-    trimming_value_left, trimming_value_right = trimming_value_right, trimming_value_left
+    if trimming_value_left > trimming_value_right:
+        trimming_value_left, trimming_value_right = trimming_value_right, trimming_value_left
 
-if not os.path.exists(f'pois_trimmed_{variable}.json'):
-    pois = create_poiJson_trimmed(base_dir, poi_list, trimming_value_left, trimming_value_right)
-    # Save the POIs to a JSON file
-    with open(f'pois_trimmed_{variable}.json', 'w') as f:
-        json.dump(pois, f)
-else:
-    # Load the POIs from the JSON file
-    with open(f'pois_trimmed_{variable}.json', 'r') as f:
-        pois = json.load(f)
+    if not os.path.exists(f'pois_trimmed_{variable_}.json'):
+        pois = pois_trimmed(toyDir_, poi_list_, trimming_value_left, trimming_value_right)
+        # Save the POIs to a JSON file
+        with open(f'pois_trimmed_{variable_}.json', 'w') as f:
+            json.dump(pois, f)
+    else:
+        # Load the POIs from the JSON file
+        with open(f'pois_trimmed_{variable_}.json', 'r') as f:
+            pois = json.load(f)
+    
+    return pois
 
-unique_pairings = list(combinations(poi_list, 2))
+def plot_individual_correlation(pois_, poi_list_, variable_):
 
-for current_tuple in unique_pairings:
-    r_1, r_2 = current_tuple
+    unique_pairings = list(combinations(poi_list_, 2))
 
-    plot_individual_correlation(pois[r_1], pois[r_2], r_1, r_2, np.corrcoef(pois[r_1], pois[r_2])[0,1], folder=f"Plots/{variable}")
+    for current_tuple in unique_pairings:
+        r_1, r_2 = current_tuple
+
+        plot_individual_correlation(pois_[r_1], pois_[r_2], r_1, r_2, np.corrcoef(pois_[r_1], pois_[r_2])[0,1], folder=f"Plots/{variable_}")
 
 # data = {}
 
 # # Cut away the lowest and highest 1% of the data
 # proportiontocut = 0.005
-# for i, current_poi in enumerate(poi_list):
+# for i, current_poi in enumerate(poi_list_):
 #     # data[current_poi] = stats.trimboth(pois[current_poi], proportiontocut=proportiontocut)
 #     data[current_poi] = stats.trim1(pois[current_poi], proportiontocut=proportiontocut, tail="left")
 #     print(f"POI: {current_poi}. Cut away {100 - 100*(len(data[current_poi]) / len(pois[current_poi]))}% of the data with {len(pois[current_poi])} entries.")
 #     print(f"minimum: {min(data[current_poi])}")
 #     print(f"maximum: {max(data[current_poi])}")
 
-produce_LLPlots(pois, poi_list, combineLL_dir, folder=f"Plots/{variable}/{subfolder}", print_first_order=True, with_crossingMethod=True)
+
+sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
+
+
+variables = ["PTH"]
+eft_variables = ["chg"]
+
+
+
+for variable in variables:
+    
+    if variable == "PTH":
+        poi_list = ["r_PTH_0p0_15p0", "r_PTH_15p0_30p0", "r_PTH_30p0_45p0", "r_PTH_45p0_80p0", "r_PTH_80p0_120p0", "r_PTH_120p0_200p0", "r_PTH_200p0_350p0", "r_PTH_350p0_10000p0"]
+    elif variable == "NJ":
+        poi_list = ["r_NJ_0p0_1p0", "r_NJ_1p0_2p0", "r_NJ_2p0_3p0", "r_NJ_3p0_100p0"]
+    elif variable == "PTJ0":
+        poi_list = ["r_PTJ0_0p0_30p0", "r_PTJ0_30p0_75p0", "r_PTJ0_75p0_120p0", "r_PTJ0_120p0_200p0", "r_PTJ0_200p0_10000p0"]
+
+    # The paths
+    main_dir = os.path.join(sample_dir, variable, "Combine", f"runFits_{variable}")
+    path_to_hesse = os.path.join(main_dir, "hesse", 'robustHessefirstStep.root')
+    toyDir = os.path.join(main_dir, "toyFit")
+    combineLL_dir = os.path.join(main_dir, "asimov")
+    
+    # XS Toys
+    pois_untrimmed = create_json_untrimmed(variable, toyDir, poi_list)
+    pois = create_json_trimmed(variable, toyDir, pois_untrimmed, poi_list, subfolder_=f"SL_{variable}")
+
+    for eft_variable in eft_variables:
+        
+        print("Processing EFT variable:", eft_variable)
+        
+        combineLL_eftDir = os.path.join(sample_dir, variable, "Combine", f"runFits_{eft_variable}", "eft_asimov")
+        subfolder = f"SL_{eft_variable}"
+        
+        bf_combine = produce_bf_combine(poi_list, combineLL_dir)
+
+        produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine)
