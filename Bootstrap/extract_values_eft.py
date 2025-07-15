@@ -19,32 +19,11 @@ from itertools import combinations
 def gaus(x, amp, mu, sigma):
     return amp * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
-translation = {
-    "r_PTH_0p0_15p0": r"$r_{p_{T}^{\gamma\gamma} \in [0,15) \text{ GeV}}$",
-    "r_PTH_15p0_30p0": r"$r_{p_{T}^{\gamma\gamma} \in [15,30) \text{ GeV}}$",
-    "r_PTH_30p0_45p0": r"$r_{p_{T}^{\gamma\gamma} \in [30,45) \text{ GeV}}$",
-    "r_PTH_45p0_80p0": r"$r_{p_{T}^{\gamma\gamma} \in [45,80) \text{ GeV}}$",
-    "r_PTH_80p0_120p0": r"$r_{p_{T}^{\gamma\gamma} \in [80,120) \text{ GeV}}$",
-    "r_PTH_120p0_200p0": r"$r_{p_{T}^{\gamma\gamma} \in [120,200) \text{ GeV}}$",
-    "r_PTH_200p0_350p0": r"$r_{p_{T}^{\gamma\gamma} \in [200,350) \text{ GeV}}$",
-    "r_PTH_350p0_10000p0": r"$r_{p_{T}^{\gamma\gamma} \in [350,+\infty) \text{ GeV}}$",
-    "r_YH_0p0_0p15": r"$r_{|y_{\gamma\gamma}| \in [0,0.15)}$",
-    "r_YH_0p15_0p3": r"$r_{|y_{\gamma\gamma}| \in [0.15,0.3)}$",
-    "r_YH_0p3_0p6": r"$r_{|y_{\gamma\gamma}| \in [0.3,0.6)}$",
-    "r_YH_0p6_0p9": r"$r_{|y_{\gamma\gamma}| \in [0.6,0.9)}$",
-    "r_YH_0p9_2p5": r"$r_{|y_{\gamma\gamma}| \in [0.9,2.5)}$",
-    "r_NJ_0p0_1p0": r"$r_{N_{\text{Jets}} \in [0,1)}$",
-    "r_NJ_1p0_2p0": r"$r_{N_{\text{Jets}} \in [1,2)}$",
-    "r_NJ_2p0_3p0": r"$r_{N_{\text{Jets}} \in [2,3)}$",
-    "r_NJ_3p0_100p0": r"$r_{N_{\text{Jets}} \in [3,+\infty)}$",
-    "r_PTJ0_0p0_30p0": r"$r_{p_{T,j0}} (N_{\text{Jets}} = 0)$",
-    "r_PTJ0_30p0_75p0": r"$r_{p_{T,j0} \in [30,75) \text{ GeV}}$",
-    "r_PTJ0_75p0_120p0": r"$r_{p_{T,j0} \in [75,120) \text{ GeV}}$",
-    "r_PTJ0_120p0_200p0": r"$r_{p_{T,j0} \in [120,200) \text{ GeV}}$",
-    "r_PTJ0_200p0_10000p0": r"$r_{p_{T,j0} \in [200,+\infty) \text{ GeV}}$",
-    "r_PTJ0_30p0_10000p0": r"$r_{p_{T,j0} \in [30,+\infty) \text{ GeV}}$",
-    "chg": r"$c_{HG}$",
-}
+# Importing translation dictionary
+translationFilePath = "/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Bootstrap/translation.json"
+with open(translationFilePath) as translationFile:
+    translation = json.load(translationFile)
+
 
 poi_to_eft2obs_namingConvention = {
     "r_PTH_0p0_15p0": "0.0",
@@ -66,11 +45,30 @@ with open(decayFilePath) as decayFile:
 with open(productionFilePath) as productionFile:
     production = json.load(productionFile)
 
+# Importing scaling file
+scalingFilePath = "/work/niharrin/tests/eft_fitter/functions/extract_EFT2Obs/mgalli/scaling.json"
+with open(scalingFilePath) as scalingFile:
+    scaling_dict = json.load(scalingFile)
+
+# Importing ranging file
+rangingFilePath = "/work/niharrin/tests/eft_fitter/functions/extract_EFT2Obs/mgalli/ranges.json"
+with open(rangingFilePath) as rangingFile:
+    range_dict = json.load(rangingFile)
+
+# Changing the plotting ranges for some EFT variables
+
+range_dict["chb"] = [-0.001, 0.002]
+range_dict["chwb"] = [-0.003, 0.001]
+range_dict["ctbre"] = [-0.001, 0.003]
+range_dict["cthre"] = [-1, 0.5]
+range_dict["ctwre"] = [-0.025, 0.05]
+
+
 def produce_bf_combine(poi_list_, combineLL_dir_):
     bf_combine = []
-    for i, current_poi in enumerate(poi_list):
+    for current_poi in poi_list_:
 
-        with uproot.open(os.path.join(combineLL_dir, f"higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.38.root")) as file:
+        with uproot.open(os.path.join(combineLL_dir_, f"higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.38.root")) as file:
             # Get the TGraphs - note that uproot reads them as pairs of arrays
             tree = file[f"limit;1"]
             # Extract minimum value
@@ -108,6 +106,8 @@ def WCToMu(wc, _current_poi, _eft_variable):
     # Note, only valid for 1D parameter space, i.e. only one POI is considered
     # eft_variable is something like "chg". Note: It MUST be in the EFT2Obs naming convention
     # current_poi is something like "r_PTH_0p0_15p0". It will be converted to the EFT2Obs naming convention
+    
+    eft_scaling = scaling_dict.get(_eft_variable, 1.0)
 
     current_poi_eft2obsConvention = poi_to_eft2obs_namingConvention[_current_poi]
 
@@ -120,6 +120,16 @@ def WCToMu(wc, _current_poi, _eft_variable):
 
     A_tot = decay.get("tot", {}).get(f"A_{_eft_variable}", 0)
     B_tot = decay.get("tot", {}).get(f"B_{_eft_variable}_2", 0)
+
+    if eft_scaling != 1.0:
+        A_prod *= eft_scaling
+        B_prod *= eft_scaling**2
+
+        A_decay *= eft_scaling
+        B_decay *= eft_scaling**2
+
+        A_tot *= eft_scaling
+        B_tot *= eft_scaling**2
 
     # Calculate mu := mu_prod * mu_decay
     mu_prod = 1 + A_prod*wc + B_prod*wc**2
@@ -161,9 +171,9 @@ def chi(wc, pois_, poi_list_, rho_, eft_variable_, abc_values=None, first_order=
                 print("Provide abc_values")
                 return None
             a, b, c = abc_values[current_poi]
-            
-            chi_vector_.append([chi_vector(wc[i], mean, a, b, c, current_poi, eft_variable_)])
 
+            chi_vector_.append([chi_vector(wc[i], mean, a, b, c, current_poi, eft_variable_)])
+    
     chi_vector_ = np.array(chi_vector_).flatten()
 
     return chi_vector_.T @ np.linalg.inv(rho_) @ chi_vector_
@@ -380,7 +390,7 @@ def covariance_to_correlation(cov_matrix):
 
     return corr_matrix
 
-def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, eft_variable_):
+def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, eft_variable_, inclusive_=False):
     abc_values_crossingMethod = {}
 
     if len(poi_list_) == 1:
@@ -399,7 +409,7 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, ef
             y0_points = graph.member("fY")  # Gets y values
 
         z_hat = x0_points[np.argmin(y0_points)] # Consider an Asimov dataset
-        print(find_crossings(x0_points, y0_points))
+        print("XS crossings", find_crossings(x0_points, y0_points))
         if len(find_crossings(x0_points, y0_points)) != 2:
             print(f"Warning: Expected two crossings for {current_poi}, found {len(find_crossings(x0_points, y0_points))}. Using the last two crossings.")
             crossing_minus, crossing_plus = find_crossings(x0_points, y0_points)[-2:]  # Use the last two crossings
@@ -409,20 +419,23 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, ef
         sigma_minus = z_hat - crossing_minus
 
         a, b, c = coefficients_crossingMethod(z_hat, sigma_minus, sigma_plus)
-
+        
         abc_values_crossingMethod[current_poi] = [a, b, c]
 
     if len(cov_matrix) == 1:
         rho_crossingMethod = np.array([[1.]])  # If only one POI, correlation is 1
     else:
         rho_crossingMethod = covariance_to_correlation(np.array(cov_matrix))
-
+    
     x0 = np.array([0. for i in range(len(poi_list_))])
-    res = minimize(chi, x0, args=(pois_, poi_list_, rho_crossingMethod, eft_variable_, abc_values_crossingMethod))
-
+    res = minimize(chi, x0, args=(pois_, poi_list_, rho_crossingMethod, eft_variable_, abc_values_crossingMethod), bounds=[(range_dict[eft_variable_][0], range_dict[eft_variable_][1]) for _ in poi_list_])
+    
+    if not res.success:
+        print(f"WARNING: Minimization did not succeed. Message: {res.message}")
+    
     # Get optimal values from minimization
     optimal_values = res.x
-
+    
     x0_ranges = []
     chi_x0_scans = []
 
@@ -431,7 +444,7 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, ef
 
         # Create a grid of points
 
-        x0_range = np.linspace(-0.2, 0.2, 100)
+        x0_range = np.linspace(range_dict[eft_variable_][0], range_dict[eft_variable_][1], 100)
 
         optimal_values_copy = optimal_values.copy()
 
@@ -439,10 +452,13 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, ef
         for x0 in x0_range:
             for j in range(len(poi_list_)):
                 if j!=i:
-                    optimal_values_copy[j] = optimal_values[j]
-                    # optimal_values_copy[j] = x0
+                    if inclusive_:
+                        optimal_values_copy[j] = x0
+                    else:
+                        optimal_values_copy[j] = optimal_values[j]
                 if j == i:
                     optimal_values_copy[j] = x0
+
             chi_x0_scan.append(float(chi(optimal_values_copy, pois_, poi_list_, rho_crossingMethod, eft_variable_, abc_values_crossingMethod, first_order=False)))
 
         chi_x0_scan = np.array(chi_x0_scan)
@@ -452,7 +468,7 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, ef
 
     return x0_ranges, chi_x0_scans, optimal_values
 
-def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=False, bf_combine_=None):
+def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=False, bf_combine_=None, inclusive_=False):
 
     cov_matrix = np.cov([pois_[r] for r in poi_list_])   
 
@@ -462,7 +478,10 @@ def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_t
         x0 = np.array([0. for i in range(len(poi_list_))])
         abc_values = None
 
-        res = minimize(chi, x0, args=(pois_, poi_list_, rho, eft_variable_, abc_values, first_order, bf_combine_))
+        res = minimize(chi, x0, args=(pois_, poi_list_, rho, eft_variable_, abc_values, first_order, bf_combine_), bounds=[(range_dict[eft_variable_][0], range_dict[eft_variable_][1]) for _ in poi_list_])
+    
+        if not res.success:
+            print(f"WARNING: Minimization did not succeed. Message: {res.message}")
 
         print("res.x for first order", res.x)
 
@@ -471,7 +490,10 @@ def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_t
         rho, abc_values = produce_rho(pois_, poi_list_, subfolder_)
 
         x0 = np.array([0. for i in range(len(poi_list_))])
-        res = minimize(chi, x0, args=(pois_, poi_list_, rho, eft_variable_, abc_values, first_order))
+        res = minimize(chi, x0, args=(pois_, poi_list_, rho, eft_variable_, abc_values, first_order), bounds=[(range_dict[eft_variable_][0], range_dict[eft_variable_][1]) for _ in poi_list_])
+    
+        if not res.success:
+            print(f"WARNING: Minimization did not succeed. Message: {res.message}")
 
     # Get optimal values from minimization
     optimal_values = res.x
@@ -486,7 +508,7 @@ def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_t
         print(f"{current_poi}: {optimal_values[i]:.3f}")
 
         # Create a grid of points
-        x0_range = np.linspace(-0.2, 0.2, 100)  # Adjust range as needed
+        x0_range = np.linspace(range_dict[eft_variable_][0], range_dict[eft_variable_][1], 100)  # Adjust range as needed
 
         optimal_values_copy = optimal_values.copy()
 
@@ -494,7 +516,10 @@ def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_t
         for x0 in x0_range:
             for j in range(len(poi_list_)):
                 if j!=i:
-                    optimal_values_copy[j] = optimal_values[j]
+                    if inclusive_:
+                        optimal_values_copy[j] = x0
+                    else:
+                        optimal_values_copy[j] = optimal_values[j]
                     # optimal_values_copy[j] = x0
                 if j == i:
                     optimal_values_copy[j] = x0
@@ -510,15 +535,15 @@ def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_t
 
     return x0_ranges, chi_x0_scans, optimal_values
 
-def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_eftDir_, path_to_hesse_, folder="", subfolder_="", print_first_order=False, bf_combine_=None, with_crossingMethod=False):
+def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_eftDir_, path_to_hesse_, folder="", subfolder_="", print_first_order=False, bf_combine_=None, with_crossingMethod=False, inclusive_=False):
 
-    x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_)
+    x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, bf_combine_=bf_combine_, inclusive_=inclusive_)
 
     if print_first_order:
-        x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=True, bf_combine_=bf_combine_)
+        x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=True, bf_combine_=bf_combine_, inclusive_=inclusive_)
 
     if with_crossingMethod:
-        x0_ranges_cm, chi_x0_scans_cm, optimal_values_cm = produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, eft_variable_)
+        x0_ranges_cm, chi_x0_scans_cm, optimal_values_cm = produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, eft_variable_, inclusive_=inclusive_)
 
     if (not os.path.exists(folder)) & (folder!=""):
         os.makedirs(folder)
@@ -526,6 +551,8 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_e
     cov_matrix = np.cov([pois_[r] for r in poi_list_])
 
     for i, current_poi in enumerate(poi_list_):
+        if inclusive_ and i > 0:
+            continue
 
         # Check if condition is satisfied
         mean = np.mean(pois_[current_poi])
@@ -552,12 +579,20 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_e
 
         if with_crossingMethod:
             ax1.plot(x0_ranges_cm[i], chi_x0_scans_cm[i], label='Crossing Method', color="darkmagenta")
+        eft_variable_bin = f"{eft_variable_}_{'_'.join(current_poi.split('_')[-2:])}"
         # with uproot.open(f"/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH/Combine/runFits_chg/eft_asimov/scans/scan_{current_poi}.root") as file:
-        with uproot.open(os.path.join(combineLL_eftDir_, "scans", f"scan_{current_poi}.root")) as file:
+        if inclusive_:
+            combine_file_path = os.path.join(combineLL_eftDir_, "scans", f"scan_{eft_variable_}.root")
+        else:
+            combine_file_path = os.path.join(combineLL_eftDir_, "scans", f"scan_{eft_variable_bin}.root")
+        with uproot.open(combine_file_path) as file:
         # with uproot.open("/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH/Combine/runFits_chg_v1/eft_asimov/scans/scan_chg.root") as file:
             # Get the TGraphs - note that uproot reads them as pairs of arrays
             # graph = file[f"scan_{current_poi};1"]  # Replace with your TGraph name
-            graph = file[f"scan_{eft_variable_}_{'_'.join(current_poi.split('_')[-2:])};1"]  # Replace with your TGraph name
+            if inclusive_:
+                graph = file[f"scan_{eft_variable_};1"]
+            else:
+                graph = file[f"scan_{eft_variable_bin};1"]  # Replace with your TGraph name
             # graph = file[f"scan_chg;1"]  # Replace with your TGraph name
             # Extract x and y values
             x0_points = graph.member("fX")  # Gets x values
@@ -574,19 +609,26 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_e
         print(f"SL Minimum and Crossings: {optimal_values[i]:.3f}, {find_crossings(x0_ranges[i], chi_x0_scans[i])}") 
         if print_first_order:
             print(f"Hesse Minimum and Crossings: {optimal_values_fo[i]:.3f}, {find_crossings(x0_ranges_fo[i], chi_x0_scans_fo[i])}") 
-        print(f"Combine Minimum and Crossings: {optimal_values_combine}, {find_crossings(x0_points, y0_points)}") 
-
-        ax1.set_xlabel(translation[current_poi])
+        print(f"Combine Minimum and Crossings: {optimal_values_combine}, {find_crossings(x0_points, y0_points)}")
+        if inclusive_:
+            ax1.set_xlabel(f"{translation[f'{eft_variable_}']}")
+        else:
+            ax1.set_xlabel(f"{translation[f'{eft_variable_bin}']}")
         ax1.set_ylabel('2ΔNLL')
         ax1.grid(True)
         ax1.legend()
 
-        ax1.set_ylim(0, 4)
-        ax1.set_xlim(-0.2, 0.2)
+        # ax1.set_ylim(0, 4)
+        ax1.set_ylim(0, 10)
+        ax1.set_xlim(range_dict[eft_variable_][0], range_dict[eft_variable_][1])
 
         plt.tight_layout()
-        plt.savefig(os.path.join(folder, f"chi_scan_{current_poi}.pdf"))
-        plt.savefig(os.path.join(folder, f"chi_scan_{current_poi}.png"))
+        if inclusive_:
+            plt.savefig(os.path.join(folder, f"chi_scan_{eft_variable_}.pdf"))
+            plt.savefig(os.path.join(folder, f"chi_scan_{eft_variable_}.png"))
+        else:
+            plt.savefig(os.path.join(folder, f"chi_scan_{eft_variable_bin}.pdf"))
+            plt.savefig(os.path.join(folder, f"chi_scan_{eft_variable_bin}.png"))
 
     rho, _ = produce_rho(pois_, poi_list_, subfolder_)
     plot_covariance_matrix(rho, poi_list_, folder=folder, title="Covariance Matrix (Simplified Likelihood)", output_name="covariance_matrix_sl.png")
@@ -795,14 +837,11 @@ def plot_individual_correlation(pois_, poi_list_, variable_):
 #     print(f"minimum: {min(data[current_poi])}")
 #     print(f"maximum: {max(data[current_poi])}")
 
-
 sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
 
-
 variables = ["PTH"]
-eft_variables = ["chg"]
-
-
+eft_variables = ["chg", "chd", "chw", "chbox", "chl3", "cll1", "cthre", "ctwre", "chwb", "ctbre", "chb"]
+# eft_variables = ["chl3"]
 
 for variable in variables:
     
@@ -832,4 +871,7 @@ for variable in variables:
         
         bf_combine = produce_bf_combine(poi_list, combineLL_dir)
 
-        produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine)
+        # produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine)
+        
+        subfolder = f"SL_{eft_variable}_inclusive"
+        produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine, inclusive_=True)
