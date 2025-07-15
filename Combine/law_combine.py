@@ -678,7 +678,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
 
                 print(file_list)
                 execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/'], shell=True)
-                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/"], shell=True)
             # time.sleep(19999)
             shutil.rmtree(temp_output_dir)
         
