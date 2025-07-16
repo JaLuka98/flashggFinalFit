@@ -58,7 +58,7 @@
     "chbox_120p0_200p0": "$c_{Hbox, p_{T}^{\\gamma\\gamma} \\in [120,200) \\text{ GeV}}$",
     "chbox_200p0_350p0": "$c_{Hbox, p_{T}^{\\gamma\\gamma} \\in [200,350) \\text{ GeV}}$",
     "chbox_350p0_10000p0": "$c_{Hbox, p_{T}^{\\gamma\\gamma} \\in [350,+\\infty) \\text{ GeV}}$",
-    "chl3": "$c_{Hl}}^{(3)}$",
+    "chl3": "$c_{Hl}^{(3)}$",
     "chl3_0p0_15p0": "$c_{Hl, p_{T}^{\\gamma\\gamma} \\in [0,15) \\text{ GeV}}^{(3)}$",
     "chl3_15p0_30p0": "$c_{Hl, p_{T}^{\\gamma\\gamma} \\in [15,30) \\text{ GeV}}^{(3)}$",
     "chl3_30p0_45p0": "$c_{Hl, p_{T}^{\\gamma\\gamma} \\in [30,45) \\text{ GeV}}^{(3)}$",
