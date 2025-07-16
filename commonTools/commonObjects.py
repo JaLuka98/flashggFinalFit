@@ -31,7 +31,7 @@ lumiMap = {
     '2023': 27.3
 }
 
-def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW, procs=None, eft_variable=None):
+def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW, procs=None, eft_variable=None, individual=False):
     paramStr = [f"r_{gen_variable}_{bin}=1" for bin in bins]
     paramStrNoOne = [f"r_{gen_variable}_{bin}" for bin in bins]
     catsStr = [f"RECO_{reco_variable}_{bin}" for bin in bins]
@@ -50,12 +50,14 @@ def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW, procs
         # eftParamStr = [f"{proc}_scaling_{eft_variable}_{bin}=0" for proc in procs for bin in bins]
         # eftParamStrNoZero = [f"{proc}_scaling_{eft_variable}_{bin}" for proc in procs for bin in bins]
         
-        # Individual bins
-        eftParamStr = [f"{eft_variable}_{bin}=0" for bin in bins]
-        eftParamStrNoZero = [f"{eft_variable}_{bin}" for bin in bins]
-
-        # eftParamStr = [f"{eft_variable}=0"]
-        # eftParamStrNoZero = [f"{eft_variable}"]
+        if individual:
+            # Individual bins
+            eftParamStr = [f"{eft_variable}_{bin}=0" for bin in bins]
+            eftParamStrNoZero = [f"{eft_variable}_{bin}" for bin in bins]
+        else:
+            # Inclusive fit
+            eftParamStr = [f"{eft_variable}=0"]
+            eftParamStrNoZero = [f"{eft_variable}"]
         VariableDict["eftParamStr"] = eftParamStr
         VariableDict["eftParamStrNoZero"] = eftParamStrNoZero
     
@@ -291,5 +293,16 @@ combineVariableDict = {
         "ctbre": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre"),
         "cthre": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre"),
         "ctwre": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre"),
+        "chg_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chg", individual=True),
+        "chw_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chw", individual=True),
+        "chb_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chb", individual=True),
+        "chwb_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chwb", individual=True),
+        "chbox_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chbox", individual=True),
+        "chd_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chd", individual=True),
+        "chl3_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chl3", individual=True),
+        "cll1_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cll1", individual=True),
+        "ctbre_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre", individual=True),
+        "cthre_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre", individual=True),
+        "ctwre_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre", individual=True),
     }
 }
