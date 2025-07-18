@@ -280,7 +280,7 @@ def plot_covariance_matrix(rho_, poi_list_, folder="", title="Covariance Matrix"
 
     plt.show()
 
-def produce_rho(pois_, poi_list_, subfolder_):
+def produce_rho(pois_, poi_list_, subfolder_, plot_r_distribution=True):
 
     # Covariance matrix
     cov_matrix = np.cov([pois_[current_poi] for current_poi in poi_list_])
@@ -308,21 +308,22 @@ def produce_rho(pois_, poi_list_, subfolder_):
 
         a, b, c = coefficients(mean, cov_matrix[i,i], third_moment)
     
-        plt.figure()
-        if current_poi == "r_PTH_350p0_10000p0":
-            plt.hist(r, bins=50, edgecolor='black', range=(-2, 5)) # range=(-1, 3)
-        else:
-            plt.hist(r, bins=50, edgecolor='black')
-        # plt.title('Distribution of the third moment')
-        plt.title('Distribution of r')
-        plt.xlabel('Value')
-        plt.ylabel('Frequency')
-        plt.grid(True)
-        rho_plot_path = f"./Plots/{variable}/{subfolder_}"
-        if (not os.path.exists(rho_plot_path)) & (rho_plot_path!=""):
-            os.makedirs(rho_plot_path)
-        plt.savefig(f"{rho_plot_path}/{current_poi}.png")
-        plt.close()
+        if plot_r_distribution:
+            plt.figure()
+            if current_poi == "r_PTH_350p0_10000p0":
+                plt.hist(r, bins=50, edgecolor='black', range=(-2, 5)) # range=(-1, 3)
+            else:
+                plt.hist(r, bins=50, edgecolor='black')
+            # plt.title('Distribution of the third moment')
+            plt.title('Distribution of r')
+            plt.xlabel('Value')
+            plt.ylabel('Frequency')
+            plt.grid(True)
+            rho_plot_path = f"./Plots/{variable}/{subfolder_}"
+            if (not os.path.exists(rho_plot_path)) & (rho_plot_path!=""):
+                os.makedirs(rho_plot_path)
+            plt.savefig(f"{rho_plot_path}/{current_poi}.png")
+            plt.close()
 
         abc_values[current_poi] = [a, b, c]
 
@@ -444,7 +445,7 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, ef
 
         # Create a grid of points
 
-        x0_range = np.linspace(range_dict[eft_variable_][0], range_dict[eft_variable_][1], 100)
+        x0_range = np.linspace(range_dict[eft_variable_][0], range_dict[eft_variable_][1], 200)
 
         optimal_values_copy = optimal_values.copy()
 
@@ -468,7 +469,7 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, ef
 
     return x0_ranges, chi_x0_scans, optimal_values
 
-def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=False, bf_combine_=None, inclusive_=False):
+def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=False, bf_combine_=None, inclusive_=False, plot_r_distribution=True):
 
     cov_matrix = np.cov([pois_[r] for r in poi_list_])   
 
@@ -487,7 +488,7 @@ def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_t
 
     else:
         print("cov_matrix", cov_matrix)
-        rho, abc_values = produce_rho(pois_, poi_list_, subfolder_)
+        rho, abc_values = produce_rho(pois_, poi_list_, subfolder_, plot_r_distribution=plot_r_distribution)
 
         x0 = np.array([0. for i in range(len(poi_list_))])
         res = minimize(chi, x0, args=(pois_, poi_list_, rho, eft_variable_, abc_values, first_order), bounds=[(range_dict[eft_variable_][0], range_dict[eft_variable_][1]) for _ in poi_list_])
@@ -508,7 +509,7 @@ def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_t
         print(f"{current_poi}: {optimal_values[i]:.3f}")
 
         # Create a grid of points
-        x0_range = np.linspace(range_dict[eft_variable_][0], range_dict[eft_variable_][1], 100)  # Adjust range as needed
+        x0_range = np.linspace(range_dict[eft_variable_][0], range_dict[eft_variable_][1], 200)  # Adjust range as needed
 
         optimal_values_copy = optimal_values.copy()
 
@@ -535,12 +536,12 @@ def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_t
 
     return x0_ranges, chi_x0_scans, optimal_values
 
-def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_eftDir_, path_to_hesse_, folder="", subfolder_="", print_first_order=False, bf_combine_=None, with_crossingMethod=False, inclusive_=False):
+def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_eftDir_, path_to_hesse_, folder="", subfolder_="", print_first_order=False, bf_combine_=None, with_crossingMethod=False, inclusive_=False, plot_r_distribution=True):
 
-    x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, bf_combine_=bf_combine_, inclusive_=inclusive_)
+    x0_ranges, chi_x0_scans, optimal_values = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, bf_combine_=bf_combine_, inclusive_=inclusive_, plot_r_distribution=plot_r_distribution)
 
     if print_first_order:
-        x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=True, bf_combine_=bf_combine_, inclusive_=inclusive_)
+        x0_ranges_fo, chi_x0_scans_fo, optimal_values_fo = produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=True, bf_combine_=bf_combine_, inclusive_=inclusive_, plot_r_distribution=plot_r_distribution)
 
     if with_crossingMethod:
         x0_ranges_cm, chi_x0_scans_cm, optimal_values_cm = produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, eft_variable_, inclusive_=inclusive_)
@@ -570,6 +571,7 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_e
         # Create plots
         plt.style.use(hep.style.CMS)
         _, ax1 = plt.subplots(1, 1, figsize=(12, 8))
+        hep.cms.label('Preliminary', data=False, lumi=27.3, com=13.6)
 
         # Plot x0 scan
         ax1.plot(x0_ranges[i], chi_x0_scans[i], label='Simplified likelihood', color="green")
@@ -630,11 +632,11 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_e
             plt.savefig(os.path.join(folder, f"chi_scan_{eft_variable_bin}.pdf"))
             plt.savefig(os.path.join(folder, f"chi_scan_{eft_variable_bin}.png"))
 
-    rho, _ = produce_rho(pois_, poi_list_, subfolder_)
-    plot_covariance_matrix(rho, poi_list_, folder=folder, title="Covariance Matrix (Simplified Likelihood)", output_name="covariance_matrix_sl.png")
+    # rho, _ = produce_rho(pois_, poi_list_, subfolder_, plot_r_distribution=plot_r_distribution)
+    # plot_covariance_matrix(rho, poi_list_, folder=folder, title="Covariance Matrix (Simplified Likelihood)", output_name="covariance_matrix_sl.png")
 
-    covariance_df = extract_covariance_matrix(path_to_hesse_, poi_list_)
-    plot_covariance_matrix(covariance_df, poi_list_, folder=folder, title="Covariance Matrix (Hessian)", output_name="covariance_matrix_hesse.png")
+    # covariance_df = extract_covariance_matrix(path_to_hesse_, poi_list_)
+    # plot_covariance_matrix(covariance_df, poi_list_, folder=folder, title="Covariance Matrix (Hessian)", output_name="covariance_matrix_hesse.png")
 
 def pois_untrimmed(toyDir_, poi_list_):
     pois = {}
@@ -766,7 +768,7 @@ def create_json_trimmed(variable_, toyDir_, pois_untrimmed_, poi_list_, subfolde
     mu_to_largest_sigma = 0
     z = 4
     for i, current_poi in enumerate(poi_list_):
-        r = np.array(pois_untrimmed[current_poi])
+        r = np.array(pois_untrimmed_[current_poi])
         mean = np.mean(r)
         s = np.std(r)
 
@@ -841,7 +843,6 @@ sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/sampl
 
 variables = ["PTH"]
 eft_variables = ["chg", "chd", "chw", "chbox", "chl3", "cll1", "cthre", "ctwre", "chwb", "ctbre", "chb"]
-# eft_variables = ["chl3"]
 
 for variable in variables:
     
@@ -866,12 +867,32 @@ for variable in variables:
         
         print("Processing EFT variable:", eft_variable)
         
-        combineLL_eftDir = os.path.join(sample_dir, variable, "Combine", f"runFits_{eft_variable}", "eft_asimov")
+        combineLL_eftDir = os.path.join(sample_dir, variable, "Combine", f"runFits_{eft_variable}_individual", "eft_asimov")
         subfolder = f"SL_{eft_variable}"
         
         bf_combine = produce_bf_combine(poi_list, combineLL_dir)
 
-        # produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine)
+        produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine, plot_r_distribution=False)
+    
+    # Change plotting ranges for inclusive plots
+    range_dict["chb"] = [-0.0005, 0.0015]
+    range_dict["chbox"] = [-0.6, 0.5]
+    range_dict["chd"] = [-0.05, 0.05]
+    range_dict["chg"] = [-0.15, 0.06]
+    range_dict["chl3"] = [-0.25, 0.25]
+    range_dict["chw"] = [-0.01, 0.04]
+    range_dict["chwb"] = [-0.0025, 0.0005]
+    range_dict["cll1"] = [-0.05, 0.05]
+    range_dict["ctbre"] = [-0.0005, 0.0025]
+    range_dict["cthre"] = [-0.8, 0.4]
+    range_dict["ctwre"] = [-0.01, 0.04]
+    
+    for eft_variable in eft_variables:
         
+        print("Processing EFT variable (inclusive):", eft_variable)
+        
+        bf_combine = produce_bf_combine(poi_list, combineLL_dir)
+        
+        combineLL_eftDir = os.path.join(sample_dir, variable, "Combine", f"runFits_{eft_variable}", "eft_asimov")
         subfolder = f"SL_{eft_variable}_inclusive"
-        produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine, inclusive_=True)
+        produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine, inclusive_=True, plot_r_distribution=False)
