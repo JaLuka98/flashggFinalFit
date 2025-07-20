@@ -6,7 +6,6 @@ inputFiles:
   # Trees2WS
   Trees2WSData: '/eos/cms/store/group/phys_higgs/cmshgg/2023_2022_Hgg_differentials/2025_01_20_intermediateNTuples_2023/data/root/Data/allData_2023.root'
   Trees2WS: '/eos/cms/store/group/phys_higgs/cmshgg/2023_2022_Hgg_differentials/2025_01_20_intermediateNTuples_2023/signal/root'
-  # Also does not work if we substitute the 2022 paths...
 
 backgroundScriptCfg:
   # Setup
@@ -50,17 +49,18 @@ trees2wsCfg:
     - "fiducialGeometricFlag"
   
   # Do empty dict, only this way it works
-  theoryWeightContainers: {}
-    #weight_LHEPdf: 101
-    #weight_LHEScale: 9
+  #theoryWeightContainers: {}
+  theoryWeightContainers:
+    weight_LHEPdf: 101
+    weight_LHEScale: 9
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
     - "ScaleEB"
     - "ScaleEE"
     - "Smearing"
-    #- "Material"
-    #- "FNUF"
+    - "Material"
+    - "FNUF"
     - "energyErrShift"
 
   cats: 'auto'
