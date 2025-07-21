@@ -60,6 +60,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     ignore_warnings = law.Parameter(default=False, description="Skip errors for missing systematics. Instead output warning message")
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
 
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
@@ -89,8 +90,12 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
+
+        if self.number_of_replicas != "":
+            # If we have replicas, get rid of the replica folder in output_dir
+            output_dir = "/".join(output_dir.split("/")[:-2])
             
-        tasks["SignalPackaging"] = SignalPackaging(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)
+        tasks["SignalPackaging"] = SignalPackaging(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -118,6 +123,9 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         if convert_boolean_string(self.bootstrap_flag) == True:
             cat, bootstrap_index = self.branch_data
             output = [law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}_{bootstrap_index}/{cat}.pkl'))]
+        elif self.number_of_replicas != "":
+            cat = self.branch_data
+            output = [law.LocalFileTarget(os.path.join(self.output_dir, f'yields_{self.ext}/{cat}.pkl'))]
         else:
             cat = self.branch_data
             output = [law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}/{cat}.pkl'))]
@@ -140,8 +148,12 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             bkgModelWSDir = self.bkgModelWSDir + f"_{bootstrap_index}"
         else:
             cat = self.branch_data
-            execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
+            
             if self.batch_flavor == "slurm/psi":
+                if self.number_of_replicas != "":
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {os.path.join(self.output_dir, f"yields_{self.ext}")}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
                 # Have to use /scratch/batch_username/ for slurm/psi
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
                 execute_command([f'mkdir -p $TARGET_PATH/Datacards/yields_{self.ext}'], shell=True)
@@ -150,6 +162,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 # safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
                 # safe_mkdir(os.path.join(temp_output_dir, f"Datacards/yields_{self.ext}"))
             else:
+                execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
                 temp_output_dir = self.output_dir
             ext = self.ext
             bkgModelWSDir = self.bkgModelWSDir
@@ -182,14 +195,14 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         if convert_boolean_string(self.skipCOWCorr): arguments.append("--skipCOWCorr")
 
         command = arguments
-        # print("Output:", command)
+        print("Output:", command)
         execute_command(command)
         
         if self.batch_flavor == "slurm/psi":
             if "/work" in self.output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
-                    f'{temp_output_dir}/Datacards',
+                    f'{temp_output_dir}/Datacards' if self.number_of_replicas == "" else f'{temp_output_dir}/Datacards/yields_{self.ext}',
                     self.output_dir
                 ]
             # Have to copy over the output to the final directory
@@ -197,7 +210,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             else:
                 slurm_copy_command = [
                     'xrdcp', '-r',
-                    f"{temp_output_dir+'/Datacards'}",
+                    f"{temp_output_dir+'/Datacards'}" if self.number_of_replicas == "" else f"{temp_output_dir}/Datacards/yields_{self.ext}",
                     'root://t3dcachedb.psi.ch:1094//'+self.output_dir
                 ]
             execute_command(slurm_copy_command)
@@ -209,74 +222,109 @@ class MakeYields(law.Task): #law.Task
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
-    
+
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
-    
+
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)
-        
+
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
-        
+
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-                
+
         input_path = config['inputFiles']['Trees2WSData']
-        
+
         packaged_config = config[f"packaged_{self.year}"]
-                    
+
         datacard_config = config["datacard_yields"]
-        
+
         if datacard_config['cats'] == 'auto':
             datacard_config['cats'] = (extractListOfCatsFromHiggsDNAAllData(input_path))
         datacard_config['nCats'] = len(datacard_config['cats'].split(","))
-    
+
         if self.year == 'combined': datacard_config['year'] = 'all'
         else: datacard_config['year'] = self.year        
-              
+
         inputWSDirMap = ''
-        
-        # Create inputWSDirMap
-        if datacard_config['year'] == 'all':
-            for i, currentYear in enumerate(allErasMap.keys()):
-                for j, currentEra in enumerate(allErasMap[currentYear]):
-                    currentYearEra = currentYear + currentEra
+
+        tasks = []
+
+        if self.number_of_replicas != "":
+            for replica_index in range(int(self.number_of_replicas)):
+                inputWSDirMap = ''
+                # Create inputWSDirMap
+                if datacard_config['year'] == 'all':
+                    for i, currentYear in enumerate(allErasMap.keys()):
+                        for j, currentEra in enumerate(allErasMap[currentYear]):
+                            currentYearEra = currentYear + currentEra
+                            if self.variable == '':
+                                currentYearEraInputOutput = os.path.join(output_dir, "input_output", f"replica_{replica_index}", "input_output_{}{}/ws_signal".format(currentYear, currentEra))
+                            else:
+                                currentYearEraInputOutput = os.path.join(output_dir, "input_output", f"replica_{replica_index}", "input_output_{}_{}{}/ws_signal".format(self.variable, currentYear, currentEra))
+                            if (i != len(allErasMap.keys()) - 1) and (j != len(allErasMap[currentYear]) - 1):  # Check if it's the last element of the last year
+                                inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput + ","
+                            else:
+                                inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
+                else:
+                    for j, currentEra in enumerate(allErasMap[self.year]):
+                        currentYearEra = self.year + currentEra
+                        if self.variable == '':
+                            currentYearEraInputOutput = os.path.join(output_dir, "input_output", f"replica_{replica_index}", "input_output_{}{}/ws_signal".format(self.year, currentEra))
+                        else:
+                            currentYearEraInputOutput = os.path.join(output_dir, "input_output", f"replica_{replica_index}", "input_output_{}_{}{}/ws_signal".format(self.variable, self.year, currentEra))
+                        if (j != len(allErasMap[self.year]) - 1):  # Check if it's the last element of the last year
+                            inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput + ","
+                        else:
+                            inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
+
+                replica_output_dir = os.path.join(output_dir, "Datacards", f"replica_{replica_index}")
+
+                tasks.append(MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=replica_output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version=f'Replica_{replica_index}', workflow=datacard_config['execution'], batch_flavor=self.batch_flavor, slurm_partition=datacard_config['batchPartition'], slurm_memory=datacard_config['batchMemory'], slurm_max_runtime=datacard_config['batchMaxRuntime'], htcondor_partition=datacard_config['batchPartition'], htcondor_memory=datacard_config['batchMemory'], htcondor_max_runtime=datacard_config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, number_of_replicas=self.number_of_replicas))
+        else:
+            # Create inputWSDirMap
+            if datacard_config['year'] == 'all':
+                for i, currentYear in enumerate(allErasMap.keys()):
+                    for j, currentEra in enumerate(allErasMap[currentYear]):
+                        currentYearEra = currentYear + currentEra
+                        if self.variable == '':
+                            currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}{}/ws_signal".format(currentYear, currentEra))
+                        else:
+                            currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}_{}{}/ws_signal".format(self.variable, currentYear, currentEra))
+                        if (i != len(allErasMap.keys()) - 1) and (j != len(allErasMap[currentYear]) - 1):  # Check if it's the last element of the last year
+                            inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput + ","
+                        else:
+                            inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
+            else:
+                for j, currentEra in enumerate(allErasMap[self.year]):
+                    currentYearEra = self.year + currentEra
                     if self.variable == '':
-                        currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}{}/ws_signal".format(currentYear, currentEra))
+                        currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}{}/ws_signal".format(self.year, currentEra))
                     else:
-                        currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}_{}{}/ws_signal".format(self.variable, currentYear, currentEra))
-                    if (i != len(allErasMap.keys()) - 1) and (j != len(allErasMap[currentYear]) - 1):  # Check if it's the last element of the last year
+                        currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}_{}{}/ws_signal".format(self.variable, self.year, currentEra))
+                    if (j != len(allErasMap[self.year]) - 1):  # Check if it's the last element of the last year
                         inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput + ","
                     else:
                         inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
-        else:
-            for j, currentEra in enumerate(allErasMap[self.year]):
-                currentYearEra = self.year + currentEra
-                if self.variable == '':
-                    currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}{}/ws_signal".format(self.year, currentEra))
-                else:
-                    currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}_{}{}/ws_signal".format(self.variable, self.year, currentEra))
-                if (j != len(allErasMap[self.year]) - 1):  # Check if it's the last element of the last year
-                    inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput + ","
-                else:
-                    inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
-        
-        tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version='v1', workflow=datacard_config['execution'], batch_flavor=self.batch_flavor, slurm_partition=datacard_config['batchPartition'], slurm_memory=datacard_config['batchMemory'], slurm_max_runtime=datacard_config['batchMaxRuntime'], htcondor_partition=datacard_config['batchPartition'], htcondor_memory=datacard_config['batchMemory'], htcondor_max_runtime=datacard_config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)]
-        
+
+            tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version='v1', workflow=datacard_config['execution'], batch_flavor=self.batch_flavor, slurm_partition=datacard_config['batchPartition'], slurm_memory=datacard_config['batchMemory'], slurm_max_runtime=datacard_config['batchMaxRuntime'], htcondor_partition=datacard_config['batchPartition'], htcondor_memory=datacard_config['batchMemory'], htcondor_max_runtime=datacard_config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, number_of_replicas=self.number_of_replicas)]
+
         return tasks
-        
+
     def output(self):
         # returns output folder
         
@@ -304,8 +352,12 @@ class MakeYields(law.Task): #law.Task
             for i in range(int(self.number_of_bootstraps)):
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}_{i}")))
         else:
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}")))
-        
+            if self.number_of_replicas != "":
+                for replica_index in range(int(self.number_of_replicas)):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Datacards", f"replica_{replica_index}", f"yields_{datacard_config['ext']}")))
+            else:
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}")))
+
         if datacard_config['cats'] == 'auto':
             datacard_config['cats'] = (extractListOfCatsFromHiggsDNAAllData(input_path))
         datacard_config['nCats'] = len(datacard_config['cats'].split(","))
@@ -316,22 +368,25 @@ class MakeYields(law.Task): #law.Task
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}_{i}/{cat}.pkl")))
         else:
             for cat in datacard_config['cats'].split(","):
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}/{cat}.pkl")))
-                                  
+                if self.number_of_replicas != "":
+                    for replica_index in range(int(self.number_of_replicas)):
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "Datacards", f"replica_{replica_index}", f"yields_{datacard_config['ext']}/{cat}.pkl")))
+                else:
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}/{cat}.pkl")))
         return output_paths
-                
-    
+
     def run(self):
-        
+
         return True
     
-class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #law.Task
+class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
 
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
@@ -340,6 +395,11 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
             branch_map = {
                 i: bootstrap_index
                 for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+            }
+        elif self.number_of_replicas != "":
+            branch_map = {
+                i: replita_index
+                for i, replita_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             branch_map = {i: i for i in range(1)}
@@ -370,13 +430,16 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
         else:
             output_dir = self.output_dir
         
-        tasks["MakeYields"] = MakeYields(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+        tasks["MakeYields"] = MakeYields(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, number_of_replicas=self.number_of_replicas)
         
         return tasks    
 
     def output(self):
         if convert_boolean_string(self.bootstrap_flag) == True:
             bootstrap_index = self.branch_data
+        
+        elif self.number_of_replicas != "":
+            replica_index = self.branch_data
 
         # returns output folder
         if self.variable == '':
@@ -404,10 +467,16 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Dataframe/Datacard_{self.year}_unsymmetrized.pkl")))
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Datacard_{self.year}.txt")))
             else:
-                if datacard_config['saveDataFrame']:
-                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}.pkl")))
-                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}_unsymmetrized.pkl")))
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.year}.txt")))
+                if self.number_of_replicas != "":
+                    if datacard_config['saveDataFrame']:
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/replica_{replica_index}/Dataframe/Datacard_{self.year}.pkl")))
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/replica_{replica_index}/Dataframe/Datacard_{self.year}_unsymmetrized.pkl")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/replica_{replica_index}/Datacard_{self.year}.txt")))
+                else:
+                    if datacard_config['saveDataFrame']:
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}.pkl")))
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}_unsymmetrized.pkl")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.year}.txt")))
         else:
             if convert_boolean_string(self.bootstrap_flag) == True:
                 if datacard_config['saveDataFrame']:
@@ -416,11 +485,18 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Datacard_{self.variable}_{self.year}.txt")))
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
             else:
-                if datacard_config['saveDataFrame']:
-                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl")))
-                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl")))
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}.txt")))
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
+                if self.number_of_replicas != "":
+                    if datacard_config['saveDataFrame']:
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/replica_{replica_index}/Dataframe/Datacard_{self.variable}_{self.year}.pkl")))
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/replica_{replica_index}/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/replica_{replica_index}/Datacard_{self.variable}_{self.year}.txt")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/replica_{replica_index}/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
+                else:
+                    if datacard_config['saveDataFrame']:
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl")))
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}.txt")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
         return output_paths
                 
     
@@ -428,6 +504,9 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
 
         if convert_boolean_string(self.bootstrap_flag) == True:
             bootstrap_index = self.branch_data
+
+        elif self.number_of_replicas != "":
+            replica_index = self.branch_data
 
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -472,6 +551,32 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 pklInputFiles = os.path.join(output_dir,f"Datacards")
                 ext = yields_config["ext"] + f"_{bootstrap_index}"
                 output_dir = os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}")
+                safe_mkdir(output_dir)
+
+                temp_output_dir = output_dir
+        elif self.number_of_replicas != "": # Account for replica index
+            if self.batch_flavor == "slurm/psi":
+                if "/work" in output_dir:
+                    execute_command([f'mkdir -p {output_dir}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                pklInputFiles = os.path.join(output_dir,f"Datacards/replica_{replica_index}")
+                ext = yields_config["ext"]
+                output_dir = os.path.join(output_dir,f"Datacards/replica_{replica_index}")
+                if "/work" in output_dir:
+                    execute_command([f'mkdir -p {output_dir}'], shell=True)
+                else:
+                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                # Have to use /scratch/batch_username/ for slurm/psi
+                # Since we run this script locally, we have to use the local scratch space. (SLURM_JOB_ID is not available)
+                os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/MakeDatacard_{replica_index}"
+                execute_command(['mkdir -p $TARGET_PATH'], shell=True)
+                temp_output_dir = os.environ["TARGET_PATH"]
+            else:
+                safe_mkdir(output_dir)
+                pklInputFiles = os.path.join(output_dir,f"Datacards/replica_{replica_index}")
+                ext = yields_config["ext"]
+                output_dir = os.path.join(output_dir,f"Datacards/replica_{replica_index}")
                 safe_mkdir(output_dir)
 
                 temp_output_dir = output_dir
