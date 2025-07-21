@@ -39,7 +39,8 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
     cats = law.Parameter(description="Category string")
     procs = law.Parameter(description="Processes")
     variable = law.Parameter(default="", description="Variable to be used")
-    year = law.Parameter(description="Year")    
+    year = law.Parameter(description="Year")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
     
     era = law.Parameter(description="Current Era")    
     
@@ -69,8 +70,12 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-            
-        tasks["Trees2WS"] = Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)
+
+        if self.number_of_replicas != "":
+            # If we have replicas, get rid of the replica folder in output_dir
+            output_dir = "/".join(output_dir.split("/")[:-2])
+
+        tasks["Trees2WS"] = Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, workflow="slurm", version="v1", number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -169,6 +174,7 @@ class FTest(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default="", description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
     
@@ -199,39 +205,75 @@ class FTest(law.Task):
         
         tasks = []
         
-        i = 1
         # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
-            
-            
-            if self.variable == '':
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{currentEra}/ws_signal")
-            else:
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
+        if self.number_of_replicas != "":
+            for replica_index in range(int(self.number_of_replicas)):
+                i = 1
+                signal_input_path = glob.glob(os.path.join(config['inputFiles']['Trees2WS'], f"replica_{replica_index}", "root")+'/*')
+                for currentEra in allErasMap[f"{self.year}"]:
+                    
+                    if self.variable == '':
+                        input_path = os.path.join(config["outputFolder"], "input_output", f"replica_{replica_index}", f"input_output_{self.year}{currentEra}/ws_signal")
+                    else:
+                        input_path = os.path.join(config["outputFolder"], "input_output", f"replica_{replica_index}", f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
 
 
-            if currentEra != "None":
-                currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
-            else:
-                currentConfig = config[f"signalScriptCfg_{self.year}"]
+                    if currentEra != "None":
+                        currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+                    else:
+                        currentConfig = config[f"signalScriptCfg_{self.year}"]
 
-            # Extract low and high MH values
-            mps = []
-            for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
-            currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+                    # Extract low and high MH values
+                    mps = []
+                    for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+                    currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
 
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # If proc/cat == auto. Extract processes and categories
-            if currentConfig['cats'] == "auto":
-                currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
-            currentConfig['nCats'] = len(currentConfig['cats'].split(","))
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # If proc/cat == auto. Extract processes and categories
+                    if currentConfig['cats'] == "auto":
+                        currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
+                    currentConfig['nCats'] = len(currentConfig['cats'].split(","))
 
-            if currentConfig['procs'] == "auto":
-                currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
-            currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+                    if currentConfig['procs'] == "auto":
+                        currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
+                    currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+                    
+                    replica_output_dir = os.path.join(output_dir, "signal", f"replica_{replica_index}")
 
-            tasks.append(FTestCategory(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], variable=self.variable, year=self.year, version=f"v{i}", workflow=currentConfig['execution'], era=currentEra, batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
-            i += 1
+                    tasks.append(FTestCategory(input_path=input_path, output_dir=replica_output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], variable=self.variable, year=self.year, version=f"Replica{replica_index}_{currentEra}", workflow=currentConfig['execution'], era=currentEra, batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime'], number_of_replicas=self.number_of_replicas))
+                    i += 1
+        else:
+            i = 1
+            for currentEra in allErasMap[f"{self.year}"]:
+                
+                if self.variable == '':
+                    input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{currentEra}/ws_signal")
+                else:
+                    input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
+
+
+                if currentEra != "None":
+                    currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+                else:
+                    currentConfig = config[f"signalScriptCfg_{self.year}"]
+
+                # Extract low and high MH values
+                mps = []
+                for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+                currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # If proc/cat == auto. Extract processes and categories
+                if currentConfig['cats'] == "auto":
+                    currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
+                currentConfig['nCats'] = len(currentConfig['cats'].split(","))
+
+                if currentConfig['procs'] == "auto":
+                    currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
+                currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+
+                tasks.append(FTestCategory(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], variable=self.variable, year=self.year, version=currentEra, workflow=currentConfig['execution'], era=currentEra, batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime'], number_of_replicas=self.number_of_replicas))
+                i += 1
 
         return tasks
 
@@ -242,16 +284,15 @@ class FTest(law.Task):
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
 
-        
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-            
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-            
+
         data_input_path = config['inputFiles']['Trees2WSData']  
 
         output_paths = []
@@ -264,20 +305,29 @@ class FTest(law.Task):
             else:
                 currentConfig = config[f"signalScriptCfg_{self.year}"]
             # returns output folder
-            
-            
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/fTest")))
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/fTest/json")))
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/fTest/Plots")))
-            
+
+            if self.number_of_replicas != "":
+                for replica_index in range(int(self.number_of_replicas)):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/fTest")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/fTest/json")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/fTest/Plots")))
+            else:
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/fTest")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/fTest/json")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/fTest/Plots")))
+
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # If proc/cat == auto. Extract processes and categories
             if currentConfig['cats'] == "auto":
                 currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
-                
+
             cat_list = currentConfig['cats'].split(",")
             for cat in cat_list:
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/fTest/json/nGauss_{cat}.json")))
+                if self.number_of_replicas != "":
+                    for replica_index in range(int(self.number_of_replicas)):
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/fTest/json/nGauss_{cat}.json")))
+                else:
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/fTest/json/nGauss_{cat}.json")))
 
         return output_paths
                 
@@ -298,7 +348,8 @@ class CalcPhotonSystCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
     scalesGlobal = law.Parameter(default="", description="Global scales")
     smears = law.Parameter(description="Smearings")
     variable = law.Parameter(default="", description="Variable to be used")
-    year = law.Parameter(description="Year")    
+    year = law.Parameter(description="Year")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
     
@@ -326,8 +377,12 @@ class CalcPhotonSystCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
+
+        if self.number_of_replicas != "":
+            # If we have replicas, get rid of the replica folder in output_dir
+            output_dir = "/".join(output_dir.split("/")[:-2])
             
-        tasks["Trees2WS"] = Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)
+        tasks["Trees2WS"] = Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, workflow="slurm", version="v1", number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -368,7 +423,7 @@ class CalcPhotonSystCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             if "/work" in self.output_dir:
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/calcPhotonSyst/pkl'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/calcPhotonSyst/pkl'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/calcPhotonSyst/pkl'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/outdir_{self.ext}/calcPhotonSyst/pkl'], shell=True)
@@ -431,6 +486,7 @@ class CalcPhotonSyst(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default="", description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -461,38 +517,74 @@ class CalcPhotonSyst(law.Task):
         
         tasks = []
         
-        i = 1
         # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
-            
-            if self.variable == '':
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{currentEra}/ws_signal")
-            else:
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
+        if self.number_of_replicas != "":
+            for replica_index in range(int(self.number_of_replicas)):
+                i = 1
+                signal_input_path = glob.glob(os.path.join(config['inputFiles']['Trees2WS'], f"replica_{replica_index}", "root")+'/*')
+                for currentEra in allErasMap[f"{self.year}"]:
+                    if self.variable == '':
+                        input_path = os.path.join(config["outputFolder"], "input_output", f"replica_{replica_index}", f"input_output_{self.year}{currentEra}/ws_signal")
+                    else:
+                        input_path = os.path.join(config["outputFolder"], "input_output", f"replica_{replica_index}", f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
 
 
-            if currentEra != "None":
-                currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
-            else:
-                currentConfig = config[f"signalScriptCfg_{self.year}"]
-                
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # If proc/cat == auto. Extract processes and categories
-            if currentConfig['cats'] == "auto":
-                currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
-            currentConfig['nCats'] = len(currentConfig['cats'].split(","))
-            
-            if currentConfig['procs'] == "auto":
-                currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
-            currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
-            
-            # Extract low and high MH values
-            mps = []
-            for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
-            currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+                    if currentEra != "None":
+                        currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+                    else:
+                        currentConfig = config[f"signalScriptCfg_{self.year}"]
+                        
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # If proc/cat == auto. Extract processes and categories
+                    if currentConfig['cats'] == "auto":
+                        currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
+                    currentConfig['nCats'] = len(currentConfig['cats'].split(","))
                     
-            tasks.append(CalcPhotonSystCategory(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], variable=self.variable, year=self.year, version=f"v{i}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
-            i += 1
+                    if currentConfig['procs'] == "auto":
+                        currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
+                    currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+                    
+                    # Extract low and high MH values
+                    mps = []
+                    for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+                    currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+
+                    replica_output_dir = os.path.join(output_dir, "signal", f"replica_{replica_index}")
+
+                    tasks.append(CalcPhotonSystCategory(input_path=input_path, output_dir=replica_output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], variable=self.variable, year=self.year, version=f"Replica{replica_index}_{currentEra}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime'], number_of_replicas=self.number_of_replicas))
+                    i += 1
+        else:
+            i = 1
+            for currentEra in allErasMap[f"{self.year}"]:
+                
+                if self.variable == '':
+                    input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{currentEra}/ws_signal")
+                else:
+                    input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
+
+
+                if currentEra != "None":
+                    currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+                else:
+                    currentConfig = config[f"signalScriptCfg_{self.year}"]
+                    
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # If proc/cat == auto. Extract processes and categories
+                if currentConfig['cats'] == "auto":
+                    currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
+                currentConfig['nCats'] = len(currentConfig['cats'].split(","))
+                
+                if currentConfig['procs'] == "auto":
+                    currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
+                currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+                
+                # Extract low and high MH values
+                mps = []
+                for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+                currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
+                        
+                tasks.append(CalcPhotonSystCategory(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], variable=self.variable, year=self.year, version=currentEra, workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
+                i += 1
 
         return tasks
     
@@ -526,27 +618,34 @@ class CalcPhotonSyst(law.Task):
                 currentConfig = config[f"signalScriptCfg_{self.year}"]
             # returns output folder
             
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/calcPhotonSyst")))
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/calcPhotonSyst/pkl")))
-        
-        
+            if self.number_of_replicas != "":
+                for replica_index in range(int(self.number_of_replicas)):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/calcPhotonSyst")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/calcPhotonSyst/pkl")))
+            else:
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/calcPhotonSyst")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/calcPhotonSyst/pkl")))
+
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # If proc/cat == auto. Extract processes and categories
             if currentConfig['cats'] == "auto":
                 currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
-                
+
             cat_list = currentConfig['cats'].split(",")
             for cat in cat_list:
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/calcPhotonSyst/pkl/{cat}.pkl")))
-                                    
+                if self.number_of_replicas != "":
+                    for replica_index in range(int(self.number_of_replicas)):
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/calcPhotonSyst/pkl/{cat}.pkl")))
+                else:
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/calcPhotonSyst/pkl/{cat}.pkl")))
+
         return output_paths
-                
-    
+
     def run(self):
-        
+
         return True
-    
-    
+
+
 class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_path = law.Parameter(description="Path to the input ROOT files (/ws_signal)")
     output_dir = law.Parameter(description="Path to the output directory")
@@ -564,14 +663,15 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
     beamspotWidthData = law.Parameter(description="Beamspot width in Data")
     beamspotWidthMC = law.Parameter(description="Beamspot width in MC")
     doPlots = law.Parameter(description="Printing the signal models.")
-    
+
     variable = law.Parameter(default="", description="Variable to be used")
-    
+
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
-    
+
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
+
     htcondor_job_kwargs_submit = {"spool": True}
-      
-    # def requires(self):
+
     def workflow_requires(self):
         workflow_reqs = super().workflow_requires()
 
@@ -596,9 +696,13 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             output_dir = config["outputFolder"]
         else:
             output_dir = self.output_dir
-            
-        tasks["FTest"] = FTest(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor)
-        tasks["CalcPhotonSyst"] = CalcPhotonSyst(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor)
+
+        if self.number_of_replicas != "":
+            # If we have replicas, get rid of the replica folder in output_dir
+            output_dir = "/".join(output_dir.split("/")[:-2])
+
+        tasks["FTest"] = FTest(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor, number_of_replicas=self.number_of_replicas)
+        tasks["CalcPhotonSyst"] = CalcPhotonSyst(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor, number_of_replicas=self.number_of_replicas)
 
         return tasks
     
@@ -643,8 +747,8 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/output'], shell=True)
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/Plots'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/signalFit/output'], shell=True)
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/signalFit/Plots'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/output'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/Plots'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/outdir_{self.ext}/signalFit/output'], shell=True)
@@ -718,63 +822,97 @@ class SignalFit(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default="", description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
-    
+
     def requires(self):
-        
+
         # Path should be somewhere centrally...
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
-        
+
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-            
+
         if self.output_dir == '':
             output_dir = config["outputFolder"]
         else:
             output_dir = self.output_dir
-            
+
         signal_input_path = glob.glob(config['inputFiles']['Trees2WS']+'/*')
-        
+
         inOutSplittingFlag = config['trees2wsCfg']['doInOutSplitting']  or config['trees2wsCfg']['doDiffSplitting']
-            
+
         tasks = []
-            
-        i = 1
+
         # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
-            
-            if self.variable == "":
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{currentEra}/ws_signal")
-            else:
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
+        if self.number_of_replicas != "":
+            for replica_index in range(int(self.number_of_replicas)):
+                i = 1
+                signal_input_path = glob.glob(os.path.join(config['inputFiles']['Trees2WS'], f"replica_{replica_index}", "root")+'/*')
+                for currentEra in allErasMap[f"{self.year}"]:
+                    if self.variable == '':
+                        input_path = os.path.join(config["outputFolder"], "input_output", f"replica_{replica_index}", f"input_output_{self.year}{currentEra}/ws_signal")
+                    else:
+                        input_path = os.path.join(config["outputFolder"], "input_output", f"replica_{replica_index}", f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
 
-            currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+                    currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
 
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # If proc/cat == auto. Extract processes and categories
-            # Use allData.root from HiggsDNA to automatically determine categories
-            data_input_path = config['inputFiles']['Trees2WSData']  
-            if currentConfig['cats'] == "auto":
-                currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
-            currentConfig['nCats'] = len(currentConfig['cats'].split(","))
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # If proc/cat == auto. Extract processes and categories
+                    # Use allData.root from HiggsDNA to automatically determine categories
+                    data_input_path = config['inputFiles']['Trees2WSData']  
+                    if currentConfig['cats'] == "auto":
+                        currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
+                    currentConfig['nCats'] = len(currentConfig['cats'].split(","))
 
-            if currentConfig['procs'] == "auto":
-                currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
-            currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
-            
-            # Extract low and high MH values
-            mps = []
-            for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
-            currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)         
-            
-            tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], replacementThreshold=currentConfig['replacementThreshold'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable, version=f"v{i}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
-            i += 1
-                
+                    if currentConfig['procs'] == "auto":
+                        currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
+                    currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+
+                    # Extract low and high MH values
+                    mps = []
+                    for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+                    currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)         
+
+                    replica_output_dir = os.path.join(output_dir, "signal", f"replica_{replica_index}")
+
+                    tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=replica_output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], replacementThreshold=currentConfig['replacementThreshold'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable, version=f"Replica{replica_index}_{currentEra}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime'], number_of_replicas=self.number_of_replicas))
+                    i += 1
+        else:
+            i = 1
+            for currentEra in allErasMap[f"{self.year}"]:
+                if self.variable == "":
+                    input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{currentEra}/ws_signal")
+                else:
+                    input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
+
+                currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # If proc/cat == auto. Extract processes and categories
+                # Use allData.root from HiggsDNA to automatically determine categories
+                data_input_path = config['inputFiles']['Trees2WSData']  
+                if currentConfig['cats'] == "auto":
+                    currentConfig['cats'] = extractListOfCatsFromHiggsDNAAllData(data_input_path)
+                currentConfig['nCats'] = len(currentConfig['cats'].split(","))
+
+                if currentConfig['procs'] == "auto":
+                    currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
+                currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
+
+                # Extract low and high MH values
+                mps = []
+                for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
+                currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)         
+
+                tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], replacementThreshold=currentConfig['replacementThreshold'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable, version=currentEra, workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime'], number_of_replicas=self.number_of_replicas))
+                i += 1
+
         return tasks
     
     def output(self):
@@ -807,9 +945,16 @@ class SignalFit(law.Task):
             currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
             
             # returns output folder
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit")))
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit/output")))
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit/Plots")))
+            if self.number_of_replicas != "":
+                for replica_index in range(int(self.number_of_replicas)):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/signalFit")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/signalFit/output")))
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/signalFit/Plots")))
+                signal_input_path = glob.glob(os.path.join(config['inputFiles']['Trees2WS'], f"replica_{replica_index}", "root")+'/*')
+            else:
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit/output")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit/Plots")))
             
             
             if currentConfig['cats'] == "auto":
@@ -820,11 +965,19 @@ class SignalFit(law.Task):
                 currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
             currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
 
-            for processIndex in range(currentConfig['nProcs']):
-                for categoryIndex in range(currentConfig['nCats']):
-                    category = currentConfig['cats'].split(",")[categoryIndex]
-                    process = currentConfig['procs'].split(",")[processIndex]
-                    output_paths += [law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit/output/CMS-HGG_sigfit_{currentConfig['ext']}_{process}_{currentConfig['year']}_{category}.root"))]
+            if self.number_of_replicas != "":
+                for replica_index in range(int(self.number_of_replicas)):
+                    for processIndex in range(currentConfig['nProcs']):
+                        for categoryIndex in range(currentConfig['nCats']):
+                            category = currentConfig['cats'].split(",")[categoryIndex]
+                            process = currentConfig['procs'].split(",")[processIndex]
+                            output_paths += [law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_{currentConfig['ext']}/signalFit/output/CMS-HGG_sigfit_{currentConfig['ext']}_{process}_{currentConfig['year']}_{category}.root"))]
+            else:
+                for processIndex in range(currentConfig['nProcs']):
+                    for categoryIndex in range(currentConfig['nCats']):
+                        category = currentConfig['cats'].split(",")[categoryIndex]
+                        process = currentConfig['procs'].split(",")[processIndex]
+                        output_paths += [law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit/output/CMS-HGG_sigfit_{currentConfig['ext']}_{process}_{currentConfig['year']}_{category}.root"))]
             
         return output_paths
                 
@@ -842,6 +995,8 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
     mergeYears = law.Parameter(default=True, description="Flag if one should merge the years or eras.")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
 
     variable = law.Parameter(default="", description="Variable to be used")
     
@@ -872,8 +1027,12 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
             output_dir = config["outputFolder"]
         else:
             output_dir = self.output_dir
+
+        if self.number_of_replicas != "":
+            # If we have replicas, get rid of the replica folder in output_dir
+            output_dir = "/".join(output_dir.split("/")[:-2])
                                 
-        tasks["SignalFit"] = SignalFit(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor)
+        tasks["SignalFit"] = SignalFit(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor, number_of_replicas=self.number_of_replicas)
                     
         return tasks
     
@@ -937,20 +1096,47 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
                 signalScriptCfg = config[f"signalScriptCfg_{self.year}_{currentEra}"]
                 # Have to copy over the input to the JOB directory
                 # Don't forget to VOMS!
+                execute_command([f'mkdir -p $TARGET_PATH/outdir_{signalScriptCfg["ext"]}/calcPhotonSyst'], shell=True)
+                execute_command([f'mkdir -p $TARGET_PATH/outdir_{signalScriptCfg["ext"]}/fTest/json'], shell=True)
+                execute_command([f'mkdir -p $TARGET_PATH/outdir_{signalScriptCfg["ext"]}/signalFit/output'], shell=True)
                 if "/work" in self.output_dir:
-                    slurm_copy_command = [
+                    slurm_copy_command_calcPhotonSyst = [
                         'cp', '-rf',
-                        f"{self.output_dir}/outdir_{signalScriptCfg['ext']}",
-                        f"{os.environ['TARGET_PATH']}/"
+                        f"{self.output_dir}/outdir_{signalScriptCfg['ext']}/calcPhotonSyst/",
+                        f"{os.environ['TARGET_PATH']}/outdir_{signalScriptCfg['ext']}/"
+                    ]
+                    slurm_copy_command_fTest = [
+                        'cp', '-rf',
+                        f"{self.output_dir}/outdir_{signalScriptCfg['ext']}/fTest/json/",
+                        f"{os.environ['TARGET_PATH']}/outdir_{signalScriptCfg['ext']}/fTest/"
+                    ]
+                    slurm_copy_command_signalFit = [
+                        'cp', '-rf',
+                        f"{self.output_dir}/outdir_{signalScriptCfg['ext']}/signalFit/output/",
+                        f"{os.environ['TARGET_PATH']}/outdir_{signalScriptCfg['ext']}/signalFit/"
                     ]
                 else:
-                    slurm_copy_command = [
+                    slurm_copy_command_calcPhotonSyst = [
                         'xrdcp', '-rf',
-                        'root://t3dcachedb.psi.ch:1094//'+f"{self.output_dir}/outdir_{signalScriptCfg['ext']}",
-                        f"{os.environ['TARGET_PATH']}/"
+                        'root://t3dcachedb.psi.ch:1094//'+f"{self.output_dir}/outdir_{signalScriptCfg['ext']}/calcPhotonSyst/",
+                        f"{os.environ['TARGET_PATH']}/outdir_{signalScriptCfg['ext']}/"
                     ]
-                print(slurm_copy_command)
-                execute_command(slurm_copy_command)
+                    slurm_copy_command_fTest = [
+                        'xrdcp', '-rf',
+                        'root://t3dcachedb.psi.ch:1094//'+f"{self.output_dir}/outdir_{signalScriptCfg['ext']}/fTest/json/",
+                        f"{os.environ['TARGET_PATH']}/outdir_{signalScriptCfg['ext']}/fTest/"
+                    ]
+                    slurm_copy_command_signalFit = [
+                        'xrdcp', '-rf',
+                        'root://t3dcachedb.psi.ch:1094//'+f"{self.output_dir}/outdir_{signalScriptCfg['ext']}/signalFit/output/",
+                        f"{os.environ['TARGET_PATH']}/outdir_{signalScriptCfg['ext']}/signalFit/"
+                    ]
+                print(slurm_copy_command_calcPhotonSyst)
+                print(slurm_copy_command_fTest)
+                print(slurm_copy_command_signalFit)
+                execute_command(slurm_copy_command_calcPhotonSyst)
+                execute_command(slurm_copy_command_fTest)
+                execute_command(slurm_copy_command_signalFit)
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Signal/scripts/packageSignal.py")
         arguments = [
@@ -965,7 +1151,7 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
             "--mergeYears", f"{self.mergeYears}",
         ]
         command = arguments
-        # print(command)
+        print(command)
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)
@@ -998,6 +1184,7 @@ class SignalPackaging(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default="", description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
     
@@ -1051,8 +1238,13 @@ class SignalPackaging(law.Task):
             exts_string += currentExt
             if i < (len(exts) - 1):
                 exts_string += ','
-            
-        tasks.append(SignalPackagingCategory(output_dir=output_dir, exts=exts_string, outputExt=outputExt, cats=packagedConfig['cats'], year=self.year, massPoints=packagedConfig['massPoints'], mergeYears=mergeYears, variable=self.variable, version=f"v1", workflow=packagedConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=packagedConfig['batchPartition'], slurm_memory=packagedConfig['batchMemory'], slurm_max_runtime=packagedConfig['batchMaxRuntime'], htcondor_partition=packagedConfig['batchPartition'], htcondor_memory=packagedConfig['batchMemory'], htcondor_max_runtime=packagedConfig['batchMaxRuntime']))
+        
+        if self.number_of_replicas != "":
+            for replica_index in range(int(self.number_of_replicas)):
+                replica_output_dir = os.path.join(output_dir, "signal", f"replica_{replica_index}")
+                tasks.append(SignalPackagingCategory(output_dir=replica_output_dir, exts=exts_string, outputExt=outputExt, cats=packagedConfig['cats'], year=self.year, massPoints=packagedConfig['massPoints'], mergeYears=mergeYears, variable=self.variable, version=f"Replica{replica_index}", workflow=packagedConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=packagedConfig['batchPartition'], slurm_memory=packagedConfig['batchMemory'], slurm_max_runtime=packagedConfig['batchMaxRuntime'], htcondor_partition=packagedConfig['batchPartition'], htcondor_memory=packagedConfig['batchMemory'], htcondor_max_runtime=packagedConfig['batchMaxRuntime'], number_of_replicas=self.number_of_replicas))
+        else:
+            tasks.append(SignalPackagingCategory(output_dir=output_dir, exts=exts_string, outputExt=outputExt, cats=packagedConfig['cats'], year=self.year, massPoints=packagedConfig['massPoints'], mergeYears=mergeYears, variable=self.variable, version=f"v1", workflow=packagedConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=packagedConfig['batchPartition'], slurm_memory=packagedConfig['batchMemory'], slurm_max_runtime=packagedConfig['batchMaxRuntime'], htcondor_partition=packagedConfig['batchPartition'], htcondor_memory=packagedConfig['batchMemory'], htcondor_max_runtime=packagedConfig['batchMaxRuntime'], number_of_replicas=self.number_of_replicas))
                 
         return tasks
 
@@ -1078,8 +1270,13 @@ class SignalPackaging(law.Task):
         
         currentConfig = config[f"packaged_{self.year}"]
 
-        output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_packaged{currentConfig['ext']}")))
-        output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_packaged{currentConfig['ext']}/packageSignal")))
+        if self.number_of_replicas != "":
+            for replica_index in range(int(self.number_of_replicas)):
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_packaged{currentConfig['ext']}")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_packaged{currentConfig['ext']}/packageSignal")))
+        else:
+            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_packaged{currentConfig['ext']}")))
+            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_packaged{currentConfig['ext']}/packageSignal")))
         
 
         # Use allData.root from HiggsDNA to automatically determine categories
@@ -1091,7 +1288,11 @@ class SignalPackaging(law.Task):
         for categoryIndex in range(currentConfig['nCats']):
             category = currentConfig['cats'].split(",")[categoryIndex]
 
-            output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_packaged{currentConfig['ext']}/CMS-HGG_sigfit_packaged{currentConfig['ext']}_{category}.root")))
+            if self.number_of_replicas != "":
+                for replica_index in range(int(self.number_of_replicas)):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, "signal", f"replica_{replica_index}", f"outdir_packaged{currentConfig['ext']}/CMS-HGG_sigfit_packaged{currentConfig['ext']}_{category}.root")))
+            else:
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_packaged{currentConfig['ext']}/CMS-HGG_sigfit_packaged{currentConfig['ext']}_{category}.root")))
             
                         
         return output_paths
