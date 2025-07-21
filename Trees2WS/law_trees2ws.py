@@ -34,12 +34,13 @@ def execute_command(command, return_output=False, shell=False, print_statements=
         # if print_statements:
         #     print("Script output:", result.stdout)
         #     print("Script executed successfully.")
-        # print("Executing command:", command)
+        print("Executing command:", command)
         print("Script output:", result.stdout)
         print("Script executed successfully.")
         if return_output:
             return (result.stdout).split("\n")[0]
     except subprocess.CalledProcessError as e:
+        print("Trying to execute command:", command)
         print("Error executing script:", e.stderr)
 
 def leave():
@@ -711,17 +712,17 @@ class Trees2WS(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             for replica_index in range(int(self.number_of_replicas)):
                 # Consider the replica index for input paths
                 # Important: In this case, the input paths in the config file should point to the folder containing the replicas (replica_0, replica_1, etc.)s
-                input_paths = os.path.join(input_paths, f"replica_{replica_index}", "root")
+                replica_input_paths = os.path.join(input_paths, f"replica_{replica_index}", "root")
                 era_list = [
-                (era, self.variable, input_paths)
+                (era, self.variable, replica_input_paths)
                 for era in allErasMap[f"{self.year}"]
                 ]
                 i = 1
                 for era, var, path_to_root_files in era_list:
                     if var == '':
-                        current_output_path = output_dir + "input_output" + f"replica_{replica_index}" + "/input_output_{}{}".format(self.year, era)
+                        current_output_path = output_dir + "/input_output" + f"/replica_{replica_index}" + "/input_output_{}{}".format(self.year, era)
                     else:
-                        current_output_path = output_dir + "input_output" + f"replica_{replica_index}" + "/input_output_{}_{}{}".format(var, self.year, era)
+                        current_output_path = output_dir + "/input_output" + f"/replica_{replica_index}" + "/input_output_{}_{}{}".format(var, self.year, era)
                                     
                     tasks[f"Trees2WS_Replica{replica_index}_{i}"] = Trees2WSSingleProcess(input_paths=path_to_root_files, era=era, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version=f"Replica{replica_index}_v{i}", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime'])
                     i += 1
@@ -756,16 +757,14 @@ class Trees2WS(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 if self.number_of_replicas == "":
                     current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
                 else:
-                    current_output_path = output_dir + "input_output" + f"replica_{replica_index}" + "/input_output_{}{}".format(self.year, era)
+                    current_output_path = output_dir + "/input_output" + f"/replica_{replica_index}" + "/input_output_{}{}".format(self.year, era)
             else:
                 if self.number_of_replicas == "":
                     current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
                 else:
-                    current_output_path = output_dir + "input_output" + f"replica_{replica_index}" + "/input_output_{}_{}{}".format(var, self.year, era)
+                    current_output_path = output_dir + "/input_output" + f"/replica_{replica_index}" + "/input_output_{}_{}{}".format(var, self.year, era)
                 
             outputFolders.append(law.LocalFileTarget(current_output_path + '/ws_signal'))
-
-        print(outputFolders)
 
         return outputFolders
     
@@ -823,9 +822,9 @@ class Trees2WS(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                     if self.batch_flavor == "slurm/psi":
                         if '/pnfs' in currentFile:
                             currentFile = currentFile.replace('/pnfs', 'root://t3dcachedb.psi.ch:1094//pnfs')
-                        elif '/pnfs' in dst_folder:
-                            dst_folder = dst_folder.replace('/pnfs', 'root://t3dcachedb.psi.ch:1094//pnfs')
-                        execute_command([f'xrdcp -rf {currentFile} {dst_folder}'], shell=True)
+                        if '/pnfs' in dst_folder:
+                            xrdcp_dst_folder = dst_folder.replace('/pnfs', 'root://t3dcachedb.psi.ch:1094//pnfs')
+                        execute_command([f'xrdcp -rf {currentFile} {xrdcp_dst_folder}'], shell=True)
                     else:
                         shutil.copy2(currentFile, dst_folder)
                 else:
