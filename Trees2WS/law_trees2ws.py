@@ -193,9 +193,9 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         # Production modes to skip theory weights: fill with 1's
         modesToSkipTheoryWeights = ['bbh','thq','thw']
         
-        if "2023" in self.year:
-            print("Skipping theory weights for 2023 for the moment")
-            modesToSkipTheoryWeights = ['bbh','thq','thw','ggh', 'qqh', 'tth', 'ggzh', 'wh', 'zh', 'vbf', 'vh']
+        # if "2023" in self.year:
+        #     print("Skipping theory weights for 2023 for the moment")
+        #     modesToSkipTheoryWeights = ['bbh','thq','thw','ggh', 'qqh', 'tth', 'ggzh', 'wh', 'zh', 'vbf', 'vh']
         
         if self.variable == '':
             input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year[:4]}_inclusive.yml")
@@ -644,16 +644,30 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             shutil.rmtree(temp_output_dir)  
 
 
-class Trees2WS(law.Task):
+class Trees2WS(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default='', description="Variable to be used for output folder naming")
     year = law.Parameter(default='2022', description="Year")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
     
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
-    
-    def requires(self):
-        # req() is defined on all tasks and handles the passing of all parameter values that are
-        # common between the required task and the instance (self)
+
+    def create_branch_map(self):
+        if self.number_of_replicas == "":
+            branch_map = {i: val for i, val in enumerate(range(1))}
+            return branch_map
+        else:
+            branch_map = {i: replica_index for i, replica_index in enumerate(range(int(self.number_of_replicas)))}
+
+        return branch_map
+
+    def workflow_requires(self):
+        workflow_reqs = super().workflow_requires()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
         
         # Load the input configuration
         if self.variable == '':
@@ -677,26 +691,45 @@ class Trees2WS(law.Task):
         doSystematics = convert_boolean_string(config["doSystematics"])
         mass_cut = convert_boolean_string(config["apply_mass_cut"])
         mass_cut_r = config["mass_cut_range"]
-
-        tasks = []
         
         era_list = [
         (era, self.variable, input_paths)
         for era in allErasMap[f"{self.year}"]
         ]
-            
-        i = 1
-        for era, var, path_to_root_files in era_list:
-            if var == '':
-                current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
-            else:
-                current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
-                            
-            tasks.append(Trees2WSSingleProcess(input_paths=path_to_root_files, era=era, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version=f"v{i}", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime']))
-            i += 1
+        
+        if self.number_of_replicas == "":
+            i = 1
+            for era, var, path_to_root_files in era_list:
+                if var == '':
+                    current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+                else:
+                    current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
+                                
+                tasks[f"Trees2WS_{i}"] = Trees2WSSingleProcess(input_paths=path_to_root_files, era=era, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version=f"v{i}", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime'])
+                i += 1
+        else:
+            for replica_index in range(int(self.number_of_replicas)):
+                # Consider the replica index for input paths
+                # Important: In this case, the input paths in the config file should point to the folder containing the replicas (replica_0, replica_1, etc.)s
+                input_paths = os.path.join(input_paths, f"replica_{replica_index}", "root")
+                era_list = [
+                (era, self.variable, input_paths)
+                for era in allErasMap[f"{self.year}"]
+                ]
+                i = 1
+                for era, var, path_to_root_files in era_list:
+                    if var == '':
+                        current_output_path = output_dir + "input_output" + f"replica_{replica_index}" + "/input_output_{}{}".format(self.year, era)
+                    else:
+                        current_output_path = output_dir + "input_output" + f"replica_{replica_index}" + "/input_output_{}_{}{}".format(var, self.year, era)
+                                    
+                    tasks[f"Trees2WS_Replica{replica_index}_{i}"] = Trees2WSSingleProcess(input_paths=path_to_root_files, era=era, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version=f"Replica{replica_index}_v{i}", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime'])
+                    i += 1
         return tasks
 
     def output(self):
+        if self.number_of_replicas != "":
+            replica_index = self.branch_data
         
         if self.variable == '':
             input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
@@ -711,7 +744,7 @@ class Trees2WS(law.Task):
         else:
             output_dir = self.output_dir
         
-        input_paths = config["inputFiles"]["Trees2WS"]
+        # input_paths = config["inputFiles"]["Trees2WS"]
         
         era_list_with_variable = [
             (era, self.variable)
@@ -720,15 +753,25 @@ class Trees2WS(law.Task):
         outputFolders = []
         for era, var in era_list_with_variable:
             if var == '':
-                current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+                if self.number_of_replicas == "":
+                    current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+                else:
+                    current_output_path = output_dir + "input_output" + f"replica_{replica_index}" + "/input_output_{}{}".format(self.year, era)
             else:
-                current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
+                if self.number_of_replicas == "":
+                    current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
+                else:
+                    current_output_path = output_dir + "input_output" + f"replica_{replica_index}" + "/input_output_{}_{}{}".format(var, self.year, era)
                 
             outputFolders.append(law.LocalFileTarget(current_output_path + '/ws_signal'))
+
+        print(outputFolders)
 
         return outputFolders
     
     def run(self):
+        if self.number_of_replicas != "":
+            replica_index = self.branch_data
         
         print("Trees2WS ran through. Moving output to the subdirectory ./ws_signal")
         
@@ -753,12 +796,17 @@ class Trees2WS(law.Task):
         outputFolders = []
         for era, var in era_list_with_variable:
             if var == '':
-                current_output_path = os.path.join(output_dir, "input_output_{}{}".format(self.year, era))
+                if self.number_of_replicas == "":
+                    current_output_path = os.path.join(output_dir, "input_output_{}{}".format(self.year, era))
+                else:
+                    current_output_path = os.path.join(output_dir, "input_output", f"replica_{replica_index}", "input_output_{}{}".format(self.year, era))
             else:
-                current_output_path = os.path.join(output_dir, "input_output_{}_{}{}".format(var, self.year, era))
+                if self.number_of_replicas == "":
+                    current_output_path = os.path.join(output_dir, "input_output_{}_{}{}".format(var, self.year, era))
+                else:
+                    current_output_path = os.path.join(output_dir, "input_output", f"replica_{replica_index}", "input_output_{}_{}{}".format(var, self.year, era))
             outputFolders.append(current_output_path)
 
-            
         for currentEra in outputFolders:
             # Create ws_signal folder
             dst_folder = currentEra + "/ws_signal"
