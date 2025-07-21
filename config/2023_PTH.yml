@@ -61,8 +61,7 @@ trees2wsCfg:
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
-    - "ScaleEB"
-    - "ScaleEE"
+    - "Scale"
     - "Smearing"
     - "Material"
     - "FNUF"
@@ -77,34 +76,6 @@ trees2wsCfg:
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
-signalScriptCfg_2023_preBPix:
-  # Setup
-  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
-  cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'earlyAnalysis_PTH_2023preBPix' # output directory extension
-  analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
-  year: '2023preBPix' # Use 'combined' if merging all years: not recommended
-  replacementThreshold: '25' # 50
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
-
-  # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
-  smears: 'Smearing' # separate nuisance per year
-
-  doPlots: True
-
-  beamspotWidthData: '3.2'
-  beamspotWidthMC: '3.732'
-
-
-  # Job submission options
-  execution: 'slurm'
-  batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
-
 signalScriptCfg_2023_postBPix:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
@@ -113,10 +84,10 @@ signalScriptCfg_2023_postBPix:
   analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
   year: '2023postBPix' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '25' # 50
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+  massPoints: '125' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
+  scales: 'Scale' # separate nuisance per year
   scalesCorr: 'FNUF,Material' # correlated across years
   scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
@@ -134,10 +105,10 @@ signalScriptCfg_2023_postBPix:
 
 packaged_2023:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+  massPoints: '125' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
-  execution: 'local'
+  execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use

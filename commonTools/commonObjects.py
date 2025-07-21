@@ -115,14 +115,10 @@ short_production_modes = ["ggh", "vbf", "vh", "tth"]
 eft_variables = ["chg", "chb", "chw", "chwb", "chbox", "chd", "chl3", "cll1", "ctbre", "cthre", "ctwre"]
 
 # Define an array of eras
-# JLS 22th of Jan 2025: This syntax looks pretty criminal and should be improved at some point
-TwentyTwentyTwoEras = ["preEE", "postEE"]
-TwentyTwentyThreeEras = ["preBPix", "postBPix"]
-
-
 allErasMap = {
-    '2022': TwentyTwentyTwoEras,
-    '2023': TwentyTwentyThreeEras
+    '2022': ["preEE", "postEE"],
+    # '2023': ["preBPix", "postBPix"]
+    '2023': ["postBPix"] # For the moment only postBPix (for POWHEG samples)
 }
 
 conversionTable_ = {
