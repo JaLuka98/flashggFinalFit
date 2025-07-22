@@ -98,6 +98,7 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -126,7 +127,7 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         
         yieldsConfig = config['datacard_yields']
             
-        tasks["MakeDatacard"] = MakeDatacard(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=yieldsConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=yieldsConfig['batchPartition'], slurm_memory=yieldsConfig['batchMemory'], slurm_max_runtime=yieldsConfig['batchMaxRuntime'], htcondor_partition=yieldsConfig['batchPartition'], htcondor_memory=yieldsConfig['batchMemory'], htcondor_max_runtime=yieldsConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+        tasks["MakeDatacard"] = MakeDatacard(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=yieldsConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=yieldsConfig['batchPartition'], slurm_memory=yieldsConfig['batchMemory'], slurm_max_runtime=yieldsConfig['batchMaxRuntime'], htcondor_partition=yieldsConfig['batchPartition'], htcondor_memory=yieldsConfig['batchMemory'], htcondor_max_runtime=yieldsConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -135,6 +136,11 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
             branch_map = {
                 i: bootstrap_index
                 for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+            }
+        elif self.number_of_replicas != "":
+            branch_map = {
+                i: replica_index
+                for i, replica_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             branch_map = {i: i for i in range(1)}
@@ -145,6 +151,9 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         if convert_boolean_string(self.bootstrap_flag) == True:
             bootstrap_index = self.branch_data
             background_suffix = f"_{bootstrap_index}"
+        elif self.number_of_replicas != "":
+            replica_index = self.branch_data
+            background_suffix = f""
         else:
             background_suffix = ""
         
@@ -181,24 +190,26 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         output_data = []
 
         output_data.append(os.path.join(output_dir, 'Combine'))
-
-        output_data.append(os.path.join(output_dir, 'Combine', fitFolderName))
+        
+        replica_folder = f"replica_{replica_index}" if self.number_of_replicas != "" else ""
+        
+        output_data.append(os.path.join(output_dir, 'Combine', replica_folder, fitFolderName))
 
         if signal_model_folder_name == background_model_folder_name:
             model_folder_name = signal_model_folder_name
-            output_data.append(os.path.join(output_dir, 'Combine', model_folder_name))
-            output_data.append(os.path.join(output_dir, 'Combine', model_folder_name, 'background'+background_suffix))
-            output_data.append(os.path.join(output_dir, 'Combine', model_folder_name, 'signal'))
+            output_data.append(os.path.join(output_dir, 'Combine', replica_folder, model_folder_name))
+            output_data.append(os.path.join(output_dir, 'Combine', replica_folder, model_folder_name, 'background'+background_suffix))
+            output_data.append(os.path.join(output_dir, 'Combine', replica_folder, model_folder_name, 'signal'))
         else:
-            output_data.append(os.path.join(output_dir, 'Combine', signal_model_folder_name))
-            output_data.append(os.path.join(output_dir, 'Combine', signal_model_folder_name, 'signal'))
+            output_data.append(os.path.join(output_dir, 'Combine', replica_folder, signal_model_folder_name))
+            output_data.append(os.path.join(output_dir, 'Combine', replica_folder, signal_model_folder_name, 'signal'))
 
-            output_data.append(os.path.join(output_dir, 'Combine', background_model_folder_name))
-            output_data.append(os.path.join(output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix))
+            output_data.append(os.path.join(output_dir, 'Combine', replica_folder, background_model_folder_name))
+            output_data.append(os.path.join(output_dir, 'Combine', replica_folder, background_model_folder_name, 'background'+background_suffix))
 
         for cat in cat_list:
-            output_data.append(os.path.join(output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix, f'CMS-HGG_multipdf_{cat}.root'))
-            output_data.append(os.path.join(output_dir, 'Combine', model_folder_name, 'signal', f'CMS-HGG_sigfit_packaged{outputExt}_{cat}.root'))
+            output_data.append(os.path.join(output_dir, 'Combine', replica_folder, background_model_folder_name, 'background'+background_suffix, f'CMS-HGG_multipdf_{cat}.root'))
+            output_data.append(os.path.join(output_dir, 'Combine', replica_folder, model_folder_name, 'signal', f'CMS-HGG_sigfit_packaged{outputExt}_{cat}.root'))
 
         if convert_boolean_string(self.bootstrap_flag) == True:
             output_data.append(os.path.join(output_dir, 'Combine', f'Datacards'))
@@ -208,21 +219,26 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
                 output_data.append(os.path.join(output_dir, 'Combine', 'Datacards', f'Datacard_{self.variable}_{self.year}_{bootstrap_index}.txt'))
         else:
             if self.variable == '':
-                output_data.append(os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.txt'))
+                output_data.append(os.path.join(output_dir, 'Combine', replica_folder, f'Datacard_{self.year}.txt'))
             else:
-                output_data.append(os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt'))
+                output_data.append(os.path.join(output_dir, 'Combine', replica_folder, f'Datacard_{self.variable}_{self.year}.txt'))
 
         for i, output in enumerate(output_data):
             output_data[i] = law.LocalFileTarget(output)
-
+        
         return output_data
 
     def run(self):
         if convert_boolean_string(self.bootstrap_flag) == True:
             bootstrap_index = self.branch_data
             background_suffix = f"_{bootstrap_index}"
+        elif self.number_of_replicas != "":
+            replica_index = self.branch_data
+            background_suffix = f""
         else:
             background_suffix = f""
+
+        replica_folder = f"replica_{replica_index}" if self.number_of_replicas != "" else ""
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -242,33 +258,32 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
 
         # Creating the Combine directory alongside the Models dir
         if self.batch_flavor == "slurm/psi":
-            execute_command([f"xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {os.path.join(output_dir, 'Combine', fitFolderName)}"], shell=True)
+            execute_command([f"xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {os.path.join(output_dir, 'Combine', replica_folder, fitFolderName)}"], shell=True)
         else:
-            safe_mkdir(os.path.join(output_dir, 'Combine'))
-            safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName))
+            safe_mkdir(os.path.join(output_dir, 'Combine', replica_folder, fitFolderName))
 
         signal_model_folder_name = config['datacard_yields']['sigModelWSDir'].split('/')[-2]
         background_model_folder_name = config['datacard_yields']['bkgModelWSDir'].split('/')[-2]
 
         if signal_model_folder_name == background_model_folder_name:
             model_folder_name = signal_model_folder_name
-            Model_dst_path = os.path.join(output_dir, 'Combine', model_folder_name)
-            background_dst_path = os.path.join(output_dir, 'Combine', model_folder_name, 'background'+background_suffix)
-            signal_dst_path = os.path.join(output_dir, 'Combine', model_folder_name, 'signal')
+            Model_dst_path = os.path.join(output_dir, 'Combine', replica_folder, model_folder_name)
+            background_dst_path = os.path.join(output_dir, 'Combine', replica_folder, model_folder_name, 'background'+background_suffix)
+            signal_dst_path = os.path.join(output_dir, 'Combine', replica_folder, model_folder_name, 'signal')
             if self.batch_flavor == "slurm/psi":
                 execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {Model_dst_path}'], shell=True)
             else:
                 safe_mkdir(Model_dst_path)
         else:
-            signalModel_dst_path = os.path.join(output_dir, 'Combine', signal_model_folder_name)
-            signal_dst_path = os.path.join(output_dir, 'Combine', signal_model_folder_name, 'signal')
+            signalModel_dst_path = os.path.join(output_dir, 'Combine', replica_folder, signal_model_folder_name)
+            signal_dst_path = os.path.join(output_dir, 'Combine', replica_folder, signal_model_folder_name, 'signal')
             if self.batch_flavor == "slurm/psi":
                 execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {signalModel_dst_path}'], shell=True)
             else:
                 safe_mkdir(signalModel_dst_path)
             
-            backgroundModel_dst_path = os.path.join(output_dir, 'Combine', background_model_folder_name)
-            background_dst_path = os.path.join(output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix)
+            backgroundModel_dst_path = os.path.join(output_dir, 'Combine', replica_folder, background_model_folder_name)
+            background_dst_path = os.path.join(output_dir, 'Combine', replica_folder, background_model_folder_name, 'background'+background_suffix)
             if self.batch_flavor == "slurm/psi":
                 execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {backgroundModel_dst_path}'], shell=True)
             else:
@@ -286,7 +301,10 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
             background_src_path = os.path.join(output_dir, "Background", f"outdir_{config['backgroundScriptCfg']['ext']}"+background_suffix)
         else:
             background_src_path = os.path.join(output_dir, "Background", f"outdir_{config['backgroundScriptCfg']['ext']}"+background_suffix)
-        signal_src_path = os.path.join(output_dir, f"outdir_packaged{config[f'packaged_{self.year}']['ext']}/")
+        if self.number_of_replicas != "":
+            signal_src_path = os.path.join(output_dir, "signal", replica_folder, f"outdir_packaged{config[f'packaged_{self.year}']['ext']}/")
+        else:
+            signal_src_path = os.path.join(output_dir, replica_folder, f"outdir_packaged{config[f'packaged_{self.year}']['ext']}/")
 
         if convert_boolean_string(self.bootstrap_flag) == True:
             if bootstrap_index == 0: # Copy the signal model only once (it is always the same)
@@ -333,13 +351,13 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         else:
             # Define the file paths
             if self.variable == '':
-                datacard_file_cleaned = os.path.join(output_dir, 'Datacards', f'Datacard_{self.year}_cleaned.txt')
-                datacard_file = os.path.join(output_dir, 'Datacards', f'Datacard_{self.year}.txt')
-                destination_file = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.txt')
+                datacard_file_cleaned = os.path.join(output_dir, 'Datacards', replica_folder, f'Datacard_{self.year}_cleaned.txt')
+                datacard_file = os.path.join(output_dir, 'Datacards', replica_folder, f'Datacard_{self.year}.txt')
+                destination_file = os.path.join(output_dir, 'Combine', replica_folder, f'Datacard_{self.year}.txt')
             else:
-                datacard_file_cleaned = os.path.join(output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}_cleaned.txt')
-                datacard_file = os.path.join(output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}.txt')
-                destination_file = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt')
+                datacard_file_cleaned = os.path.join(output_dir, 'Datacards', replica_folder, f'Datacard_{self.variable}_{self.year}_cleaned.txt')
+                datacard_file = os.path.join(output_dir, 'Datacards', replica_folder, f'Datacard_{self.variable}_{self.year}.txt')
+                destination_file = os.path.join(output_dir, 'Combine', replica_folder, f'Datacard_{self.variable}_{self.year}.txt')
 
         # Check if the cleaned file exists
         if os.path.exists(datacard_file_cleaned):
@@ -366,6 +384,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -394,7 +413,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             
         fitConfig = config['combine_fit']
 
-        tasks["PrepareTheDirectory"] = PrepareTheDirectory(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+        tasks["PrepareTheDirectory"] = PrepareTheDirectory(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -404,6 +423,11 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 i: bootstrap_index
                 for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
             }
+        elif self.number_of_replicas != "":
+            branch_map = {
+                i: replica_index
+                for i, replica_index in enumerate(range(int(self.number_of_replicas)))
+            }
         else:
             branch_map = {i: i for i in range(1)}
         return branch_map
@@ -412,6 +436,8 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
 
         if convert_boolean_string(self.bootstrap_flag) == True:
             bootstrap_index = self.branch_data
+        elif self.number_of_replicas != "":
+            replica_index = self.branch_data
 
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -426,6 +452,8 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
+
+        replica_folder = f"replica_{replica_index}" if self.number_of_replicas != "" else ""
 
         if convert_boolean_string(self.bootstrap_flag) == True:
             # Define the file paths
@@ -445,19 +473,17 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
         else:
             # Define the file paths
             if self.variable == '':
-                output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')]
+                output = [os.path.join(output_dir, 'Combine', replica_folder, f'Datacard_{self.year}.root')]
             else:
                 if self.eft_variable == '':
-                    output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
+                    output = [os.path.join(output_dir, 'Combine', replica_folder, f'Datacard_{self.variable}_{self.year}.root')]
                 else:
-                    output = [os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')]
+                    output = [os.path.join(output_dir, 'Combine', replica_folder, f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')]
 
         outputFileTargets = []
 
         for _, current_output_path in enumerate(output):
             outputFileTargets.append(law.LocalFileTarget(current_output_path))
-        
-        # print(outputFileTargets)
 
         return outputFileTargets
 
@@ -466,6 +492,9 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
         if convert_boolean_string(self.bootstrap_flag) == True:
             bootstrap_index = self.branch_data
             bootstrap_suffix = f"_{bootstrap_index}"
+        elif self.number_of_replicas != "":
+            replica_index = self.branch_data
+            bootstrap_suffix = ""
         else:
             bootstrap_suffix = ""
 
@@ -492,6 +521,8 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             output_dir = self.output_dir
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"],"Combine/RunText2Workspace.py")
+
+        replica_folder = f"replica_{replica_index}" if self.number_of_replicas != "" else ""
 
         if convert_boolean_string(self.bootstrap_flag) == True:
             if self.eft_variable != '':
@@ -613,21 +644,21 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             # Copying datacard...
             slurm_copy_command = [
                 'xrdcp', '-rf',
-                'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{datacard_name}.txt',
+                'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{replica_folder}/{datacard_name}.txt',
                 f'{temp_output_dir}/Combine'
             ]
             execute_command(slurm_copy_command)
             # Copying Signal Model...
             slurm_copy_command = [
                 'xrdcp', '-rf',
-                'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"]}',
+                'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{replica_folder}/{config["datacard_yields"]["sigModelWSDir"]}',
                 f'{temp_output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
             ]
             execute_command(slurm_copy_command)
             # Copying Background Model...
             slurm_copy_command = [
                 'xrdcp', '-rf',
-                'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"]}',
+                'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{replica_folder}/{config["datacard_yields"]["bkgModelWSDir"]}',
                 f'{temp_output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
             ]
             execute_command(slurm_copy_command)
@@ -670,15 +701,15 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                     execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {output_dir}/Combine/"], shell=True)
                 else:
                     execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
-                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
             else:
                 # Copy workspaces to workspaces folder
                 list_command = ["ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
                 file_list = subprocess.check_output(list_command).decode().splitlines()
 
                 print(file_list)
-                execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/'], shell=True)
-                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/"], shell=True)
+                execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/{replica_folder}/'], shell=True)
+                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/{replica_folder}/"], shell=True)
             # time.sleep(19999)
             shutil.rmtree(temp_output_dir)
         
@@ -7111,7 +7142,9 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
     year = law.Parameter(default='2022', description="Year")
     eft_variable = law.Parameter(default="", description="EFT Variable to be used")
 
-    number_of_toys = law.Parameter(default=1000, description="Number of toys")
+    number_of_replicas = law.Parameter(default="", description="Number of replicas to run. If empty, will run the standard workflow.")
+
+    number_of_toys = law.Parameter(default=1, description="Number of toys")
     starting_value = law.Parameter(default=0, description="Starting toy computation from this index. This can be useful for preventing overloading schedds.")
     seed = law.Parameter(default=123456, description="Seed for the toy generation")
     
@@ -7141,19 +7174,30 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         
         fitConfig = config["combine_fit"]
         
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], eft_variable=self.eft_variable, bootstrap_flag=False, number_of_bootstraps=1000)
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], eft_variable=self.eft_variable, bootstrap_flag=False, number_of_bootstraps=1000, number_of_replicas=self.number_of_replicas)
         
         return tasks
     
     def create_branch_map(self):
-        branch_map = {
-            j: toy_index
-            for j, toy_index in enumerate(range(int(self.starting_value), (int(self.starting_value) + int(self.number_of_toys))))
-        }
+        if self.number_of_replicas != "":
+            # If number_of_replicas is set, we need to create a branch for each replica
+            branch_map = {
+                i * int(self.number_of_replicas) + j: (toy_index, replica_index)
+                for i, toy_index in enumerate(range(int(self.starting_value), (int(self.starting_value) + int(self.number_of_toys))))
+                for j, replica_index in enumerate(range(int(self.number_of_replicas)))
+            }
+        else:
+            branch_map = {
+                j: toy_index
+                for j, toy_index in enumerate(range(int(self.starting_value), (int(self.starting_value) + int(self.number_of_toys))))
+            }
         return branch_map
 
     def output(self):
-        toy_index = self.branch_data
+        if self.number_of_replicas != "":
+            toy_index, replica_index = self.branch_data
+        else:
+            toy_index = self.branch_data
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -7176,6 +7220,8 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 fitFolderName = f'runFits_{self.variable}'
             else:
                 fitFolderName = f'runFits_{self.eft_variable}'
+
+        replica_folder = f"replica_{replica_index}" if self.number_of_replicas != "" else ""
         
         output = []
         
@@ -7183,11 +7229,11 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         
         if self.variable != '':
             if self.eft_variable == '':
-                output += [os.path.join(output_dir, 'Combine', fitFolderName, 'toyFit', f'toy_{toy_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root')]
-                output += [os.path.join(output_dir, 'Combine', fitFolderName, 'toyFit', f'toy_{toy_index}', f'multidimfitfirstStep.root')]
+                output += [os.path.join(output_dir, 'Combine', replica_folder, fitFolderName, 'toyFit', f'toy_{toy_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root')]
+                output += [os.path.join(output_dir, 'Combine', replica_folder, fitFolderName, 'toyFit', f'toy_{toy_index}', f'multidimfitfirstStep.root')]
             else:
-                output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit_{self.eft_variable}', f'toy_{toy_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root')]
-                output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit_{self.eft_variable}', f'toy_{toy_index}', f'multidimfitfirstStep.root')]
+                output += [os.path.join(output_dir, 'Combine', replica_folder, fitFolderName, f'toyFit_{self.eft_variable}', f'toy_{toy_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root')]
+                output += [os.path.join(output_dir, 'Combine', replica_folder, fitFolderName, f'toyFit_{self.eft_variable}', f'toy_{toy_index}', f'multidimfitfirstStep.root')]
         
         outputFileTargets = []
                 
@@ -7199,7 +7245,10 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         return outputFileTargets
 
     def run(self):
-        toy_index = self.branch_data
+        if self.number_of_replicas != "":
+            toy_index, replica_index = self.branch_data
+        else:
+            toy_index = self.branch_data
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -7220,35 +7269,37 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
+
+        replica_folder = f"replica_{replica_index}" if self.number_of_replicas != "" else ""
         
         cwd = os.getcwd()
         
         if self.eft_variable == '':
             if self.variable == '':
-                ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+                ws_path = os.path.join(output_dir, 'Combine', replica_folder, f'Datacard_{self.year}.root')
             else:
-                ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+                ws_path = os.path.join(output_dir, 'Combine', replica_folder, f'Datacard_{self.variable}_{self.year}.root')
         else:
             if self.variable == '':
                 print("EFT variable is set, but no variable to fit over is specified. This is NOT what you want to do.")
                 exit(1)
             else:
-                ws_path = os.path.join(output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')
+                ws_path = os.path.join(output_dir, 'Combine', replica_folder, f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')
                     
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
             toyFit_eftVariable = f"toyFit_{self.eft_variable}" if self.eft_variable != '' else 'toyFit'
             if "/work" in output_dir:
-                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
+                execute_command([f'mkdir -p {output_dir}/Combine/{replica_folder}/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{replica_folder}/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
             os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, f'{toyFit_eftVariable}', f'toy_{toy_index}'))
         else:
-            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
-            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, f'{toyFit_eftVariable}', f'toy_{toy_index}'))
+            execute_command([f'mkdir -p {output_dir}/Combine/{replica_folder}/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', replica_folder, fitFolderName, f'{toyFit_eftVariable}', f'toy_{toy_index}'))
 
         seed = int(self.seed) + int(toy_index)
         
@@ -7306,18 +7357,19 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if "/work" in output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
-                    f"{os.environ['TARGET_PATH']}/Combine/",
-                    output_dir
+                    f"{os.environ['TARGET_PATH']}/Combine/{fitFolderName}" if self.number_of_replicas != "" else f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir+f"/Combine/{replica_folder}/" if self.number_of_replicas != "" else ""
                 ]
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    f"{os.environ['TARGET_PATH']}/Combine/{fitFolderName}" if self.number_of_replicas != "" else f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb.psi.ch:1094//'+output_dir+f"/Combine/{replica_folder}/" if self.number_of_replicas != "" else ""
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
             # Clean up the temporary directory
+            # time.sleep(1999)
             shutil.rmtree(os.environ["TARGET_PATH"])
 
         os.chdir(cwd)
