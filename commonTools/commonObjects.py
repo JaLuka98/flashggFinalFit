@@ -33,6 +33,7 @@ lumiMap = {
     '2023postBPix': 9.5,
     '2223postBPix': 9.5,
     '2023': 27.3,
+    '2223': 61.9,
     'Run3': 61.9 # Up to 2023, this does NOT include 2024.
 }
 
