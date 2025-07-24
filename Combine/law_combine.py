@@ -390,7 +390,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
             mode = self.variable
             datacard_name = f"Datacard_{self.variable}_{self.year}"
-            workspace_name = datacard_name
+        workspace_name = datacard_name
 
         #Load central config file
         with open(configYamlPath, 'r') as file:
@@ -5448,7 +5448,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
 
         if self.variable == '':
             fitFolderName = f'runFits_mu_fiducial'
-            reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
+            reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
         else:
             fitFolderName = f'runFits_{self.variable}'
             reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
@@ -5542,7 +5542,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             
             if self.variable == '':
                 # firstStep_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
-                reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
+                reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
             else:
                 # firstStep_path = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
                 reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
@@ -5554,7 +5554,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 "--loadSnapshot", f"{config['combine_mggToys']['loadSnapshot']}",
                 "--cats", f"{','.join(reco_cats_with_bmw)}",
                 "--doZeroes",
-                "--unblind",
+                #"--unblind",
                 "--translateCats", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'cats.json')}",
                 "--doSumCategories",
                 "--doCatWeights",
@@ -5636,7 +5636,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
                 
             if self.variable == '':
-                reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
+                reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
             else:
                 reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
                 
