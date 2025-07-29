@@ -259,9 +259,7 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
             # Clean up the temporary directory
             shutil.rmtree(os.environ["TARGET_PATH"])
 
-        os.chdir(cwd)
-
-# combine -M GenerateOnly -d /t3home/niharrin/devel/pnfs/ntuples/midRun3/samples/2025_07_17_powheg/finalfits/PTH/Combine/Datacard_PTH_2023.root -t 1 --setParameters r_PTH_0p0_15p0=0,r_PTH_15p0_30p0=0,r_PTH_30p0_45p0=0,r_PTH_45p0_80p0=0,r_PTH_80p0_120p0=0,r_PTH_120p0_200p0=0,r_PTH_200p0_350p0=0,r_PTH_350p0_10000p0=0 --saveToys --freezeParameters MH -m 125.38   
+        os.chdir(cwd) 
 
 class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     # Don't be afraid. It's just a toy.
@@ -413,23 +411,6 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
         # Create the replica dataset
         
-        # if self.parquet_dir == "":
-            # for proc_folder in proc_folders:
-            #     print(f"Processing parquet files from {proc_folder}")
-            #     # Load the parquet files for the current process
-            #     proc_parquet_files = glob.glob(os.path.join(proc_folder, "nominal", "*.parquet"))
-                
-            #     if len(proc_parquet_files) == 0:
-            #         print(f"No parquet files found in {proc_folder}. Skipping...")
-            #         continue
-                
-            #     proc_replica = get_replica(proc_parquet_files, cat_dict)
-        
-        # else:
-        #     print(f"Processing parquet files from {main_parquet_dir}")
-        #     parquet_files = glob.glob(os.path.join(self.parquet_dir, "*.parquet"))
-        #     proc_replica = get_replica(parquet_files, cat_dict)
-        
         replica_separated_procs = []
         
         # Get the replica for each process / category
@@ -511,3 +492,215 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         
         os.chdir(cwd)
 
+class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    variable = law.Parameter(default="", description="Variable to be used")
+    year = law.Parameter(default='2022', description="Year")
+
+    number_of_replicas = law.Parameter(default=1000, description="Number of replicas to run.")
+    starting_value = law.Parameter(default=0, description="Starting toy computation from this index. This can be useful for preventing overloading schedds.")
+    seed = law.Parameter(default=123456, description="Seed for the toy generation")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    
+    def workflow_requires(self):
+        workflow_reqs = super().workflow_requires()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
+        
+        if self.variable == '':
+            print("Running S+B toys for inclusive variable not implemented. Exiting...")
+            exit(1)
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+        
+        SplusB_config = config["combine_SplusB_toys"]
+        
+        tasks["GenerateSplusBToys"] = GenerateSplusBToys(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable, workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
+        
+        return tasks
+    
+    def create_branch_map(self):
+        branch_map = {
+            j: replica_index
+            for j, replica_index in enumerate(range(int(self.starting_value), (int(self.starting_value) + int(self.number_of_replicas))))
+        }
+        return branch_map
+
+    def output(self):
+        replica_index = self.branch_data
+        
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        if self.variable == '':
+            print("Running S+B toys for inclusive variable not implemented. Exiting...")
+            exit(1)
+        else:
+            fitFolderName = f'runFits_{self.variable}'
+        
+        output = []
+        
+        seed = int(self.seed) + int(replica_index)
+        
+        if self.variable != '':
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'multidimfitfirstStep.root')]
+        
+        outputFileTargets = []
+                
+        for _, current_output_path in enumerate(output):
+            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+            
+        return outputFileTargets
+
+    def run(self):
+        replica_index = self.branch_data
+        
+        if self.variable == '':
+            print("Running S+B toys for inclusive variable not implemented. Exiting...")
+            exit(1)
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+            fitFolderName = f'runFits_{self.variable}'
+                    
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+        
+        cwd = os.getcwd()
+
+        if self.variable == '':
+            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+        else:
+            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+                    
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/toyFit/toy_{replica_index}'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/toyFit/toy_{replica_index}'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/toyFit/toy_{replica_index}'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/toyFit/toy_{replica_index}'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}'))
+
+        seed = int(self.seed) + int(replica_index)
+                
+        # pdfIndicesStr = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])
+        
+        splusb_toy = os.path.join(output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
+
+        if self.variable != '':
+            # arguments = [
+            #     "combine",
+            #     "-M", "MultiDimFit",
+            #     ws_path,
+            #     "-m", "125.38",
+            #     "-n", f"firstStep",
+            #     "--cminDefaultMinimizerStrategy=0",
+            #     "--saveWorkspace",
+            #     "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
+            #     "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+            #     "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+            #     "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+            #     "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+            #     # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
+            #     "-t", "1",
+            #     "-s", f"{seed}",
+            #     "--saveFitResult",
+            #     "--saveSpecifiedIndex", f"""{pdfIndicesStr}""",
+            #     # "--freezeParameters", f"""MH,{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""", # According to Mauro: Try without profiling
+            #     "--freezeParameters", f"""MH""",
+            #     "--floatOtherPOIs", "1",
+            #     # "--toysNoSystematics", # According to Mauro: Try without profiling
+            #     "--saveToys",
+            # ]
+            arguments = [
+                "combine",
+                "-M", "MultiDimFit",
+                ws_path,
+                "-m", "125.38",
+                "-n", f"firstStep",
+                "--cminDefaultMinimizerStrategy=0",
+                "--saveWorkspace",
+                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
+                "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+                "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+                "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+                "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
+                "--algo", "singles",
+                "--saveFitResult",
+                "--freezeParameters", f"""MH""",
+                "-D", f"{splusb_toy}:toys/toy_1",
+            ]
+            # if self.eft_variable == '':
+            #     arguments.append("--setParameters")
+            #     arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""")
+            # else:
+            #     arguments.append("--setParameters")
+            #     arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""")
+            command = arguments
+            print(command)
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print("Error executing script:", e.stderr)
+
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
+
+        os.chdir(cwd)
