@@ -650,10 +650,8 @@ def pois_untrimmed(toyDir_, poi_list_):
         if i%100==0:
             print(f"Processing fit_{i}")
 
-        seed = 123456 + i
-
         try:
-            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root")
+            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             continue
@@ -691,10 +689,8 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
         if i%100==0:
             print(f"Processing fit_{i}")
 
-        seed = 123456 + i
-
         try:
-            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root")
+            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             continue
@@ -748,16 +744,16 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
 def create_json_untrimmed(variable_, toyDir_, poi_list_):
     # Loop through all fit directories (fit_0, fit_1, etc.)
     if not os.path.exists(f'pois_untrimmed_{variable_}.json'):
-        pois_untrimmed = pois_untrimmed(toyDir_, poi_list_)
+        pois = pois_untrimmed(toyDir_, poi_list_)
         # Save the POIs to a JSON file
         with open(f'pois_untrimmed_{variable_}.json', 'w') as f:
-            json.dump(pois_untrimmed, f)
+            json.dump(pois, f)
     else:
         # Load the POIs from the JSON file
         with open(f'pois_untrimmed_{variable_}.json', 'r') as f:
-            pois_untrimmed = json.load(f)
+            pois = json.load(f)
 
-    return pois_untrimmed
+    return pois
 
 def create_json_trimmed(variable_, toyDir_, pois_untrimmed_, poi_list_, subfolder_):
 
@@ -839,6 +835,7 @@ def plot_individual_correlation(pois_, poi_list_, variable_):
 #     print(f"minimum: {min(data[current_poi])}")
 #     print(f"maximum: {max(data[current_poi])}")
 
+sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/finalfits'
 sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
 
 variables = ["PTH"]
