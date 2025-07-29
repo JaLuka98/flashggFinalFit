@@ -81,10 +81,8 @@ for i in range(channel.numTypes()):
 # # Save the canvas to a PNG file
 # c_vorher.SaveAs(f"./validation/myData_vorher.png")
 
-
 # # Make sure base folder exists
 # os.makedirs(output_dir, exist_ok=True)
-
 
 # Load all Parquet files from the specified directory
 parquet_files = glob.glob(os.path.join(parquet_dir, "*.parquet"))

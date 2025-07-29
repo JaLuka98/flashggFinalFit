@@ -112,16 +112,16 @@ production_modes = [
     ("tth", "ttHto2G"),
 ]
 
-# Getting production XS from GenXsecAnalyzer
+# Getting production XS from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWG136TeVxsec_extrap, for 125.38 @ 13.6 TeV
 production_XS = {
-    "GluGluHtoGG": 39.1,
-    "GluGluHto2G": 39.1,
-    "VBFHtoGG": 4.36,
-    "VBFHto2G": 4.36,
-    "VHtoGG": 2.62,
-    "VHto2G": 2.62,
-    "ttHtoGG": 0.58,
-    "ttHto2G": 0.58,
+    "GluGluHtoGG": 51.96,
+    "GluGluHto2G": 51.96,
+    "VBFHtoGG": 4.067,
+    "VBFHto2G": 4.067,
+    "VHtoGG": 2.3781,
+    "VHto2G": 2.3781,
+    "ttHtoGG": 0.5638,
+    "ttHto2G": 0.5638,
     "bbHtoGG": 0.49,
     "bbHto2G": 0.49,
 }

@@ -48,9 +48,11 @@ def create_folder(folder):
     else:
         os.makedirs(folder, exist_ok=True)
 
-def get_replica(parquet_files, cat_dict):
+def get_replica(parquet_files):
     
     process_name = parquet_files[0].split("/")[-3].split("_")[0]
+    
+    era = parquet_files[0].split("/")[-3].split("_")[-1]
     
     sum_weight_central = 0.0
     sum_genw_beforesel = 0
@@ -61,39 +63,37 @@ def get_replica(parquet_files, cat_dict):
     
     # print(sum_weight_central, sum_genw_beforesel)
     
-    columns_to_load = ["mass", "weight", "genWeight"]
+    columns_to_load = ["mass", "weight", "genWeight", "pt", "PTJ0", "NJ", "lead_mvaID", "sublead_mvaID", "sigma_m_over_m_corr_smeared_decorr"]
     
-    replica_cats = {}
+    df = pd.concat((pd.read_parquet(f, columns=columns_to_load) for f in parquet_files), ignore_index=True)
+
+    negative_weights = df[df["weight"] < 0.0].to_numpy()
+    if len(negative_weights) > 0:
+        # Why the HELL are they there?
+        print(f"Warning: Negative weights found in the dataset: {len(negative_weights)}")
     
-    for cat in cat_dict:
-        df = pd.concat((pd.read_parquet(f, filters=cat_dict[cat]["cat_filter"], columns=columns_to_load) for f in parquet_files), ignore_index=True)
+    df = df[df["weight"] >= 0.0]
 
-        negative_weights = df[df["weight"] < 0.0].to_numpy()
-        if len(negative_weights) > 0:
-            # Why the HELL are they there?
-            print(f"Warning: Negative weights found in the dataset: {len(negative_weights)}")
+    # df["weight_norm"] = df["weight"] / sum_weight_central
+    df["weight_norm"] = df["weight"] / sum_genw_beforesel# (sum_genw_beforesel * sum_weight_central)
+    ## Probability should be normalised to one
+    df["prob"] = df["weight_norm"] / sum(df["weight_norm"])
+
+    ## Compute the expected number of events
+    ## This is scaled to the full Run3 lumi and the individual production XS (=ggH or VBF or VH or ttH or bbH); Taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt13TeV
+    exp = sum(df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * lumiMap[era] # 55.65
+
+    ## Extract from a Poisson distribution the number of events for each replica
+    exp_replicas = poisson.rvs(mu=exp, size=(1))
+
+    ## Indeces corresponding to the events to pick up in each replica
+    ## NB! replace MUST be True, otherwise the sampling is not independent anymore and it is no longer a Poisson process
+    idx_replicas = [np.random.choice(np.array(df.index), replace=True, size=(exp_replicas[0]), p=df["prob"])]
+
+    ## Extract the events for each replica
+    replica = df.loc[idx_replicas[0]]
         
-        df = df[df["weight"] >= 0.0]
-
-        df["weight_norm"] = df["weight"] / sum_weight_central
-        ## Probability should be normalised to one
-        df["prob"] = df["weight_norm"] / sum(df["weight_norm"])
-        
-        ## Compute the expected number of events
-        ## This is scaled to the full Run3 lumi and the individual production XS (=ggH or VBF or VH or ttH or bbH); Taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt13TeV
-        exp = sum(df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * 27.3 # 55.65
-
-        ## Extract from a Poisson distribution the number of events for each replica
-        exp_replicas = poisson.rvs(mu=exp, size=(1))
-
-        ## Indeces corresponding to the events to pick up in each replica
-        ## NB! replace MUST be True, otherwise the sampling is not independent anymore and it is no longer a Poisson process
-        idx_replicas = [np.random.choice(np.array(df.index), replace=True, size=(exp_replicas[0]), p=df["prob"])]
-
-        ## Extract the events for each replica
-        replica_cats[cat] = df.loc[idx_replicas[0]]
-        
-    return replica_cats
+    return replica
 
 class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     variable = law.Parameter(default="", description="Variable to be used")
@@ -423,21 +423,24 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
                 print(f"No parquet files found in {proc_folder}. Skipping...")
                 continue
             
-            replica_separated_procs.append(get_replica(proc_parquet_files, cat_dict))
+            replica_separated_procs.append(get_replica(proc_parquet_files))
         
         # Now merge the procs per category
         for cat in cat_dict:
+            query_str = " and ".join(
+                f"{col} {op} {val}" for col, op, val in cat_dict[cat]["cat_filter"]
+            )
             # Merge the replicas for the current category
-            merged_replica = pd.concat([replica_separated_procs[i][cat] for i in range(len(replica_separated_procs))], ignore_index=True)
-                
+            merged_replica = pd.concat([replica_separated_procs[i].query(query_str) for i in range(len(replica_separated_procs))], ignore_index=True)
+                                        
             additional_mass_values = merged_replica["mass"].to_list()
-            additional_probability_values = merged_replica["prob"].to_list()
+            # additional_probability_values = merged_replica["prob"].to_list()
 
             for i, val in enumerate(additional_mass_values):
                 channel.setIndex(CMS_channel_dict[cat])
                 mass.setVal(val)
-                bonly_toy.add(argset, additional_probability_values[i])
-
+                # bonly_toy.add(argset, additional_probability_values[i])
+                bonly_toy.add(argset, 1.)
 
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
@@ -561,20 +564,18 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             exit(1)
         else:
             fitFolderName = f'runFits_{self.variable}'
-        
+
         output = []
-        
-        seed = int(self.seed) + int(replica_index)
-        
+
         if self.variable != '':
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.{seed}.root')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.root')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'multidimfitfirstStep.root')]
-        
+
         outputFileTargets = []
-                
+
         for _, current_output_path in enumerate(output):
             outputFileTargets.append(law.LocalFileTarget(current_output_path))
-            
+
         return outputFileTargets
 
     def run(self):
@@ -624,30 +625,6 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         splusb_toy = os.path.join(output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
 
         if self.variable != '':
-            # arguments = [
-            #     "combine",
-            #     "-M", "MultiDimFit",
-            #     ws_path,
-            #     "-m", "125.38",
-            #     "-n", f"firstStep",
-            #     "--cminDefaultMinimizerStrategy=0",
-            #     "--saveWorkspace",
-            #     "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
-            #     "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
-            #     "--X-rtd", "MINIMIZER_multiMin_hideConstants",
-            #     "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
-            #     "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-            #     # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
-            #     "-t", "1",
-            #     "-s", f"{seed}",
-            #     "--saveFitResult",
-            #     "--saveSpecifiedIndex", f"""{pdfIndicesStr}""",
-            #     # "--freezeParameters", f"""MH,{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""", # According to Mauro: Try without profiling
-            #     "--freezeParameters", f"""MH""",
-            #     "--floatOtherPOIs", "1",
-            #     # "--toysNoSystematics", # According to Mauro: Try without profiling
-            #     "--saveToys",
-            # ]
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
@@ -661,18 +638,11 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
                 "--algo", "singles",
                 "--saveFitResult",
                 "--freezeParameters", f"""MH""",
                 "-D", f"{splusb_toy}:toys/toy_1",
             ]
-            # if self.eft_variable == '':
-            #     arguments.append("--setParameters")
-            #     arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""")
-            # else:
-            #     arguments.append("--setParameters")
-            #     arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""")
             command = arguments
             print(command)
             try:
