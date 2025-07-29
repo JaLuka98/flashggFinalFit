@@ -208,11 +208,11 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             # Have to use /scratch/batch_username/ for slurm/psi
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             temp_output_dir = os.environ["TARGET_PATH"]
-            execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Background'], shell=True)
+            execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Background'], shell=True)
             if convert_boolean_string(self.bootstrap_flag) == True:
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Background/outdir_{config["ext"]}_{bootstrap_index}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Background/outdir_{config["ext"]}_{bootstrap_index}'], shell=True)
             else:
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Background/outdir_{config["ext"]}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Background/outdir_{config["ext"]}'], shell=True)
             safe_mkdir(temp_output_dir)
         else:
             safe_mkdir(output_dir)
@@ -270,7 +270,7 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f'{temp_output_dir}/{bkg_folder}',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Background/'
+                    'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Background/'
                 ]
             execute_command(slurm_copy_command)
             # Cleaning up scratch space.

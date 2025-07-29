@@ -46,7 +46,7 @@ def execute_command(command, return_output=False, shell=False):
         
 def manually_copy_t3(src, dst):
     # List files in the directory
-    list_command = ["xrdfs", "root://t3dcachedb.psi.ch", "ls", src]
+    list_command = ["xrdfs", "root://t3dcachedb03.psi.ch", "ls", src]
     file_list = subprocess.check_output(list_command).decode().splitlines()
     
     print(file_list)
@@ -56,8 +56,8 @@ def manually_copy_t3(src, dst):
         filename = file_path.split("/")[-1]
         if "bkgfTest-Data" in filename: continue
         if "/pnfs" in file_path: 
-            src_file = f"root://t3dcachedb.psi.ch:1094/{file_path}"
-            dest_file = f"root://t3dcachedb.psi.ch:1094/{dst}/{filename}"
+            src_file = f"root://t3dcachedb03.psi.ch:1094/{file_path}"
+            dest_file = f"root://t3dcachedb03.psi.ch:1094/{dst}/{filename}"
             
             print(f"Copying {filename}...")
             print(f"xrdcp -rf {src_file} {dest_file}")
@@ -69,7 +69,7 @@ def manually_copy_t3(src, dst):
 
 def manually_move_t3(src, dst):
     # List files in the directory
-    list_command = ["xrdfs", "root://t3dcachedb.psi.ch", "ls", src]
+    list_command = ["xrdfs", "root://t3dcachedb03.psi.ch", "ls", src]
     file_list = subprocess.check_output(list_command).decode().splitlines()
     
     print(file_list)
@@ -79,13 +79,13 @@ def manually_move_t3(src, dst):
         filename = file_path.split("/")[-1]
         if "bkgfTest-Data" in filename: continue
         if "/pnfs" in file_path: 
-            src_file = f"root://t3dcachedb.psi.ch:1094/{file_path}"
-            dest_file = f"root://t3dcachedb.psi.ch:1094/{dst}/{filename}"
+            src_file = f"root://t3dcachedb03.psi.ch:1094/{file_path}"
+            dest_file = f"root://t3dcachedb03.psi.ch:1094/{dst}/{filename}"
             
             print(f"Moving {filename} on or off the PSI SE...")
             
-            print(f"xrdfs root://t3dcachedb.psi.ch:1094/ mv -f {src_file} {dest_file}")
-            execute_command([f"xrdfs root://t3dcachedb.psi.ch:1094/ mv -f {src_file} {dest_file}"], shell=True)
+            print(f"xrdfs root://t3dcachedb03.psi.ch:1094/ mv -f {src_file} {dest_file}")
+            execute_command([f"xrdfs root://t3dcachedb03.psi.ch:1094/ mv -f {src_file} {dest_file}"], shell=True)
         else:
             print(f"Moving {filename}...")
             print(f"mv -f {file_path} {dst}/{filename}")
@@ -242,7 +242,7 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
 
         # Creating the Combine directory alongside the Models dir
         if self.batch_flavor == "slurm/psi":
-            execute_command([f"xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {os.path.join(output_dir, 'Combine', fitFolderName)}"], shell=True)
+            execute_command([f"xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {os.path.join(output_dir, 'Combine', fitFolderName)}"], shell=True)
         else:
             safe_mkdir(os.path.join(output_dir, 'Combine'))
             safe_mkdir(os.path.join(output_dir, 'Combine', fitFolderName))
@@ -256,27 +256,27 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
             background_dst_path = os.path.join(output_dir, 'Combine', model_folder_name, 'background'+background_suffix)
             signal_dst_path = os.path.join(output_dir, 'Combine', model_folder_name, 'signal')
             if self.batch_flavor == "slurm/psi":
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {Model_dst_path}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {Model_dst_path}'], shell=True)
             else:
                 safe_mkdir(Model_dst_path)
         else:
             signalModel_dst_path = os.path.join(output_dir, 'Combine', signal_model_folder_name)
             signal_dst_path = os.path.join(output_dir, 'Combine', signal_model_folder_name, 'signal')
             if self.batch_flavor == "slurm/psi":
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {signalModel_dst_path}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {signalModel_dst_path}'], shell=True)
             else:
                 safe_mkdir(signalModel_dst_path)
             
             backgroundModel_dst_path = os.path.join(output_dir, 'Combine', background_model_folder_name)
             background_dst_path = os.path.join(output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix)
             if self.batch_flavor == "slurm/psi":
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {backgroundModel_dst_path}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {backgroundModel_dst_path}'], shell=True)
             else:
                 safe_mkdir(backgroundModel_dst_path)
 
         if self.batch_flavor == "slurm/psi":
-            execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {signal_dst_path}'], shell=True)
-            execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {background_dst_path}'], shell=True)
+            execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {signal_dst_path}'], shell=True)
+            execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {background_dst_path}'], shell=True)
         else:
             safe_mkdir(signal_dst_path)
             safe_mkdir(background_dst_path)
@@ -319,7 +319,7 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         if convert_boolean_string(self.bootstrap_flag) == True:
             # Define the file paths
             if self.batch_flavor == "slurm/psi":
-                execute_command([f"xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {os.path.join(output_dir, 'Combine', 'Datacards')}"], shell=True)
+                execute_command([f"xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {os.path.join(output_dir, 'Combine', 'Datacards')}"], shell=True)
             else:
                 safe_mkdir(os.path.join(output_dir, 'Combine', 'Datacards'))
             if self.variable == '':
@@ -345,13 +345,13 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         if os.path.exists(datacard_file_cleaned):
             # Copy the cleaned file if it exists
             if self.batch_flavor == "slurm/psi":
-                execute_command([f'xrdcp -rf root://t3dcachedb.psi.ch:1094/{datacard_file_cleaned} root://t3dcachedb.psi.ch:1094/{destination_file}'], shell=True)
+                execute_command([f'xrdcp -rf root://t3dcachedb03.psi.ch:1094/{datacard_file_cleaned} root://t3dcachedb03.psi.ch:1094/{destination_file}'], shell=True)
             else:
                 shutil.copy2(datacard_file_cleaned, destination_file)
         else:
             # Otherwise, copy the uncleaned file
             if self.batch_flavor == "slurm/psi":
-                execute_command([f'xrdcp -rf root://t3dcachedb.psi.ch:1094/{datacard_file} root://t3dcachedb.psi.ch:1094/{destination_file}'], shell=True)
+                execute_command([f'xrdcp -rf root://t3dcachedb03.psi.ch:1094/{datacard_file} root://t3dcachedb03.psi.ch:1094/{destination_file}'], shell=True)
             else:
                 shutil.copy2(datacard_file, destination_file)
             
@@ -513,7 +513,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 # Copying datacard...
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{datacard_name}.txt',
+                    'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{datacard_name}.txt',
                     f'{temp_output_dir}/Combine/Datacards/'
                 ]
                 execute_command(slurm_copy_command)
@@ -527,7 +527,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 else:
                     slurm_copy_command = [
                         'xrdcp', '-rf',
-                        'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["sigModelWSDir"]}',
+                        'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["sigModelWSDir"]}',
                         f'{temp_output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
                     ]
                 execute_command(slurm_copy_command)
@@ -541,7 +541,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 else:
                     slurm_copy_command = [
                         'xrdcp', '-rf',
-                        'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["bkgModelWSDir"]}' + bootstrap_suffix,
+                        'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/Datacards/{config["datacard_yields"]["bkgModelWSDir"]}' + bootstrap_suffix,
                         f'{temp_output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
                     ]
                 execute_command(slurm_copy_command)
@@ -552,10 +552,10 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                     # Keep t2w_jobs for debugging purposes
                     execute_command([f'mkdir -p {output_dir}/Combine/t2w_jobs'], shell=True)
                 else:
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/Workspaces'], shell=True)
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/Datacards'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/Workspaces'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/Datacards'], shell=True)
                     # Keep t2w_jobs for debugging purposes
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/t2w_jobs'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/t2w_jobs'], shell=True)
             else:
                 temp_output_dir = output_dir
                 execute_command([f'mkdir -p {temp_output_dir}/Combine/Workspaces'], shell=True)
@@ -594,8 +594,8 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 execute_command([f'cp -rf {datacards_dir}/{datacard_name}.root {output_dir}/Combine/Workspaces/'], shell=True)
                 execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {output_dir}/Combine/t2w_jobs/"], shell=True)
             else:
-                execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
-                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+                execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
+                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
             shutil.rmtree(temp_output_dir)
 
             os.chdir(current_dir)
@@ -613,21 +613,21 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             # Copying datacard...
             slurm_copy_command = [
                 'xrdcp', '-rf',
-                'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{datacard_name}.txt',
+                'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/{datacard_name}.txt',
                 f'{temp_output_dir}/Combine'
             ]
             execute_command(slurm_copy_command)
             # Copying Signal Model...
             slurm_copy_command = [
                 'xrdcp', '-rf',
-                'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"]}',
+                'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"]}',
                 f'{temp_output_dir}/Combine/{config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
             ]
             execute_command(slurm_copy_command)
             # Copying Background Model...
             slurm_copy_command = [
                 'xrdcp', '-rf',
-                'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"]}',
+                'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"]}',
                 f'{temp_output_dir}/Combine/{config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
             ]
             execute_command(slurm_copy_command)
@@ -669,16 +669,16 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                     # execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {output_dir}/Combine/t2w_jobs/"], shell=True)
                     execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {output_dir}/Combine/"], shell=True)
                 else:
-                    execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
-                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
+                    execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/Workspaces/'], shell=True)
+                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
             else:
                 # Copy workspaces to workspaces folder
                 list_command = ["ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
                 file_list = subprocess.check_output(list_command).decode().splitlines()
 
                 print(file_list)
-                execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/'], shell=True)
-                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine')} root://t3dcachedb.psi.ch:1094//{output_dir}/Combine/"], shell=True)
+                execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/'], shell=True)
+                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine')} root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/"], shell=True)
             # time.sleep(19999)
             shutil.rmtree(temp_output_dir)
         
@@ -801,7 +801,7 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/asimov'], shell=True)
@@ -857,7 +857,7 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -1050,7 +1050,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/asimov'], shell=True)
@@ -1172,7 +1172,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -1283,7 +1283,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/asimov'], shell=True)
@@ -1409,7 +1409,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -1543,7 +1543,7 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov/scans'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov/scans'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/asimov/scans'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/asimov/scans'], shell=True)
@@ -1569,7 +1569,7 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+f'{output_dir}/Combine/{fitFolderName}/asimov',
+                    'root://t3dcachedb03.psi.ch:1094//'+f'{output_dir}/Combine/{fitFolderName}/asimov',
                     f"{os.environ['TARGET_PATH']}/Combine/{fitFolderName}"
                 ]
             print(slurm_copy_command)
@@ -1670,7 +1670,7 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -1783,7 +1783,7 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/impact'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/impact'], shell=True)
@@ -1858,7 +1858,7 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -2031,7 +2031,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/impact'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/impact'], shell=True)
@@ -2115,7 +2115,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -2236,7 +2236,7 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/impact/impacts'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact/impacts'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact/impacts'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/impact/impacts'], shell=True)
@@ -2249,7 +2249,7 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/impact',
+                    'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/impact',
                     f'{os.environ["TARGET_PATH"]}/Combine/{fitFolderName}'
                 ]
             execute_command(slurm_copy_command)
@@ -2358,7 +2358,7 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -2498,7 +2498,7 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/{hesseDir}'], shell=True)
@@ -2552,7 +2552,7 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -2680,7 +2680,7 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}/Plots'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}/Plots'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{hesseDir}/Plots'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/{hesseDir}/Plots'], shell=True)
@@ -2694,7 +2694,7 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/{hesseDir}',
+                    'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/{hesseDir}',
                     f'{os.environ["TARGET_PATH"]}/Combine/{fitFolderName}/'
                 ]
             execute_command(slurm_copy_command)
@@ -2763,7 +2763,7 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -2903,7 +2903,7 @@ class UnblindedFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit/bootstrap_{bootstrap_index}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit/bootstrap_{bootstrap_index}'], shell=True)
 
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
                 execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/dataFit/bootstrap_{bootstrap_index}'], shell=True)
@@ -2994,7 +2994,7 @@ class UnblindedFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             slurm_copy_command = [
                 'xrdcp', '-rf',
                 f"{os.environ['TARGET_PATH']}/Combine/",
-                'root://t3dcachedb.psi.ch:1094//'+output_dir
+                'root://t3dcachedb03.psi.ch:1094//'+output_dir
             ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -3132,7 +3132,7 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/dataFit'], shell=True)
@@ -3228,7 +3228,7 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -3365,7 +3365,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/dataFit'], shell=True)
@@ -3474,7 +3474,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -3612,7 +3612,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/dataFit'], shell=True)
@@ -3710,7 +3710,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -3859,7 +3859,7 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit/scans'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit/scans'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit/scans'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/dataFit/scans'], shell=True)
@@ -3901,7 +3901,7 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+f'{output_dir}/Combine/{fitFolderName}/dataFit',
+                    'root://t3dcachedb03.psi.ch:1094//'+f'{output_dir}/Combine/{fitFolderName}/dataFit',
                     f"{os.environ['TARGET_PATH']}/Combine/{fitFolderName}"
                 ]
             print(slurm_copy_command)
@@ -3940,7 +3940,7 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -4054,7 +4054,7 @@ class UnblindedCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
             else:
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/hesse'], shell=True)
@@ -4105,7 +4105,7 @@ class UnblindedCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -4221,7 +4221,7 @@ class UnblindedCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse/Plots/data'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/hesse/Plots/data'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/hesse/Plots/data'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/hesse/Plots/data'], shell=True)
@@ -4235,7 +4235,7 @@ class UnblindedCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/hesse',
+                    'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/hesse',
                     f'{os.environ["TARGET_PATH"]}/Combine/{fitFolderName}/'
                 ]
             execute_command(slurm_copy_command)
@@ -4306,7 +4306,7 @@ class UnblindedCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -4418,7 +4418,7 @@ class UnblindedImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/impact/unblinded'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact/unblinded'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact/unblinded'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/impact/unblinded'], shell=True)
@@ -4492,7 +4492,7 @@ class UnblindedImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -4652,7 +4652,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/impact/unblinded'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact/unblinded'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact/unblinded'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/impact/unblinded'], shell=True)
@@ -4782,7 +4782,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -4909,7 +4909,7 @@ class UnblindedImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/impact/unblinded/impacts'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact/unblinded/impacts'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/impact/unblinded/impacts'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/impact/unblinded/impacts'], shell=True)
@@ -4924,7 +4924,7 @@ class UnblindedImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/impact/unblinded',
+                    'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/impact/unblinded',
                     f'{os.environ["TARGET_PATH"]}/Combine/{fitFolderName}/impact'
                 ]
             execute_command(slurm_copy_command)
@@ -5055,7 +5055,7 @@ class UnblindedImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -5178,7 +5178,7 @@ class MggBestFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(la
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/postFit/SplusBModels_{cat}'], shell=True)
@@ -5228,7 +5228,7 @@ class MggBestFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(la
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -5387,7 +5387,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 if "/work" in output_dir:
                     execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/toys/filechecker'], shell=True)
                 else:   
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/toys/filechecker'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/toys/filechecker'], shell=True)
 
                 execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/toys/filechecker'], shell=True)
                 os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', 'toys'))
@@ -5587,7 +5587,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 if "/work" in output_dir:
                     execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/toys/filechecker'], shell=True)
                 else:   
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/toys/filechecker'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/toys/filechecker'], shell=True)
 
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
                 execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/toys/filechecker'], shell=True)
@@ -5794,7 +5794,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -5944,7 +5944,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 if "/work" in output_dir:
                     execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/'], shell=True)
                 else:   
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/'], shell=True)
 
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
                 execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/'], shell=True)
@@ -5958,7 +5958,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 else:
                     slurm_copy_command = [
                         'xrdcp', '-rf',
-                        'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/toys',
+                        'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/toys',
                         f'{os.environ["TARGET_PATH"]}/Combine/{fitFolderName}/postFit/SplusBModels_{cat}/'
                     ]
                 execute_command(slurm_copy_command)
@@ -6037,7 +6037,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 if "/work" in output_dir:
                     execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/'], shell=True)
                 else:   
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/'], shell=True)
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
                 execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/'], shell=True)
 
@@ -6050,7 +6050,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 else:
                     slurm_copy_command = [
                         'xrdcp', '-rf',
-                        'root://t3dcachedb.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/toys',
+                        'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/toys',
                         f'{os.environ["TARGET_PATH"]}/Combine/{fitFolderName}/preFit/SplusBModels_{cat}/'
                     ]
                 execute_command(slurm_copy_command)
@@ -6110,7 +6110,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -6221,7 +6221,7 @@ class PValueCalculation(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/dataFit'], shell=True)
@@ -6324,7 +6324,7 @@ class PValueCalculation(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -6434,7 +6434,7 @@ class AsimovEFTFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.L
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/eft_asimov'], shell=True)
@@ -6490,7 +6490,7 @@ class AsimovEFTFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.L
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -6593,7 +6593,7 @@ class AsimovEFTFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/eft_asimov'], shell=True)
@@ -6679,7 +6679,7 @@ class AsimovEFTFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -6778,7 +6778,7 @@ class AsimovEFTFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/eft_asimov'], shell=True)
@@ -6868,7 +6868,7 @@ class AsimovEFTFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -6972,7 +6972,7 @@ class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov/scans'], shell=True)
             else:
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov/scans'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov/scans'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/eft_asimov/scans'], shell=True)
@@ -6995,7 +6995,7 @@ class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
-                    'root://t3dcachedb.psi.ch:1094//'+f'{output_dir}/Combine/{fitFolderName}/eft_asimov',
+                    'root://t3dcachedb03.psi.ch:1094//'+f'{output_dir}/Combine/{fitFolderName}/eft_asimov',
                     f"{os.environ['TARGET_PATH']}/Combine/{fitFolderName}"
                 ]
             print(slurm_copy_command)
@@ -7095,7 +7095,7 @@ class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -7241,7 +7241,7 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if "/work" in output_dir:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/{toyFit_eftVariable}/toy_{toy_index}'], shell=True)
@@ -7313,7 +7313,7 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Combine/",
-                    'root://t3dcachedb.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)

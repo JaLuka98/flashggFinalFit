@@ -129,7 +129,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             cat, bootstrap_index = self.branch_data
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}")}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{bootstrap_index}")}'], shell=True)
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
                 execute_command([f'mkdir -p $TARGET_PATH/Datacards/yields_{self.ext}_{bootstrap_index}'], shell=True)
                 temp_output_dir = os.environ["TARGET_PATH"]
@@ -198,7 +198,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 slurm_copy_command = [
                     'xrdcp', '-r',
                     f"{temp_output_dir+'/Datacards'}",
-                    'root://t3dcachedb.psi.ch:1094//'+self.output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+self.output_dir
                 ]
             execute_command(slurm_copy_command)
             # Clean up the temporary directory
@@ -451,14 +451,14 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 if "/work" in output_dir:
                     execute_command([f'mkdir -p {output_dir}'], shell=True)
                 else:
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 pklInputFiles = os.path.join(output_dir,f"Datacards")
                 ext = yields_config["ext"] + f"_{bootstrap_index}"
                 output_dir = os.path.join(output_dir,f"Datacards/Datacard_{bootstrap_index}")
                 if "/work" in output_dir:
                     execute_command([f'mkdir -p {output_dir}'], shell=True)
                 else:
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 # Have to use /scratch/batch_username/ for slurm/psi
                 # Since we run this script locally, we have to use the local scratch space. (SLURM_JOB_ID is not available)
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/MakeDatacard_{bootstrap_index}"
@@ -480,12 +480,12 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 if "/work" in output_dir:
                     execute_command([f'mkdir -p {output_dir}'], shell=True)
                 else:
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 output_dir = os.path.join(output_dir,"Datacards/")
                 if "/work" in output_dir:
                     execute_command([f'mkdir -p {output_dir}'], shell=True)
                 else:
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}'], shell=True)
                 # Have to use /scratch/batch_username/ for slurm/psi
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/MakeDatacard"
                 execute_command(['mkdir -p $TARGET_PATH'], shell=True)
@@ -594,7 +594,7 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 # Don't forget to VOMS!
                 else:
                     slurm_copy_command = [
-                        f'xrdcp -rf {temp_output_dir}/* root://t3dcachedb.psi.ch:1094//'+output_dir
+                        f'xrdcp -rf {temp_output_dir}/* root://t3dcachedb03.psi.ch:1094//'+output_dir
                     ]
                 print("Copy command:", slurm_copy_command)
                 execute_command(slurm_copy_command, shell=True)
@@ -608,8 +608,8 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                     execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
                     execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
                 else:
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
-                    execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
+                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
             else:
                 execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
                 execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
