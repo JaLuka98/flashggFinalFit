@@ -112,6 +112,20 @@ production_modes = [
     ("tth", "ttHto2G"),
 ]
 
+# Getting production XS from GenXsecAnalyzer
+production_XS = {
+    "GluGluHtoGG": 39.1,
+    "GluGluHto2G": 39.1,
+    "VBFHtoGG": 4.36,
+    "VBFHto2G": 4.36,
+    "VHtoGG": 2.62,
+    "VHto2G": 2.62,
+    "ttHtoGG": 0.58,
+    "ttHto2G": 0.58,
+    "bbHtoGG": 0.49,
+    "bbHto2G": 0.49,
+}
+
 short_production_modes = ["ggh", "vbf", "vh", "tth"]
 
 eft_variables = ["chg", "chb", "chw", "chwb", "chbox", "chd", "chl3", "cll1", "ctbre", "cthre", "ctwre"]
