@@ -140,9 +140,9 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             bkgModelWSDir = self.bkgModelWSDir + f"_{bootstrap_index}"
         else:
             cat = self.branch_data
-            execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
                 os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
                 execute_command([f'mkdir -p $TARGET_PATH/Datacards/yields_{self.ext}'], shell=True)
                 temp_output_dir = os.environ["TARGET_PATH"]
@@ -150,6 +150,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 # safe_mkdir(os.path.join(temp_output_dir, "Datacards"))
                 # safe_mkdir(os.path.join(temp_output_dir, f"Datacards/yields_{self.ext}"))
             else:
+                execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
                 temp_output_dir = self.output_dir
             ext = self.ext
             bkgModelWSDir = self.bkgModelWSDir
