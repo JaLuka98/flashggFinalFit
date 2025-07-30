@@ -16,6 +16,7 @@ from commonTools import *
 from commonObjects import *
 
 from Datacard.law_datacard import *
+from Background.law_background import *
 
 from framework import Task
 from framework import HTCondorWorkflow, SlurmWorkflow
@@ -124,7 +125,9 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         yieldsConfig = config['datacard_yields']
             
         tasks["MakeDatacard"] = MakeDatacard(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=yieldsConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=yieldsConfig['batchPartition'], slurm_memory=yieldsConfig['batchMemory'], slurm_max_runtime=yieldsConfig['batchMaxRuntime'], htcondor_partition=yieldsConfig['batchPartition'], htcondor_memory=yieldsConfig['batchMemory'], htcondor_max_runtime=yieldsConfig['batchMaxRuntime'])
-        
+
+        tasks["Background"] = Background(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive")
+
         return tasks
     
     def create_branch_map(self):
