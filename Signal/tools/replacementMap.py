@@ -711,3 +711,41 @@ globalReplacementMap["earlyAnalysisDiffPt23"]["catRVMap"]["RECO_PTH_200p0_350p0_
 globalReplacementMap["earlyAnalysisDiffPt23"]["catRVMap"]["RECO_PTH_350p0_10000p0_cat0"] = "RECO_PTH_350p0_10000p0_cat0"
 globalReplacementMap["earlyAnalysisDiffPt23"]["catRVMap"]["RECO_PTH_350p0_10000p0_cat1"] = "RECO_PTH_350p0_10000p0_cat1"
 globalReplacementMap["earlyAnalysisDiffPt23"]["catRVMap"]["RECO_PTH_350p0_10000p0_cat2"] = "RECO_PTH_350p0_10000p0_cat2"
+
+
+# Differential NJ (Number of Jets)
+globalReplacementMap["intermediateAnalysisDiffNJ"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["intermediateAnalysisDiffNJ"]['procWV'] = "ggh_NJ_1p0_2p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]['catWV'] = "RECO_NJ_2p0_3p0_cat2"
+# Relacement processes for RV
+globalReplacementMap["intermediateAnalysisDiffNJ"]['procRVMap'] = od()
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_0p0_1p0_cat0"] = "ggh_NJ_0p0_1p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_0p0_1p0_cat1"] = "ggh_NJ_0p0_1p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_0p0_1p0_cat2"] = "ggh_NJ_0p0_1p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_1p0_2p0_cat0"] = "ggh_NJ_1p0_2p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_1p0_2p0_cat1"] = "ggh_NJ_1p0_2p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_1p0_2p0_cat2"] = "ggh_NJ_1p0_2p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_2p0_3p0_cat0"] = "ggh_NJ_2p0_3p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_2p0_3p0_cat1"] = "ggh_NJ_2p0_3p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_2p0_3p0_cat2"] = "ggh_NJ_2p0_3p0_in"
+
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_3p0_100p0_cat0"] = "ggh_NJ_3p0_100p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_3p0_100p0_cat1"] = "ggh_NJ_3p0_100p0_in"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["procRVMap"]["RECO_NJ_3p0_100p0_cat2"] = "ggh_NJ_3p0_100p0_in"
+
+# Replacement categories for RV
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"] = od()
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_0p0_1p0_cat0"] = "RECO_NJ_0p0_1p0_cat0"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_0p0_1p0_cat1"] = "RECO_NJ_0p0_1p0_cat1"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_0p0_1p0_cat2"] = "RECO_NJ_0p0_1p0_cat2"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_1p0_2p0_cat0"] = "RECO_NJ_1p0_2p0_cat0"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_1p0_2p0_cat1"] = "RECO_NJ_1p0_2p0_cat1"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_1p0_2p0_cat2"] = "RECO_NJ_1p0_2p0_cat2"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_2p0_3p0_cat0"] = "RECO_NJ_2p0_3p0_cat0"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_2p0_3p0_cat1"] = "RECO_NJ_2p0_3p0_cat1"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_2p0_3p0_cat2"] = "RECO_NJ_2p0_3p0_cat2"
+
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_3p0_100p0_cat0"] = "RECO_NJ_3p0_100p0_cat0"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_3p0_100p0_cat1"] = "RECO_NJ_3p0_100p0_cat1"
+globalReplacementMap["intermediateAnalysisDiffNJ"]["catRVMap"]["RECO_NJ_3p0_100p0_cat2"] = "RECO_NJ_3p0_100p0_cat2"
