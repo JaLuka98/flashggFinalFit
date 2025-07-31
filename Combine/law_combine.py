@@ -829,11 +829,11 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
                 "-t", "-1",
                 "-P", f"{current_branch}",
                 "--saveFitResult",
-                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
                 "--floatOtherPOIs", "1"
             ]
             arguments.append("--setParameters")
-            arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""")
+            arguments.append(f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""")
             command = arguments
             # print(command)
             try:
@@ -894,7 +894,7 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
             cats = ["r"]
             version = "inclusive_v1"
         else:
-            cats = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'])
+            cats = ",".join(combineVariableDict(self.variable, self.year)['paramStrNoOne'])
             version = f"{self.variable}_v1"
         
         impactConfig = config['combine_impacts']
@@ -1145,9 +1145,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
                 "--alignEdges", "1",
-                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
-                "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""",
-                # "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""", # According to Mauro: Try without profiling
+                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
+                "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""",
+                # "--setParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""", # According to Mauro: Try without profiling
             ]
             command = arguments
             # print(command)
@@ -1382,9 +1382,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--floatOtherPOIs", "1",
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
-                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
-                "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""",
-                # "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""", # According to Mauro: Try without profiling
+                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
+                "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""",
+                # "--setParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""", # According to Mauro: Try without profiling
             ]
             command = arguments
             # print(command)
@@ -1454,7 +1454,7 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             tasks["AsimovFitCategoryStat"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'])
         else:
             version_index = 1
-            for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+            for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                 tasks[f"AsimovFitCategorySyst_{cat}"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'])
                 tasks[f"AsimovFitCategoryStat_{cat}"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'])
                 version_index += 1
@@ -1500,7 +1500,7 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', 'scans', f'scan_{cat}.pdf')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', 'scans', f'scan_{cat}.png')]
         else:
-            for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+            for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                 
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')]
@@ -1555,7 +1555,7 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
         if self.variable == '':
             cats = ["r"]
         else:
-            cats = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+            cats = combineVariableDict(self.variable, self.year)['paramStrNoOne']
         
         if self.batch_flavor == "slurm/psi":
             # Have to copy over the input to the JOB directory
@@ -1823,7 +1823,7 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 "-M", "MultiDimFit",
                 "-d", datacard_path,
                 "--algo", "singles",
-                "--redefineSignalPOIs", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'])}""",
+                "--redefineSignalPOIs", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStrNoOne'])}""",
                 "--freezeParameters", "MH",
                 "-m", "125.38",
                 "-n", "_initialFit_Test",
@@ -1833,7 +1833,7 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
+                "--setParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}"""
             ]
             command = arguments
             # print(command)
@@ -1956,7 +1956,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         if self.variable == '':
             poiList = ["r"]
         else:
-            poiList = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+            poiList = combineVariableDict(self.variable, self.year)['paramStrNoOne']
         
         paramList = all_free_parameters(datacard_path, 'w', 'ModelConfig', poiList)
 
@@ -2076,7 +2076,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "-M", "MultiDimFit",
                 "-d", datacard_path,
                 "--algo", "impact",
-                "--redefineSignalPOIs", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'])}""",
+                "--redefineSignalPOIs", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStrNoOne'])}""",
                 "--freezeParameters", "MH",
                 "-m", "125.38",
                 "-P", f"{current_param}",
@@ -2090,7 +2090,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
+                "--setParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}"""
             ]
             command = arguments
             # print(command)
@@ -2192,7 +2192,7 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'impacts', 'impacts_corrected_dropBkgModelParams.json')]
             
         else:
-            for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+            for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'impacts')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'impacts', f'impacts_{cat}.pdf')]
                 
@@ -2328,7 +2328,7 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
                 
-            for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+            for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                 arguments = [
                     "plotImpacts.py",
                     "-i", "impacts/impacts.json",
@@ -2516,7 +2516,7 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             "-n", "firstStep",
             "--saveWorkspace",
             "--saveFitResult",
-            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
             "--floatOtherPOIs", "1",
             "--robustHesse", "1",
             "--robustHesseSave", "1",
@@ -2527,7 +2527,7 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
             # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
             "-t", "-1",
-            "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
+            "--setParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}"""
         ]
         command = arguments
         # print(command)
@@ -2814,7 +2814,7 @@ class UnblindedFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             if self.variable == '':
                 param_list = ["r"]
             else:
-                param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {
                 i * int(self.number_of_bootstraps) + j: (current_cat, bootstrap_index)
                 for i, current_cat in enumerate(param_list)
@@ -2824,7 +2824,7 @@ class UnblindedFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             if self.variable == '':
                 param_list = ["r"]
             else:
-                param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {i: current_cat for i, current_cat in enumerate(param_list)}
         return branch_map
 
@@ -2976,7 +2976,7 @@ class UnblindedFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
                 "--saveWorkspace",
-                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
             ]
             command = arguments
             # print(command)
@@ -3050,7 +3050,7 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if self.variable == '':
                 param_list = ["r"]
             else:
-                param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {
                 i * int(self.number_of_bootstraps) + j: (current_cat, bootstrap_index)
                 for i, current_cat in enumerate(param_list)
@@ -3060,7 +3060,7 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if self.variable == '':
                 param_list = ["r"]
             else:
-                param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {i: current_cat for i, current_cat in enumerate(param_list)}
         return branch_map
 
@@ -3281,7 +3281,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             if self.variable == '':
                 param_list = ["r"]
             else:
-                param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {
                 i * int(self.number_of_bootstraps) + j: (current_cat, bootstrap_index)
                 for i, current_cat in enumerate(param_list)
@@ -3291,7 +3291,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             if self.variable == '':
                 param_list = ["r"]
             else:
-                param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {i: current_cat for i, current_cat in enumerate(param_list)}
         return branch_map
 
@@ -3449,7 +3449,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
                 "--saveWorkspace",
-                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
             ]
             command = arguments
             # print(command)
@@ -3531,7 +3531,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             if self.variable == '':
                 param_list = ["r"]
             else:
-                param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {
                 i * int(self.number_of_bootstraps) + j: (current_cat, bootstrap_index)
                 for i, current_cat in enumerate(param_list)
@@ -3541,7 +3541,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             if self.variable == '':
                 param_list = ["r"]
             else:
-                param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {i: current_cat for i, current_cat in enumerate(param_list)}
         return branch_map
 
@@ -3804,7 +3804,7 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', 'scans', f'scan_{cat}_observed.pdf')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', 'scans', f'scan_{cat}_observed.png')]
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', 'scans', f'scan_{cat}_observed.root')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', 'scans', f'scan_{cat}_observed.pdf')]
@@ -3819,7 +3819,7 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.pdf')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.png')]
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.root')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.pdf')]
@@ -3887,7 +3887,7 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         if self.variable == '':
             cats = ["r"]
         else:
-            cats = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+            cats = combineVariableDict(self.variable, self.year)['paramStrNoOne']
         
         if self.batch_flavor == "slurm/psi":
             # Have to copy over the input to the JOB directory
@@ -4072,7 +4072,7 @@ class UnblindedCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             "-n", "firstStep_data",
             "--saveWorkspace",
             "--saveFitResult",
-            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
             "--floatOtherPOIs", "1",
             "--robustHesse", "1",
             "--robustHesseSave", "1",
@@ -4458,7 +4458,7 @@ class UnblindedImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
                 "-M", "MultiDimFit",
                 "-d", datacard_path,
                 "--algo", "singles",
-                "--redefineSignalPOIs", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'])}""",
+                "--redefineSignalPOIs", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStrNoOne'])}""",
                 "--freezeParameters", "MH",
                 "-m", "125.38",
                 "--robustFit", "1",
@@ -4576,7 +4576,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
         if self.variable == '':
             poiList = ["r"]
         else:
-            poiList = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+            poiList = combineVariableDict(self.variable, self.year)['paramStrNoOne']
         
         paramList = all_free_parameters(datacard_path, 'w', 'ModelConfig', poiList)
 
@@ -4726,7 +4726,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 print("Error: Tree 'limit' not found in the file.")
                 exit(1)
 
-            for poi in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+            for poi in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                 # Access the branch 'r_YH_0p9_2p5' and get its first value
                 if hasattr(tree, poi):
                     tree.GetEntry(0)  # Load the first entry
@@ -4744,7 +4744,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 "-M", "MultiDimFit",
                 "-d", datacard_path,
                 "--algo", "impact",
-                "--redefineSignalPOIs", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'])}""",
+                "--redefineSignalPOIs", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStrNoOne'])}""",
                 "--setParameters", poi_bf_string,
                 "--freezeParameters", "MH",
                 "-m", "125.38",
@@ -4862,7 +4862,7 @@ class UnblindedImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', 'impacts_corrected_dropBkgModelParams.json')]
             
         else:
-            for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+            for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', f'impacts_unblinded_{cat}.pdf')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', 'impacts_corrected_dropBkgModelParams.json')]
@@ -5022,7 +5022,7 @@ class UnblindedImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
                 
-            for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+            for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                 arguments = [
                     "plotImpacts.py",
                     "-i", f"{os.path.join(temp_output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', 'impacts_corrected_dropBkgModelParams.json')}",
@@ -5106,7 +5106,7 @@ class MggBestFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(la
         if self.variable == "":
             cat_list = ["r"]
         else:
-            cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+            cat_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
 
         branch_map = {i: current_cat for i, current_cat in enumerate(cat_list)}
         return branch_map
@@ -5295,7 +5295,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
         if self.variable == "":
             cat_list = ["r"]
         else:
-            cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+            cat_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
         nToys = config['combine_mggToys']['nToys']
         
         toy_cat_list = [
@@ -5612,7 +5612,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             if self.variable == '':
                 arguments.append('r=1')
             else:
-                arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""")
+                arguments.append(f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""")
             command = arguments
             # print(command)
             try:
@@ -5675,7 +5675,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             if self.variable == '':
                 arguments.append('r=1')
             else:
-                arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""")
+                arguments.append(f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""")
             command = arguments
             # print(command)
             try:
@@ -5723,7 +5723,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             if self.variable == '':
                 arguments.append('r=0')
             else:
-                arguments.append(f"""{(",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])).replace("=1", "=0")}""")
+                arguments.append(f"""{(",".join(combineVariableDict(self.variable, self.year)['paramStr'])).replace("=1", "=0")}""")
             command = arguments
             # print(command)
             try:
@@ -5854,7 +5854,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
         if self.variable == '':
             cat_list = ["r"]
         else:
-            cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+            cat_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
         branch_map = {i: cat for i, cat in enumerate(cat_list)}
         return branch_map
 
@@ -5880,7 +5880,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
         else:
             fitFolderName = f'runFits_{self.variable}'
-            reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+            reco_cats_with_bmw = [element for element in combineVariableDict(self.variable, self.year)['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
             
         
         output = []
@@ -5974,7 +5974,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
             else:
                 # firstStep_path = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
-                reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+                reco_cats_with_bmw = [element for element in combineVariableDict(self.variable, self.year)['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
 
             arguments = [
                 "python3",
@@ -6067,7 +6067,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             if self.variable == '':
                 reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
             else:
-                reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+                reco_cats_with_bmw = [element for element in combineVariableDict(self.variable, self.year)['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
                 
             arguments = [
                 "python3",
@@ -6158,7 +6158,7 @@ class PValueCalculation(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         # if self.variable == '':
         #     cat_list = ["r"]
         # else:
-        #     cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+        #     cat_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
         # branch_map = {i: cat for i, cat in enumerate(cat_list)}
         branch_map = {i: value for i, value in enumerate([0])}
         return branch_map
@@ -6242,14 +6242,14 @@ class PValueCalculation(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
             command = [
                 "combine",
                 "-M", "MultiDimFit",
-                os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f"higgsCombineDataPostFitScanFit_{combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'][0]}.MultiDimFit.mH125.38.root"),
+                os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f"higgsCombineDataPostFitScanFit_{combineVariableDict(self.variable, self.year)['paramStrNoOne'][0]}.MultiDimFit.mH125.38.root"),
                 "--algo", "fixed",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "--freezeParameters", "MH",
-                "--fixedPointPOIs", f"{','.join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])},MH=125.38",
+                "--fixedPointPOIs", f"{','.join(combineVariableDict(self.variable, self.year)['paramStr'])},MH=125.38",
                 "-n", ".pvalue",
                 "-m", "125.38",
                 "--saveWorkspace"
@@ -6269,7 +6269,7 @@ class PValueCalculation(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
 
 
         # Count the number of elements in paramStrNoOne
-        n_bins = len(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'])
+        n_bins = len(combineVariableDict(self.variable, self.year)['paramStrNoOne'])
 
         # Change directory to the fitFolderName
         os.chdir("../")
@@ -6462,11 +6462,11 @@ class AsimovEFTFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.L
                 "-t", "-1",
                 "-P", f"{current_branch}",
                 "--saveFitResult",
-                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
                 "--floatOtherPOIs", "1"
             ]
             arguments.append("--setParameters")
-            arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""")
+            arguments.append(f"""{",".join(combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStr'])}""")
             command = arguments
             print(command)
             try:
@@ -6531,7 +6531,7 @@ class AsimovEFTFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
 
         fitConfig = config["combine_fit"]
 
-        cats = ",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStrNoZero'])
+        cats = ",".join(combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStrNoZero'])
         version = f"{self.eft_variable}"
 
         tasks["AsimovEFTFitCategoryFirstStep"] = AsimovEFTFitCategoryFirstStep(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, cats=cats, version=version, workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
@@ -6653,8 +6653,8 @@ class AsimovEFTFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             "--saveFitResult",
             "--floatOtherPOIs", "1",
             "--alignEdges", "1",
-            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
-            "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""",
+            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
+            "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStr'])}""",
         ]
         command = arguments
         print(command)
@@ -6719,7 +6719,7 @@ class AsimovEFTFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
 
         fitConfig = config["combine_fit"]
 
-        cats = ",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStrNoZero'])
+        cats = ",".join(combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStrNoZero'])
         version = f"{self.eft_variable}"
 
         tasks["AsimovEFTFitCategoryFirstStep"] = AsimovEFTFitCategoryFirstStep(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, cats=cats, version=version, workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
@@ -6841,9 +6841,9 @@ class AsimovEFTFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             "--floatOtherPOIs", "1",
             "--alignEdges", "1",
             "--snapshotName", "MultiDimFit",
-            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
-            "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""",
-            # "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""", # According to Mauro: Try without profiling
+            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
+            "--setParameters", f"""{pdfIdx},{",".join(combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStr'])}""",
+            # "--setParameters", f"""{",".join(combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStr'])}""", # According to Mauro: Try without profiling
         ]
         command = arguments
         print(command)
@@ -6906,7 +6906,7 @@ class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         
         fitConfig = config["combine_fit"]
 
-        for cat in combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStrNoZero']:
+        for cat in combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStrNoZero']:
             tasks[f"AsimovEFTFitCategorySyst_{cat}"] = AsimovEFTFitCategorySyst(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, cat=cat, nPoints=fitConfig["asimov_numPoints"], version=f"{self.eft_variable}_{cat}", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
             tasks[f"AsimovEFTFitCategoryStat_{cat}"] = AsimovEFTFitCategoryStat(output_dir=output_dir, variable=self.variable, eft_variable=self.eft_variable, year=self.year, cat=cat, nPoints=fitConfig["asimov_numPoints"], version=f"{self.eft_variable}_{cat}", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
 
@@ -6936,7 +6936,7 @@ class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
         output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', 'scans')]
 
-        for cat in combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStrNoZero']:
+        for cat in combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStrNoZero']:
 
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')]
@@ -6981,7 +6981,7 @@ class CreateAsimovEFTFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/eft_asimov/scans'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'eft_asimov'))
 
-        cats = combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStrNoZero']
+        cats = combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStrNoZero']
 
         if self.batch_flavor == "slurm/psi":
             # Have to copy over the input to the JOB directory
@@ -7255,9 +7255,9 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         print("Generating Toy with seed {}".format(seed))
         
         if self.eft_variable == '':
-            pdfIndicesStr = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])
+            pdfIndicesStr = ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])
         else:
-            pdfIndicesStr = ",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['pdfIndeces'])
+            pdfIndicesStr = ",".join(combineVariableDict(self.variable, self.year, self.eft_variable)['pdfIndeces'])
 
         if self.variable != '':
             arguments = [
@@ -7278,7 +7278,7 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 "-s", f"{seed}",
                 "--saveFitResult",
                 "--saveSpecifiedIndex", f"""{pdfIndicesStr}""",
-                # "--freezeParameters", f"""MH,{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""", # According to Mauro: Try without profiling
+                # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""", # According to Mauro: Try without profiling
                 "--freezeParameters", f"""MH""",
                 "--floatOtherPOIs", "1",
                 # "--toysNoSystematics", # According to Mauro: Try without profiling
@@ -7286,10 +7286,10 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             ]
             if self.eft_variable == '':
                 arguments.append("--setParameters")
-                arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}""")
+                arguments.append(f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""")
             else:
                 arguments.append("--setParameters")
-                arguments.append(f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.eft_variable}']['eftParamStr'])}""")
+                arguments.append(f"""{",".join(combineVariableDict(self.variable, self.year, self.eft_variable)['eftParamStr'])}""")
             command = arguments
             print(command)
             try:

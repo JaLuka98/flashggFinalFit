@@ -183,7 +183,7 @@ class FinalFits(law.Task):
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.pdf')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.png')]
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.root')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.pdf')]
@@ -201,7 +201,7 @@ class FinalFits(law.Task):
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', 'impacts_corrected_dropBkgModelParams.json')]
 
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', f'impacts_unblinded_{cat}.pdf')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', 'impacts_corrected_dropBkgModelParams.json')]
@@ -216,8 +216,8 @@ class FinalFits(law.Task):
                 reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
                 cat_list = ["r"]
             else:
-                reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-                cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                reco_cats_with_bmw = [element for element in combineVariableDict(self.variable, self.year)['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+                cat_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             
             output = []
             for cat in cat_list:
@@ -279,7 +279,7 @@ class FinalFits(law.Task):
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', 'scans', f'scan_{cat}.pdf')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', 'scans', f'scan_{cat}.png')]
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')]
@@ -300,7 +300,7 @@ class FinalFits(law.Task):
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'impacts', 'impacts_corrected_dropBkgModelParams.json')]
                 
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'impacts')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'impacts', f'impacts_{cat}.pdf')]
                     

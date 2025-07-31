@@ -240,7 +240,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             print("Variable is not set. Please set the variable parameter to a valid value.")
             exit(1)
         else:
-            cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'] #has to be in the correct order
+            cat_list = combineVariableDict(self.variable, self.year)['paramStrNoOne'] #has to be in the correct order
             fitFolderName = f'runFits_{self.variable}'
             
             oneSigmaDict = {}

@@ -287,62 +287,81 @@ differentialProcTable_ = {
 #BMW == Best Medium Worst
 BMW = ['cat0', 'cat1', 'cat2']
 
-combineVariableDict = {
-    "2022": {
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2022", BMW=BMW),
-        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2022", BMW=BMW),
-        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2022", BMW=BMW),
-        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022", BMW=BMW),
-        "PTHvsDPhiJ0J1": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022", BMW=BMW)
-    },
-    "2023":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW),
-        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2023", BMW=BMW),
-        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW),
-        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2023", BMW=BMW),
-        "chg": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chg"),
-        "chw": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chw"),
-        "chb": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chb"),
-        "chwb": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chwb"),
-        "chbox": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chbox"),
-        "chd": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chd"),
-        "chl3": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chl3"),
-        "cll1": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cll1"),
-        "ctbre": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre"),
-        "cthre": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre"),
-        "ctwre": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre"),
-        "chg_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chg", individual=True),
-        "chw_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chw", individual=True),
-        "chb_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chb", individual=True),
-        "chwb_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chwb", individual=True),
-        "chbox_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chbox", individual=True),
-        "chd_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chd", individual=True),
-        "chl3_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chl3", individual=True),
-        "cll1_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cll1", individual=True),
-        "ctbre_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre", individual=True),
-        "cthre_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre", individual=True),
-        "ctwre_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre", individual=True),
-        "chg_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chg"),
-        "chw_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chw"),
-        "chb_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chb"),
-        "chwb_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chwb"),
-        "chbox_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chbox"),
-        "chd_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chd"),
-        "chl3_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chl3"),
-        "cll1_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cll1"),
-        "ctbre_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre"),
-        "cthre_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre"),
-        "ctwre_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre"),
-        "chg_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chg", individual=True),
-        "chw_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chw", individual=True),
-        "chb_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chb", individual=True),
-        "chwb_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chwb", individual=True),
-        "chbox_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chbox", individual=True),
-        "chd_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chd", individual=True),
-        "chl3_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chl3", individual=True),
-        "cll1_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cll1", individual=True),
-        "ctbre_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre", individual=True),
-        "cthre_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre", individual=True),
-        "ctwre_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre", individual=True),
-    }
+# Variable bins
+
+variableBins = {
+    "PTH": ["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"],
+    "NJ": ["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"],
+    "rapidity": ["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"],
+    "PTJ0": ["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"],
+    "PTHvsDPhiJ0J1": ["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"]
 }
+
+# combineVariableDict = {
+#     "2022": {
+#         "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2022", BMW=BMW),
+#         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=variableBins["rapidity"], year="2022", BMW=BMW),
+#         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2022", BMW=BMW),
+#         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=variableBins["PTJ0"], year="2022", BMW=BMW),
+#         "PTHvsDPhiJ0J1": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=variableBins["PTHvsDPhiJ0J1"], year="2022", BMW=BMW)
+#     },
+#     "2023":{
+#         "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW),
+#         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=variableBins["rapidity"], year="2023", BMW=BMW),
+#         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW),
+#         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=variableBins["PTJ0"], year="2023", BMW=BMW),
+#         "chg": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chg"),
+#         "chw": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chw"),
+#         "chb": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chb"),
+#         "chwb": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chwb"),
+#         "chbox": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chbox"),
+#         "chd": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chd"),
+#         "chl3": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chl3"),
+#         "cll1": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cll1"),
+#         "ctbre": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre"),
+#         "cthre": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre"),
+#         "ctwre": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre"),
+#         "chg_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chg", individual=True),
+#         "chw_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chw", individual=True),
+#         "chb_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chb", individual=True),
+#         "chwb_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chwb", individual=True),
+#         "chbox_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chbox", individual=True),
+#         "chd_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chd", individual=True),
+#         "chl3_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chl3", individual=True),
+#         "cll1_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cll1", individual=True),
+#         "ctbre_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre", individual=True),
+#         "cthre_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre", individual=True),
+#         "ctwre_individual": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=variableBins["PTH"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre", individual=True),
+#         "chg_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chg"),
+#         "chw_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chw"),
+#         "chb_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chb"),
+#         "chwb_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chwb"),
+#         "chbox_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chbox"),
+#         "chd_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chd"),
+#         "chl3_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chl3"),
+#         "cll1_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cll1"),
+#         "ctbre_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre"),
+#         "cthre_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre"),
+#         "ctwre_NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre"),
+#         "chg_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chg", individual=True),
+#         "chw_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chw", individual=True),
+#         "chb_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chb", individual=True),
+#         "chwb_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chwb", individual=True),
+#         "chbox_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chbox", individual=True),
+#         "chd_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chd", individual=True),
+#         "chl3_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="chl3", individual=True),
+#         "cll1_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cll1", individual=True),
+#         "ctbre_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctbre", individual=True),
+#         "cthre_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="cthre", individual=True),
+#         "ctwre_NJ_individual": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=variableBins["NJ"], year="2023", BMW=BMW, procs=short_production_modes, eft_variable="ctwre", individual=True),
+#     }
+# }
+
+def combineVariableDict(variable, year, eft_variable=""):
+    if eft_variable != "":
+        individual_flag = False
+        if "individual" in eft_variable:
+            individual_flag = True
+        return CreateVariableParameters(gen_variable=variable, reco_variable=variable, bins=variableBins[variable], year=year, BMW=BMW, procs=short_production_modes, eft_variable=eft_variable, individual=individual_flag)
+    else:
+        return CreateVariableParameters(gen_variable=variable, reco_variable=variable, bins=variableBins[variable], year=year, BMW=BMW)

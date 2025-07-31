@@ -223,7 +223,7 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
             "-d", ws_path,
             "-t", "1",
             "-s", f"{seed}",
-            "--setParameters", ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrZero']),
+            "--setParameters", ",".join(combineVariableDict(self.variable, self.year)['paramStrZero']),
             "--saveToys",
             "--freezeParameters", "MH",
             "-m", "125.38",
@@ -620,7 +620,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
 
         seed = int(self.seed) + int(replica_index)
                 
-        # pdfIndicesStr = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])
+        # pdfIndicesStr = ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])
         
         splusb_toy = os.path.join(output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
 
