@@ -45,7 +45,7 @@
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     },
-    "Njets2p5":{
+    "NJ":{
         "pois":"r_NJ_0p0_1p0,r_NJ_1p0_2p0,r_NJ_2p0_3p0,r_NJ_3p0_100p0",
         "fits":"robustHesse:syst:r_NJ_1p0_2p0",
         "points":"",
