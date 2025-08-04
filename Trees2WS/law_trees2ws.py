@@ -193,9 +193,9 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         # Production modes to skip theory weights: fill with 1's
         modesToSkipTheoryWeights = ['bbh','thq','thw']
         
-        if "2023" in self.year:
-            print("Skipping theory weights for 2023 for the moment")
-            modesToSkipTheoryWeights = ['bbh','thq','thw','ggh', 'qqh', 'tth', 'ggzh', 'wh', 'zh', 'vbf', 'vh']
+        # if "2023" in self.year:
+        #     print("Skipping theory weights for 2023 for the moment")
+        #     modesToSkipTheoryWeights = ['bbh','thq','thw','ggh', 'qqh', 'tth', 'ggzh', 'wh', 'zh', 'vbf', 'vh']
         
         if self.variable == '':
             input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year[:4]}_inclusive.yml")

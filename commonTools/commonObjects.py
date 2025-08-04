@@ -157,7 +157,7 @@ conversionTable_ = {
 # List of all jet-related variables. Variables listed here will get the CMS_scale_j and CMS_res_j uncertainty in the datacard step.
 jetVariables = [
     "Njets2p5",
-    "ptJ0",
+    "PTJ0",
     "YJ0",
     "AbsPhiHJ0",
     "AbsYHJ0",
@@ -191,7 +191,7 @@ differentialProcTable_ = {
         (33, "NJ_3p0_100p0_in"),
         (34, "NJ_0p0_100p0_out")
     ],
-    "ptJ0": [
+    "PTJ0": [
         (40, "PTJ0_0p0_30p0_in"),
         (41, "PTJ0_30p0_75p0_in"),
         (42, "PTJ0_75p0_120p0_in"),

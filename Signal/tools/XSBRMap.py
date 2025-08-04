@@ -525,3 +525,35 @@ globalXSBRMap['intermediateAnalysisDiffNJ']['tth_NJ_3p0_100p0_in'] = {'mode':'co
 # globalXSBRMap['intermediateAnalysisDiffNJ']['tth_NJ_3p0_4p0_in'] = {'mode':'constant','factor':0.5638}
 # globalXSBRMap['intermediateAnalysisDiffNJ']['tth_NJ_4p0_100p0_in'] = {'mode':'constant','factor':0.5638}
 globalXSBRMap['intermediateAnalysisDiffNJ']['tth_NJ_0p0_100p0_out'] = {'mode':'constant','factor':0.5638}
+
+
+# Early Run 3 Hgg analysis with differentials in PTJ0
+globalXSBRMap['intermediateAnalysisDiffPTJ0'] = od()
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['decay'] = {'mode':'hgg'}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['ggh_PTJ0_0p0_30p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['ggh_PTJ0_30p0_75p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['ggh_PTJ0_75p0_120p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['ggh_PTJ0_120p0_200p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['ggh_PTJ0_200p0_10000p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['ggh_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':51.96}
+
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vbf_PTJ0_0p0_30p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vbf_PTJ0_30p0_75p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vbf_PTJ0_75p0_120p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vbf_PTJ0_120p0_200p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vbf_PTJ0_200p0_10000p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vbf_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':4.067}
+
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vh_PTJ0_0p0_30p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vh_PTJ0_30p0_75p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vh_PTJ0_75p0_120p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vh_PTJ0_120p0_200p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vh_PTJ0_200p0_10000p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['vh_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':2.3781}
+
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_0p0_30p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_30p0_75p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_75p0_120p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_120p0_200p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_200p0_10000p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':0.5638}
