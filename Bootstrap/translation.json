@@ -16,7 +16,7 @@
     "r_NJ_1p0_2p0": "$r_{N_{\\text{Jets}} \\in [1,2)}$",
     "r_NJ_2p0_3p0": "$r_{N_{\\text{Jets}} \\in [2,3)}$",
     "r_NJ_3p0_100p0": "$r_{N_{\\text{Jets}} \\in [3,+\\infty)}$",
-    "r_PTJ0_0p0_30p0": "$r_{p_{T,j0}} (N_{\\text{Jets}} = 0)$",
+    "r_PTJ0_0p0_30p0": "$r_{p_{T,j0} (N_{\\text{Jets}} = 0)}$",
     "r_PTJ0_30p0_75p0": "$r_{p_{T,j0} \\in [30,75) \\text{ GeV}}$",
     "r_PTJ0_75p0_120p0": "$r_{p_{T,j0} \\in [75,120) \\text{ GeV}}$",
     "r_PTJ0_120p0_200p0": "$r_{p_{T,j0} \\in [120,200) \\text{ GeV}}$",
