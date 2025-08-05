@@ -51,7 +51,13 @@
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     },
-    "ptJ0":{
+    "DPhiJ0J1":{
+        "pois":"r_DPhiJ0J1_m3p1416_m2p0944,r_DPhiJ0J1_m2p0944_m1p0472,r_DPhiJ0J1_m1p0472_0p0,r_DPhiJ0J1_0p0_1p0472,r_DPhiJ0J1_1p0472_2p0944,r_DPhiJ0J1_2p0944_3p1416",
+        "fits":"robustHesse:syst:r_DPhiJ0J1_m3p1416_m2p0944",
+        "points":"",
+        "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
+    },
+    "PTJ0":{
         "pois":"r_PTJ0_0p0_30p0,r_PTJ0_30p0_75p0,r_PTJ0_75p0_120p0,r_PTJ0_120p0_200p0,r_PTJ0_200p0_10000p0",
         "fits":"robustHesse:syst:r_PTJ0_30p0_75p0",
         "points":"",
