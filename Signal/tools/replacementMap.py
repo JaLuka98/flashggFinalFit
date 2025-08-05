@@ -840,3 +840,45 @@ globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ
 globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat0"] = "RECO_DPhiJ0J1_2p0944_3p1416_cat0"
 globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat1"] = "RECO_DPhiJ0J1_2p0944_3p1416_cat1"
 globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat2"] = "RECO_DPhiJ0J1_2p0944_3p1416_cat2"
+
+# Differential Y (Rapidity)
+globalReplacementMap["intermediateAnalysisDiffYH"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["intermediateAnalysisDiffYH"]['procWV'] = "ggh_YH_0p3_0p6_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]['catWV'] = "RECO_rapidity_0p3_0p6_cat2"
+# Relacement processes for RV
+globalReplacementMap["intermediateAnalysisDiffYH"]['procRVMap'] = od()
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p0_0p15_cat0"] = "ggh_YH_0p0_0p15_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p0_0p15_cat1"] = "ggh_YH_0p0_0p15_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p0_0p15_cat2"] = "ggh_YH_0p0_0p15_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p15_0p3_cat0"] = "ggh_YH_0p15_0p3_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p15_0p3_cat1"] = "ggh_YH_0p15_0p3_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p15_0p3_cat2"] = "ggh_YH_0p15_0p3_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p3_0p6_cat0"] = "ggh_YH_0p3_0p6_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p3_0p6_cat1"] = "ggh_YH_0p3_0p6_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p3_0p6_cat2"] = "ggh_YH_0p3_0p6_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p6_0p9_cat0"] = "ggh_YH_0p6_0p9_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p6_0p9_cat1"] = "ggh_YH_0p6_0p9_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p6_0p9_cat2"] = "ggh_YH_0p6_0p9_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p9_2p5_cat0"] = "ggh_YH_0p9_2p5_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p9_2p5_cat1"] = "ggh_YH_0p9_2p5_in"
+globalReplacementMap["intermediateAnalysisDiffYH"]["procRVMap"]["RECO_rapidity_0p9_2p5_cat2"] = "ggh_YH_0p9_2p5_in"
+
+
+# Replacement categories for RV
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"] = od()
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p0_0p15_cat0"] = "RECO_rapidity_0p0_0p15_cat0"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p0_0p15_cat1"] = "RECO_rapidity_0p0_0p15_cat1"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p0_0p15_cat2"] = "RECO_rapidity_0p0_0p15_cat2"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p15_0p3_cat0"] = "RECO_rapidity_0p15_0p3_cat0"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p15_0p3_cat1"] = "RECO_rapidity_0p15_0p3_cat1"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p15_0p3_cat2"] = "RECO_rapidity_0p15_0p3_cat2"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p3_0p6_cat0"] = "RECO_rapidity_0p3_0p6_cat0"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p3_0p6_cat1"] = "RECO_rapidity_0p3_0p6_cat1"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p3_0p6_cat2"] = "RECO_rapidity_0p3_0p6_cat2"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p6_0p9_cat0"] = "RECO_rapidity_0p6_0p9_cat0"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p6_0p9_cat1"] = "RECO_rapidity_0p6_0p9_cat1"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p6_0p9_cat2"] = "RECO_rapidity_0p6_0p9_cat2"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p9_2p5_cat0"] = "RECO_rapidity_0p9_2p5_cat0"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p9_2p5_cat1"] = "RECO_rapidity_0p9_2p5_cat1"
+globalReplacementMap["intermediateAnalysisDiffYH"]["catRVMap"]["RECO_rapidity_0p9_2p5_cat2"] = "RECO_rapidity_0p9_2p5_cat2"
