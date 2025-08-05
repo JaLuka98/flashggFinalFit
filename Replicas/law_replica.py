@@ -63,7 +63,7 @@ def get_replica(parquet_files):
     
     # print(sum_weight_central, sum_genw_beforesel)
     
-    columns_to_load = ["mass", "weight", "genWeight", "pt", "PTJ0", "NJ", "lead_mvaID", "sublead_mvaID", "sigma_m_over_m_corr_smeared_decorr"]
+    columns_to_load = ["mass", "weight", "genWeight", "pt", "PTJ0", "NJ", "DPhiJ0J1", "lead_mvaID", "sublead_mvaID", "sigma_m_over_m_corr_smeared_decorr"]
     
     df = pd.concat((pd.read_parquet(f, columns=columns_to_load) for f in parquet_files), ignore_index=True)
 
