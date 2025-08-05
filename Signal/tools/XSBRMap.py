@@ -557,3 +557,40 @@ globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_75p0_120p0_in'] = {'mode
 globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_120p0_200p0_in'] = {'mode':'constant','factor':0.5638}
 globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_200p0_10000p0_in'] = {'mode':'constant','factor':0.5638}
 globalXSBRMap['intermediateAnalysisDiffPTJ0']['tth_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':0.5638}
+
+
+# Early Run 3 Hgg analysis with differentials in DPhiJ0J1
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1'] = od()
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['decay'] = {'mode':'hgg'}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['ggh_DPhiJ0J1_m3p1416_m2p0944_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['ggh_DPhiJ0J1_m2p0944_m1p0472_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['ggh_DPhiJ0J1_m1p0472_0p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['ggh_DPhiJ0J1_0p0_1p0472_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['ggh_DPhiJ0J1_1p0472_2p0944_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['ggh_DPhiJ0J1_2p0944_3p1416_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['ggh_DPhiJ0J1_m3p1416_3p1416_out'] = {'mode':'constant','factor':51.96}
+
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vbf_DPhiJ0J1_m3p1416_m2p0944_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vbf_DPhiJ0J1_m2p0944_m1p0472_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vbf_DPhiJ0J1_m1p0472_0p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vbf_DPhiJ0J1_0p0_1p0472_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vbf_DPhiJ0J1_1p0472_2p0944_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vbf_DPhiJ0J1_2p0944_3p1416_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vbf_DPhiJ0J1_m3p1416_3p1416_out'] = {'mode':'constant','factor':4.067}
+
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vh_DPhiJ0J1_m3p1416_m2p0944_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vh_DPhiJ0J1_m2p0944_m1p0472_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vh_DPhiJ0J1_m1p0472_0p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vh_DPhiJ0J1_0p0_1p0472_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vh_DPhiJ0J1_1p0472_2p0944_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vh_DPhiJ0J1_2p0944_3p1416_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['vh_DPhiJ0J1_m3p1416_3p1416_out'] = {'mode':'constant','factor':2.3781}
+
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['tth_DPhiJ0J1_m3p1416_m2p0944_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['tth_DPhiJ0J1_m2p0944_m1p0472_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['tth_DPhiJ0J1_m1p0472_0p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['tth_DPhiJ0J1_0p0_1p0472_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['tth_DPhiJ0J1_1p0472_2p0944_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['tth_DPhiJ0J1_2p0944_3p1416_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['intermediateAnalysisDiffDPhiJ0J1']['tth_DPhiJ0J1_m3p1416_3p1416_out'] = {'mode':'constant','factor':0.5638}
+

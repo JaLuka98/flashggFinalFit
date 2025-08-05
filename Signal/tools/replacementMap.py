@@ -792,3 +792,51 @@ globalReplacementMap["intermediateAnalysisDiffPTJ0"]["catRVMap"]["RECO_PTJ0_120p
 globalReplacementMap["intermediateAnalysisDiffPTJ0"]["catRVMap"]["RECO_PTJ0_200p0_10000p0_cat0"] = "RECO_PTJ0_200p0_10000p0_cat0"
 globalReplacementMap["intermediateAnalysisDiffPTJ0"]["catRVMap"]["RECO_PTJ0_200p0_10000p0_cat1"] = "RECO_PTJ0_200p0_10000p0_cat1"
 globalReplacementMap["intermediateAnalysisDiffPTJ0"]["catRVMap"]["RECO_PTJ0_200p0_10000p0_cat2"] = "RECO_PTJ0_200p0_10000p0_cat2"
+
+# Differential DPhiJ0J1 (Delta Phi between the leading and sub-leading jet)
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]['procWV'] = "ggh_DPhiJ0J1_2p0944_3p1416_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]['catWV'] = "RECO_DPhiJ0J1_2p0944_3p1416_cat2"
+# Relacement processes for RV
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]['procRVMap'] = od()
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat0"] = "ggh_DPhiJ0J1_m3p1416_m2p0944_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat1"] = "ggh_DPhiJ0J1_m3p1416_m2p0944_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat2"] = "ggh_DPhiJ0J1_m3p1416_m2p0944_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat0"] = "ggh_DPhiJ0J1_m2p0944_m1p0472_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat1"] = "ggh_DPhiJ0J1_m2p0944_m1p0472_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat2"] = "ggh_DPhiJ0J1_m2p0944_m1p0472_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat0"] = "ggh_DPhiJ0J1_m1p0472_0p0_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat1"] = "ggh_DPhiJ0J1_m1p0472_0p0_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat2"] = "ggh_DPhiJ0J1_m1p0472_0p0_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat0"] = "ggh_DPhiJ0J1_0p0_1p0472_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat1"] = "ggh_DPhiJ0J1_0p0_1p0472_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat2"] = "ggh_DPhiJ0J1_0p0_1p0472_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat0"] = "ggh_DPhiJ0J1_1p0472_2p0944_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat1"] = "ggh_DPhiJ0J1_1p0472_2p0944_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat2"] = "ggh_DPhiJ0J1_1p0472_2p0944_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat0"] = "ggh_DPhiJ0J1_2p0944_3p1416_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat1"] = "ggh_DPhiJ0J1_2p0944_3p1416_in"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat2"] = "ggh_DPhiJ0J1_2p0944_3p1416_in"
+
+
+# Replacement categories for RV
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"] = od()
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat0"] = "RECO_DPhiJ0J1_m3p1416_m2p0944_cat0"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat1"] = "RECO_DPhiJ0J1_m3p1416_m2p0944_cat1"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat2"] = "RECO_DPhiJ0J1_m3p1416_m2p0944_cat2"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat0"] = "RECO_DPhiJ0J1_m2p0944_m1p0472_cat0"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat1"] = "RECO_DPhiJ0J1_m2p0944_m1p0472_cat1"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat2"] = "RECO_DPhiJ0J1_m2p0944_m1p0472_cat2"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat0"] = "RECO_DPhiJ0J1_m1p0472_0p0_cat0"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat1"] = "RECO_DPhiJ0J1_m1p0472_0p0_cat1"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat2"] = "RECO_DPhiJ0J1_m1p0472_0p0_cat2"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat0"] = "RECO_DPhiJ0J1_0p0_1p0472_cat0"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat1"] = "RECO_DPhiJ0J1_0p0_1p0472_cat1"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat2"] = "RECO_DPhiJ0J1_0p0_1p0472_cat2"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat0"] = "RECO_DPhiJ0J1_1p0472_2p0944_cat0"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat1"] = "RECO_DPhiJ0J1_1p0472_2p0944_cat1"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat2"] = "RECO_DPhiJ0J1_1p0472_2p0944_cat2"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat0"] = "RECO_DPhiJ0J1_2p0944_3p1416_cat0"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat1"] = "RECO_DPhiJ0J1_2p0944_3p1416_cat1"
+globalReplacementMap["intermediateAnalysisDiffDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat2"] = "RECO_DPhiJ0J1_2p0944_3p1416_cat2"

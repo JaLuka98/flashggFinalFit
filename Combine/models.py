@@ -474,6 +474,32 @@ models = {
 --PO \"map=.*/vh_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,0,3]\" \
 --PO \"map=.*/vbf_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,0,3]\"",
 
+  "DPhiJ0J1":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/ggh_DPhiJ0J1_m3p1416_m2p0944.*:r_DPhiJ0J1_m3p1416_m2p0944[1,-8,8]\" \
+--PO \"map=.*/tth_DPhiJ0J1_m3p1416_m2p0944.*:r_DPhiJ0J1_m3p1416_m2p0944[1,-8,8]\" \
+--PO \"map=.*/vh_DPhiJ0J1_m3p1416_m2p0944.*:r_DPhiJ0J1_m3p1416_m2p0944[1,-8,8]\" \
+--PO \"map=.*/vbf_DPhiJ0J1_m3p1416_m2p0944.*:r_DPhiJ0J1_m3p1416_m2p0944[1,-8,8]\" \
+--PO \"map=.*/ggh_DPhiJ0J1_m2p0944_m1p0472.*:r_DPhiJ0J1_m2p0944_m1p0472[1,-8,8]\" \
+--PO \"map=.*/tth_DPhiJ0J1_m2p0944_m1p0472.*:r_DPhiJ0J1_m2p0944_m1p0472[1,-8,8]\" \
+--PO \"map=.*/vh_DPhiJ0J1_m2p0944_m1p0472.*:r_DPhiJ0J1_m2p0944_m1p0472[1,-8,8]\" \
+--PO \"map=.*/vbf_DPhiJ0J1_m2p0944_m1p0472.*:r_DPhiJ0J1_m2p0944_m1p0472[1,-8,8]\" \
+--PO \"map=.*/ggh_DPhiJ0J1_m1p0472_0p0.*:r_DPhiJ0J1_m1p0472_0p0[1,-8,8]\" \
+--PO \"map=.*/tth_DPhiJ0J1_m1p0472_0p0.*:r_DPhiJ0J1_m1p0472_0p0[1,-8,8]\" \
+--PO \"map=.*/vh_DPhiJ0J1_m1p0472_0p0.*:r_DPhiJ0J1_m1p0472_0p0[1,-8,8]\" \
+--PO \"map=.*/vbf_DPhiJ0J1_m1p0472_0p0.*:r_DPhiJ0J1_m1p0472_0p0[1,-8,8]\" \
+--PO \"map=.*/ggh_DPhiJ0J1_0p0_1p0472.*:r_DPhiJ0J1_0p0_1p0472[1,-8,8]\" \
+--PO \"map=.*/tth_DPhiJ0J1_0p0_1p0472.*:r_DPhiJ0J1_0p0_1p0472[1,-8,8]\" \
+--PO \"map=.*/vh_DPhiJ0J1_0p0_1p0472.*:r_DPhiJ0J1_0p0_1p0472[1,-8,8]\" \
+--PO \"map=.*/vbf_DPhiJ0J1_0p0_1p0472.*:r_DPhiJ0J1_0p0_1p0472[1,-8,8]\" \
+--PO \"map=.*/ggh_DPhiJ0J1_1p0472_2p0944.*:r_DPhiJ0J1_1p0472_2p0944[1,-8,8]\" \
+--PO \"map=.*/tth_DPhiJ0J1_1p0472_2p0944.*:r_DPhiJ0J1_1p0472_2p0944[1,-8,8]\" \
+--PO \"map=.*/vh_DPhiJ0J1_1p0472_2p0944.*:r_DPhiJ0J1_1p0472_2p0944[1,-8,8]\" \
+--PO \"map=.*/vbf_DPhiJ0J1_1p0472_2p0944.*:r_DPhiJ0J1_1p0472_2p0944[1,-8,8]\" \
+--PO \"map=.*/ggh_DPhiJ0J1_2p0944_3p1416.*:r_DPhiJ0J1_2p0944_3p1416[1,-8,8]\" \
+--PO \"map=.*/tth_DPhiJ0J1_2p0944_3p1416.*:r_DPhiJ0J1_2p0944_3p1416[1,-8,8]\" \
+--PO \"map=.*/vh_DPhiJ0J1_2p0944_3p1416.*:r_DPhiJ0J1_2p0944_3p1416[1,-8,8]\" \
+--PO \"map=.*/vbf_DPhiJ0J1_2p0944_3p1416.*:r_DPhiJ0J1_2p0944_3p1416[1,-8,8]\"",
+
   "yJ0":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggh_YJ0_0p0_0p5.*:r_YJ0_0p0_0p5[1,0,3]\" \
 --PO \"map=.*/tth_YJ0_0p0_0p5.*:r_YJ0_0p0_0p5[1,0,3]\" \

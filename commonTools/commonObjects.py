@@ -161,6 +161,7 @@ jetVariables = [
     "YJ0",
     "AbsPhiHJ0",
     "AbsYHJ0",
+    "DPhiJ0J1",
     "PTHvsDPhiJ0J1"
 ]
 
@@ -199,29 +200,38 @@ differentialProcTable_ = {
         (44, "PTJ0_200p0_10000p0_in"),
         (45, "PTJ0_0p0_10000p0_out")
     ],
+    "DPhiJ0J1": [
+        (50, "DPhiJ0J1_m3p1416_m2p0944_in"),
+        (51, "DPhiJ0J1_m2p0944_m1p0472_in"),
+        (52, "DPhiJ0J1_m1p0472_0p0_in"),
+        (53, "DPhiJ0J1_0p0_1p0472_in"),
+        (54, "DPhiJ0J1_1p0472_2p0944_in"),
+        (55, "DPhiJ0J1_2p0944_3p1416_in"),
+        (56, "DPhiJ0J1_m3p1416_3p1416_out")
+    ],
     "YJ0": [
-        (50, "YJ0_0p0_0p5_in"),
-        (51, "YJ0_0p5_1p2_in"),
-        (52, "YJ0_1p2_2p0_in"),
-        (53, "YJ0_2p0_2p5_in"),
-        (54, "YJ0_NJ0_in"),
-        (55, "YJ0_0p0_2p5_out")
+        (60, "YJ0_0p0_0p5_in"),
+        (61, "YJ0_0p5_1p2_in"),
+        (62, "YJ0_1p2_2p0_in"),
+        (63, "YJ0_2p0_2p5_in"),
+        (64, "YJ0_NJ0_in"),
+        (65, "YJ0_0p0_2p5_out")
     ],
     "AbsPhiHJ0": [
-        (60, "AbsPhiHJ0_0p0_2p6_in"),
-        (61, "AbsPhiHJ0_2p6_2p9_in"),
-        (62, "AbsPhiHJ0_2p9_3p03_in"),
-        (63, "AbsPhiHJ0_3p03_3p1415926_in"),
-        (64, "AbsPhiHJ0_NJ_in"),
-        (65, "AbsPhiHJ0_0p0_Pi_out")
+        (70, "AbsPhiHJ0_0p0_2p6_in"),
+        (71, "AbsPhiHJ0_2p6_2p9_in"),
+        (72, "AbsPhiHJ0_2p9_3p03_in"),
+        (73, "AbsPhiHJ0_3p03_3p1415926_in"),
+        (74, "AbsPhiHJ0_NJ_in"),
+        (75, "AbsPhiHJ0_0p0_Pi_out")
     ],
     "AbsYHJ0": [
-        (70, "AbsYHJ0_0p0_0p6_in"),
-        (71, "AbsYHJ0_0p6_1p2_in"),
-        (72, "AbsYHJ0_1p2_1p9_in"),
-        (73, "AbsYHJ0_1p9_100p0_in"),
-        (74, "AbsYHJ0_NJ0_in"),
-        (75, "AbsYHJ0_0p0_100p0_out")
+        (80, "AbsYHJ0_0p0_0p6_in"),
+        (81, "AbsYHJ0_0p6_1p2_in"),
+        (82, "AbsYHJ0_1p2_1p9_in"),
+        (83, "AbsYHJ0_1p9_100p0_in"),
+        (84, "AbsYHJ0_NJ0_in"),
+        (85, "AbsYHJ0_0p0_100p0_out")
     ],
     "PTHvsDPhiJ0J1": [
         (4501, "PTHvsDPhiJ0J1_0p0_15p0_mPi_m23Pi_in"),
@@ -294,6 +304,7 @@ variableBins = {
     "NJ": ["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"],
     "rapidity": ["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"],
     "PTJ0": ["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"],
+    "DPhiJ0J1": ["m3p1416_m2p0944", "m2p0944_m1p0472", "m1p0472_0p0", "0p0_1p0472", "1p0472_2p0944", "2p0944_3p1416"],
     "PTHvsDPhiJ0J1": ["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"]
 }
 

@@ -97,6 +97,13 @@
         "fit_opts":"--setParameterRanges r=0,3 --saveSpecifiedNuis all+--setParameterRanges r=0,3 --saveSpecifiedNuis all"
     },
 
+    "DPhiJ0J1":{
+        "pois":"r_DPhiJ0J1_m3p1416_m2p0944,r_DPhiJ0J1_m2p0944_m1p0472,r_DPhiJ0J1_m1p0472_0p0,r_DPhiJ0J1_0p0_1p0472,r_DPhiJ0J1_1p0472_2p0944,r_DPhiJ0J1_2p0944_3p1416",
+        "fits":"profile1D:syst:all+profile1D:statonly:all",
+        "points":"40:40+40:40",
+        "fit_opts":"--setParameterRanges r=-8,8 --saveSpecifiedNuis all+--setParameterRanges r=-8,8 --saveSpecifiedNuis all"
+    },
+
     "yJ0":{
         "pois":"r_YJ0_0p0_0p5,r_YJ0_0p5_1p2,r_YJ0_1p2_2p0,r_YJ0_2p0_2p5,r_YJ0_NJ0",
         "fits":"profile1D:syst:all+profile1D:statonly:all",
