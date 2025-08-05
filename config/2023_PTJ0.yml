@@ -8,6 +8,7 @@ inputFiles:
   Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/variables/PTJ0/root'
 
   src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/signal'
+  catDict_timestamp: '2025_08_04'
 
 backgroundScriptCfg:
   # Setup

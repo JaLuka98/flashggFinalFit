@@ -63,7 +63,7 @@ def get_replica(parquet_files):
     
     # print(sum_weight_central, sum_genw_beforesel)
     
-    columns_to_load = ["mass", "weight", "genWeight", "pt", "PTJ0", "NJ", "DPhiJ0J1", "lead_mvaID", "sublead_mvaID", "sigma_m_over_m_corr_smeared_decorr"]
+    columns_to_load = ["mass", "weight", "genWeight", "pt", "PTJ0", "NJ", "DPhiJ0J1", "rapidity", "lead_mvaID", "sublead_mvaID", "sigma_m_over_m_corr_smeared_decorr"]
     
     df = pd.concat((pd.read_parquet(f, columns=columns_to_load) for f in parquet_files), ignore_index=True)
 
@@ -366,7 +366,7 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
         # Need to load the categorization dictionary
         # Location hardcoded, as I want to use the "common" categorization dictionary from the Analysis Git Repo
-        cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", f"{self.variable}_MC.json")
+        cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
         if not os.path.exists(cat_dict_path):
             print(f"Category dictionary {cat_dict_path} does not exist. Check path in law_replica.py. Exiting...")
             exit(1)
@@ -427,9 +427,20 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         
         # Now merge the procs per category
         for cat in cat_dict:
-            query_str = " and ".join(
-                f"{col} {op} {val}" for col, op, val in cat_dict[cat]["cat_filter"]
-            )
+            try:
+                query_str = " and ".join(
+                    f"{col} {op} {val}" for col, op, val in cat_dict[cat]["cat_filter"]
+                )
+            except:
+                # Have a variable using absolute values.
+                query_str = ""
+                for k, set_of_conditions in enumerate(cat_dict[cat]["cat_filter"]):
+                    if k > 0:
+                        query_str += " and "
+                    query_str += " and ".join(
+                        f"{col} {op} {val}" for col, op, val in set_of_conditions
+                    )
+            print(f"Processing category {cat} with query: {query_str}")
             # Merge the replicas for the current category
             merged_replica = pd.concat([replica_separated_procs[i].query(query_str) for i in range(len(replica_separated_procs))], ignore_index=True)
                                         

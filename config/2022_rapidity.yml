@@ -10,6 +10,7 @@ inputFiles:
   # Trees2WS
   Trees2WSData: '/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/devel/EOSCMS/2024/ntuples/forPaper_24_10_14/variables/rapidity/data_postprocessing/root/Data/allData_2022.root'
   Trees2WS: '/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/devel/EOSCMS/2024/ntuples/forPaper_24_10_14/variables/rapidity/signal_postprocessing/root'
+  catDict_timestamp: '2025_08_04'
 
 backgroundScriptCfg:
   # Setup
