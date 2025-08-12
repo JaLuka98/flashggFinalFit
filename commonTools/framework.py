@@ -186,6 +186,6 @@ class SlurmWorkflow(law.slurm.SlurmWorkflow):
         
         config.custom_content.append(("time", job_time))
         config.custom_content.append(("mem", self.slurm_memory))
-        config.custom_content.append(("nodes", 1))
+        # config.custom_content.append(("nodes", 1))
 
         return config
