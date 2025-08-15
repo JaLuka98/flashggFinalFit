@@ -368,7 +368,7 @@ class CalcPhotonSystCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             if "/work" in self.output_dir:
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/calcPhotonSyst/pkl'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/calcPhotonSyst/pkl'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/calcPhotonSyst/pkl'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/outdir_{self.ext}/calcPhotonSyst/pkl'], shell=True)
@@ -643,8 +643,8 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/output'], shell=True)
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/Plots'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/signalFit/output'], shell=True)
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/signalFit/Plots'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/output'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/Plots'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/outdir_{self.ext}/signalFit/output'], shell=True)

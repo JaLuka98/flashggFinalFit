@@ -52,7 +52,7 @@
         "pois":"r_NJ_0p0_1p0,r_NJ_1p0_2p0,r_NJ_2p0_3p0,r_NJ_3p0_100p0",
         "fits":"profile1D:syst:all+profile1D:statonly:all",
         "points":"40:40+40:40",
-        "fit_opts":"--setParameterRanges r=-5,5 --saveSpecifiedNuis all+--setParameterRanges r=-5,5 --saveSpecifiedNuis all"
+        "fit_opts":"--setParameterRanges r=-10,10 --saveSpecifiedNuis all+--setParameterRanges r=-10,10 --saveSpecifiedNuis all"
     },
 
     "Njets2p5_0_3_fine":{
