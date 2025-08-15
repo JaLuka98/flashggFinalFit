@@ -16,6 +16,7 @@ crabConfig_*
 # ROOT-related files
 *.root
 *.C
+!toy_Bonly.C
 !checkPdfIdx.C
 *_cc.d
 *_cc.so

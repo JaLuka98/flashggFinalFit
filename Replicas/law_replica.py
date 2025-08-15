@@ -217,18 +217,27 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         
         print("Generating B-Only replica with seed {}".format(seed))
 
-        arguments = [
-            "combine",
-            "-M", "GenerateOnly",
-            "-d", ws_path,
-            "-t", "1",
-            "-s", f"{seed}",
-            "--setParameters", ",".join(combineVariableDict(self.variable, self.year)['paramStrZero']),
-            "--saveToys",
-            "--freezeParameters", "MH",
-            "-m", "125.38",
-            "-n", f"Toy_{int(replica_index)}",
-        ]
+        # arguments = [
+        #     "combine",
+        #     "-M", "GenerateOnly",
+        #     "-d", ws_path,
+        #     "-t", "1",
+        #     "-s", f"{seed}",
+        #     "--setParameters", ",".join(combineVariableDict(self.variable, self.year)['paramStrZero']),
+        #     "--saveToys",
+        #     "--freezeParameters", "MH",
+        #     "--toysNoSystematics", # Just try it and see if it screws up the correlation matrix
+        #     "-m", "125.38",
+        #     "-n", f"Toy_{int(replica_index)}",
+        # ]
+
+        # Run the ROOT command
+        background_model_folder_name = config['datacard_yields']['bkgModelWSDir'].split('/')[-2]
+        bkg_input_folder = os.path.join(output_dir, "Combine", background_model_folder_name, "background")
+        toy_output_file = f"./higgsCombineToy_{int(replica_index)}"+f".GenerateOnly.mH125.38.{seed}.root"
+        arguments = ['root', '-l', '-q', f"{os.environ['ANALYSIS_PATH']}/Replicas/toy_Bonly.C(\"{bkg_input_folder}\", \"{toy_output_file}\", {seed})"]
+        
+        # Execute the command and capture the output
         command = arguments
         # print(command)
         try:
