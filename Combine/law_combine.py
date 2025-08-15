@@ -506,7 +506,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 execute_command([f'mkdir -p $TARGET_PATH/Combine/Datacards/{config["datacard_yields"]["sigModelWSDir"]}'], shell=True)
                 execute_command([f'mkdir -p $TARGET_PATH/Combine/Datacards/{config["datacard_yields"]["bkgModelWSDir"]}'+bootstrap_suffix], shell=True)
                 # Keep t2w_jobs for debugging purposes
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/t2w_jobs'], shell=True)    
+                execute_command([f'mkdir -p $TARGET_PATH/Combine/t2w_jobs'], shell=True)
                 temp_output_dir = os.environ["TARGET_PATH"]
                 
                 # Copy concerning datacard + Model to scratch dir, cause of how RunText2Workspace works.--
@@ -678,7 +678,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
 
                 print(file_list)
                 execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/'], shell=True)
-                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine')} root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/"], shell=True)
+                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine')} root://t3dcachedb03.psi.ch:1094//{output_dir}/"], shell=True)
             # time.sleep(19999)
             shutil.rmtree(temp_output_dir)
         
