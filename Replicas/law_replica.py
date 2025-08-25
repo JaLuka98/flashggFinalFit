@@ -81,7 +81,8 @@ def get_replica(parquet_files):
 
     ## Compute the expected number of events
     ## This is scaled to the full Run3 lumi and the individual production XS (=ggH or VBF or VH or ttH or bbH); Taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt13TeV
-    exp = sum(df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * lumiMap[era] # 55.65
+    # exp = sum(df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * lumiMap[era] # 55.65
+    exp = sum(df["weight_norm"]) * (production_XS["GluGluHtoGG"] + production_XS["VBFHtoGG"] + production_XS["VHtoGG"] + production_XS["ttHtoGG"] + production_XS["bbHtoGG"]) * 0.2270/100 * 1000 * 27.3
 
     ## Extract from a Poisson distribution the number of events for each replica
     exp_replicas = poisson.rvs(mu=exp, size=(1))
@@ -94,6 +95,164 @@ def get_replica(parquet_files):
     replica = df.loc[idx_replicas[0]]
         
     return replica
+
+class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
+    variable = law.Parameter(default="", description="Variable to be used")
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    year = law.Parameter(default='2022', description="Year")
+
+    batch_flavor = law.Parameter(default="slurm", description="Special treatment for PSI Slurm batch system")
+
+    def workflow_requires(self):
+        # req() is defined on all tasks and handles the passing of all parameter values that are
+        # common between the required task and the instance (self)
+
+        workflow_reqs = super().workflow_requires()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
+        
+        if self.variable == '':
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+        
+        fitConfig = config["combine_fit"]
+        
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+
+        return tasks
+
+    def create_branch_map(self):
+        branch_map = {i: i for i in range(1)}
+        return branch_map
+
+    def output(self):
+        
+        if self.variable == '':
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
+        else:
+            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+            
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+        
+        output_paths = []
+
+        output_paths.append(os.path.join(output_dir, 'Replicas', f'higgsCombineFirstStep.MultiDimFit.mH125.38.root'))
+
+        outputFileTargets = []
+                
+        for _, current_output_path in enumerate(output_paths):
+            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+        
+        return outputFileTargets
+
+    def run(self):
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")            
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+        
+        cwd = os.getcwd()
+        
+        if self.variable == '':
+            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+        else:
+            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+                    
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Replicas'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Replicas'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Replicas'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Replicas'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Replicas'))
+
+        arguments = [
+            "combine",
+            "-M", "MultiDimFit",
+            ws_path,
+            "--freezeParameters", "MH",
+            "-m", "125.38",
+            "-n", f"FirstStep",
+            "--cminDefaultMinimizerStrategy=0",
+            "--expectSignal", "1",
+            "--saveWorkspace",
+            "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+            "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+            "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+            "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+            "-t", "-1",
+            "--saveFitResult",
+            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
+            "--floatOtherPOIs", "1"
+        ]
+
+        # Execute the command and capture the output
+        command = arguments
+        print(command)
+        try:
+            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            print("Script output:", result.stdout)
+            print("Script executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Error executing script:", e.stderr)
+    
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Replicas/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Replicas/",
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
+
+        os.chdir(cwd)
 
 class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     variable = law.Parameter(default="", description="Variable to be used")
@@ -215,6 +374,32 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
 
         seed = int(self.seed) + int(replica_index)
         
+        first_output = os.path.join(output_dir, 'Replicas')
+
+        def check_pdf_idx(param):
+            # Run the ROOT command
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep.MultiDimFit.mH125.38.root")\''
+            
+            # Execute the command and capture the output
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            
+            # Get the output and check for errors
+            pdfIdx = result.stdout.strip()
+            
+            if result.returncode != 0:
+                print("Error executing the command:", result.stderr)
+                return None
+            
+            if pdfIdx.startswith("Processing"):
+                pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
+            
+            # Remove the last comma
+            pdfIdx = pdfIdx.rstrip(',')
+
+            # Print the final result
+            print(pdfIdx)
+            return pdfIdx
+        
         print("Generating B-Only replica with seed {}".format(seed))
 
         # arguments = [
@@ -268,7 +453,7 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
             # Clean up the temporary directory
             shutil.rmtree(os.environ["TARGET_PATH"])
 
-        os.chdir(cwd) 
+        os.chdir(cwd)
 
 class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     # Don't be afraid. It's just a toy.
