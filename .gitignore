@@ -32,6 +32,7 @@ AutoDict_*
 *.png
 *.pdf
 *.out
+*.err
 *.tmp
 *.pcm
 *.o
