@@ -97,8 +97,8 @@ outputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':'','scalesGlobal':'
 bkgWSName__ = "multipdf"
 
 # Define an array of input masses
-# input_masses = [120, 125, 130]
-input_masses = [125]
+input_masses = [120, 125, 130]
+# input_masses = [125]
 
 # Define an array of production modes and corresponding process strings
 # JLS 23th Jan 2025, also adding 2G naming conventions
@@ -156,7 +156,7 @@ conversionTable_ = {
 
 # List of all jet-related variables. Variables listed here will get the CMS_scale_j and CMS_res_j uncertainty in the datacard step.
 jetVariables = [
-    "Njets2p5",
+    "NJ",
     "PTJ0",
     "YJ0",
     "AbsPhiHJ0",
