@@ -81,8 +81,9 @@ def get_replica(parquet_files):
 
     ## Compute the expected number of events
     ## This is scaled to the full Run3 lumi and the individual production XS (=ggH or VBF or VH or ttH or bbH); Taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt13TeV
-    # exp = sum(df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * lumiMap[era] # 55.65
-    exp = sum(df["weight_norm"]) * (production_XS["GluGluHtoGG"] + production_XS["VBFHtoGG"] + production_XS["VHtoGG"] + production_XS["ttHtoGG"] + production_XS["bbHtoGG"]) * 0.2270/100 * 1000 * 27.3
+    exp = sum(df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * lumiMap[era] # 55.65
+    # exp = sum(df["weight_norm"]) * (production_XS["GluGluHtoGG"] + production_XS["VBFHtoGG"] + production_XS["VHtoGG"] + production_XS["ttHtoGG"]) * 0.2270/100 * 1000 * 27.3
+    # exp = sum(df["weight_norm"]) * (production_XS["GluGluHtoGG"]) * 0.2270/100 * 1000 * 27.3
 
     ## Extract from a Poisson distribution the number of events for each replica
     exp_replicas = poisson.rvs(mu=exp, size=(1))
@@ -93,7 +94,7 @@ def get_replica(parquet_files):
 
     ## Extract the events for each replica
     replica = df.loc[idx_replicas[0]]
-        
+
     return replica
 
 class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
@@ -292,7 +293,7 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         
         fitConfig = config["combine_fit"]
         
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+        tasks["GetAsimovBestFit"] = GetAsimovBestFit(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
 
         return tasks
 
@@ -376,9 +377,9 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         
         first_output = os.path.join(output_dir, 'Replicas')
 
-        def check_pdf_idx(param):
+        def check_pdf_idx():
             # Run the ROOT command
-            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep.MultiDimFit.mH125.38.root")\''
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombineFirstStep.MultiDimFit.mH125.38.root")\''
             
             # Execute the command and capture the output
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -389,7 +390,7 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            
+
             if pdfIdx.startswith("Processing"):
                 pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
             
@@ -415,16 +416,18 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         #     "-m", "125.38",
         #     "-n", f"Toy_{int(replica_index)}",
         # ]
+        
+        pdfIdx = check_pdf_idx()
 
         # Run the ROOT command
         background_model_folder_name = config['datacard_yields']['bkgModelWSDir'].split('/')[-2]
         bkg_input_folder = os.path.join(output_dir, "Combine", background_model_folder_name, "background")
         toy_output_file = f"./higgsCombineToy_{int(replica_index)}"+f".GenerateOnly.mH125.38.{seed}.root"
-        arguments = ['root', '-l', '-q', f"{os.environ['ANALYSIS_PATH']}/Replicas/toy_Bonly.C(\"{bkg_input_folder}\", \"{toy_output_file}\", {seed})"]
+        arguments = ['root', '-l', '-q', f"{os.environ['ANALYSIS_PATH']}/Replicas/toy_Bonly.C(\"{bkg_input_folder}\", \"{toy_output_file}\", \"{pdfIdx}\", {seed})"]
         
         # Execute the command and capture the output
         command = arguments
-        # print(command)
+        print(command)
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)
@@ -774,7 +777,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
 
         if self.variable != '':
             output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.root')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'multidimfitfirstStep.root')]
+            # output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'multidimfitfirstStep.root')]
 
         outputFileTargets = []
 
@@ -826,6 +829,34 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         seed = int(self.seed) + int(replica_index)
                 
         # pdfIndicesStr = ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])
+
+        first_output = os.path.join(output_dir, 'Replicas')
+
+        def check_pdf_idx():
+            # Run the ROOT command
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombineFirstStep.MultiDimFit.mH125.38.root")\''
+            
+            # Execute the command and capture the output
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            
+            # Get the output and check for errors
+            pdfIdx = result.stdout.strip()
+            
+            if result.returncode != 0:
+                print("Error executing the command:", result.stderr)
+                return None
+
+            if pdfIdx.startswith("Processing"):
+                pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
+            
+            # Remove the last comma
+            pdfIdx = pdfIdx.rstrip(',')
+
+            # Print the final result
+            print(pdfIdx)
+            return pdfIdx
+        
+        pdfIdx = check_pdf_idx()
         
         splusb_toy = os.path.join(output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
 
@@ -843,9 +874,12 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                "--algo", "singles",
-                "--saveFitResult",
-                "--freezeParameters", f"""MH""",
+                # "--algo", "singles",
+                "--algo", "none",
+                # "--saveFitResult",
+                "--setParameters", f"""{pdfIdx}""",
+                # "--freezeParameters", f"""MH,{pdfIdx}""",
+                # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
                 "-D", f"{splusb_toy}:toys/toy_1",
             ]
             command = arguments
