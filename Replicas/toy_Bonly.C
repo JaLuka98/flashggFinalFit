@@ -1,4 +1,6 @@
 #include <filesystem>
+#include <sstream>
+#include <vector>
 namespace fs = std::filesystem;
 
 std::string getDataHistName(const std::string& filename) {
@@ -16,6 +18,22 @@ std::string getDataHistName(const std::string& filename) {
     return "roohist_data_mass_RECO_" + cat;
 }
 
+// Hilfsfunktion zum Parsen des Eingabestrings
+std::vector<std::pair<std::string, int>> parsePdfIndices(const std::string& input) {
+    std::vector<std::pair<std::string, int>> result;
+    std::stringstream ss(input);
+    std::string item;
+    while (std::getline(ss, item, ',')) {
+        size_t eqPos = item.find('=');
+        if (eqPos != std::string::npos) {
+            std::string name = item.substr(0, eqPos);
+            int value = std::stoi(item.substr(eqPos + 1));
+            result.emplace_back(name, value);
+        }
+    }
+    return result;
+}
+
 // Hilfsfunktion zum Extrahieren des Kategorienamens
 std::string getCategoryName(const std::string& filename) {
     size_t start = filename.find("CMS-HGG_multipdf_");
@@ -26,7 +44,7 @@ std::string getCategoryName(const std::string& filename) {
     return filename.substr(start, end - start);
 }
 
-void toy_Bonly(const char* inputFolder, const char* outputFile, int seed) {
+void toy_Bonly(const char* inputFolder, const char* outputFile, const char* pdfindex, int seed) {
     std::vector<std::string> rootFiles;
     for (const auto& entry : fs::directory_iterator(inputFolder)) {
         if (entry.path().extension() == ".root") {
@@ -34,6 +52,22 @@ void toy_Bonly(const char* inputFolder, const char* outputFile, int seed) {
         }
     }
     std::sort(rootFiles.begin(), rootFiles.end());
+
+    // pdfindices setzen und fixieren
+    std::vector<std::pair<std::string, int>> indices;
+    std::string indices_str = pdfindex;
+    if (!indices_str.empty()) {
+        indices = parsePdfIndices(indices_str);
+        // std::cout << "Indices: " << indices << std::endl;
+        std::cout << "Indices:" << std::endl;
+        for (const auto& [name, val] : indices) {
+            std::cout << "  " << name << " = " << val << std::endl;
+        }
+    }
+    if (indices.empty()) {
+        std::cerr << "Error: No valid pdfindex provided." << std::endl;
+        return;
+    }
 
     RooDataSet* mergedToy = nullptr;
     RooArgSet* vars = nullptr;
@@ -53,11 +87,28 @@ void toy_Bonly(const char* inputFolder, const char* outputFile, int seed) {
         TFile* file = TFile::Open(filename.c_str());
         if (!file || file->IsZombie()) continue;
 
+        // Kategorie-Label aus Dateiname extrahieren und in RooCategory definieren
+        std::string catName = catNames[fileIdx];
+        std::cout << "Category name: " << catName << std::endl;
+
+        // Initialisiere bestFit_idx für jede Kategorie
+        int bestFit_idx = -1;
+
+        for (const auto& [name, val] : indices) {
+            // std::cout << "Checking index: " << name << " = " << catName << std::endl;
+            if (name.find(catName) != std::string::npos) {
+                bestFit_idx = val;
+                break;  // stop once we find it
+            }
+        }
+
+        std::cout << "Best fit index for category " << catName << ": " << bestFit_idx << std::endl;
+
         RooWorkspace* ws = (RooWorkspace*)file->Get("multipdf");
         if (!ws) { file->Close(); continue; }
 
         RooRealVar* obs = ws->var("CMS_hgg_mass");
-        obs->setBins(80);
+        obs->setBins(320);
         if (!obs) { file->Close(); continue; }
 
         RooMultiPdf* multipdf = nullptr;
@@ -73,7 +124,7 @@ void toy_Bonly(const char* inputFolder, const char* outputFile, int seed) {
         delete pdfIt;
         if (!multipdf) { file->Close(); continue; }
 
-        RooAbsPdf* pdf = multipdf->getCurrentPdf();
+        RooAbsPdf* pdf = multipdf->getPdf(bestFit_idx);
 
         std::string dataHistName = getDataHistName(filename);
         RooAbsData* data = ws->data(dataHistName.c_str());
@@ -82,17 +133,35 @@ void toy_Bonly(const char* inputFolder, const char* outputFile, int seed) {
         RooRealVar* n_yield = new RooRealVar("n_yield", "Fitted yield", 1000, 0, 1e6);
         RooExtendPdf* extPdf = new RooExtendPdf("extPdf", "extended pdf", *pdf, *n_yield);
 
-        extPdf->fitTo(*data, RooFit::Extended(), RooFit::PrintLevel(-1));
+        // // Blind the dataset in the signal region
+        // obs->setRange("lowerSidebands", 100, 115);
+        // obs->setRange("upperSidebands", 135, 180);
+
+        // RooDataSet* data_low  = (RooDataSet*) data->reduce(RooFit::CutRange("lowerSidebands"));
+        // RooDataSet* data_high = (RooDataSet*) data->reduce(RooFit::CutRange("upperSidebands"));
+
+        // // Clone and append
+        // RooDataSet* data_sidebands = (RooDataSet*) data_low->Clone("data_sidebands");
+        // data_sidebands->append(*data_high);
+
+        // // Now fit only to the sidebands
+        // extPdf->fitTo(*data_sidebands,
+        //             RooFit::Extended(),
+        //             RooFit::PrintLevel(-1));
+
+        extPdf->fitTo(*data,
+            RooFit::Extended(),
+            RooFit::PrintLevel(-1));
+
         double fitted_yield = n_yield->getVal();
 
-        TRandom3 *rng = new TRandom3(seed);
+        TRandom3 *rng = new TRandom3(seed); // Setze den Seed für die Zufallszahlengenerierung für den Poissonian
         int nToys = rng->Poisson(fitted_yield);
 
         RooArgSet genVars(*obs); // Nur über obs generieren!
+        RooRandom::randomGenerator()->SetSeed(seed); // Setze nochmal den Seed für die Zufallszahlengenerierung für RooFit. Duh...
         RooDataSet* toyData = pdf->generate(genVars, nToys);
 
-        // Kategorie-Label aus Dateiname extrahieren und in RooCategory definieren
-        std::string catName = catNames[fileIdx];
         CMS_channel.setLabel(catName.c_str()); // Setze Wert für diese Kategorie
         cout << "Processing category: " << catName << " (channel_number=" << fileIdx << ")" << std::endl;
 
