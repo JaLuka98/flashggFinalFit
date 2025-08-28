@@ -1,23 +1,18 @@
 # Config file: options for signal fitting
 
-
-# Tests
-# Test Trees2WS: law run Trees2WS --variable rapidity --workers 4 --output-dir /afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/test_t2w_diff/t2w --doDiffSplitting True --doSystematic True
-
-outputFolder: '/eos/home-n/niharrin/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/forPaper_24_10_14_rapidity/'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/devel/EOSCMS/2024/ntuples/forPaper_24_10_14/variables/rapidity/data_postprocessing/root/Data/allData_2022.root'
-  Trees2WS: '/afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/devel/EOSCMS/2024/ntuples/forPaper_24_10_14/variables/rapidity/signal_postprocessing/root'
-  catDict_timestamp: '2025_08_04'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/PTH/allData_2023.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/PTH/root'
 
 backgroundScriptCfg:
   # Setup
   cats: 'auto' # auto: automatically inferred from input ws
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
-  ext: 'earlyAnalysis_rapidity' # extension to add to output directory
-  # year: '2022' # Use combined when merging all years in category (for plots)
+  ext: 'earlyAnalysis_PTH' # extension to add to output directory
+  # year: '2023' # Use combined when merging all years in category (for plots)
   execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
@@ -42,21 +37,21 @@ trees2wsCfg:
     - "*Up"
     - "*Down"
     - "fiducialGeometricFlag"
-    - "diffVariable_GenYH"
+    - "diffVariable_GenPTH"
   
   dataVars:
     - "CMS_hgg_mass"
     - "weight" # Vars to be added for data
     
   stxsVar: ''
-  diffVar: 'diffVariable_GenYH'
+  diffVar: 'diffVariable_GenPTH'
   notagVars: [] # Vars to add to NOTAG RooDataset
   
   systematicsVars:
     - "CMS_hgg_mass"
     - "weight"
     - "fiducialGeometricFlag"
-    - "diffVariable_GenYH"
+    - "diffVariable_GenPTH"
   
   theoryWeightContainers:
     weight_LHEPdf: 101
@@ -76,17 +71,18 @@ trees2wsCfg:
   cats: 'auto'
 
   execution: 'slurm'
-  batchPartition: "standard" # Slurm partition to use for job submission
-  batchMemory: 12000 # Slurm memory to use for job submission
-  batchMaxRuntime: "05:00:00" # Slurm max runtime to use
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
-signalScriptCfg_2022_preEE:
+signalScriptCfg_2023_preBPix:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'earlyAnalysis_rapidity_2022preEE' # output directory extension
-  analysis: 'earlyAnalysisDiffYH' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
-  year: '2022preEE' # Use 'combined' if merging all years: not recommended
+  ext: 'earlyAnalysis_PTH_2023preBPix' # output directory extension
+  analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
+  year: '2023preBPix' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '25' # 50
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
@@ -107,13 +103,14 @@ signalScriptCfg_2022_preEE:
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
-signalScriptCfg_2022_postEE:
+signalScriptCfg_2023_postBPix:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'earlyAnalysis_rapidity_2022postEE' # output directory extension
-  analysis: 'earlyAnalysisDiffYH' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
-  year: '2022postEE' # Use 'combined' if merging all years: not recommended
+  ext: 'earlyAnalysis_PTH_2023postBPix' # output directory extension
+  analysis: 'earlyAnalysisDiffPt' # To specify replacement dataset and XS*BR mapping (defined in ./tools/replacementMap.py and ./tools/XSBRMap.py respectively)
+  year: '2023postBPix' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '25' # 50
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
@@ -124,7 +121,6 @@ signalScriptCfg_2022_postEE:
 
   doPlots: True
 
-  
   beamspotWidthData: '3.5'
   beamspotWidthMC: '3.732'
 
@@ -134,13 +130,12 @@ signalScriptCfg_2022_postEE:
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
-packaged_2022:
+packaged_2023:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
-  # Job submission options
-  execution: 'slurm'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
@@ -149,9 +144,9 @@ datacard_yields:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   procs: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'earlyAnalysis' # Extension for saving
-  # inputWSDirMap: '2022preEE,2022postEE'
-  sigModelWSDir: './Models_rapidity/signal' # Input signal model WS directory
-  bkgModelWSDir: './Models_rapidity/background' # Input background model WS directory
+  # inputWSDirMap: '2023preBPix,2023postBPix'
+  sigModelWSDir: './Models_PTH/signal' # Input signal model WS directory
+  bkgModelWSDir: './Models_PTH/background' # Input background model WS directory
   bkgModelExt: 'multipdf' # Extension used when saving background model
   doSystematics: True # Include systematics calculations and add to datacard
   mergeYears: True # Merge category across years
@@ -182,7 +177,7 @@ datacard:
 
   # For output:
   saveDataFrame: False # Save final dataframe as pkl file
-  output: 'Datacard_rapidity_2022' # Datacard name
+  output: 'Datacard_PTH_2023' # Datacard name
 
 datacard_clean:
   factor: 10000 # Factor beyond which uncertainty is considered incorrect and is removed
@@ -192,21 +187,22 @@ datacard_clean:
   verbose: False # Spit out all the cleaning being done
 
 combine_fit:
-  asimov_numPoints: 100 # Number of points the Asimov generator should generate for the NLL scan
+  asimov_numPoints: 200 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,3"
+  cminApproxPreFitTolerance: 0.01
   execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+  batchMaxRuntime: "00:45:00" # Slurm max runtime to use
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
   not_show_POI: True
   execution: 'slurm'
-  batchPartition: "standard" # Slurm partition to use for job submission
-  batchMemory: 8000 # Slurm memory to use for job submission
-  batchMaxRuntime: "08:00:00" # Slurm max runtime to use
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_hesse:
   execution: 'slurm'
@@ -218,27 +214,29 @@ combine_mggToys:
   nToys: 1000 # Number of toys = nToys * 10
   loadSnapshot: 'MultiDimFit'
   doBands: True
-  execution: 'slurm'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 spectra:
   no_preliminary: True # Flag that determines, if Preliminary label should be printed.
-  ggh_xs: "fidXS_YH_ggH"
-  vbf_xs: "fidXS_YH_VBFH"
-  vh_xs: "fidXS_YH_VH"
-  tth_xs: "fidXS_YH_ttH"
-  xh_xs: "fidXS_YH_xH"
-  ggh_powheg_xs: "fidXS_YH_ggH_powheg"
-  ggh_no_nnlops_xs: "fidXS_YH_ggH_genWeight"
+  ggh_xs: "fidXS_PTH_ggH"
+  vbf_xs: "fidXS_PTH_VBFH"
+  vh_xs: "fidXS_PTH_VH"
+  tth_xs: "fidXS_PTH_ttH"
+  xh_xs: "fidXS_PTH_xH"
+  ggh_powheg_xs: "fidXS_PTH_ggH_powheg"
+  ggh_no_nnlops_xs: "fidXS_PTH_ggH_genWeight"
   underflow_bin_normalized: False # Underflow bin normalized with binwidth
-  last_bin_center: 0
-  first_bin_center: 0.075
-  plot_log: 0
-  variable: "|y^H|"
-  y_unit: "(fb)"
-  x_unit: ""
-  x_lim: [0, 2.5]
-  y_lim: [0,2.75]
+  last_bin_center: 425
+  first_bin_center: 7.5
+  plot_log: 1
+  variable: "p_T^H"
+  y_unit: "(fb/GeV)"
+  x_unit: "(GeV)"
+  x_lim: [0, 500]
+  y_lim: [-1,3]
+  y_lim_top: 500
+  overflow: 500
 
