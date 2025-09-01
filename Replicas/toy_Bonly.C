@@ -133,33 +133,18 @@ void toy_Bonly(const char* inputFolder, const char* outputFile, const char* pdfi
         RooRealVar* n_yield = new RooRealVar("n_yield", "Fitted yield", 1000, 0, 1e6);
         RooExtendPdf* extPdf = new RooExtendPdf("extPdf", "extended pdf", *pdf, *n_yield);
 
-        // // Blind the dataset in the signal region
-        // obs->setRange("lowerSidebands", 100, 115);
-        // obs->setRange("upperSidebands", 135, 180);
-
-        // RooDataSet* data_low  = (RooDataSet*) data->reduce(RooFit::CutRange("lowerSidebands"));
-        // RooDataSet* data_high = (RooDataSet*) data->reduce(RooFit::CutRange("upperSidebands"));
-
-        // // Clone and append
-        // RooDataSet* data_sidebands = (RooDataSet*) data_low->Clone("data_sidebands");
-        // data_sidebands->append(*data_high);
-
-        // // Now fit only to the sidebands
-        // extPdf->fitTo(*data_sidebands,
-        //             RooFit::Extended(),
-        //             RooFit::PrintLevel(-1));
-
         extPdf->fitTo(*data,
             RooFit::Extended(),
             RooFit::PrintLevel(-1));
 
         double fitted_yield = n_yield->getVal();
 
-        TRandom3 *rng = new TRandom3(seed); // Setze den Seed für die Zufallszahlengenerierung für den Poissonian
+        int catSeed = seed + 1000000 * fileIdx; // Großer Offset, um Überschneidungen zu vermeiden
+        TRandom3 *rng = new TRandom3(catSeed); // Setze den Seed für die Zufallszahlengenerierung für den Poissonian
         int nToys = rng->Poisson(fitted_yield);
 
         RooArgSet genVars(*obs); // Nur über obs generieren!
-        RooRandom::randomGenerator()->SetSeed(seed); // Setze nochmal den Seed für die Zufallszahlengenerierung für RooFit. Duh...
+        RooRandom::randomGenerator()->SetSeed(catSeed); // Setze nochmal den Seed für die Zufallszahlengenerierung für RooFit. Duh...
         RooDataSet* toyData = pdf->generate(genVars, nToys);
 
         CMS_channel.setLabel(catName.c_str()); // Setze Wert für diese Kategorie
