@@ -874,8 +874,8 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                # "--algo", "singles",
-                "--algo", "none",
+                "--algo", "singles",
+                # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
                 # "--saveFitResult",
                 "--setParameters", f"""{pdfIdx}""",
                 # "--freezeParameters", f"""MH,{pdfIdx}""",
