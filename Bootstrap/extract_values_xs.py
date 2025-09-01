@@ -716,14 +716,17 @@ def create_json_trimmed(variable_, toyDir_, pois_untrimmed_, poi_list_, subfolde
                 mu_to_largest_sigma = mu_fit
 
         if (not os.path.exists(f"./Plots/{variable_}/{subfolder_}")) & (f"./Plots/{variable_}/{subfolder_}"!=""):
-            os.makedirs(f"./Plots/{variable_}/{subfolder_}")        
+            os.makedirs(f"./Plots/{variable_}/{subfolder_}")
+        
 
         plt.figure(figsize=(12, 8))
         plt.style.use(hep.style.CMS)
         hep.cms.label('Preliminary', data=False, lumi=9.5, com=13.6)
         plt.hist(r, bins=bins, density=False, alpha=0.6, label='S+B Toys') #30
         plt.plot(bin_centers, gaus(bin_centers, *popt), color='red', label='Fitted Gaussian')
-        plt.axvline(mu_fit, color='red', linestyle='--', label=f'Mean: {mu_fit:.2f} ± {sigma_fit:.2f}')
+        plt.axvline(mean, color='red', linestyle='--', label=f'Mean: {mean:.2f} ± {s:.2f}')
+        plt.axvline(np.median(r), color='blue', linestyle='--', label=f'Median: {np.median(r):.2f}')
+        plt.axvline(1.0, color='grey', linestyle='--', label=r'$\mu=1$')
         plt.legend()
         plt.xlabel(f"{translation[f'{current_poi}']}")
         plt.ylabel(r'$N$')
@@ -762,7 +765,8 @@ def plot_correlation(pois_, poi_list_, variable_):
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/finalfits'
 sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
 
-variables = ["NJ"]
+# variables = ["rapidity", "NJ"]
+variables = ["PTH"]
 
 for variable in variables:
     
@@ -772,6 +776,8 @@ for variable in variables:
         poi_list = ["r_NJ_0p0_1p0", "r_NJ_1p0_2p0", "r_NJ_2p0_3p0", "r_NJ_3p0_100p0"]
     elif variable == "PTJ0":
         poi_list = ["r_PTJ0_0p0_30p0", "r_PTJ0_30p0_75p0", "r_PTJ0_75p0_120p0", "r_PTJ0_120p0_200p0", "r_PTJ0_200p0_10000p0"]
+    elif variable == "rapidity":
+        poi_list = ["r_YH_0p0_0p15", "r_YH_0p15_0p3", "r_YH_0p3_0p6", "r_YH_0p6_0p9", "r_YH_0p9_2p5"]
 
     # The paths
     main_dir = os.path.join(sample_dir, variable, "Combine", f"runFits_{variable}")
@@ -782,13 +788,13 @@ for variable in variables:
     # XS Toys
     pois_untrimmed = create_json_untrimmed(variable, toyDir, poi_list)
     pois = create_json_trimmed(variable, toyDir, pois_untrimmed, poi_list, subfolder_=f"SL_{variable}")
+
+    plot_correlation(pois, poi_list, variable)
         
     print("Processing variable:", variable)
         
     subfolder = f"SL_{variable}"
     
     bf_combine = produce_bf_combine(poi_list, combineLL_dir)
-    
-    plot_correlation(pois, poi_list, variable)
 
     produce_LLPlots(pois, poi_list, combineLL_dir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine, plot_r_distribution=False)
