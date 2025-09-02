@@ -159,7 +159,6 @@ globalXSBRMap['STXS']['THW'] = {'mode':'tHW','factor':0.9894}
 ###################################################################################################################################################################################################
 # Early Run3
 
-
 # Early Run 3 Hgg analysis
 globalXSBRMap['earlyAnalysis'] = od()
 globalXSBRMap['earlyAnalysis']['decay'] = {'mode':'hgg'}
@@ -172,15 +171,6 @@ globalXSBRMap['earlyAnalysis']['BBH'] = {'mode':'constant','factor':0.49}
 # Early Run 3 Hgg analysis WITH in/out splitting TBD
 globalXSBRMap['earlyAnalysisInOut'] = od()
 globalXSBRMap['earlyAnalysisInOut']['decay'] = {'mode':'hgg'}
-#globalXSBRMap['earlyAnalysisInOut']['GG2H_in'] = {'mode':'constant','factor':51.96}
-#globalXSBRMap['earlyAnalysisInOut']['VBF_in'] = {'mode':'constant','factor':4.067}
-#globalXSBRMap['earlyAnalysisInOut']['VH_in'] = {'mode':'constant','factor':2.3781}
-#globalXSBRMap['earlyAnalysisInOut']['TTH_in'] = {'mode':'constant','factor':0.5638}
-#globalXSBRMap['earlyAnalysisInOut']['GG2H_out'] = {'mode':'constant','factor':51.96}
-#globalXSBRMap['earlyAnalysisInOut']['VBF_out'] = {'mode':'constant','factor':4.067}
-#globalXSBRMap['earlyAnalysisInOut']['VH_out'] = {'mode':'constant','factor':2.3781}
-#globalXSBRMap['earlyAnalysisInOut']['TTH_out'] = {'mode':'constant','factor':0.5638}
-# Also adding the lower-case strings (Nico convention)
 globalXSBRMap['earlyAnalysisInOut']['ggh_in'] = {'mode':'constant','factor':51.96}
 globalXSBRMap['earlyAnalysisInOut']['vbf_in'] = {'mode':'constant','factor':4.067}
 globalXSBRMap['earlyAnalysisInOut']['vh_in'] = {'mode':'constant','factor':2.3781}
@@ -354,25 +344,6 @@ globalXSBRMap['earlyAnalysisDiffPTJ0']['bbh_PTJ0_75p0_120p0_in'] = {'mode':'cons
 globalXSBRMap['earlyAnalysisDiffPTJ0']['bbh_PTJ0_120p0_200p0_in'] = {'mode':'constant','factor':0.49}
 globalXSBRMap['earlyAnalysisDiffPTJ0']['bbh_PTJ0_200p0_10000p0_in'] = {'mode':'constant','factor':0.49}
 globalXSBRMap['earlyAnalysisDiffPTJ0']['bbh_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':0.49}
-
-# # Early Run 3 Hgg analysis with differentials in PTJ0
-# globalXSBRMap['earlyAnalysisDiffPTJ0'] = od()
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['decay'] = {'mode':'hgg'}
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['ggh_PTJ0_0p0_30p0_in'] = {'mode':'constant','factor':51.96}
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['ggh_PTJ0_30p0_10000p0_in'] = {'mode':'constant','factor':51.96}
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['ggh_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':51.96}
-
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['vbf_PTJ0_0p0_30p0_in'] = {'mode':'constant','factor':4.067}
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['vbf_PTJ0_30p0_10000p0_in'] = {'mode':'constant','factor':4.067}
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['vbf_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':4.067}
-
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['vh_PTJ0_0p0_30p0_in'] = {'mode':'constant','factor':2.3781}
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['vh_PTJ0_30p0_10000p0_in'] = {'mode':'constant','factor':2.3781}
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['vh_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':2.3781}
-
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['tth_PTJ0_0p0_30p0_in'] = {'mode':'constant','factor':0.5638}
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['tth_PTJ0_30p0_10000p0_in'] = {'mode':'constant','factor':0.5638}
-# globalXSBRMap['earlyAnalysisDiffPTJ0']['tth_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':0.5638}
 
 # Early Run 3 Hgg analysis with differentials in YJ0
 globalXSBRMap['earlyAnalysisDiffYJ0'] = od()
@@ -701,3 +672,75 @@ globalXSBRMap['intermediateAnalysisDiffYH']['bbh_YH_0p3_0p6_in'] = {'mode':'cons
 globalXSBRMap['intermediateAnalysisDiffYH']['bbh_YH_0p6_0p9_in'] = {'mode':'constant','factor':0.49}
 globalXSBRMap['intermediateAnalysisDiffYH']['bbh_YH_0p9_2p5_in'] = {'mode':'constant','factor':0.49}
 globalXSBRMap['intermediateAnalysisDiffYH']['bbh_YH_0p0_2p5_out'] = {'mode':'constant','factor':0.49}
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Functions for loading XS*BR below
+# Importing modules from combine
+from HiggsAnalysis.CombinedLimit.DatacardParser import *
+from HiggsAnalysis.CombinedLimit.ModelTools import *
+from HiggsAnalysis.CombinedLimit.PhysicsModel import *
+from HiggsAnalysis.CombinedLimit.SMHiggsBuilder import *
+import HiggsAnalysis.CombinedLimit.PhysicsModel as models
+class dummy_options:
+  def __init__(self):
+    self.physModel = "HiggsAnalysis.CombinedLimit.PhysicsModel:floatingHiggsMass"
+    self.physOpt = ["higgsMassRange=90,250"]
+    self.bin = True
+    self.fileName = "dummy.root"
+    self.cexpr = False
+    self.out = "wsdefault"
+    self.verbose = 0
+    self.mass = 125
+    self.funcXSext = "dummy"
+
+# Functions to get XS/BR
+def getXS(_SM,_MHVar,_mh,_pm):
+  _MHVar.setVal(_mh)
+  return _SM.modelBuilder.out.function("SM_XS_%s_%s"%(_pm,sqrts__)).getVal()
+def getBR(_SM,_MHVar,_mh,_dm):
+  _MHVar.setVal(_mh)
+  return _SM.modelBuilder.out.function("SM_BR_%s"%_dm).getVal()
+
+# Function to initialise XS values from combine
+def initialiseXSBR(mass='125'):
+  options=dummy_options()
+  DC = Datacard()
+  MB = ModelBuilder(DC, options)
+  physics = models.floatingHiggsMass
+  physics.setPhysicsOptions(options.physOpt)
+  MB.setPhysics(physics)
+  MB.physics.doParametersOfInterest()
+  SM = SMHiggsBuilder(MB)
+  MHVar = SM.modelBuilder.out.var("MH")
+
+  # Make XS and BR
+  SM.makeBR(decayMode)
+  for pm in productionModes: SM.makeXS(pm,sqrts__)
+
+  # Store values for each production mode in ordered dict
+  xsbr = od()
+  for pm in productionModes: xsbr[pm] = getXS(SM,MHVar,float(mass),pm)
+  xsbr['constant'] = 1.
+  xsbr[decayMode] = getBR(SM,MHVar,float(mass),decayMode)
+  # If ggZH and ZH in production modes then make qqZH numpy array
+  if('ggZH' in productionModes)&('ZH' in productionModes): xsbr['qqZH'] = xsbr['ZH']-xsbr['ggZH']
+  return xsbr
+
+def extractXSBR(d,mass='125',analysis='STXS'):
+  # Import cross sections and branching ratios from combine
+  xsbr = initialiseXSBR(mass)
+  # Define map of procs to XS,BR
+  XSBR_for_analysis = od()
+  # XS
+  for proc in d[d['type']=='sig']['procOriginal'].unique():
+    fp = globalXSBRMap[analysis][proc]['factor'] if 'factor' in globalXSBRMap[analysis][proc] else 1.
+    mode = globalXSBRMap[analysis][proc]['mode']
+    xs = fp*xsbr[mode]
+    XSBR_for_analysis['XS_%s'%proc] = xs
+  # BR
+  fd = globalXSBRMap[analysis]['decay']['factor'] if 'factor' in globalXSBRMap[analysis]['decay'] else 1.
+  mode = globalXSBRMap[analysis]['decay']['mode']
+  br = fd*xsbr[mode]
+  XSBR_for_analysis['BR'] = br
+  return XSBR_for_analysis

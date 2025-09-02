@@ -111,6 +111,8 @@ production_modes = [
     ("vh", "VHto2G"),
     ("tth", "ttHtoGG"),
     ("tth", "ttHto2G"),
+    ("bbh", "bbHtoGG"),
+    ("bbh", "bbHto2G")
 ]
 
 # Getting production XS from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWG136TeVxsec_extrap, for 125.38 @ 13.6 TeV
@@ -127,7 +129,7 @@ production_XS = {
     "bbHto2G": 0.49,
 }
 
-short_production_modes = ["ggh", "vbf", "vh", "tth"]
+short_production_modes = ["ggh", "vbf", "vh", "tth", "bbh"]
 
 eft_variables = ["chg", "chb", "chw", "chwb", "chbox", "chd", "chl3", "cll1", "ctbre", "cthre", "ctwre"]
 
@@ -148,6 +150,8 @@ conversionTable_ = {
     "GluGluHto2G": "ggh",
     "ttHtoGG": "tth",
     "ttHto2G": "tth",
+    "bbHtoGG": "bbh",
+    "bbHto2G": "bbh",
     "VBFHtoGG": "vbf",
     "VBFHto2G": "vbf",
     "VHtoGG": "vh",
