@@ -148,7 +148,7 @@ if opt.prune:
 
     # Extract XS*BR using datacardTools.XSBR
     data['xsbr'] = '-'
-    from datacardTools.XSBR import *
+    from XSBRMap import *
     XSBR = extractXSBR(data,mass=opt.mass,analysis=opt.analysis)
     data.loc[mask,'xsbr'] = data[mask].apply(lambda x: XSBR["XS_%s"%x['procOriginal']]*XSBR['BR'], axis=1)
 
