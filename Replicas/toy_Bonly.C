@@ -3,19 +3,36 @@
 #include <vector>
 namespace fs = std::filesystem;
 
-std::string getDataHistName(const std::string& filename) {
-    // Find "RECO_" in the filename
-    size_t recoPos = filename.find("RECO_");
-    if (recoPos == std::string::npos) return "";
+std::string getDataHistName(const std::string& filename, bool inclusive_file) {
+    if (inclusive_file) {
+        // Since there is no RECO in the filename..
+        size_t catPos = filename.find("_cat");
+        if (catPos == std::string::npos) return "";
 
-    // Find the start of the category
-    size_t catStart = recoPos + 5; // length of "RECO_"
-    // Find the end (before ".root")
-    size_t rootPos = filename.rfind(".root");
-    if (rootPos == std::string::npos || rootPos <= catStart) return "";
+        // Find the start of the category
+        size_t catStart = catPos + 4; // length of "_cat"
+        // Find the end (before ".root")
+        size_t rootPos = filename.rfind(".root");
+        if (rootPos == std::string::npos || rootPos <= catStart) return "";
 
-    std::string cat = filename.substr(catStart, rootPos - catStart);
-    return "roohist_data_mass_RECO_" + cat;
+        std::string cat = filename.substr(catStart, rootPos - catStart);
+        return "roohist_data_mass_cat" + cat;
+    }
+    else {
+        // Find "RECO_" in the filename
+        size_t recoPos = filename.find("RECO_");
+        if (recoPos == std::string::npos) return "";
+
+        // Find the start of the category
+        size_t catStart = recoPos + 5; // length of "RECO_"
+        // Find the end (before ".root")
+        size_t rootPos = filename.rfind(".root");
+        if (rootPos == std::string::npos || rootPos <= catStart) return "";
+
+        std::string cat = filename.substr(catStart, rootPos - catStart);
+        return "roohist_data_mass_RECO_" + cat;
+    }
+
 }
 
 // Hilfsfunktion zum Parsen des Eingabestrings
@@ -126,7 +143,9 @@ void toy_Bonly(const char* inputFolder, const char* outputFile, const char* pdfi
 
         RooAbsPdf* pdf = multipdf->getPdf(bestFit_idx);
 
-        std::string dataHistName = getDataHistName(filename);
+        bool inclusive_file = (catName == "cat0" || catName == "cat1" || catName == "cat2");
+
+        std::string dataHistName = getDataHistName(filename, inclusive_file);
         RooAbsData* data = ws->data(dataHistName.c_str());
         if (!data) { file->Close(); continue; }
 
