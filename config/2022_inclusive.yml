@@ -1,11 +1,14 @@
 # Config file: options for signal fitting
 
-outputFolder: '/work/niharrin/ntuples/2025/slurm_test/inclusives/law_output'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/earlyRun3/finalfits/inclusive'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/work/niharrin/ntuples/2025/slurm_test/inclusives/data/allData_2022.root'
-  Trees2WS: '/work/niharrin/ntuples/2025/slurm_test/inclusives/signal/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/earlyRun3/variables/inclusive/allData_2022.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/earlyRun3/variables/inclusive/root'
+
+  src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/signal'
+  catDict_timestamp: '2025_08_04'
 
 backgroundScriptCfg:
   # Setup
@@ -13,7 +16,10 @@ backgroundScriptCfg:
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
   ext: 'backgroundEarlyAnalysis' # extension to add to output directory
   # year: '2022' # Use combined when merging all years in category (for plots)
-  execution: 'local'
+  execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 trees2wsCfg:
   inputTreeDir: 'DiphotonTree' # Name of RooDirectory storing input tree
@@ -64,6 +70,9 @@ trees2wsCfg:
   cats: 'auto'
 
   execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2022_preEE:
   # Setup
@@ -88,6 +97,9 @@ signalScriptCfg_2022_preEE:
 
   # Job submission options
   execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2022_postEE:
   # Setup
@@ -112,6 +124,9 @@ signalScriptCfg_2022_postEE:
 
   # Job submission options
   execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 packaged_2022:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
@@ -119,6 +134,9 @@ packaged_2022:
   mergeYears: True # Merges the eras
   ext: ''
   execution: 'local'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard_yields:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
@@ -137,6 +155,9 @@ datacard_yields:
   bkgScaler: 1. # Add overall scale factor for background
   skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
   execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard:
   # For pruning processes
@@ -171,6 +192,9 @@ combine_fit:
   rMin: 0.7
   rMax: 1.6
   execution: 'local'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
@@ -180,12 +204,21 @@ combine_impacts:
   setCrossingTolerance: 0.00005 
   not_show_POI: False
   execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_hesse:
   execution: 'local'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_mggToys:
   nToys: 1000 # Number of toys = nToys * 10
   loadSnapshot: 'MultiDimFit'
   doBands: True
   execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
