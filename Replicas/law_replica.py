@@ -210,7 +210,6 @@ class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
             "-m", "125.38",
             "-n", f"FirstStep",
             "--cminDefaultMinimizerStrategy=0",
-            "--expectSignal", "1",
             "--saveWorkspace",
             "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
             "--X-rtd", "MINIMIZER_multiMin_hideConstants",
@@ -218,9 +217,14 @@ class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
             "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
             "-t", "-1",
             "--saveFitResult",
-            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
             "--floatOtherPOIs", "1"
         ]
+        if self.variable == "":
+            arguments += ["--saveSpecifiedIndex", ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])]
+            arguments += ["--setParameters", "r=1"]
+        else:
+            arguments += ["--saveSpecifiedIndex", ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])]
+            arguments += ["--setParameters", ",".join(combineVariableDict(self.variable, self.year)['paramStr'])]
 
         # Execute the command and capture the output
         command = arguments
@@ -496,11 +500,7 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         
         fitConfig = config["combine_fit"]
         
-        if self.variable == '':
-            print("Running S+B toys for inclusive variable not implemented. Exiting...")
-            exit(1)
-        
-        tasks["GenerateBOnlyToys"] = GenerateBOnlyToys(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable, workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=2000, slurm_max_runtime="00:15:00", htcondor_partition="espresso", htcondor_memory=2000, htcondor_max_runtime="00:20:00", seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
+        tasks["GenerateBOnlyToys"] = GenerateBOnlyToys(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=2000, slurm_max_runtime="00:15:00", htcondor_partition="espresso", htcondor_memory=2000, htcondor_max_runtime="00:20:00", seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
 
         return tasks
 
@@ -516,8 +516,7 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         replica_index = self.branch_data
         
         if self.variable == '':
-            print("Running S+B toys for inclusive variable not implemented. Exiting...")
-            exit(1)
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
         else:
             configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
         
@@ -547,8 +546,7 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         replica_index = self.branch_data
 
         if self.variable == '':
-            print("Running S+B toys for inclusive variable not implemented. Exiting...")
-            exit(1)           
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")     
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
 
@@ -563,7 +561,10 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
         # Need to load the categorization dictionary
         # Location hardcoded, as I want to use the "common" categorization dictionary from the Analysis Git Repo
-        cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
+        if self.variable == '':
+            cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", config['inputFiles']['catDict_timestamp'], f"inclusive_MC.json")
+        else:
+            cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
         if not os.path.exists(cat_dict_path):
             print(f"Category dictionary {cat_dict_path} does not exist. Check path in law_replica.py. Exiting...")
             exit(1)
@@ -723,8 +724,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             tasks.update(workflow_reqs)
         
         if self.variable == '':
-            print("Running S+B toys for inclusive variable not implemented. Exiting...")
-            exit(1)
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
         
@@ -739,7 +739,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         
         SplusB_config = config["combine_SplusB_toys"]
         
-        tasks["GenerateSplusBToys"] = GenerateSplusBToys(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable, workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
+        tasks["GenerateSplusBToys"] = GenerateSplusBToys(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
         
         return tasks
     
@@ -768,16 +768,13 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             output_dir = self.output_dir
 
         if self.variable == '':
-            print("Running S+B toys for inclusive variable not implemented. Exiting...")
-            exit(1)
+            fitFolderName = f'runFits_mu_fiducial'
         else:
             fitFolderName = f'runFits_{self.variable}'
 
         output = []
 
-        if self.variable != '':
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.root')]
-            # output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'multidimfitfirstStep.root')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.root')]
 
         outputFileTargets = []
 
@@ -790,8 +787,8 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         replica_index = self.branch_data
         
         if self.variable == '':
-            print("Running S+B toys for inclusive variable not implemented. Exiting...")
-            exit(1)
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
+            fitFolderName = f'runFits_mu_fiducial'
         else:
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
             fitFolderName = f'runFits_{self.variable}'
@@ -860,36 +857,35 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         
         splusb_toy = os.path.join(output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
 
-        if self.variable != '':
-            arguments = [
-                "combine",
-                "-M", "MultiDimFit",
-                ws_path,
-                "-m", "125.38",
-                "-n", f"firstStep",
-                "--cminDefaultMinimizerStrategy=0",
-                "--saveWorkspace",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
-                "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
-                "--X-rtd", "MINIMIZER_multiMin_hideConstants",
-                "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
-                "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                "--algo", "singles",
-                # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
-                # "--saveFitResult",
-                "--setParameters", f"""{pdfIdx}""",
-                # "--freezeParameters", f"""MH,{pdfIdx}""",
-                # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
-                "-D", f"{splusb_toy}:toys/toy_1",
-            ]
-            command = arguments
-            print(command)
-            try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
-                print("Script output:", result.stdout)
-                print("Script executed successfully.")
-            except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+        arguments = [
+            "combine",
+            "-M", "MultiDimFit",
+            ws_path,
+            "-m", "125.38",
+            "-n", f"firstStep",
+            "--cminDefaultMinimizerStrategy=0",
+            "--saveWorkspace",
+            "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
+            "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+            "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+            "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+            "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+            "--algo", "singles",
+            # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
+            # "--saveFitResult",
+            "--setParameters", f"""{pdfIdx}""",
+            "--freezeParameters", f"""MH,{pdfIdx}""",
+            "--X-rtd", "MINIMIZER_skipDiscreteIterations",
+            "-D", f"{splusb_toy}:toys/toy_1",
+        ]
+        command = arguments
+        print(command)
+        try:
+            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            print("Script output:", result.stdout)
+            print("Script executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Error executing script:", e.stderr)
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
