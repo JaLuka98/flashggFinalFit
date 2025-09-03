@@ -104,34 +104,59 @@ class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
 
     batch_flavor = law.Parameter(default="slurm", description="Special treatment for PSI Slurm batch system")
 
+    _class_cache = {}
+
+    def _init_once(self):
+        key = (self.year, self.variable, self.output_dir)
+        if key in self._class_cache:
+            (
+                self.configYamlPath,
+                self.config,
+                self.resolved_output_dir,
+                self.fitFolderName
+            ) = self._class_cache[key]
+            return
+
+        # compute config path
+        if self.variable == "":
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml"
+            )
+        else:
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml"
+            )
+
+        with open(configYamlPath, "r") as f:
+            config = yaml.safe_load(f)
+
+        resolved_output_dir = self.output_dir or config["outputFolder"]
+        fitFolderName = "runFits_mu_fiducial" if self.variable == "" else f"runFits_{self.variable}"
+
+        self.configYamlPath = configYamlPath
+        self.config = config
+        self.resolved_output_dir = resolved_output_dir
+        self.fitFolderName = fitFolderName
+
+        # store in class-level cache
+        self._class_cache[key] = (configYamlPath, config, resolved_output_dir, fitFolderName)
+
     def workflow_requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)
 
         workflow_reqs = super().workflow_requires()
+        
+        self._init_once()
 
         tasks = {}
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
         
-        if self.variable == '':
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
-        else:
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        fitConfig = self.config["combine_fit"]
         
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-        
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
-        
-        fitConfig = config["combine_fit"]
-        
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
 
         return tasks
 
@@ -141,23 +166,11 @@ class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
 
     def output(self):
         
-        if self.variable == '':
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
-        else:
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
-        
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-            
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
+        self._init_once()
         
         output_paths = []
 
-        output_paths.append(os.path.join(output_dir, 'Replicas', f'higgsCombineFirstStep.MultiDimFit.mH125.38.root'))
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', f'higgsCombineFirstStep.MultiDimFit.mH125.38.root'))
 
         outputFileTargets = []
                 
@@ -167,40 +180,29 @@ class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
         return outputFileTargets
 
     def run(self):
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")            
-        else:
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
-
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
         
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
+        self._init_once()
         
         cwd = os.getcwd()
         
         if self.variable == '':
-            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.root')
         else:
-            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
                     
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
-            if "/work" in output_dir:
-                execute_command([f'mkdir -p {output_dir}/Replicas'], shell=True)
+            if "/work" in self.resolved_output_dir:
+                execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Replicas'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Replicas'], shell=True)
             os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas'))
         else:
-            execute_command([f'mkdir -p {output_dir}/Replicas'], shell=True)
-            os.chdir(os.path.join(output_dir, 'Replicas'))
+            execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas'], shell=True)
+            os.chdir(os.path.join(self.resolved_output_dir, 'Replicas'))
 
         arguments = [
             "combine",
@@ -240,17 +242,17 @@ class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
         if self.batch_flavor == "slurm/psi":
             # Have to copy over the output to the final directory
             # Don't forget to VOMS!
-            if "/work" in output_dir:
+            if "/work" in self.resolved_output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Replicas/",
-                    output_dir
+                    self.resolved_output_dir
                 ]
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Replicas/",
-                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+self.resolved_output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -270,34 +272,59 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
     starting_value = law.Parameter(default=0, description="Starting replica computation from this index. This can be useful for preventing overloading schedds.")
     seed = law.Parameter(default=123456, description="Seed for the replica generation")
 
+    _class_cache = {}
+
+    def _init_once(self):
+        key = (self.year, self.variable, self.output_dir)
+        if key in self._class_cache:
+            (
+                self.configYamlPath,
+                self.config,
+                self.resolved_output_dir,
+                self.fitFolderName
+            ) = self._class_cache[key]
+            return
+
+        # compute config path
+        if self.variable == "":
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml"
+            )
+        else:
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml"
+            )
+
+        with open(configYamlPath, "r") as f:
+            config = yaml.safe_load(f)
+
+        resolved_output_dir = self.output_dir or config["outputFolder"]
+        fitFolderName = "runFits_mu_fiducial" if self.variable == "" else f"runFits_{self.variable}"
+
+        self.configYamlPath = configYamlPath
+        self.config = config
+        self.resolved_output_dir = resolved_output_dir
+        self.fitFolderName = fitFolderName
+
+        # store in class-level cache
+        self._class_cache[key] = (configYamlPath, config, resolved_output_dir, fitFolderName)
+
     def workflow_requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)
         
         workflow_reqs = super().workflow_requires()
+        
+        self._init_once()
 
         tasks = {}
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
         
-        if self.variable == '':
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
-        else:
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        fitConfig = self.config["combine_fit"]
         
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-        
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
-        
-        fitConfig = config["combine_fit"]
-        
-        tasks["GetAsimovBestFit"] = GetAsimovBestFit(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+        tasks["GetAsimovBestFit"] = GetAsimovBestFit(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
 
         return tasks
 
@@ -312,25 +339,13 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         # returns output folder
         replica_index = self.branch_data
         
-        if self.variable == '':
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
-        else:
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
-        
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-            
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
+        self._init_once()
         
         output_paths = []
         
         seed = int(self.seed) + int(replica_index)
 
-        output_paths.append(os.path.join(output_dir, 'Replicas', 'bonly', f'higgsCombineToy_{int(replica_index)}'+f'.GenerateOnly.mH125.38.{seed}.root'))
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'bonly', f'higgsCombineToy_{int(replica_index)}'+f'.GenerateOnly.mH125.38.{seed}.root'))
 
         outputFileTargets = []
                 
@@ -341,45 +356,33 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
 
     def run(self):
         replica_index = self.branch_data
-
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")            
-        else:
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
-
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
         
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
+        self._init_once()
         
         cwd = os.getcwd()
         
         if self.variable == '':
-            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.root')
         else:
-            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
                     
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
-            if "/work" in output_dir:
-                execute_command([f'mkdir -p {output_dir}/Replicas/bonly'], shell=True)
+            if "/work" in self.resolved_output_dir:
+                execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/bonly'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Replicas/bonly'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/bonly'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Replicas/bonly'], shell=True)
             os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas', 'bonly'))
         else:
-            execute_command([f'mkdir -p {output_dir}/Replicas/bonly'], shell=True)
-            os.chdir(os.path.join(output_dir, 'Replicas', 'bonly'))
+            execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/bonly'], shell=True)
+            os.chdir(os.path.join(self.resolved_output_dir, 'Replicas', 'bonly'))
 
         seed = int(self.seed) + int(replica_index)
         
-        first_output = os.path.join(output_dir, 'Replicas')
+        first_output = os.path.join(self.resolved_output_dir, 'Replicas')
 
         def check_pdf_idx():
             # Run the ROOT command
@@ -424,8 +427,8 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         pdfIdx = check_pdf_idx()
 
         # Run the ROOT command
-        background_model_folder_name = config['datacard_yields']['bkgModelWSDir'].split('/')[-2]
-        bkg_input_folder = os.path.join(output_dir, "Combine", background_model_folder_name, "background")
+        background_model_folder_name = self.config['datacard_yields']['bkgModelWSDir'].split('/')[-2]
+        bkg_input_folder = os.path.join(self.resolved_output_dir, "Combine", background_model_folder_name, "background")
         toy_output_file = f"./higgsCombineToy_{int(replica_index)}"+f".GenerateOnly.mH125.38.{seed}.root"
         arguments = ['root', '-l', '-q', f"{os.environ['ANALYSIS_PATH']}/Replicas/toy_Bonly.C(\"{bkg_input_folder}\", \"{toy_output_file}\", \"{pdfIdx}\", {seed})"]
         
@@ -443,17 +446,17 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         if self.batch_flavor == "slurm/psi":
             # Have to copy over the output to the final directory
             # Don't forget to VOMS!
-            if "/work" in output_dir:
+            if "/work" in self.resolved_output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Replicas/",
-                    output_dir
+                    self.resolved_output_dir
                 ]
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Replicas/",
-                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+self.resolved_output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -475,32 +478,57 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
     starting_value = law.Parameter(default=0, description="Starting replica computation from this index. This can be useful for preventing overloading schedds.")
     seed = law.Parameter(default=123456, description="Seed for the replica generation")
 
+    _class_cache = {}
+
+    def _init_once(self):
+        key = (self.year, self.variable, self.output_dir)
+        if key in self._class_cache:
+            (
+                self.configYamlPath,
+                self.config,
+                self.resolved_output_dir,
+                self.fitFolderName
+            ) = self._class_cache[key]
+            return
+
+        # compute config path
+        if self.variable == "":
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml"
+            )
+        else:
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml"
+            )
+
+        with open(configYamlPath, "r") as f:
+            config = yaml.safe_load(f)
+
+        resolved_output_dir = self.output_dir or config["outputFolder"]
+        fitFolderName = "runFits_mu_fiducial" if self.variable == "" else f"runFits_{self.variable}"
+
+        self.configYamlPath = configYamlPath
+        self.config = config
+        self.resolved_output_dir = resolved_output_dir
+        self.fitFolderName = fitFolderName
+
+        # store in class-level cache
+        self._class_cache[key] = (configYamlPath, config, resolved_output_dir, fitFolderName)
+
     def workflow_requires(self):
         
         workflow_reqs = super().workflow_requires()
+        
+        self._init_once()
 
         tasks = {}
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
         
-        if self.variable == '':
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
-        else:
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
+        fitConfig = self.config["combine_fit"]
         
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-        
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
-        
-        fitConfig = config["combine_fit"]
-        
-        tasks["GenerateBOnlyToys"] = GenerateBOnlyToys(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=2000, slurm_max_runtime="00:15:00", htcondor_partition="espresso", htcondor_memory=2000, htcondor_max_runtime="00:20:00", seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
+        tasks["GenerateBOnlyToys"] = GenerateBOnlyToys(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition="short", slurm_memory=2000, slurm_max_runtime="00:15:00", htcondor_partition="espresso", htcondor_memory=2000, htcondor_max_runtime="00:20:00", seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
 
         return tasks
 
@@ -515,25 +543,13 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         # returns output folder
         replica_index = self.branch_data
         
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
-        else:
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
-        
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-            
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
+        self._init_once()
         
         output_paths = []
         
         seed = int(self.seed) + int(replica_index)
 
-        output_paths.append(os.path.join(output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root'))
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root'))
 
         outputFileTargets = []
 
@@ -544,27 +560,15 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
     def run(self):
         replica_index = self.branch_data
-
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")     
-        else:
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
-
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
+        
+        self._init_once()
 
         # Need to load the categorization dictionary
         # Location hardcoded, as I want to use the "common" categorization dictionary from the Analysis Git Repo
         if self.variable == '':
-            cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", config['inputFiles']['catDict_timestamp'], f"inclusive_MC.json")
+            cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", self.config['inputFiles']['catDict_timestamp'], f"inclusive_MC.json")
         else:
-            cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
+            cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", self.config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
         if not os.path.exists(cat_dict_path):
             print(f"Category dictionary {cat_dict_path} does not exist. Check path in law_replica.py. Exiting...")
             exit(1)
@@ -574,7 +578,7 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
         cwd = os.getcwd()
 
-        main_parquet_dir = config['inputFiles']['src_files']
+        main_parquet_dir = self.config['inputFiles']['src_files']
 
         # Load all Parquet files from the main_parquet_dir
         # Note, that I have to load the nominal parquet files from all the procs, as the systematics are already accounted for in the signal model
@@ -654,19 +658,19 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
-            if "/work" in output_dir:
-                execute_command([f'mkdir -p {output_dir}/Replicas/SplusB'], shell=True)
+            if "/work" in self.resolved_output_dir:
+                execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/SplusB'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Replicas/SplusB'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/SplusB'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Replicas/SplusB'], shell=True)
             output_root_path = os.path.join(os.environ["TARGET_PATH"], 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
             os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas', "SplusB"))
         else:
-            execute_command([f'mkdir -p {output_dir}/Replicas/SplusB'], shell=True)
-            output_root_path = os.path.join(output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
-            os.chdir(os.path.join(output_dir, 'Replicas', 'SplusB'))
+            execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/SplusB'], shell=True)
+            output_root_path = os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
+            os.chdir(os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB'))
         
         # Open a new ROOT file for writing
         output_file = ROOT.TFile(output_root_path, "RECREATE")
@@ -686,17 +690,17 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         if self.batch_flavor == "slurm/psi":
             # Have to copy over the output to the final directory
             # Don't forget to VOMS!
-            if "/work" in output_dir:
+            if "/work" in self.resolved_output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Replicas/",
-                    output_dir
+                    self.resolved_output_dir
                 ]
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Replicas/",
-                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+self.resolved_output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -717,31 +721,56 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
     starting_value = law.Parameter(default=0, description="Starting replica computation from this index. This can be useful for preventing overloading schedds.")
     seed = law.Parameter(default=123456, description="Seed for the replica generation")
 
+    _class_cache = {}
+
+    def _init_once(self):
+        key = (self.year, self.variable, self.output_dir)
+        if key in self._class_cache:
+            (
+                self.configYamlPath,
+                self.config,
+                self.resolved_output_dir,
+                self.fitFolderName
+            ) = self._class_cache[key]
+            return
+
+        # compute config path
+        if self.variable == "":
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml"
+            )
+        else:
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml"
+            )
+
+        with open(configYamlPath, "r") as f:
+            config = yaml.safe_load(f)
+
+        resolved_output_dir = self.output_dir or config["outputFolder"]
+        fitFolderName = "runFits_mu_fiducial" if self.variable == "" else f"runFits_{self.variable}"
+
+        self.configYamlPath = configYamlPath
+        self.config = config
+        self.resolved_output_dir = resolved_output_dir
+        self.fitFolderName = fitFolderName
+
+        # store in class-level cache
+        self._class_cache[key] = (configYamlPath, config, resolved_output_dir, fitFolderName)
+
     def workflow_requires(self):
         workflow_reqs = super().workflow_requires()
+
+        self._init_once()
 
         tasks = {}
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
         
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
-        else:
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
+        SplusB_config = self.config["combine_SplusB_toys"]
         
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-        
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
-        
-        SplusB_config = config["combine_SplusB_toys"]
-        
-        tasks["GenerateSplusBToys"] = GenerateSplusBToys(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
+        tasks["GenerateSplusBToys"] = GenerateSplusBToys(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
         
         return tasks
 
@@ -755,23 +784,11 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
     def output(self):
         replica_index = self.branch_data
         
-        if self.variable == '':
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_inclusive.yml"
-        else:
-            configYamlPath = os.environ["ANALYSIS_PATH"] + f"/config/{self.year}_{self.variable}.yml"
-        
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-            
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
+        self._init_once()
         
         output_paths = []
 
-        output_paths.append(os.path.join(output_dir, 'Replicas', 'SplusB_PdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'))
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB_PdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'))
 
         outputFileTargets = []
                 
@@ -783,44 +800,32 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
     def run(self):
         replica_index = self.branch_data
         
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")            
-        else:
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
-
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-        
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
+        self._init_once()
         
         cwd = os.getcwd()
         
         if self.variable == '':
-            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.root')
         else:
-            ws_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
                     
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
-            if "/work" in output_dir:
-                execute_command([f'mkdir -p {output_dir}/Replicas/SplusB_PdfIndices'], shell=True)
+            if "/work" in self.resolved_output_dir:
+                execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/SplusB_PdfIndices'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Replicas/SplusB_PdfIndices'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/SplusB_PdfIndices'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Replicas/SplusB_PdfIndices/'], shell=True)
             os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas', "SplusB_PdfIndices"))
         else:
-            execute_command([f'mkdir -p {output_dir}/Replicas/SplusB_PdfIndices'], shell=True)
-            os.chdir(os.path.join(output_dir, 'Replicas', 'SplusB_PdfIndices'))
+            execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/SplusB_PdfIndices'], shell=True)
+            os.chdir(os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB_PdfIndices'))
         
         seed = int(self.seed) + int(replica_index)
         
-        splusb_toy = os.path.join(output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
+        splusb_toy = os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
 
         arguments = [
             "combine",
@@ -835,8 +840,6 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
             "--X-rtd", "MINIMIZER_multiMin_hideConstants",
             "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
             "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-            # "-t", "-1",
-            # "--saveFitResult",
             "--floatOtherPOIs", "1",
             "-D", f"{splusb_toy}:toys/toy_1",
         ]
@@ -861,17 +864,17 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
         if self.batch_flavor == "slurm/psi":
             # Have to copy over the output to the final directory
             # Don't forget to VOMS!
-            if "/work" in output_dir:
+            if "/work" in self.resolved_output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Replicas/",
-                    output_dir
+                    self.resolved_output_dir
                 ]
             else:
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/Replicas/",
-                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+self.resolved_output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -1059,7 +1062,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         
         pdfIdx = check_pdf_idx()
         
-        splusb_toy = os.path.join(output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
+        splusb_toy = os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
 
         arguments = [
             "combine",
