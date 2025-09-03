@@ -631,13 +631,14 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
                 )
             except:
                 # Have a variable using absolute values.
-                query_str = ""
+                query_str = "("
                 for k, set_of_conditions in enumerate(cat_dict[cat]["cat_filter"]):
                     if k > 0:
-                        query_str += " and "
+                        query_str += ") or ("
                     query_str += " and ".join(
                         f"{col} {op} {val}" for col, op, val in set_of_conditions
                     )
+                query_str += ")"
             print(f"Processing category {cat} with query: {query_str}")
             # Merge the replicas for the current category
             merged_replica = pd.concat([replica_separated_procs[i].query(query_str) for i in range(len(replica_separated_procs))], ignore_index=True)
@@ -874,7 +875,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
             # "--saveFitResult",
             "--setParameters", f"""{pdfIdx}""",
-            "--freezeParameters", f"""MH,{pdfIdx}""",
+            "--freezeParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
             "--X-rtd", "MINIMIZER_skipDiscreteIterations",
             "-D", f"{splusb_toy}:toys/toy_1",
         ]
