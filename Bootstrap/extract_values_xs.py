@@ -573,8 +573,6 @@ def pois_untrimmed(toyDir_, poi_list_):
     for current_poi in poi_list_:
 
         pois[current_poi] = []
-    
-    pois["MH"] = []
 
     for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
 
@@ -592,8 +590,6 @@ def pois_untrimmed(toyDir_, poi_list_):
         for j, current_poi in enumerate(poi_list_):
 
             try: 
-                if j == 0: 
-                    pois["MH"].append(float(current_root_files["limit"]["mh"].array()[0]))
                 current_tree = current_root_files["limit"]
             except:
                 print(f"Skipping fit_{i}: Tree 'limit' not found in ROOT file")
@@ -621,8 +617,6 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
 
         pois[current_poi] = []
     
-    pois["MH"] = []
-
     for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
 
         if i%100==0:
@@ -650,8 +644,6 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
             current_limit_values = current_tree[current_poi].array()
 
             try:
-                if j == 0: 
-                    pois["MH"].append(float(current_root_files["limit"]["mh"].array()[0]))
                 if (current_limit_values[0] > trimming_value_right_) or (current_limit_values[0] < trimming_value_left_):
                     kill_event = True 
                     break
