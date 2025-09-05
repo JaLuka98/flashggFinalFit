@@ -573,6 +573,8 @@ def pois_untrimmed(toyDir_, poi_list_):
     for current_poi in poi_list_:
 
         pois[current_poi] = []
+    
+    pois["MH"] = []
 
     for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
 
@@ -583,14 +585,19 @@ def pois_untrimmed(toyDir_, poi_list_):
             current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
+            for current_poi in poi_list_:
+                pois[current_poi].append(-999.0)
             continue
 
         for j, current_poi in enumerate(poi_list_):
 
             try: 
+                if j == 0: 
+                    pois["MH"].append(float(current_root_files["limit"]["mh"].array()[0]))
                 current_tree = current_root_files["limit"]
             except:
                 print(f"Skipping fit_{i}: Tree 'limit' not found in ROOT file")
+                pois[current_poi].append(-999.0)
                 continue
 
             current_limit_values = current_tree[current_poi].array()
@@ -601,6 +608,7 @@ def pois_untrimmed(toyDir_, poi_list_):
             except:
                 if j == 0:
                     print("Empty ROOT file for bootstrap: ", i)
+                pois[current_poi].append(-999.0)
                 continue
 
             pois[current_poi].append(float(current_limit_values[0]))
@@ -612,6 +620,8 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
     for current_poi in poi_list_:
 
         pois[current_poi] = []
+    
+    pois["MH"] = []
 
     for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
 
@@ -622,6 +632,8 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
             current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
+            for current_poi in poi_list_:
+                pois[current_poi].append(-999.0)
             continue
 
         kill_event = False
@@ -632,21 +644,27 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
                 current_tree = current_root_files["limit"]
             except:
                 print(f"Skipping fit_{i}: Tree 'limit' not found in ROOT file")
+                pois[current_poi].append(-999.0)
                 continue
 
             current_limit_values = current_tree[current_poi].array()
 
             try:
+                if j == 0: 
+                    pois["MH"].append(float(current_root_files["limit"]["mh"].array()[0]))
                 if (current_limit_values[0] > trimming_value_right_) or (current_limit_values[0] < trimming_value_left_):
-                    kill_event = True
+                    kill_event = True 
                     break
             except:
                 if j == 0:
                     print("Empty ROOT file for bootstrap: ", i)
+                pois[current_poi].append(-999.0)
                 continue
 
         if kill_event:
-            print(f"Skipping fit_{i} with {current_limit_values}: Outlier found")
+            print(f"Skipping fit_{i} with {current_limit_values[0]}: Outlier found")
+            for current_poi in poi_list_:
+                pois[current_poi].append(-999.0)
             continue
 
         for j, current_poi in enumerate(poi_list_):
@@ -694,10 +712,11 @@ def create_json_trimmed(variable_, toyDir_, pois_untrimmed_, poi_list_, subfolde
     z = 4
     for i, current_poi in enumerate(poi_list_):
         r = np.array(pois_untrimmed_[current_poi])
-        mean = np.mean(r)
-        s = np.std(r)
         r = r[r > -998.0]
         # r = r[r < 5.0]
+        
+        mean = np.mean(r)
+        s = np.std(r)
         
         bins = 30
         
@@ -766,7 +785,7 @@ def plot_correlation(pois_, poi_list_, variable_):
 sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
 
 # variables = ["rapidity", "NJ"]
-variables = ["PTH"]
+variables = ["rapidity"]
 
 for variable in variables:
     
