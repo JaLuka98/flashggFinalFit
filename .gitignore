@@ -80,3 +80,10 @@ remote
 htcondor
 
 output
+
+# Bootstrap files
+pois_*trimmed*
+
+# Replica tests
+Replicas/*
+!Replicas/corr_matrix
