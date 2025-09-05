@@ -82,6 +82,7 @@ def get_replica(parquet_files):
     ## Compute the expected number of events
     ## This is scaled to the full Run3 lumi and the individual production XS (=ggH or VBF or VH or ttH or bbH); Taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt13TeV
     exp = sum(df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * lumiMap[era] # 55.65
+    # exp = 430.2999789511411
     # exp = sum(df["weight_norm"]) * (production_XS["GluGluHtoGG"] + production_XS["VBFHtoGG"] + production_XS["VHtoGG"] + production_XS["ttHtoGG"]) * 0.2270/100 * 1000 * 27.3
     # exp = sum(df["weight_norm"]) * (production_XS["GluGluHtoGG"]) * 0.2270/100 * 1000 * 27.3
 
@@ -590,7 +591,7 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         np.random.seed(seed)
         
         # Load the b-only toy file
-        bonly_toy_path = os.path.join(output_dir, 'Replicas', 'bonly', f'higgsCombineToy_{int(replica_index)}.GenerateOnly.mH125.38.{seed}.root')
+        bonly_toy_path = os.path.join(self.resolved_output_dir, 'Replicas', 'bonly', f'higgsCombineToy_{int(replica_index)}.GenerateOnly.mH125.38.{seed}.root')
         if not os.path.exists(bonly_toy_path):
             print(f"B-only toy file {bonly_toy_path} does not exist. Something went wrong. Exiting...")
             exit(1)
@@ -1079,11 +1080,11 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
             "--algo", "singles",
             # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
-            # "--saveFitResult",
+            "--saveFitResult",
             "--setParameters", f"""{pdfIdx}""",
-            "--freezeParameters", "MH",
-            # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
-            # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
+            # "--freezeParameters", "MH",
+            "--freezeParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
+            "--X-rtd", "MINIMIZER_skipDiscreteIterations",
             "-D", f"{splusb_toy}:toys/toy_1",
         ]
         command = arguments
