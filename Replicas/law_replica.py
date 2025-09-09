@@ -1070,6 +1070,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             "-M", "MultiDimFit",
             ws_path,
             "-m", "125.38",
+            # "-m", "125",
             "-n", f"firstStep",
             "--cminDefaultMinimizerStrategy=0",
             "--saveWorkspace",
@@ -1083,8 +1084,8 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             "--saveFitResult",
             "--setParameters", f"""{pdfIdx}""",
             # "--freezeParameters", "MH",
-            "--freezeParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
-            "--X-rtd", "MINIMIZER_skipDiscreteIterations",
+            # "--freezeParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
+            # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
             "-D", f"{splusb_toy}:toys/toy_1",
         ]
         command = arguments
