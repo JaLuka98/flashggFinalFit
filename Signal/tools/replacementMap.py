@@ -588,3 +588,52 @@ globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_1p9_1
 globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_NJ0_cat0"] = "RECO_AbsYHJ0_NJ0_cat0"
 globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_NJ0_cat1"] = "RECO_AbsYHJ0_NJ0_cat1"
 globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_NJ0_cat2"] = "RECO_AbsYHJ0_NJ0_cat2"
+
+
+# Differential DPhiJ0J1 (Delta Phi between the leading and sub-leading jet)
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['procWV'] = "ggh_DPhiJ0J1_2p0944_3p1416_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['catWV'] = "RECO_DPhiJ0J1_2p0944_3p1416_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['procRVMap'] = od()
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat0"] = "ggh_DPhiJ0J1_m3p1416_m2p0944_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat1"] = "ggh_DPhiJ0J1_m3p1416_m2p0944_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat2"] = "ggh_DPhiJ0J1_m3p1416_m2p0944_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat0"] = "ggh_DPhiJ0J1_m2p0944_m1p0472_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat1"] = "ggh_DPhiJ0J1_m2p0944_m1p0472_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat2"] = "ggh_DPhiJ0J1_m2p0944_m1p0472_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat0"] = "ggh_DPhiJ0J1_m1p0472_0p0_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat1"] = "ggh_DPhiJ0J1_m1p0472_0p0_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat2"] = "ggh_DPhiJ0J1_m1p0472_0p0_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat0"] = "ggh_DPhiJ0J1_0p0_1p0472_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat1"] = "ggh_DPhiJ0J1_0p0_1p0472_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat2"] = "ggh_DPhiJ0J1_0p0_1p0472_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat0"] = "ggh_DPhiJ0J1_1p0472_2p0944_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat1"] = "ggh_DPhiJ0J1_1p0472_2p0944_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat2"] = "ggh_DPhiJ0J1_1p0472_2p0944_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat0"] = "ggh_DPhiJ0J1_2p0944_3p1416_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat1"] = "ggh_DPhiJ0J1_2p0944_3p1416_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat2"] = "ggh_DPhiJ0J1_2p0944_3p1416_in"
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"] = od()
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat0"] = "RECO_DPhiJ0J1_m3p1416_m2p0944_cat0"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat1"] = "RECO_DPhiJ0J1_m3p1416_m2p0944_cat1"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m3p1416_m2p0944_cat2"] = "RECO_DPhiJ0J1_m3p1416_m2p0944_cat2"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat0"] = "RECO_DPhiJ0J1_m2p0944_m1p0472_cat0"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat1"] = "RECO_DPhiJ0J1_m2p0944_m1p0472_cat1"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m2p0944_m1p0472_cat2"] = "RECO_DPhiJ0J1_m2p0944_m1p0472_cat2"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat0"] = "RECO_DPhiJ0J1_m1p0472_0p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat1"] = "RECO_DPhiJ0J1_m1p0472_0p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m1p0472_0p0_cat2"] = "RECO_DPhiJ0J1_m1p0472_0p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat0"] = "RECO_DPhiJ0J1_0p0_1p0472_cat0"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat1"] = "RECO_DPhiJ0J1_0p0_1p0472_cat1"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_0p0_1p0472_cat2"] = "RECO_DPhiJ0J1_0p0_1p0472_cat2"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat0"] = "RECO_DPhiJ0J1_1p0472_2p0944_cat0"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat1"] = "RECO_DPhiJ0J1_1p0472_2p0944_cat1"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_1p0472_2p0944_cat2"] = "RECO_DPhiJ0J1_1p0472_2p0944_cat2"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat0"] = "RECO_DPhiJ0J1_2p0944_3p1416_cat0"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat1"] = "RECO_DPhiJ0J1_2p0944_3p1416_cat1"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_2p0944_3p1416_cat2"] = "RECO_DPhiJ0J1_2p0944_3p1416_cat2"

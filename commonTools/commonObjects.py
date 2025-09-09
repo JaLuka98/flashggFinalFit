@@ -97,8 +97,8 @@ outputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':'','scalesGlobal':'
 bkgWSName__ = "multipdf"
 
 # Define an array of input masses
-input_masses = [120, 125, 130]
-# input_masses = [125]
+# input_masses = [120, 125, 130]
+input_masses = [125]
 
 # Define an array of production modes and corresponding process strings
 # JLS 23th Jan 2025, also adding 2G naming conventions

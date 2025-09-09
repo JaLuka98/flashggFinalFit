@@ -774,10 +774,11 @@ def plot_correlation(pois_, poi_list_, variable_):
         plot_individual_correlation(pois_[r_1], pois_[r_2], r_1, r_2, np.corrcoef(pois_[r_1], pois_[r_2])[0,1], folder=f"Plots/{variable_}")
 
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/finalfits'
-sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
+# sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
+sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/finalfits'
 
 # variables = ["rapidity", "NJ"]
-variables = ["rapidity"]
+variables = ["PTH"]
 
 for variable in variables:
     
