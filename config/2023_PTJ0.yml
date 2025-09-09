@@ -1,13 +1,15 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/finalfits/PTJ0'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTJ0'
+# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/finalfits/PTJ0'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/variables/PTJ0/allData_2023.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/variables/PTJ0/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/onlyGGH_125_post_PTJ0/allData_2023.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/onlyGGH_125_post_PTJ0/root'
+  # Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/variables/PTJ0/root'
 
-  src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/signal'
+  src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/ggH24_PU24'
   catDict_timestamp: '2025_08_04'
 
 backgroundScriptCfg:
@@ -62,9 +64,9 @@ trees2wsCfg:
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
-    # - "ScaleEB"
-    # - "ScaleEE"
-    - "Scale"
+    - "ScaleEB"
+    - "ScaleEE"
+    # - "Scale"
     - "Smearing"
     - "Material"
     - "FNUF"
@@ -91,8 +93,8 @@ signalScriptCfg_2023_preBPix:
   massPoints: '125' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
-  # scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scales: 'Scale' # separate nuisance per year
+  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
+  # scales: 'Scale' # separate nuisance per year
   scalesCorr: 'FNUF,Material' # correlated across years
   scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
@@ -121,8 +123,8 @@ signalScriptCfg_2023_postBPix:
   massPoints: '125' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
-  # scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scales: 'Scale' # separate nuisance per year
+  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
+  # scales: 'Scale' # separate nuisance per year
   scalesCorr: 'FNUF,Material' # correlated across years
   scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
