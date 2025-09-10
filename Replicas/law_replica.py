@@ -48,22 +48,30 @@ def create_folder(folder):
     else:
         os.makedirs(folder, exist_ok=True)
 
-def get_replica(parquet_files):
+def get_replica(mc_parquet_files, parquet_files):
     
     process_name = parquet_files[0].split("/")[-3].split("_")[0]
     
     era = parquet_files[0].split("/")[-3].split("_")[-1]
     
-    sum_weight_central = 0.0
+    mc_sum_genw_beforesel = 0
+    for i in range(len(mc_parquet_files)):
+        mc_sum_genw_beforesel += float(pq.read_table(mc_parquet_files[i]).schema.metadata[b'sum_genw_presel'])
+
     sum_genw_beforesel = 0
     for i in range(len(parquet_files)):
-        # print(f"Processing parquet file {parquet_files[i]}")
-        sum_weight_central += float(pq.read_table(parquet_files[i]).schema.metadata[b'sum_weight_central'])
         sum_genw_beforesel += float(pq.read_table(parquet_files[i]).schema.metadata[b'sum_genw_presel'])
     
     # print(sum_weight_central, sum_genw_beforesel)
     
     columns_to_load = ["mass", "weight", "genWeight", "pt", "PTJ0", "NJ", "DPhiJ0J1", "rapidity", "lead_mvaID", "sublead_mvaID", "sigma_m_over_m_corr_smeared_decorr"]
+    
+    mc_df = pd.concat((pd.read_parquet(f, columns=columns_to_load) for f in mc_parquet_files), ignore_index=True)
+    
+    mc_df["weight_norm"] = mc_df["weight"] / mc_sum_genw_beforesel
+    ## Compute the expected number of events
+    ## This is scaled to the full Run3 lumi and the individual production XS (=ggH or VBF or VH or ttH or bbH); Taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt13TeV
+    mc_exp = sum(mc_df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * lumiMap[era]
     
     df = pd.concat((pd.read_parquet(f, columns=columns_to_load) for f in parquet_files), ignore_index=True)
 
@@ -74,24 +82,16 @@ def get_replica(parquet_files):
     
     df = df[df["weight"] >= 0.0]
 
-    # df["weight_norm"] = df["weight"] / sum_weight_central
     df["weight_norm"] = df["weight"] / sum_genw_beforesel# (sum_genw_beforesel * sum_weight_central)
     ## Probability should be normalised to one
     df["prob"] = df["weight_norm"] / sum(df["weight_norm"])
 
-    ## Compute the expected number of events
-    ## This is scaled to the full Run3 lumi and the individual production XS (=ggH or VBF or VH or ttH or bbH); Taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt13TeV
-    exp = sum(df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * lumiMap[era] # 55.65
-    # exp = 430.2999789511411
-    # exp = sum(df["weight_norm"]) * (production_XS["GluGluHtoGG"] + production_XS["VBFHtoGG"] + production_XS["VHtoGG"] + production_XS["ttHtoGG"]) * 0.2270/100 * 1000 * 27.3
-    # exp = sum(df["weight_norm"]) * (production_XS["GluGluHtoGG"]) * 0.2270/100 * 1000 * 27.3
-
     ## Extract from a Poisson distribution the number of events for each replica
-    exp_replicas = poisson.rvs(mu=exp, size=(1))
+    mc_exp_replicas = poisson.rvs(mu=mc_exp, size=(1))
 
     ## Indeces corresponding to the events to pick up in each replica
     ## NB! replace MUST be True, otherwise the sampling is not independent anymore and it is no longer a Poisson process
-    idx_replicas = [np.random.choice(np.array(df.index), replace=True, size=(exp_replicas[0]), p=df["prob"])]
+    idx_replicas = [np.random.choice(np.array(df.index), replace=True, size=(mc_exp_replicas[0]), p=df["prob"])]
 
     ## Extract the events for each replica
     replica = df.loc[idx_replicas[0]]
@@ -579,12 +579,13 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
         cwd = os.getcwd()
 
-        main_parquet_dir = self.config['inputFiles']['src_files']
+        powheg_main_parquet_dir = self.config['inputFiles']['powheg_src_files']
+        mc_main_parquet_dir = self.config['inputFiles']['mc_src_files']
 
         # Load all Parquet files from the main_parquet_dir
         # Note, that I have to load the nominal parquet files from all the procs, as the systematics are already accounted for in the signal model
         # Select only 125 GeV Higgs mass point (idk how I should interpolate the different datasets on an event basis...)
-        proc_folders = glob.glob(os.path.join(main_parquet_dir, "*125*"))
+        powheg_proc_folders = glob.glob(os.path.join(powheg_main_parquet_dir, "*125*"))
 
         # Fix a seed for reproducibility
         seed = int(self.seed) + int(replica_index)
@@ -613,20 +614,21 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             CMS_channel_dict[channel.getLabel()] = i
 
         # Create the replica dataset
-        
         replica_separated_procs = []
-        
+
         # Get the replica for each process / category
-        for proc_folder in proc_folders:
+        for i, powheg_proc_folder in enumerate(powheg_proc_folders):
             # print(f"Processing parquet files from {proc_folder}")
             # Load the parquet files for the current process
-            proc_parquet_files = glob.glob(os.path.join(proc_folder, "nominal", "*.parquet"))
-            
-            if len(proc_parquet_files) == 0:
-                print(f"No parquet files found in {proc_folder}. Skipping...")
+            powheg_proc_parquet_files = glob.glob(os.path.join(powheg_proc_folder, "nominal", "*.parquet"))
+            current_proc_name = powheg_proc_folder.split("/")[-1]
+            mc_proc_parquet_files = glob.glob(os.path.join(mc_main_parquet_dir, current_proc_name, "nominal", "*.parquet"))
+
+            if len(powheg_proc_parquet_files) == 0:
+                print(f"No parquet files found in {powheg_proc_folder}. Skipping...")
                 continue
-            
-            replica_separated_procs.append(get_replica(proc_parquet_files))
+
+            replica_separated_procs.append(get_replica(mc_proc_parquet_files, powheg_proc_parquet_files))
         
         # Now merge the procs per category
         for cat in cat_dict:
