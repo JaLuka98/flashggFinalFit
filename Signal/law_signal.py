@@ -110,8 +110,8 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/fTest/Plots'], shell=True)
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/fTest/json'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/fTest/Plots'], shell=True)
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/fTest/json'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/fTest/Plots'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_{self.ext}/fTest/json'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/outdir_{self.ext}/fTest/Plots'], shell=True)
@@ -158,7 +158,7 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/outdir_{self.ext}/",
-                    'root://t3dcachedb.psi.ch:1094//'+self.output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+self.output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -368,7 +368,7 @@ class CalcPhotonSystCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             if "/work" in self.output_dir:
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/calcPhotonSyst/pkl'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/calcPhotonSyst/pkl'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/calcPhotonSyst/pkl'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/outdir_{self.ext}/calcPhotonSyst/pkl'], shell=True)
@@ -420,7 +420,7 @@ class CalcPhotonSystCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/outdir_{self.ext}/",
-                    'root://t3dcachedb.psi.ch:1094//'+self.output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+self.output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -558,7 +558,8 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
     scalesGlobal = law.Parameter(default="",description="Global scales")
     smears = law.Parameter(description="Smearings")
     year = law.Parameter(description="Year")    
-    analysis = law.Parameter(description="Analysis")
+    analysisXSBR = law.Parameter(description="XSBR Analysis")
+    analysisRM = law.Parameter(description="Replacement Map Analysis")
     replacementThreshold = law.Parameter(description="replacementThreshold")
     massPoints = law.Parameter(description="Mass Points")
     beamspotWidthData = law.Parameter(description="Beamspot width in Data")
@@ -643,8 +644,8 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/output'], shell=True)
                 execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/Plots'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/signalFit/output'], shell=True)
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/signalFit/Plots'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/signalFit/output'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/signalFit/Plots'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/outdir_{self.ext}/signalFit/output'], shell=True)
@@ -667,7 +668,8 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             "--year", f"{self.year}",
             "--scales", f"{self.scales}",
             "--smears", f"{self.smears}",
-            "--analysis", f"{self.analysis}",
+            "--analysisXSBR", f"{self.analysisXSBR}",
+            "--analysisRM", f"{self.analysisRM}",
             "--massPoints", f"{self.massPoints}",
             "--replacementThreshold",f"{self.replacementThreshold}",
             "--beamspotWidthData", f"{self.beamspotWidthData}",
@@ -707,7 +709,7 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/outdir_{self.ext}/",
-                    'root://t3dcachedb.psi.ch:1094//'+self.output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+self.output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
@@ -772,7 +774,7 @@ class SignalFit(law.Task):
             for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
             currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)         
             
-            tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysis=currentConfig['analysis'], replacementThreshold=currentConfig['replacementThreshold'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable, version=f"v{i}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
+            tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysisXSBR=currentConfig['analysisXSBR'], analysisRM=currentConfig['analysisRM'], replacementThreshold=currentConfig['replacementThreshold'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable, version=f"v{i}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
             i += 1
                 
         return tasks
@@ -913,7 +915,7 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
             if "/work" in self.output_dir:
                 execute_command([f'mkdir -p {self.output_dir}/outdir_packaged{self.outputExt}/packageSignal'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_packaged{self.outputExt}/packageSignal'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.output_dir}/outdir_packaged{self.outputExt}/packageSignal'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/outdir_packaged{self.outputExt}/packageSignal'], shell=True)
@@ -946,7 +948,7 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
                 else:
                     slurm_copy_command = [
                         'xrdcp', '-rf',
-                        'root://t3dcachedb.psi.ch:1094//'+f"{self.output_dir}/outdir_{signalScriptCfg['ext']}",
+                        'root://t3dcachedb03.psi.ch:1094//'+f"{self.output_dir}/outdir_{signalScriptCfg['ext']}",
                         f"{os.environ['TARGET_PATH']}/"
                     ]
                 print(slurm_copy_command)
@@ -987,7 +989,7 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f"{os.environ['TARGET_PATH']}/outdir_packaged{self.outputExt}/",
-                    'root://t3dcachedb.psi.ch:1094//'+self.output_dir
+                    'root://t3dcachedb03.psi.ch:1094//'+self.output_dir
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
