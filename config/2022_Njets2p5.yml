@@ -1,15 +1,11 @@
 # Config file: options for signal fitting
 
-
-# Tests
-# Test Trees2WS: law run Trees2WS --variable Njets2p5 --workers 4 --output-dir /afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/test_t2w_diff/t2w --doDiffSplitting True --doSystematic True
-
-outputFolder: '/eos/home-n/niharrin/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/forPaper_24_10_14_Njets2p5/'
+outputFolder: '/net/data_cms3a-1/spaeh/private/PhD/analyses/partial_Run3_differential/Hgg-PartialRun3-3A-ETH-Analysis/fitting/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2023_rapidity'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/eos/cms/store/group/phys_higgs/cmshgg/niharrin/2024/ntuples/forPaper_24_10_14/variables/Njets2p5/data_postprocessing/root/Data/allData_2022.root'
-  Trees2WS: '/eos/cms/store/group/phys_higgs/cmshgg/niharrin/2024/ntuples/forPaper_24_10_14/variables/Njets2p5/signal_postprocessing/root'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04/rapidity/2023/data/allData_2023.root'
+  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04/rapidity/2023/signal'
 
 backgroundScriptCfg:
   # Setup

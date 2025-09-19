@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/work/niharrin/ntuples/2025/slurm_test/inclusives/law_output'
+outputFolder: '/net/data_cms3a-1/spaeh/private/PhD/analyses/partial_Run3_differential/Hgg-PartialRun3-3A-ETH-Analysis/fitting/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_inclusive'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/work/niharrin/ntuples/2025/slurm_test/inclusives/data/allData_2022.root'
-  Trees2WS: '/work/niharrin/ntuples/2025/slurm_test/inclusives/signal/root'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_08_04/data/allData_2022.root'
+  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_08_04/signal/2022'
 
 backgroundScriptCfg:
   # Setup

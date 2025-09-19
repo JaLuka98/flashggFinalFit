@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH'
+outputFolder: '/net/data_cms3a-1/spaeh/private/PhD/analyses/partial_Run3_differential/Hgg-PartialRun3-3A-ETH-Analysis/fitting/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2023_PTH'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/PTH/allData_2023.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/PTH/root'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04/PTH/2023/data/allData_2023.root'
+  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04/PTH/2023/signal'
 
 backgroundScriptCfg:
   # Setup
@@ -84,7 +84,7 @@ signalScriptCfg_2023_preBPix:
   year: '2023preBPix' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '25' # 50
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
-
+  replacementThreshold: '25'
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
   scalesCorr: 'FNUF,Material' # correlated across years
@@ -112,7 +112,7 @@ signalScriptCfg_2023_postBPix:
   year: '2023postBPix' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '25' # 50
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
-
+  replacementThreshold: '25'
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
   scalesCorr: 'FNUF,Material' # correlated across years
