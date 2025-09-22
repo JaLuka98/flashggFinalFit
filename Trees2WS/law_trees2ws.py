@@ -69,7 +69,7 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     doDiffSplitting = law.Parameter(default=False, description="Split output WS per differential bin")
     doInOutSplitting = law.Parameter(default=False, description="Split output WS into in/out fiducial based on some variable in the input trees (to be improved).")
 
-    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
     def create_branch_map(self):
         # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
@@ -645,7 +645,7 @@ class Trees2WS(law.Task):
     variable = law.Parameter(default='', description="Variable to be used for output folder naming")
     year = law.Parameter(default='2022', description="Year")
     
-    batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
+    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are

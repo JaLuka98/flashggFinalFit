@@ -52,8 +52,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
     year = law.Parameter(default='2022', description="Year")
     is_unblinded = law.Parameter(default=False, description="Flag that signifies if spectrum is created for the unblinded results.")
 
-    batch_flavor = law.Parameter(default="slurm", description="Special treatment for PSI Slurm batch system")
-    batch_system = law.Parameter(default="slurm", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Special treatment for PSI Slurm batch system")
+    batch_system = law.Parameter(default="local", description="Batch system to use")
 
     # htcondor_job_kwargs_submit = {"spool": True}  
     
