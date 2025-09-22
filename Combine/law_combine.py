@@ -125,9 +125,9 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         yieldsConfig = config['datacard_yields']
         
         bkgConfig = config["backgroundScriptCfg"]
-            
+        # comment the line below out if you want to do combineCards stuff
         tasks["MakeDatacard"] = MakeDatacard(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=yieldsConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=yieldsConfig['batchPartition'], slurm_memory=yieldsConfig['batchMemory'], slurm_max_runtime=yieldsConfig['batchMaxRuntime'], htcondor_partition=yieldsConfig['batchPartition'], htcondor_memory=yieldsConfig['batchMemory'], htcondor_max_runtime=yieldsConfig['batchMaxRuntime'])
-
+        # comment the line below out if you want to do combineCards stuff
         tasks["Background"] = Background(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", slurm_partition=bkgConfig['batchPartition'], slurm_memory=bkgConfig['batchMemory'], slurm_max_runtime=bkgConfig['batchMaxRuntime'], htcondor_partition=bkgConfig['batchPartition'], htcondor_memory=bkgConfig['batchMemory'], htcondor_max_runtime=bkgConfig['batchMaxRuntime'], workflow=bkgConfig["execution"])
 
         return tasks
@@ -345,7 +345,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             output_dir = self.output_dir
             
         fitConfig = config['combine_fit']
-
+        # comment the line below out if you want to do combineCards stuff
         tasks["PrepareTheDirectory"] = PrepareTheDirectory(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
         
         return tasks
@@ -603,6 +603,12 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
 
+        if self.year == "2223":
+            saveIndex = ",".join([f"pdfindex_{bmw}_2022_13TeV" for bmw in BMW] + [f"pdfindex_{bmw}_2023_13TeV" for bmw in BMW])
+        else:
+            saveIndex = ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])
+
+
         if self.variable == '':
             arguments = [
                 "combine",
@@ -621,7 +627,7 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
                 # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # According to Mauro: Try without profiling
                 "-t", "-1",
                 "--saveFitResult", #pdfindex_cat0_{self.year}_13TeV,pdfindex_cat1_2022_13TeV,pdfindex_cat2_2022_13TeV}
-                "--saveSpecifiedIndex", f"""{",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
+                "--saveSpecifiedIndex", saveIndex,
                 "--floatOtherPOIs", "1"
             ]
             command = arguments
@@ -5681,7 +5687,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
                 
             if self.variable == '':
-                reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
+                reco_cats_with_bmw = ['Y22_cat0', 'Y22_cat1', 'Y22_cat2', 'Y23_cat0', 'Y23_cat1', 'Y23_cat2']
             else:
                 reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
                 
@@ -5691,7 +5697,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
                 "--inputWSFile", datacard_path,
                 "--cats", f"{','.join(reco_cats_with_bmw)}",
                 "--doZeroes",
-                "--blindingRegion", "125,125",
+                "--blindingRegion", "117,133",
                 "--translateCats", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'cats.json')}",
                 "--doSumCategories",
                 "--doCatWeights",

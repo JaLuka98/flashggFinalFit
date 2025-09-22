@@ -42,8 +42,17 @@ def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW):
     paramStrNoOne = [f"r_{gen_variable}_{bin}" for bin in bins]
     catsStr = [f"RECO_{reco_variable}_{bin}" for bin in bins]
     catsStrWithBMW = [f"RECO_{reco_variable}_{bin}_{bmw}" for bin in bins for bmw in BMW]
-    pdfIndeces = [f"pdfindex_RECO_{reco_variable}_{bin}_{bmw}_{year}_{sqrts__}" for bin in bins for bmw in BMW]
-    
+
+    if year == "2223":
+        years = ["2022", "2023"]
+    else:
+        years = [year]
+
+    pdfIndeces = [
+        f"pdfindex_RECO_{reco_variable}_{bin}_{bmw}_{yr}_{sqrts__}"
+        for bin in bins for bmw in BMW for yr in years
+    ]
+
     VariableDict = {
         "paramStr": paramStr,
         "paramStrNoOne": paramStrNoOne,
