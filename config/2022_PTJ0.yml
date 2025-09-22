@@ -2,6 +2,7 @@
 
 outputFolder: '/net/data_cms3a-1/wrabetz/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_ptJ0/'
 
+# ptJ0
 inputFiles:
   # Trees2WS
   Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_07_18/ptJ0/allData_2022.root'
