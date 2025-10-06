@@ -471,6 +471,8 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    
+    save_sonly = law.Parameter(default=False, description="If True, will save the s-only replica as well.")
 
     # parquet_dir = law.Parameter(default='', description="Path to the parquet directory, used to create the s-only replicas")
     
@@ -543,14 +545,21 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
     def output(self):
         # returns output folder
         replica_index = self.branch_data
-        
+
         self._init_once()
-        
+
         output_paths = []
-        
+
         seed = int(self.seed) + int(replica_index)
 
         output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root'))
+
+        if convert_boolean_string(self.save_sonly):
+            powheg_main_parquet_dir = self.config['inputFiles']['powheg_src_files']
+            dir_list = glob.glob(os.path.join(powheg_main_parquet_dir, "*"))
+            proc_list = [d.split("/")[-1] for d in dir_list if os.path.isdir(d)]
+            for proc in proc_list:   
+                output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'Sonly', proc, f'Sonly_Toy_{int(replica_index)}.{seed}.parquet'))
 
         outputFileTargets = []
 
@@ -627,8 +636,10 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             if len(powheg_proc_parquet_files) == 0:
                 print(f"No parquet files found in {powheg_proc_folder}. Skipping...")
                 continue
+            
+            current_proc_replica = get_replica(mc_proc_parquet_files, powheg_proc_parquet_files)
 
-            replica_separated_procs.append(get_replica(mc_proc_parquet_files, powheg_proc_parquet_files))
+            replica_separated_procs.append(current_proc_replica)
         
         # Now merge the procs per category
         for cat in cat_dict:
@@ -663,15 +674,35 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             # Have to use /scratch/batch_username/ for slurm/psi
             if "/work" in self.resolved_output_dir:
                 execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/SplusB'], shell=True)
+                if convert_boolean_string(self.save_sonly):
+                    dir_list = glob.glob(os.path.join(powheg_main_parquet_dir, "*"))
+                    proc_list = [d.split("/")[-1] for d in dir_list if os.path.isdir(d)]
+                    for proc in proc_list:
+                        execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/Sonly/{proc}'], shell=True)
             else:   
                 execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/SplusB'], shell=True)
+                if convert_boolean_string(self.save_sonly):
+                    dir_list = glob.glob(os.path.join(powheg_main_parquet_dir, "*"))
+                    proc_list = [d.split("/")[-1] for d in dir_list if os.path.isdir(d)]
+                    for proc in proc_list:
+                        execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/Sonly/{proc}'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             execute_command([f'mkdir -p $TARGET_PATH/Replicas/SplusB'], shell=True)
+            if convert_boolean_string(self.save_sonly):
+                dir_list = glob.glob(os.path.join(powheg_main_parquet_dir, "*"))
+                proc_list = [d.split("/")[-1] for d in dir_list if os.path.isdir(d)]
+                for proc in proc_list:
+                    execute_command([f'mkdir -p $TARGET_PATH/Replicas/Sonly/{proc}'], shell=True)
             output_root_path = os.path.join(os.environ["TARGET_PATH"], 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
             os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas', "SplusB"))
         else:
             execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/SplusB'], shell=True)
+            if convert_boolean_string(self.save_sonly):
+                dir_list = glob.glob(os.path.join(powheg_main_parquet_dir, "*"))
+                proc_list = [d.split("/")[-1] for d in dir_list if os.path.isdir(d)]
+                for proc in proc_list:
+                    execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/Sonly/{proc}'], shell=True)
             output_root_path = os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
             os.chdir(os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB'))
         
@@ -689,6 +720,24 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         # Close the file
         output_file.Close()
         
+        # Now save the s-only replica if requested
+        if convert_boolean_string(self.save_sonly):
+            dir_list = glob.glob(os.path.join(powheg_main_parquet_dir, "*"))
+            proc_list = [d.split("/")[-1] for d in dir_list if os.path.isdir(d)]
+
+            for i, powheg_proc_folder in enumerate(powheg_proc_folders):
+                # print(f"Processing parquet files from {proc_folder}")
+                # Load the parquet files for the current process
+                current_proc_name = powheg_proc_folder.split("/")[-1]
+                
+                current_proc_replica = replica_separated_procs[i]
+
+                output_sonly_path = os.path.join(self.resolved_output_dir, 'Replicas', 'Sonly', current_proc_name, f'Sonly_Toy_{int(replica_index)}.{seed}.parquet')
+                if self.batch_flavor == "slurm/psi":
+                    output_sonly_path = os.path.join(os.environ["TARGET_PATH"], 'Replicas', 'Sonly', current_proc_name, f'Sonly_Toy_{int(replica_index)}.{seed}.parquet')
+                
+                current_proc_replica.to_parquet(output_sonly_path)
+    
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
             # Have to copy over the output to the final directory
@@ -717,6 +766,8 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    
+    save_sonly = law.Parameter(default=False, description="If True, will save the s-only replica as well.")
 
     batch_flavor = law.Parameter(default="slurm", description="Special treatment for PSI Slurm batch system")
 
@@ -773,7 +824,7 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
         
         SplusB_config = self.config["combine_SplusB_toys"]
         
-        tasks["GenerateSplusBToys"] = GenerateSplusBToys(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
+        tasks["GenerateSplusBToys"] = GenerateSplusBToys(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, save_sonly=self.save_sonly)
         
         return tasks
 
@@ -890,6 +941,8 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
+    
+    save_sonly = law.Parameter(default=False, description="If True, will save the s-only replica as well.")
 
     number_of_replicas = law.Parameter(default=1000, description="Number of replicas to run.")
     starting_value = law.Parameter(default=0, description="Starting toy computation from this index. This can be useful for preventing overloading schedds.")
@@ -947,7 +1000,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
 
         SplusB_config = self.config["combine_SplusB_toys"]
         
-        tasks["GetAsimovBestFitBeforeSplusBFit"] = GetAsimovBestFitBeforeSplusBFit(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
+        tasks["GetAsimovBestFitBeforeSplusBFit"] = GetAsimovBestFitBeforeSplusBFit(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, save_sonly=self.save_sonly)
         
         return tasks
     
