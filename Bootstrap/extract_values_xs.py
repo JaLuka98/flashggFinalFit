@@ -104,6 +104,8 @@ def chi(mu, pois_, poi_list_, rho_, abc_values=None, first_order=False, bf_combi
 
     return chi_vector_.T @ np.linalg.inv(rho_) @ chi_vector_
 
+# IDEA: To get rid of the non closure, maybe do an asimov (or whatever that will be...) over the POWHEG samples while considering the MG5 normalization?
+
 def find_crossings(x_vals, y_vals, threshold=1.0):
     # Find where the difference changes sign
     signs = np.sign(y_vals - threshold)
@@ -503,13 +505,16 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, path_to_hesse_, folder="",
         hep.cms.label('Preliminary', data=False, lumi=9.5, com=13.6)
 
         # Plot x0 scan
-        ax1.plot(x0_ranges[i], chi_x0_scans[i], label='Simplified likelihood', color="green")
+        # Shift the x-axis so that the minimum is at 1
+        shift = 1 - optimal_values[i]
+        ax1.plot(x0_ranges[i] + shift, chi_x0_scans[i], label='Simplified likelihood (min at 1)', color="green")
         ax1.axvline(optimal_values[i], color='red', linestyle='--', label=f'Minimum: {optimal_values[i]:.3f}')
         if print_first_order:
             ax1.plot(x0_ranges_fo[i], chi_x0_scans_fo[i], label='Gaussian likelihood', color="teal")
 
         if with_crossingMethod:
-            ax1.plot(x0_ranges_cm[i], chi_x0_scans_cm[i], label='Crossing Method', color="darkmagenta")
+            shift_cm = 1 - optimal_values_cm[i]
+            ax1.plot(x0_ranges_cm[i] + shift_cm, chi_x0_scans_cm[i], label='Crossing Method', color="darkmagenta")
         variable_bin = f"{variable}_{'_'.join(current_poi.split('_')[-2:])}"
         # with uproot.open(f"/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH/Combine/runFits_chg/eft_asimov/scans/scan_{current_poi}.root") as file:
         if inclusive_:
@@ -775,7 +780,8 @@ def plot_correlation(pois_, poi_list_, variable_):
 
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/finalfits'
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
-sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/finalfits'
+# sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/finalfits'
+sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/finalfits'
 
 # variables = ["rapidity", "NJ"]
 variables = ["PTH"]
