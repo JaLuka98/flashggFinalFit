@@ -1,16 +1,20 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH'
+# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH'
 # outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/finalfits/PTH'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/finalfits/PTH'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/onlyGGH_125_post_PTH/allData_2023.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/onlyGGH_125_post_PTH/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/variables/PTH/allData_2023.root'
+  # Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/onlyGGH_125_post_PTH/root'
   # Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/variables/PTH/root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/variables/PTH/root'
 
-  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/signal'
-  powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/ggH24_PU24'
+  # mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/signal'
+  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/signal'
+  # powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/ggH24_PU24'
+  powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/intermediateRun3NTuples_powheg/signal'
   catDict_timestamp: '2025_08_04'
 
 backgroundScriptCfg:
@@ -90,7 +94,7 @@ signalScriptCfg_2023_preBPix:
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2023preBPix' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '25' # 50
-  massPoints: '125' # You can now run with a single mass point if necessary
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
@@ -119,7 +123,7 @@ signalScriptCfg_2023_postBPix:
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2023postBPix' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '25' # 50
-  massPoints: '125' # You can now run with a single mass point if necessary
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
@@ -140,7 +144,7 @@ signalScriptCfg_2023_postBPix:
 
 packaged_2023:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  massPoints: '125' # You can now run with a single mass point if necessary
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
   execution: 'local'
