@@ -78,7 +78,7 @@ BR_Z_qq = 69.91*0.01
 BR_W_qq = 67.41*0.01
 
 # List of years
-years_to_process = ['2016','2017','2018','2022preEE','2022postEE','2022preBPix','2022postBPix']
+years_to_process = ['2016','2017','2018','2022preEE','2022postEE','2023preBPix','2023postBPix']
 # Production modes and decay channel: for extract XS from combine
 productionModes = ['ggH','qqH','ttH','tHq','tHW','ggZH', 'WH','ZH','bbH']
 decayMode = 'hgg'
@@ -97,8 +97,8 @@ outputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':'','scalesGlobal':'
 bkgWSName__ = "multipdf"
 
 # Define an array of input masses
-# input_masses = [120, 125, 130]
-input_masses = [125]
+input_masses = [120, 125, 130]
+# input_masses = [125]
 
 # Define an array of production modes and corresponding process strings
 # JLS 23th Jan 2025, also adding 2G naming conventions
@@ -136,8 +136,8 @@ eft_variables = ["chg", "chb", "chw", "chwb", "chbox", "chd", "chl3", "cll1", "c
 # Define an array of eras
 # JLS 22th of Jan 2025: This syntax looks pretty criminal and should be improved at some point
 TwentyTwentyTwoEras = ["preEE", "postEE"]
-# TwentyTwentyThreeEras = ["preBPix", "postBPix"]
-TwentyTwentyThreeEras = ["postBPix"]
+TwentyTwentyThreeEras = ["preBPix", "postBPix"]
+# TwentyTwentyThreeEras = ["postBPix"]
 
 
 allErasMap = {
@@ -377,6 +377,7 @@ def combineVariableDict(variable, year, eft_variable=""):
         individual_flag = False
         if "individual" in eft_variable:
             individual_flag = True
+        eft_variable = eft_variable.replace("_individual","")
         return CreateVariableParameters(gen_variable=variable, reco_variable=variable, bins=variableBins[variable], year=year, BMW=BMW, procs=short_production_modes, eft_variable=eft_variable, individual=individual_flag)
     else:
         return CreateVariableParameters(gen_variable=variable, reco_variable=variable, bins=variableBins[variable], year=year, BMW=BMW)
