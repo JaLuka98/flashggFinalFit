@@ -163,6 +163,7 @@ def chi(wc, pois_, poi_list_, rho_, eft_variable_, abc_values=None, first_order=
         for i, current_poi in enumerate(poi_list_):
             # Convert to numpy arrays for easier computation
             r = np.array(pois_[current_poi])
+            r = r[r > -998.0]
 
             # 1. Mean values
             mean = np.mean(r)
@@ -283,7 +284,7 @@ def plot_covariance_matrix(rho_, poi_list_, folder="", title="Covariance Matrix"
 def produce_rho(pois_, poi_list_, subfolder_, plot_r_distribution=True):
 
     # Covariance matrix
-    cov_matrix = np.cov([pois_[current_poi] for current_poi in poi_list_])
+    cov_matrix = np.cov([np.array(pois_[current_poi])[np.array(pois_[current_poi]) > -998.0] for current_poi in poi_list_])
 
     print("\nCovariance matrix:")
     print(cov_matrix)
@@ -297,6 +298,7 @@ def produce_rho(pois_, poi_list_, subfolder_, plot_r_distribution=True):
 
         # Convert to numpy arrays for easier computation
         r = np.array(pois_[current_poi])
+        r = r[r > -998.0]  # Filter out invalid values
 
         # 1. Mean values
         mean = np.mean(r)
@@ -398,7 +400,7 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, ef
         print("Only one POI provided. Using cov_matrix = 1")
         cov_matrix = 1
     else:
-        cov_matrix = np.cov([pois_[r] for r in poi_list_])
+        cov_matrix = np.cov([np.array(pois_[current_poi])[np.array(pois_[current_poi]) > -998.0] for current_poi in poi_list_])
 
     for i, current_poi in enumerate(poi_list_):
 
@@ -471,7 +473,7 @@ def produce_and_minimize_chi_crossingMethod(pois_, poi_list_, combineLL_dir_, ef
 
 def produce_and_minimize_chi(pois_, poi_list_, eft_variable_, subfolder_, path_to_hesse_, first_order=False, bf_combine_=None, inclusive_=False, plot_r_distribution=True):
 
-    cov_matrix = np.cov([pois_[r] for r in poi_list_])   
+    cov_matrix = np.cov([np.array(pois_[current_poi])[np.array(pois_[current_poi]) > -998.0] for current_poi in poi_list_])
 
     if first_order:
         rho = extract_covariance_matrix(path_to_hesse_, poi_list_)
@@ -549,16 +551,16 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_e
     if (not os.path.exists(folder)) & (folder!=""):
         os.makedirs(folder)
 
-    cov_matrix = np.cov([pois_[r] for r in poi_list_])
+    cov_matrix = np.cov([np.array(pois_[current_poi])[np.array(pois_[current_poi]) > -998.0] for current_poi in poi_list_])
 
     for i, current_poi in enumerate(poi_list_):
         if inclusive_ and i > 0:
             continue
 
         # Check if condition is satisfied
-        mean = np.mean(pois_[current_poi])
+        mean = np.mean(np.array(pois_[current_poi])[np.array(pois_[current_poi]) > -998.0])
         variance = cov_matrix[i,i]
-        third_moment = np.mean((pois_[current_poi] - mean)**3)
+        third_moment = np.mean((np.array(pois_[current_poi])[np.array(pois_[current_poi]) > -998.0] - mean)**3)
 
         condition = (8*variance**3 >= third_moment**2)
         print(f"Condition for {current_poi}: {condition}")
@@ -571,16 +573,23 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_e
         # Create plots
         plt.style.use(hep.style.CMS)
         _, ax1 = plt.subplots(1, 1, figsize=(12, 8))
-        hep.cms.label('Preliminary', data=False, lumi=27.3, com=13.6)
+        hep.cms.label('Preliminary', data=False, lumi=9.7, com=13.6)
 
         # Plot x0 scan
-        ax1.plot(x0_ranges[i], chi_x0_scans[i], label='Simplified likelihood', color="green")
-        ax1.axvline(optimal_values[i], color='red', linestyle='--', label=f'Minimum: {optimal_values[i]:.3f}')
+        # Shift y values so that the y-axis zero crossing is at 0
+        chi_x0_scans_shifted = chi_x0_scans[i] - np.min(chi_x0_scans[i])
+        ax1.plot(x0_ranges[i], chi_x0_scans_shifted, label='Simplified likelihood', color="green")
+        if inclusive_:
+            SL_minima = optimal_values[np.argmin(np.abs(optimal_values))]
+        else:
+            SL_minima = optimal_values[i]
+        ax1.axvline(SL_minima, color='red', linestyle='--', label=f'Minimum: {SL_minima:.3f}')
         if print_first_order:
             ax1.plot(x0_ranges_fo[i], chi_x0_scans_fo[i], label='Gaussian likelihood', color="teal")
 
         if with_crossingMethod:
-            ax1.plot(x0_ranges_cm[i], chi_x0_scans_cm[i], label='Crossing Method', color="darkmagenta")
+            chi_x0_scans_shifted_cm = chi_x0_scans_cm[i] - np.min(chi_x0_scans_cm[i])
+            ax1.plot(x0_ranges_cm[i], chi_x0_scans_shifted_cm, label='Crossing Method', color="darkmagenta")
         eft_variable_bin = f"{eft_variable_}_{'_'.join(current_poi.split('_')[-2:])}"
         # with uproot.open(f"/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/PTH/Combine/runFits_chg/eft_asimov/scans/scan_{current_poi}.root") as file:
         if inclusive_:
@@ -608,7 +617,7 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, eft_variable_, combineLL_e
 
         ax1.plot(x0_points, y0_points, 'r--', label='Full likelihood', color="black")
 
-        print(f"SL Minimum and Crossings: {optimal_values[i]:.3f}, {find_crossings(x0_ranges[i], chi_x0_scans[i])}") 
+        print(f"SL Minimum and Crossings: {SL_minima:.3f}, {find_crossings(x0_ranges[i], chi_x0_scans[i])}") 
         if print_first_order:
             print(f"Hesse Minimum and Crossings: {optimal_values_fo[i]:.3f}, {find_crossings(x0_ranges_fo[i], chi_x0_scans_fo[i])}") 
         print(f"Combine Minimum and Crossings: {optimal_values_combine}, {find_crossings(x0_points, y0_points)}")
@@ -765,6 +774,7 @@ def create_json_trimmed(variable_, toyDir_, pois_untrimmed_, poi_list_, subfolde
     z = 4
     for i, current_poi in enumerate(poi_list_):
         r = np.array(pois_untrimmed_[current_poi])
+        r = r[r > -998.0]
         mean = np.mean(r)
         s = np.std(r)
 
@@ -784,14 +794,20 @@ def create_json_trimmed(variable_, toyDir_, pois_untrimmed_, poi_list_, subfolde
 
         if (not os.path.exists(f"./Plots/{variable_}/{subfolder_}")) & (f"./Plots/{variable_}/{subfolder_}"!=""):
             os.makedirs(f"./Plots/{variable_}/{subfolder_}")
+            
+        bins = 30
 
-        plt.figure()
-        plt.hist(r, bins=30, density=True, alpha=0.6, label='Histogram')
+        plt.figure(figsize=(12, 8))
+        plt.style.use(hep.style.CMS)
+        hep.cms.label('Preliminary', data=False, lumi=9.5, com=13.6)
+        plt.hist(r, bins=bins, density=False, alpha=0.6, label='S+B Toys') #30
         plt.plot(bin_centers, gaus(bin_centers, *popt), color='red', label='Fitted Gaussian')
+        plt.axvline(mean, color='red', linestyle='--', label=f'Mean: {mean:.2f} ± {s:.2f}')
+        plt.axvline(np.median(r), color='blue', linestyle='--', label=f'Median: {np.median(r):.2f}')
+        plt.axvline(1.0, color='grey', linestyle='--', label=r'$\mu=1$')
         plt.legend()
-        plt.xlabel('Value')
-        plt.ylabel('Density')
-        plt.title('Gaussian Fit to Data Histogram')
+        plt.xlabel(f"{translation[f'{current_poi}']}")
+        plt.ylabel(r'$N$')
         plt.savefig(f"./Plots/{variable_}/{subfolder_}/gaussian_fit_{current_poi}.png")
         plt.close()
 
@@ -837,9 +853,11 @@ def plot_individual_correlation(pois_, poi_list_, variable_):
 
 sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/finalfits'
 sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
+sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/finalfits'
 
 variables = ["PTH"]
-eft_variables = ["chg", "chd", "chw", "chbox", "chl3", "cll1", "cthre", "ctwre", "chwb", "ctbre", "chb"]
+# eft_variables = ["chg", "chd", "chw", "chbox", "chl3", "cll1", "cthre", "ctwre", "chwb", "ctbre", "chb"]
+eft_variables = ["chg"]
 
 for variable in variables:
     
@@ -860,22 +878,22 @@ for variable in variables:
     pois_untrimmed = create_json_untrimmed(variable, toyDir, poi_list)
     pois = create_json_trimmed(variable, toyDir, pois_untrimmed, poi_list, subfolder_=f"SL_{variable}")
 
-    for eft_variable in eft_variables:
+    # for eft_variable in eft_variables:
         
-        print("Processing EFT variable:", eft_variable)
+    #     print("Processing EFT variable:", eft_variable)
         
-        combineLL_eftDir = os.path.join(sample_dir, variable, "Combine", f"runFits_{eft_variable}_individual", "eft_asimov")
-        subfolder = f"SL_{eft_variable}"
+    #     combineLL_eftDir = os.path.join(sample_dir, variable, "Combine", f"runFits_{eft_variable}_individual", "eft_asimov")
+    #     subfolder = f"SL_{eft_variable}"
         
-        bf_combine = produce_bf_combine(poi_list, combineLL_dir)
+    #     bf_combine = produce_bf_combine(poi_list, combineLL_dir)
 
-        produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine, plot_r_distribution=False)
+    #     produce_LLPlots(pois, poi_list, combineLL_dir, eft_variable, combineLL_eftDir, path_to_hesse, folder=f"Plots/{variable}/{subfolder}", subfolder_=subfolder, print_first_order=True, with_crossingMethod=True, bf_combine_=bf_combine, plot_r_distribution=False)
     
     # Change plotting ranges for inclusive plots
     range_dict["chb"] = [-0.0005, 0.0015]
     range_dict["chbox"] = [-0.6, 0.5]
     range_dict["chd"] = [-0.05, 0.05]
-    range_dict["chg"] = [-0.15, 0.06]
+    range_dict["chg"] = [-0.15, 0.06] # [-0.15, 0.06]
     range_dict["chl3"] = [-0.25, 0.25]
     range_dict["chw"] = [-0.01, 0.04]
     range_dict["chwb"] = [-0.0025, 0.0005]
