@@ -28,7 +28,8 @@ lumiMap = {
     '2022': 34.7,
     '2023preBPix': 17.8,
     '2023postBPix': 9.5,
-    '2023': 27.3
+    '2023': 27.3,
+    '2024': 109.0
 }
 
 def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW):
