@@ -1,13 +1,13 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits/inclusive'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_17_Preliminary_2024_NTuples/finalfits/inclusive'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/inclusive/allData_2023.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/variables/inclusive/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_17_Preliminary_2024_NTuples/variables/inclusive/allData_2024.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_17_Preliminary_2024_NTuples/variables/inclusive/root'
   
-  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/signal'
+  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_17_Preliminary_2024_NTuples/signal'
   powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/ggH24_PU24'
   catDict_timestamp: '2025_08_04'
 
@@ -72,18 +72,18 @@ trees2wsCfg:
 
   execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
-signalScriptCfg_2024:
+signalScriptCfg_2024_all:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'Run3FidXSAnalysis_2024' # output directory extension
   analysisRM: 'Run3FidXSAnalysisInclusive' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
-  year: '2024' # Use 'combined' if merging all years: not recommended
+  year: '2024all' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
@@ -165,7 +165,7 @@ datacard_clean:
   verbose: False # Spit out all the cleaning being done
 
 combine_fit:
-  asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
+  asimov_numPoints: 100 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,2"
   cminApproxPreFitTolerance: 0.01

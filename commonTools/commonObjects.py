@@ -35,6 +35,7 @@ lumiMap = {
     '2023': 27.756,
     '2223': 62.4081,
     '2024': 109.0,
+    '2024all': 109.0,
     'Run3': 171.4081
 }
 
@@ -127,6 +128,7 @@ allErasMap = {
     '2022': ["preEE", "postEE"],
     '2023': ["preBPix", "postBPix"],
     '2223': ["preEE", "postEE", "preBPix", "postBPix"],
+    '2024': ["all"],
     'Run3': ["preEE", "postEE", "preBPix", "postBPix"],
 }
 
