@@ -6,9 +6,7 @@ inputFiles:
   # Trees2WS
   Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_17_Preliminary_2024_NTuples/variables/inclusive/allData_2024.root'
   Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_17_Preliminary_2024_NTuples/variables/inclusive/root'
-  
-  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_17_Preliminary_2024_NTuples/signal'
-  powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/ggH24_PU24'
+
   catDict_timestamp: '2025_08_04'
 
 backgroundScriptCfg:
@@ -95,8 +93,8 @@ signalScriptCfg_2024_all:
 
   doPlots: True
 
-  beamspotWidthData: '3.703'
-  beamspotWidthMC: '3.597'
+  beamspotWidthData: '3.583'
+  beamspotWidthMC: '3.601'
 
 
   # Job submission options
