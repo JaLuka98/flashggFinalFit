@@ -1,6 +1,7 @@
 # Config file: options for signal fitting
 
 outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_17_Preliminary_2024_NTuples/finalfits/inclusive'
+# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/ext-khuang/2024_inclusive'
 
 inputFiles:
   # Trees2WS
