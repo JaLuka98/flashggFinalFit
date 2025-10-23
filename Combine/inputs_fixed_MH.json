@@ -17,7 +17,8 @@
         "pois":"r",
         "fits":"profile1D:statonly_fixedMH:all+profile1D:syst_fixedMH:all",
         "points":"40:1+40:1",
-        "fit_opts":"-m 125.38 --freezeParameters ALL,MH --setParameterRanges r=0,2 --saveSpecifiedNuis all+-m 125.38 --freezeParameters MH --setParameterRanges r=0,2 --saveSpecifiedNuis all"
+        "fit_opts": "-m 125.38 --setParameters pdfindex_cat2_2022_13TeV=2 --freezeParameters ALL,MH --trackParameters pdfindex_cat2_2022_13TeV,pdfindex_cat1_2022_13TeV,pdfindex_cat0_2022_13TeV --setParameterRanges r=0,2 --saveWorkspace --saveFitResult --saveSpecifiedNuis all +-m 125.38 --setParameters pdfindex_cat2_2022_13TeV=2 --freezeParameters MH --trackParameters pdfindex_cat2_2022_13TeV,pdfindex_cat1_2022_13TeV,pdfindex_cat0_2022_13TeV --setParameterRanges r=0,2 --saveSpecifiedNuis all --saveWorkspace --saveFitResult"
+
     },
 
     "differential_PTH":{

@@ -93,6 +93,16 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             for input_path in glob.glob(f"{self.input_paths}/{process}_M-{mass}_{self.year}/*.root")
             ]
         branch_map = {i: mode_proc_mass for i, mode_proc_mass in enumerate(mode_proc_mass_list)}
+        if not branch_map:
+            print("branch_map still empty, trying with plain year suffix.")
+            plain_year = ''.join(filter(str.isdigit, self.year))
+            mode_proc_mass_list = [
+                (mode, mass, input_path)
+                for mode, process in production_modes
+                for mass in input_masses
+                for input_path in glob.glob(f"{self.input_paths}/{process}_M-{mass}_{plain_year}/*.root")
+            ]
+            branch_map = {i: mode_proc_mass for i, mode_proc_mass in enumerate(mode_proc_mass_list)}
         return branch_map
 
     def output(self):
