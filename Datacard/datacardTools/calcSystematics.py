@@ -18,11 +18,36 @@ def addConstantSyst(sd,_syst,options):
   # Add column to dataFrame with default value
   if _syst['correlateAcrossYears'] == 1: 
     sd[_syst['name']] = '-'
+    mask_sig = (sd['type']=='sig')&(~sd['cat'].str.contains("NOTAG"))
     if fromJson:
       sd.loc[(sd['type']=='sig'),_syst['name']] = sd[(sd['type']=='sig')].apply(lambda x: getValueFromJson(x,uval,_syst['name']), axis=1)
     else:
-      # If signal and not NOTAG then set value
-      sd.loc[(sd['type']=='sig')&(~sd['cat'].str.contains("NOTAG")), _syst['name']] = _syst['value']
+      value = _syst['value']
+      if isinstance(value, dict):
+        def _pick_val(row):
+          year = row.get('year', '')
+          candidates = []
+          if isinstance(year, str):
+            candidates.append(year)
+            # include prefix up to first underscore
+            if "_" in year:
+              candidates.append(year.split("_")[0])
+            candidates.append(year[:4])
+          year_digits = ''.join(ch for ch in str(year) if ch.isdigit())
+          if year_digits:
+            candidates.append(year_digits)
+            if len(year_digits) >= 4:
+              candidates.append(year_digits[:4])
+          candidates.extend(["Run3", "combined", "all"])
+          for cand in candidates:
+            if cand and cand in value:
+              return value[cand]
+          # Fall back to dash if nothing matches
+          return '-'
+        sd.loc[mask_sig, _syst['name']] = sd.loc[mask_sig].apply(_pick_val, axis=1)
+      else:
+        # If signal and not NOTAG then set value
+        sd.loc[mask_sig, _syst['name']] = value
 
   # Partial correlation
   elif _syst['correlateAcrossYears'] == -1:

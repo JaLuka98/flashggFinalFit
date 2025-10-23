@@ -117,6 +117,16 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
       # Construct syst line/lines if separate by year
       if(s['correlateAcrossYears'] == 1)|(s['correlateAcrossYears'] == -1):
         stitle = "%s%s%s"%(s['title'],mergeStr,tierStr)
+        if s['title'].startswith("lumi_"):
+          year_tokens = set()
+          for y in d['year'].unique():
+            if not isinstance(y, str):
+              continue
+            match = re.search(r'\d{4}', y)
+            if match:
+              year_tokens.add(match.group(0))
+          if len(year_tokens) == 1:
+            stitle = "%s_%s"%(stitle, next(iter(year_tokens)))
         lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
         # Loop over categories and then iterate over rows in category
         for cat in d.cat.unique():
@@ -212,7 +222,7 @@ def addSyst(l,v,s,p,c,n):
           l += "%-15s "%vstr
     return l
   else:
-    print(" --> [ERROR] systematic %s: value does not have type string or list for (%s,%s). Leaving..."%(s['title'],p,c))
+    print(" --> [ERROR] systematic %s: value does not have type string or list for (%s,%s). Leaving..."%(s,p,c))
     sys.exit(1)
 
 def writeMCStatUncertainty(f,d,options):
