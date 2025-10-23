@@ -6,13 +6,13 @@ if [ $# -eq 1 ]; then
     mkdir "Models_${differential_variable}"
     mkdir "Models_${differential_variable}/signal"
     mkdir "Models_${differential_variable}/background"
-    cp ../Background/outdir_partialAnalysis_Full_2024_Preliminary_16_10_25_2024/CMS-HGG*.root ./Models_${differential_variable}/background/
+    cp ../Background/outdir_earlyAnalysis_${differential_variable}/CMS-HGG*.root ./Models_${differential_variable}/background/
     #cp ../Background/outdir_earlyAnalysis_2022preEE/CMS-HGG*.root ./Models/background/
     # Comment this renaming stuff in/out as needed, I am not totally sure about these year suffixes
     #for file in Models/background/*resolution.root; do mv "$file" "${file%.root}_2022preEE.root"; done
     #cp ../Background/outdir_earlyAnalysis_2022postEE/CMS-HGG*.root ./Models/background/
     #for file in Models/background/*resolution.root; do mv "$file" "${file%.root}_2022postEE.root"; done
-    cp ../Signal/outdir_partialAnalysis_Full_2024_Preliminary_16_10_25_2024/CMS-HGG*.root ./Models_${differential_variable}/signal/
+    cp ../Signal/outdir_packaged_${differential_variable}/CMS-HGG*.root ./Models_${differential_variable}/signal/
     # See above
     for file in Models_${differential_variable}/signal/*_2022.root; do
         if [ -f "$file" ]; then
@@ -28,16 +28,16 @@ if [ $# -eq 1 ]; then
     fi
 
 elif [ $# -eq 0 ]; then
-    #mkdir Models
-    #mkdir Models/signal
-    #mkdir Models/background
-    cp ../Background/outdir_partialAnalysis_Full_2024_Preliminary_16_10_25_2024/CMS-HGG*.root ./Models/background/
+    mkdir Models
+    mkdir Models/signal
+    mkdir Models/background
+    cp ../Background/outdir_earlyAnalysis/CMS-HGG*.root ./Models/background/
     #cp ../Background/outdir_earlyAnalysis_2022preEE/CMS-HGG*.root ./Models/background/
     # Comment this renaming stuff in/out as needed, I am not totally sure about these year suffixes
     #for file in Models/background/*resolution.root; do mv "$file" "${file%.root}_2022preEE.root"; done
     #cp ../Background/outdir_earlyAnalysis_2022postEE/CMS-HGG*.root ./Models/background/
     #for file in Models/background/*resolution.root; do mv "$file" "${file%.root}_2022postEE.root"; done
-    cp ../Signal/outdir_partialAnalysis_Full_2024_Preliminary_16_10_25_2024/CMS-HGG*.root ./Models/signal/
+    cp ../Signal/outdir_packaged/CMS-HGG*.root ./Models/signal/
     # See above
     for file in Models/signal/*_2022.root; do
         if [ -f "$file" ]; then

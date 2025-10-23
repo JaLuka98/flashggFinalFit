@@ -3,10 +3,10 @@
 backgroundScriptCfg = {
   
   # Setup
-  'inputWS':'/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/input_output_2024_correct_ID_cut/ws/allData_2024.root', # location of 'allData.root' file
+  'inputWS':'../input_output_2022/ws/allData_2022.root', # location of 'allData.root' file
   'cats':'auto', # auto: automatically inferred from input ws
   'catOffset':0, # add offset to category numbers (useful for categories from different allData.root files)  
-  'ext':'earlyAnalysis_2024_with_SAS_correct_ID', # extension to add to output directory
+  'ext':'earlyAnalysis', # extension to add to output directory
   'year':'2022', # Use combined when merging all years in category (for plots)
 
   # Job submission options

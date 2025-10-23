@@ -34,9 +34,7 @@ lumiMap = {
     '2223postBPix': 9.693,
     '2023': 27.756,
     '2223': 62.4081,
-    '2024': 109.0,
-    '2024all': 109.0,
-    'Run3': 171.4081
+    'Run3': 62.4081 # Up to 2023, this does NOT include 2024.
 }
 
 def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW):
@@ -70,7 +68,7 @@ BR_Z_qq = 69.91*0.01
 BR_W_qq = 67.41*0.01
 
 # List of years
-years_to_process = ['2016','2017','2018','2022preEE','2022postEE','2023preBPix','2023postBPix', '2024']
+years_to_process = ['2016','2017','2018','2022preEE','2022postEE','2023preBPix','2023postBPix']
 # Production modes and decay channel: for extract XS from combine
 productionModes = ['ggH','qqH','ttH','tHq','tHW','ggZH', 'WH','ZH','bbH']
 decayMode = 'hgg'
@@ -124,12 +122,17 @@ short_production_modes = ["ggh", "vbf", "vh", "tth", "bbh"]
 
 eft_variables = ["chg", "chb", "chw", "chwb", "chbox", "chd", "chl3", "cll1", "ctbre", "cthre", "ctwre"]
 
+# Define an array of eras
+# JLS 22th of Jan 2025: This syntax looks pretty criminal and should be improved at some point
+TwentyTwentyTwoEras = ["preEE", "postEE"]
+TwentyTwentyThreeEras = ["preBPix", "postBPix"]
+
+
 allErasMap = {
-    '2022': ["preEE", "postEE"],
-    '2023': ["preBPix", "postBPix"],
-    '2223': ["preEE", "postEE", "preBPix", "postBPix"],
-    '2024': ["all"],
-    'Run3': ["preEE", "postEE", "preBPix", "postBPix"],
+    '2022': TwentyTwentyTwoEras,
+    '2023': TwentyTwentyThreeEras,
+    '2223': TwentyTwentyTwoEras + TwentyTwentyThreeEras,
+    'Run3': TwentyTwentyTwoEras + TwentyTwentyThreeEras,
 }
 
 conversionTable_ = {
@@ -237,11 +240,5 @@ combineVariableDict = {
         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2223", BMW=BMW),
         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2223", BMW=BMW),
         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2223", BMW=BMW)
-    },
-    "2024":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2024", BMW=BMW),
-        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2024", BMW=BMW),
-        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2024", BMW=BMW),
-        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2024", BMW=BMW)
-    },
+    }
 }
