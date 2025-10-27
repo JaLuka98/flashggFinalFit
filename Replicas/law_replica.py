@@ -1,17 +1,17 @@
 import law
-import luigi
 import os
 import yaml
 import errno
 import subprocess
 import ROOT
 import json
-import pyarrow as pa
 import pyarrow.parquet as pq
 from scipy.stats import poisson
 import glob
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
+import re
 
 from commonTools import *
 from commonObjects import *
@@ -81,6 +81,8 @@ def get_replica(mc_parquet_files, parquet_files):
         print(f"Warning: Negative weights found in the dataset: {len(negative_weights)}")
     
     df = df[df["weight"] >= 0.0]
+    
+    df = df[(df["lead_mvaID"] > photonMVA_cut[era]) & (df["sublead_mvaID"] > photonMVA_cut[era])]
 
     df["weight_norm"] = df["weight"] / sum_genw_beforesel# (sum_genw_beforesel * sum_weight_central)
     ## Probability should be normalised to one
@@ -97,6 +99,159 @@ def get_replica(mc_parquet_files, parquet_files):
     replica = df.loc[idx_replicas[0]]
 
     return replica
+
+def get_mc_exp(mc_parquet_files):
+    """
+    Load Parquet data in memory-efficient chunks with a progress bar.
+    Computes a weighted replica sample of events.
+    """
+
+    columns_to_load = [
+        "mass", "weight", "lead_mvaID", "sublead_mvaID"
+    ]
+
+    # --- Step 1: Function to iterate over Parquet files by row group ---
+    def iter_parquet_rows(files, columns):
+        for file in files:
+            parquet_file = pq.ParquetFile(file)
+            for rg in range(parquet_file.num_row_groups):
+                yield parquet_file.read_row_group(rg, columns=columns).to_pandas()
+    
+    df_list = []
+    
+    for parquet_files in mc_parquet_files:
+    
+        process_name = parquet_files[0].split("/")[-3].split("_")[0]
+        
+        era = parquet_files[0].split("/")[-3].split("_")[-1]
+        
+        # --- Step 3: Compute total gen weight before selection ---
+        sum_genw_beforesel = 0.0
+        for f in parquet_files:
+            meta = pq.read_table(f).schema.metadata
+            sum_genw_beforesel += float(meta[b'sum_genw_presel'])
+
+        # --- Step 4: Load physics data in chunks with progress bar ---
+        df_chunks = []
+        total_files = sum(pq.ParquetFile(f).num_row_groups for f in parquet_files)
+        print("\nLoading main physics data...")
+        for chunk in tqdm(iter_parquet_rows(parquet_files, columns_to_load), total=total_files, unit="rowgroup"):
+            chunk = chunk[chunk["weight"] >= 0.0]
+            chunk["weight"] = (chunk["weight"] * lumiMap[era] * production_XS[process_name]) / sum_genw_beforesel
+            df_chunks.append(chunk)
+
+        current_df = pd.concat(df_chunks, ignore_index=True)
+        current_df = current_df[(current_df["lead_mvaID"] > photonMVA_cut[era]) & (current_df["sublead_mvaID"] > photonMVA_cut[era])]
+        df_list.append(current_df)
+    
+    df = pd.concat(df_list, ignore_index=True)
+    
+    df = df[(df["mass"] >= 100) & (df["mass"] <= 180)]
+    
+    mc_exp = sum(df["weight"]) 
+    
+    return mc_exp
+
+def get_data_exp(data_parquet_files):
+    
+    columns_to_load_data = ["mass", "lead_mvaID", "sublead_mvaID"]
+
+    # --- Step 1: Function to iterate over Parquet files by row group ---
+    def iter_parquet_rows(files, columns):
+        for file in files:
+            parquet_file = pq.ParquetFile(file)
+            for rg in range(parquet_file.num_row_groups):
+                yield parquet_file.read_row_group(rg, columns=columns).to_pandas()
+
+    # --- Step 2: Load sideband data (mass only) with progress bar ---
+    data_df_chunks = []
+    print("\nLoading sideband mass data...")
+    for chunk in tqdm(iter_parquet_rows(data_parquet_files, columns_to_load_data), total=len(data_parquet_files), unit="file"):
+        data_df_chunks.append(chunk)
+        
+    data_df = pd.concat(data_df_chunks, ignore_index=True)
+    
+    era = data_parquet_files[0].split("/")[-3].split("_")[-1]
+    
+    reduced_data_df = data_df[((data_df["mass"] >= 100) &  (data_df["mass"] <= 180)) & (data_df["lead_mvaID"] > photonMVA_cut[era]) & (data_df["sublead_mvaID"] > photonMVA_cut[era])]
+
+    return len(reduced_data_df), reduced_data_df
+
+def get_bkg_replica(sidebands_exp, parquet_files_divided_in_processes, columns_to_load):
+    """
+    Load Parquet data in memory-efficient chunks with a progress bar.
+    Computes a weighted replica sample of events.
+    """
+
+    # --- Step 1: Function to iterate over Parquet files by row group ---
+    def iter_parquet_rows(files, columns):
+        for file in files:
+            parquet_file = pq.ParquetFile(file)
+            for rg in range(parquet_file.num_row_groups):
+                yield parquet_file.read_row_group(rg, columns=columns).to_pandas()
+    
+    df_list = []
+    
+    for parquet_files in parquet_files_divided_in_processes:
+    
+        process_name = parquet_files[0].split("/")[-3].split("_")[0]
+        
+        era = parquet_files[0].split("/")[-3].split("_")[-1]
+        
+        # --- Step 2: Compute total gen weight before selection ---
+        sum_genw_beforesel = 0.0
+        for f in parquet_files:
+            meta = pq.read_table(f).schema.metadata
+            sum_genw_beforesel += float(meta[b'sum_genw_presel'])
+
+        # --- Step 3: Load physics data in chunks with progress bar ---
+        df_chunks = []
+        total_files = sum(pq.ParquetFile(f).num_row_groups for f in parquet_files)
+        print("\nLoading main physics data...")
+        for chunk in tqdm(iter_parquet_rows(parquet_files, columns_to_load), total=total_files, unit="rowgroup"):
+            chunk = chunk[chunk["weight"] >= 0.0]
+            chunk["weight_norm"] = (chunk["weight"] * bkg_normalizing_factor[era][process_name] * lumiMap[era] * production_XS[process_name]) / sum_genw_beforesel
+            df_chunks.append(chunk)
+
+        current_df = pd.concat(df_chunks, ignore_index=True)
+
+        # Apply a mask
+        mask = (current_df["mass"] >= 100) & (current_df["mass"] <= 180) & (current_df["lead_mvaID"] > photonMVA_cut[era]) & (current_df["sublead_mvaID"] > photonMVA_cut[era])
+        current_df = current_df[mask]
+
+        df_list.append(current_df)
+    
+    df = pd.concat(df_list, ignore_index=True)
+
+    df["prob"] = df["weight_norm"] / df["weight_norm"].sum()
+
+    # --- Step 5: Poisson sampling of replicas ---
+    print("\nGenerating one background replica sample...")
+    sidebands_exp_replicas = poisson.rvs(mu=sidebands_exp, size=1)
+    idx_replicas = np.random.choice(
+        df.index,
+        replace=True,
+        size=sidebands_exp_replicas[0],
+        p=df["prob"]
+    )
+
+    replica = df.loc[idx_replicas]
+
+    print("✅ Background replica generation complete!")
+    return replica
+
+def natural_sort_key(name):
+    # Split string into text and number chunks
+    return [int(text) if text.isdigit() else text.lower()
+            for text in re.split(r'(\d+)', name)]
+
+# Helper function to extract the category name
+def get_category_name(filename: str) -> str:
+    pattern = r"CMS-HGG_multipdf_(.+)\.root$"
+    match = re.search(pattern, filename)
+    if not match:
+        return ""
+    return match.group(1)
 
 class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     variable = law.Parameter(default="", description="Variable to be used")
@@ -346,7 +501,7 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         
         seed = int(self.seed) + int(replica_index)
 
-        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'bonly', f'higgsCombineToy_{int(replica_index)}'+f'.GenerateOnly.mH125.38.{seed}.root'))
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'bonly', f'bkgReplica_{int(replica_index)}.{seed}.root'))
 
         outputFileTargets = []
                 
@@ -362,10 +517,10 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         
         cwd = os.getcwd()
         
-        if self.variable == '':
-            ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.root')
-        else:
-            ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+        # if self.variable == '':
+        #     ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.root')
+        # else:
+        #     ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
                     
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
@@ -425,23 +580,137 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
         #     "-n", f"Toy_{int(replica_index)}",
         # ]
         
-        pdfIdx = check_pdf_idx()
+        # pdfIdx = check_pdf_idx()
 
-        # Run the ROOT command
-        background_model_folder_name = self.config['datacard_yields']['bkgModelWSDir'].split('/')[-2]
-        bkg_input_folder = os.path.join(self.resolved_output_dir, "Combine", background_model_folder_name, "background")
-        toy_output_file = f"./higgsCombineToy_{int(replica_index)}"+f".GenerateOnly.mH125.38.{seed}.root"
-        arguments = ['root', '-l', '-q', f"{os.environ['ANALYSIS_PATH']}/Replicas/toy_Bonly.C(\"{bkg_input_folder}\", \"{toy_output_file}\", \"{pdfIdx}\", {seed})"]
+        # # Run the ROOT command
+        # background_model_folder_name = self.config['datacard_yields']['bkgModelWSDir'].split('/')[-2]
+        # bkg_input_folder = os.path.join(self.resolved_output_dir, "Combine", background_model_folder_name, "background")
+        # toy_output_file = f"./higgsCombineToy_{int(replica_index)}"+f".GenerateOnly.mH125.38.{seed}.root"
+        # arguments = ['root', '-l', '-q', f"{os.environ['ANALYSIS_PATH']}/Replicas/toy_Bonly.C(\"{bkg_input_folder}\", \"{toy_output_file}\", \"{pdfIdx}\", {seed})"]
         
-        # Execute the command and capture the output
-        command = arguments
-        print(command)
-        try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
-            print("Script output:", result.stdout)
-            print("Script executed successfully.")
-        except subprocess.CalledProcessError as e:
-            print("Error executing script:", e.stderr)
+        # # Execute the command and capture the output
+        # command = arguments
+        # print(command)
+        # try:
+        #     result = subprocess.run(command, check=True, text=True, capture_output=True)
+        #     print("Script output:", result.stdout)
+        #     print("Script executed successfully.")
+        # except subprocess.CalledProcessError as e:
+        #     print("Error executing script:", e.stderr)
+        
+        bkg_proc_dirs = glob.glob(os.path.join(self.config['inputFiles']['bkg_src_files'], "*"))
+        data_parquet_files = glob.glob(os.path.join(self.config['inputFiles']['data_src_files'], "*/nominal/*.parquet"))
+        
+        all_parquet_files = []
+        for proc_dir in bkg_proc_dirs:
+            # if "GG-Box-3Jets" in proc_dir: continue
+            parquet_files = glob.glob(os.path.join(proc_dir, "nominal", "*.parquet"))
+            all_parquet_files.append(parquet_files)
+        
+        # Extract the expected number of sideband events from data
+        sideband_exp, _ = get_data_exp(data_parquet_files)
+        
+        columns_to_load = [
+            "mass", "weight", "lead_mvaID", "sublead_mvaID",
+            "sigma_m_over_m_corr_smeared_decorr"
+        ]
+        
+        if self.variable == "PTH":
+            columns_to_load += ["pt"]
+        elif self.variable in jetVariables:
+            columns_to_load += [self.variable, "NJ"]
+        else:
+            columns_to_load += [self.variable]
+        
+        np.random.seed(seed)
+        inclusive_bkg_replica = get_bkg_replica(sideband_exp, all_parquet_files, columns_to_load)
+        
+        # Apply a mass mask
+        mass_mask = (inclusive_bkg_replica["mass"] >= 100) & (inclusive_bkg_replica["mass"] <= 180)
+        inclusive_bkg_replica = inclusive_bkg_replica[mass_mask]
+        
+        # Get background file list
+        background_model_folder_name = self.config['datacard_yields']['bkgModelWSDir'].split('/')[-2]
+        bkg_file_list = glob.glob(os.path.join(self.resolved_output_dir, "Combine", background_model_folder_name, "background", "*.root"))
+
+        # Create RooCategory (same as in C++)
+        CMS_channel = ROOT.RooCategory("CMS_channel", "Channel name")
+
+        # Collect category names
+        cat_names = [get_category_name(filename) for filename in bkg_file_list]
+        cat_names.sort(key=natural_sort_key)
+
+
+        # Define the types in the RooCategory
+        for i, cat_name in enumerate(cat_names):
+            if cat_name:  # skip empty names
+                CMS_channel.defineType(cat_name, i)
+
+        # Extract CMS channel labels and indices
+        # This corresponds to the categories in the category dictionary
+        CMS_channel_dict = {}
+        for i in range(CMS_channel.numTypes()):
+            CMS_channel.setIndex(i)
+            CMS_channel_dict[CMS_channel.getLabel()] = i
+        
+        # Load the considered variable
+        cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", self.config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
+        if not os.path.exists(cat_dict_path):
+            print(f"Category dictionary {cat_dict_path} does not exist. Check path in law_replica.py. Exiting...")
+            exit(1)
+        else:
+            with open(cat_dict_path) as pf:
+                cat_dict = json.load(pf)
+                
+        # Now create the output ROOT file and the associated variables (Combine konform)
+                
+        output_bkg_rootfile = ROOT.TFile(f'./bkgReplica_{int(replica_index)}.{seed}.root', "RECREATE")
+
+        # Create the CMS_hgg_mass variable
+        CMS_hgg_mass = ROOT.RooRealVar("CMS_hgg_mass", "CMS_hgg_mass", 100.0, 100.0, 180.0)
+        CMS_hgg_mass.setBins(320)
+        argset = ROOT.RooArgSet(CMS_hgg_mass, CMS_channel)
+
+        output_bkg_rootfile.mkdir("toys")
+        output_bkg_rootfile.cd("toys")
+
+        # Create empty RooDataSet 
+        toy_1 = ROOT.RooDataSet("toy_1", "toy_1", argset)
+                
+        # Now categorize the background replica
+        for cat in cat_dict:
+            try:
+                query_str = " and ".join(
+                    f"{col} {op} {val}" for col, op, val in cat_dict[cat]["cat_filter"]
+                )
+            except:
+                # Have a variable using absolute values.
+                query_str = "("
+                for k, set_of_conditions in enumerate(cat_dict[cat]["cat_filter"]):
+                    if k > 0:
+                        query_str += ") or ("
+                    query_str += " and ".join(
+                        f"{col} {op} {val}" for col, op, val in set_of_conditions
+                    )
+                query_str += ")"
+            print(f"Processing category {cat} with query: {query_str}")
+
+            current_cat_replica = pd.concat([inclusive_bkg_replica.query(query_str)], ignore_index=True)
+            
+            mass_value_list = current_cat_replica["mass"].to_list()
+            
+            # Loop to add the events to the RooDataSet
+            for i, val in enumerate(mass_value_list):
+                CMS_channel.setIndex(CMS_channel_dict[cat])
+                CMS_hgg_mass.setVal(val)
+                # bonly_toy.add(argset, additional_probability_values[i])
+                toy_1.add(argset, 1.)
+            
+        toy_1.SetName("toy_1")   # Important: name must match what Combine expects
+        toy_1.Write()
+
+        # Close the file
+        output_bkg_rootfile.Close()
     
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -601,7 +870,7 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         np.random.seed(seed)
         
         # Load the b-only toy file
-        bonly_toy_path = os.path.join(self.resolved_output_dir, 'Replicas', 'bonly', f'higgsCombineToy_{int(replica_index)}.GenerateOnly.mH125.38.{seed}.root')
+        bonly_toy_path = os.path.join(self.resolved_output_dir, 'Replicas', 'bonly', f'bkgReplica_{int(replica_index)}.{seed}.root')
         if not os.path.exists(bonly_toy_path):
             print(f"B-only toy file {bonly_toy_path} does not exist. Something went wrong. Exiting...")
             exit(1)
@@ -1138,7 +1407,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
             "--saveFitResult",
             "--setParameters", f"""{pdfIdx}""",
-            # "--freezeParameters", "MH",
+            "--freezeParameters", "MH",
             # "--freezeParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
             # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
             "-D", f"{splusb_toy}:toys/toy_1",

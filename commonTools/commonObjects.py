@@ -97,8 +97,8 @@ outputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':'','scalesGlobal':'
 bkgWSName__ = "multipdf"
 
 # Define an array of input masses
-input_masses = [120, 125, 130]
-# input_masses = [125]
+# input_masses = [120, 125, 130]
+input_masses = [125]
 
 # Define an array of production modes and corresponding process strings
 # JLS 23th Jan 2025, also adding 2G naming conventions
@@ -127,6 +127,43 @@ production_XS = {
     "ttHto2G": 0.5638,
     "bbHtoGG": 0.49,
     "bbHto2G": 0.49,
+    "GG-Box-3Jets": 89.14e3,
+    "GJet-PT-20to40": 242.5e3,
+    "GJet-PT-40": 919.1e3,
+}
+
+photonMVA_cut = {
+    "2022preEE": 0.25,
+    "2022postEE": 0.25,
+    "2022": 0.25,
+    "2023preBPix": 0.19,
+    "2023postBPix": 0.19,
+    "2023": 0.19,
+    "2024all": 0.19,
+    "2024": 0.19
+}
+
+bkg_normalizing_factor = { # Factors to account for the mismodelling of the background samples 
+    "2022preEE": {
+        "GG-Box-3Jets": 1.43,
+        "GJet-PT-20to40": 2.4,
+        "GJet-PT-40": 2.4
+    },
+    "2022postEE": {
+        "GG-Box-3Jets": 1.43,
+        "GJet-PT-20to40": 2.4,
+        "GJet-PT-40": 2.4
+    },
+    "2023preBPix": {
+        "GG-Box-3Jets": 1.44,
+        "GJet-PT-20to40": 2.8,
+        "GJet-PT-40": 2.8
+    },
+    "2023postBPix": {
+        "GG-Box-3Jets": 1.44,
+        "GJet-PT-20to40": 2.8,
+        "GJet-PT-40": 2.8
+    }
 }
 
 short_production_modes = ["ggh", "vbf", "vh", "tth", "bbh"]
@@ -136,8 +173,8 @@ eft_variables = ["chg", "chb", "chw", "chwb", "chbox", "chd", "chl3", "cll1", "c
 # Define an array of eras
 # JLS 22th of Jan 2025: This syntax looks pretty criminal and should be improved at some point
 TwentyTwentyTwoEras = ["preEE", "postEE"]
-TwentyTwentyThreeEras = ["preBPix", "postBPix"]
-# TwentyTwentyThreeEras = ["postBPix"]
+# TwentyTwentyThreeEras = ["preBPix", "postBPix"]
+TwentyTwentyThreeEras = ["postBPix"]
 
 
 allErasMap = {
