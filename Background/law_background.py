@@ -41,54 +41,80 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
 
+    toy_flag = law.Parameter(default=False, description="Toy flag")
+    seed = law.Parameter(default=123456, description="Seed for the replica generation")
+    number_of_toys = law.Parameter(default=1000, description="Number of toys")
+
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+
+    _class_cache = {}
+    
+    def _init_once(self):
+        key = (self.year, self.variable, self.output_dir)
+        if key in self._class_cache:
+            (
+                self.configYamlPath,
+                self.config,
+                self.resolved_output_dir,
+                self.fitFolderName,
+                self.bkgConfig
+            ) = self._class_cache[key]
+            return
+
+        # compute config path
+        if self.variable == "":
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml"
+            )
+        else:
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml"
+            )
+
+        with open(configYamlPath, "r") as f:
+            config = yaml.safe_load(f)
+
+        resolved_output_dir = self.output_dir or config["outputFolder"]
+        fitFolderName = "runFits_mu_fiducial" if self.variable == "" else f"runFits_{self.variable}"
+
+        self.configYamlPath = configYamlPath
+        self.config = config
+        self.resolved_output_dir = resolved_output_dir
+        self.fitFolderName = fitFolderName
+
+        input_path = config['inputFiles']['Trees2WSData']
+
+        bkgConfig = config["backgroundScriptCfg"]
+        if bkgConfig['cats'] == 'auto':
+            bkgConfig['cats'] = (extractListOfCatsFromHiggsDNAAllData(input_path))
+        
+        self.bkgConfig = bkgConfig
+
+        # store in class-level cache
+        self._class_cache[key] = (configYamlPath, config, resolved_output_dir, fitFolderName, bkgConfig)
 
     # def requires(self):
     def workflow_requires(self):
         workflow_reqs = super().workflow_requires()
+        
+        self._init_once()
 
         tasks = {}
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
         
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
-        else:
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
-        
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-        
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
-        
-        config = config["backgroundScriptCfg"]
+        config = self.config["backgroundScriptCfg"]
             
-        tasks["Trees2WSData"] = Trees2WSData(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+        tasks["Trees2WSData"] = Trees2WSData(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, toy_flag=self.toy_flag, seed=self.seed, number_of_toys=self.number_of_toys)
         
         return tasks
     
     def create_branch_map(self):
-        # Creating a branch map for the categories
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
-        else:
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
         
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-
-        input_path = config['inputFiles']['Trees2WSData']
+        self._init_once()
                     
-        config = config["backgroundScriptCfg"]
-        
-        if config['cats'] == 'auto':
-            config['cats'] = (extractListOfCatsFromHiggsDNAAllData(input_path))
+        config = self.bkgConfig
 
         nCats = len(config['cats'].split(","))
               
@@ -102,34 +128,33 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
                 for i, cat_catOffset in enumerate(cat_list)
                 for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
             }
+        if convert_boolean_string(self.toy_flag) == True:
+            branch_map = {
+                i * int(self.number_of_toys) + j: (cat_catOffset, toy_index)
+                for i, cat_catOffset in enumerate(cat_list)
+                for j, toy_index in enumerate(range(int(self.number_of_toys)))
+            }
         else:
             branch_map = {i: cat_catOffset for i, cat_catOffset in enumerate(cat_list)}
         return branch_map
 
     def output(self):
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
-        else:
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
         
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-        
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
+        self._init_once()
                     
-        config = config["backgroundScriptCfg"]
+        config = self.bkgConfig
         
         if convert_boolean_string(self.bootstrap_flag) == True:
             cat_cat_offset, bootstrap_index = self.branch_data
             cat, cat_offset = cat_cat_offset
-            outdir_ext = os.path.join(output_dir, 'Background', f'outdir_{config["ext"]}_{bootstrap_index}')
+            outdir_ext = os.path.join(self.resolved_output_dir, 'Background', f'outdir_{config["ext"]}_{bootstrap_index}')
+        elif convert_boolean_string(self.toy_flag) == True:
+            cat_cat_offset, toy_index = self.branch_data
+            cat, cat_offset = cat_cat_offset
+            outdir_ext = os.path.join(self.resolved_output_dir, 'Background', f'outdir_{config["ext"]}_{toy_index}')
         else:
             cat, cat_offset = self.branch_data
-            outdir_ext = os.path.join(output_dir, 'Background', f'outdir_{config["ext"]}')
+            outdir_ext = os.path.join(self.resolved_output_dir, 'Background', f'outdir_{config["ext"]}')
 
         
         outputFileTargets = []
@@ -151,27 +176,10 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
         return outputFileTargets
 
     def run(self):
-        if self.variable == '':
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
-        else:
-            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
         
-        #Load central config file
-        with open(configYamlPath, 'r') as file:
-            config = yaml.safe_load(file)
-        
-        if self.output_dir == '':
-            output_dir = config['outputFolder']
-        else:
-            output_dir = self.output_dir
-            
-        
-        input_path = config['inputFiles']['Trees2WSData']
-                    
-        config = config["backgroundScriptCfg"]
-        
-        if config['cats'] == 'auto':
-            config['cats'] = (extractListOfCatsFromHiggsDNAAllData(input_path))
+        self._init_once()
+
+        config = self.bkgConfig
         config['nCats'] = len(config['cats'].split(","))
     
         # Add dummy entries for procs and signalFitWSFile (used in old plotting script)
@@ -184,15 +192,15 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
         config['intLumi'] = lumiMap[self.year]
 
         if self.variable == '':
-            if convert_boolean_string(self.bootstrap_flag) == False:
-                all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.year}/ws/allData.root")
+            if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
+                all_data_input_path = os.path.join(self.resolved_output_dir, "input_output_data", f"input_output_data_{self.year}/ws/allData.root")
             else:
-                all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.year}")
+                all_data_input_path = os.path.join(self.resolved_output_dir, "input_output_data", f"input_output_data_{self.year}")
         else:
-            if convert_boolean_string(self.bootstrap_flag) == False:
-                all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.variable}_{self.year}/ws/allData.root")
+            if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
+                all_data_input_path = os.path.join(self.resolved_output_dir, "input_output_data", f"input_output_data_{self.variable}_{self.year}/ws/allData.root")
             else:
-                all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.variable}_{self.year}")
+                all_data_input_path = os.path.join(self.resolved_output_dir, "input_output_data", f"input_output_data_{self.variable}_{self.year}")
 
         if convert_boolean_string(self.bootstrap_flag) == True:
             cat_cat_offset, bootstrap_index = self.branch_data
@@ -200,6 +208,10 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             # In this case self.input_path is self.output_path/input_output_data_{self.year}
             # Have to add the _{bootstrap_index}/ws/allData.root to the path manually, since we need the bootstrap index
             input_path = os.path.join(all_data_input_path+f"_{bootstrap_index}", "ws/allData.root")
+        elif convert_boolean_string(self.toy_flag) == True:
+            cat_cat_offset, toy_index = self.branch_data
+            cat, cat_offset = cat_cat_offset
+            input_path = os.path.join(all_data_input_path+f"_{toy_index}", "ws/allData.root")
         else:
             cat, cat_offset = self.branch_data
             input_path = all_data_input_path
@@ -208,17 +220,19 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             # Have to use /scratch/batch_username/ for slurm/psi
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             temp_output_dir = os.environ["TARGET_PATH"]
-            execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Background'], shell=True)
+            execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Background'], shell=True)
             if convert_boolean_string(self.bootstrap_flag) == True:
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Background/outdir_{config["ext"]}_{bootstrap_index}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Background/outdir_{config["ext"]}_{bootstrap_index}'], shell=True)
+            if convert_boolean_string(self.toy_flag) == True:
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Background/outdir_{config["ext"]}_{toy_index}'], shell=True)
             else:
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Background/outdir_{config["ext"]}'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Background/outdir_{config["ext"]}'], shell=True)
             safe_mkdir(temp_output_dir)
         else:
-            safe_mkdir(output_dir)
-            safe_mkdir(os.path.join(output_dir, "Background"))
-            safe_mkdir(os.path.join(output_dir, "Background", f"outdir_{config['ext']}"))
-            temp_output_dir = os.path.join(output_dir, "Background")
+            safe_mkdir(self.resolved_output_dir)
+            safe_mkdir(os.path.join(self.resolved_output_dir, "Background"))
+            safe_mkdir(os.path.join(self.resolved_output_dir, "Background", f"outdir_{config['ext']}"))
+            temp_output_dir = os.path.join(self.resolved_output_dir, "Background")
         
         if temp_output_dir[-1] != "/":
             temp_output_dir += "/"
@@ -229,7 +243,6 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             "-p", "none",
             "-f", cat,
             "--outputFolder", f"{temp_output_dir}",
-            "--ext", f'{config["ext"]}_{bootstrap_index}' if convert_boolean_string(self.bootstrap_flag) == True else f'{config["ext"]}',
             "--catOffset", cat_offset,
             "--intLumi", f"{lumiMap[self.year]}",
             "--year", f"{self.year}",
@@ -239,6 +252,12 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             "--isData",
             "--fTest"
         ]
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            arguments += ["--ext", f'{config["ext"]}_{bootstrap_index}']
+        elif convert_boolean_string(self.toy_flag) == True:
+            arguments += ["--ext", f'{config["ext"]}_{toy_index}']
+        else:
+            arguments += ["--ext", f'{config["ext"]}']
         command = [script_path] + arguments
         # print("Output:", command)
         
@@ -256,21 +275,23 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
         if self.batch_flavor == "slurm/psi":
             if convert_boolean_string(self.bootstrap_flag) == True:
                 bkg_folder = f"outdir_{config['ext']}_{bootstrap_index}"
+            elif convert_boolean_string(self.toy_flag) == True:
+                bkg_folder = f"outdir_{config['ext']}_{toy_index}"
             else:
                 bkg_folder = f"outdir_{config['ext']}"
             execute_command([f"ls -al {temp_output_dir}/*"], shell=True)
-            if "/work" in output_dir:
+            if "/work" in self.resolved_output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
                     f'{temp_output_dir}/{bkg_folder}',
-                     f'{output_dir}/Background/'
+                     f'{self.resolved_output_dir}/Background/'
                 ]
             else:
                 # Copying output files to final destination on the /pnfs.
                 slurm_copy_command = [
                     'xrdcp', '-rf',
                     f'{temp_output_dir}/{bkg_folder}',
-                    'root://t3dcachedb03.psi.ch:1094//'+ f'{output_dir}/Background/'
+                    'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Background/'
                 ]
             execute_command(slurm_copy_command)
             # Cleaning up scratch space.

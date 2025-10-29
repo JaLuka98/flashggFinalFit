@@ -243,7 +243,7 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 if "diff" in var: continue
                 if var == "CMS_hgg_mass": 
                     _vars[var] = ROOT.RooRealVar(var,var,125.,100.,180.)
-                    _vars[var].setBins(160)
+                    _vars[var].setBins(80) # 160
                 elif var == "dZ": 
                     _vars[var] = ROOT.RooRealVar(var,var,0.,-20.,20.)
                     _vars[var].setBins(40)

@@ -55,7 +55,8 @@ else:
     print(" --> Input: %s.txt --> Output: %s.root"%(opt.inputName,opt.outputName))
 
 if opt.bootstrapping:
-  if not os.path.isdir(f"{outputDir}/../t2w_jobs"): os.system(f"mkdir {outputDir}/../t2w_jobs")
+  # if not os.path.isdir(f"{outputDir}/../t2w_jobs"): os.system(f"mkdir {outputDir}/../t2w_jobs")
+  if not os.path.isdir(f"{outputDir}/t2w_jobs"): os.system(f"mkdir {outputDir}/t2w_jobs")
 else:
   if not os.path.isdir(f"{outputDir}/t2w_jobs"): os.system(f"mkdir {outputDir}/t2w_jobs")
 
@@ -63,9 +64,11 @@ if opt.bootstrapping:
   if opt.eft_mode != "":
     print(" --> [ERROR] Bootstrapping and eft mode is not compatible fo now. Leaving...")
   if opt.ext != "":
-    t2w_file_path = "%s/../t2w_jobs/t2w_%s"%(outputDir,opt.ext)
+    # t2w_file_path = "%s/../t2w_jobs/t2w_%s"%(outputDir,opt.ext)
+    t2w_file_path = "%s/t2w_jobs/t2w_%s"%(outputDir,opt.ext)
   else:
-    t2w_file_path = "%s/../t2w_jobs/t2w_%s"%(outputDir,opt.mode)
+    # t2w_file_path = "%s/../t2w_jobs/t2w_%s"%(outputDir,opt.mode)
+    t2w_file_path = "%s/t2w_jobs/t2w_%s"%(outputDir,opt.mode)
 else:
     if opt.ext != "":
       if opt.eft_mode != "":
@@ -82,7 +85,8 @@ else:
 fsub = open(t2w_file_path+".sh","w")
 fsub.write("#!/bin/bash\n\n")
 if opt.bootstrapping:
-  fsub.write("cd %s\n\n"%outputDir)
+  # fsub.write("cd %s\n\n"%outputDir)
+  fsub.write("cd %s\n\n"%os.environ['PWD'])
 else:  
   fsub.write("cd %s\n\n"%os.environ['PWD'])
 fsub.write("eval `scramv1 runtime -sh`\n\n")

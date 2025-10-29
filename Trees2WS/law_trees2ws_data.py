@@ -39,114 +39,166 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
+    toy_flag = law.Parameter(default=False, description="Toy flag")
+    seed = law.Parameter(default=123456, description="Seed for the replica generation")
+    starting_value = law.Parameter(default=0, description="Starting replica computation from this index. This can be useful for preventing overloading schedds.")
     number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_toys = law.Parameter(default=1000, description="Number of toys")
+
+    _class_cache = {}
+    
+    def _init_once(self):
+        key = (self.year, self.variable, self.output_dir)
+        if key in self._class_cache:
+            (
+                self.configYamlPath,
+                self.config,
+                self.resolved_output_dir,
+                self.fitFolderName
+            ) = self._class_cache[key]
+            return
+
+        # compute config path
+        if self.variable == "":
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml"
+            )
+        else:
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml"
+            )
+
+        with open(configYamlPath, "r") as f:
+            config = yaml.safe_load(f)
+
+        resolved_output_dir = self.output_dir or config["outputFolder"]
+        fitFolderName = "runFits_mu_fiducial" if self.variable == "" else f"runFits_{self.variable}"
+
+        self.configYamlPath = configYamlPath
+        self.config = config
+        self.resolved_output_dir = resolved_output_dir
+        self.fitFolderName = fitFolderName
+
+        # store in class-level cache
+        self._class_cache[key] = (configYamlPath, config, resolved_output_dir, fitFolderName)
+    
+    def workflow_requires(self):
+        # req() is defined on all tasks and handles the passing of all parameter values that are
+        # common between the required task and the instance (self)
+        
+        workflow_reqs = super().workflow_requires()
+        
+        self._init_once()
+
+        tasks = {}
+
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
+        
+        fitConfig = self.config["combine_fit"]
+        
+        if (convert_boolean_string(self.toy_flag) == True):
+            from Replicas.law_replica import GenerateAllReplicaData
+            tasks["GenerateAllReplicaData"] = GenerateAllReplicaData(output_dir=self.resolved_output_dir, variable=self.variable if self.variable != "" else "inclusive", version=self.variable if self.variable != "" else "inclusive", year=self.year, number_of_replicas=self.number_of_toys, seed=self.seed, starting_value=self.starting_value, workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+            
+            return tasks
+        
+        else:
+            return True
 
     def create_branch_map(self):
-        if convert_boolean_string(self.bootstrap_flag) == False:
+        if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
             branch_map = {i: val for i, val in enumerate(range(1))}
             return branch_map
+        elif convert_boolean_string(self.toy_flag) == True:
+            branch_map = {i: toy_index for i, toy_index in enumerate(range(int(self.number_of_toys)))}
         else:
-            # map branch indexes from 0 to 999
             branch_map = {i: bootstrap_index for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))}
 
         return branch_map
 
     def output(self):
+        
+        self._init_once()
+        
         if convert_boolean_string(self.bootstrap_flag) == True:
             bootstrap_index = self.branch_data
-
-        # Load the input configuration
-        if self.variable == '':
-            input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
-        else:
-            input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
-
-        if not os.path.exists(input_config):
-            print(f"[ERROR] {input_config} does not exist. Exiting...")
-            return
-
-        # Import the configuration options from the config file
-        with open(input_config, 'r') as file:
-            config = yaml.safe_load(file)
-        if self.output_dir == '':
-            output_dir = config["outputFolder"]
-        else:
-            output_dir = self.output_dir
+        elif convert_boolean_string(self.toy_flag) == True:
+            toy_index = self.branch_data
             
         if self.variable == '':
-            if convert_boolean_string(self.bootstrap_flag) == False:
-                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
+            if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
+                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
+            elif convert_boolean_string(self.toy_flag) == True:
+                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{toy_index}/ws/")
             else:
-                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
         else:
-            if convert_boolean_string(self.bootstrap_flag) == False:
-                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
+            if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
+                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
+            elif convert_boolean_string(self.toy_flag) == True:
+                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{toy_index}/ws/")
             else:
-                ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
-
+                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+                
         return law.LocalFileTarget(os.path.join(ws_dir, "allData.root"))
 
     def run(self):
+        
+        self._init_once()
+        
         if convert_boolean_string(self.bootstrap_flag) == True:
             bootstrap_index = self.branch_data
-
-        # Load the input configuration
-        if self.variable == '':
-            input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
-        else:
-            input_config = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
-
-        if not os.path.exists(input_config):
-            print(f"[ERROR] {input_config} does not exist. Exiting...")
-            return
-
-        # Import the configuration options from the config file
-        with open(input_config, 'r') as file:
-            config = yaml.safe_load(file)
-        if self.output_dir == '':
-            output_dir = config["outputFolder"]
-        else:
-            output_dir = self.output_dir
+        elif convert_boolean_string(self.toy_flag) == True:
+            toy_index = self.branch_data
         
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
             temp_output_dir = os.environ["TARGET_PATH"]
         else:
-            temp_output_dir = output_dir
+            temp_output_dir = self.resolved_output_dir
             
         # Step 1: Create the output directory if it doesn't exist
         if self.variable == '':
-            if convert_boolean_string(self.bootstrap_flag) == False:
+            if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
                 temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
+            elif convert_boolean_string(self.toy_flag) == True:
+                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}_{toy_index}/ws/")
             else:
                 temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
         else:
-            if convert_boolean_string(self.bootstrap_flag) == False:
+            if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
                 temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
+            elif convert_boolean_string(self.toy_flag) == True:
+                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{toy_index}/ws/")
             else:
                 temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
 
         if self.batch_flavor == "slurm/psi":
             if self.variable == '':
-                if convert_boolean_string(self.bootstrap_flag) == False:
-                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
+                if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
+                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
+                elif convert_boolean_string(self.toy_flag) == True:
+                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{toy_index}/ws/")
                 else:
-                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
             else:
-                if convert_boolean_string(self.bootstrap_flag) == False:
-                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
+                if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
+                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
+                elif convert_boolean_string(self.toy_flag) == True:
+                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{toy_index}/ws/")
                 else:
-                    final_ws_dir = os.path.join(output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
 
             # Have to use the xrdfs for the pnfs file system while on PSI Tier 3.
             execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {final_ws_dir}'], shell=True)
 
         os.makedirs(temp_ws_dir, exist_ok=True)
             
-        input_path = config["inputFiles"]["Trees2WSData"]
+        input_path = self.config["inputFiles"]["Trees2WSData"]
         
-        config = config[f"trees2wsCfg"]
+        config = self.config[f"trees2wsCfg"]
         input_tree_dir = config['inputTreeDir']
         data_vars = config['dataVars']
         categories = config['cats']
@@ -156,7 +208,11 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
 
         # Step 2: Convert data trees to RooWorkspace
         # Open the input ROOT file
-        f = uproot.open(input_path)
+        if convert_boolean_string(self.toy_flag) == True:
+            seed = int(self.seed) + int(toy_index)
+            f = uproot.open(os.path.join(self.resolved_output_dir, "Replicas", "allReplicas", f"allReplica_{int(toy_index)}.{seed}.root"))
+        else:
+            f = uproot.open(input_path)
         list_of_tree_names = f.keys() if input_tree_dir == '' else f[input_tree_dir].keys()
 
         if categories == 'auto':
@@ -165,8 +221,11 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             if "sigma" in tn: continue
             c = tn.split("_%s_"%sqrts__)[-1].split(";")[0]
             categories.append(c)
-            
-        f = ROOT.TFile(input_path)
+
+        if convert_boolean_string(self.toy_flag) == True:
+            f = ROOT.TFile(os.path.join(self.resolved_output_dir, "Replicas", "allReplicas", f"allReplica_{int(toy_index)}.{seed}.root"))
+        else:
+            f = ROOT.TFile(input_path)
 
         # Create ROOT output workspace
         output_ws_file = os.path.join(temp_ws_dir, f"allData_{self.year}.root")
@@ -184,7 +243,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             for var in _dataVars:
                 if var == "CMS_hgg_mass":
                     _vars[var] = ROOT.RooRealVar(var, var, 125., 100., 180.)
-                    _vars[var].setBins(160)
+                    _vars[var].setBins(80) # 160
                 elif var == "dZ":
                     _vars[var] = ROOT.RooRealVar(var, var, 0., -20., 20.)
                     _vars[var].setBins(40)
@@ -267,7 +326,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         print(f"Workspace written and renamed to {all_data_file}")
         
         if self.batch_flavor == "slurm/psi":
-            if "/work" in output_dir:
+            if "/work" in self.resolved_output_dir:
                 slurm_copy_command = [
                     'cp', '-rf',
                     f'{all_data_file}',
