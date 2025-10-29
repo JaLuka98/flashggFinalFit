@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/earlyRun3/finalfits/PTH'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/finalfits/PTH'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/earlyRun3/variables/PTH/allData_2022.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/earlyRun3/variables/PTH/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/variables_old/PTH/data_postprocessing/root/Data/allData_2022.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/variables_old/PTH/signal_postprocessing/root'
   catDict_timestamp: '2025_08_04'
 
 backgroundScriptCfg:

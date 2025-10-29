@@ -781,7 +781,8 @@ def plot_correlation(pois_, poi_list_, variable_):
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/finalfits'
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/finalfits'
-sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/finalfits'
+# sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/finalfits'
+sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_14_intermediate/finalfits_postBPix'
 
 # variables = ["rapidity", "NJ"]
 variables = ["PTH"]
@@ -798,7 +799,7 @@ for variable in variables:
         poi_list = ["r_YH_0p0_0p15", "r_YH_0p15_0p3", "r_YH_0p3_0p6", "r_YH_0p6_0p9", "r_YH_0p9_2p5"]
 
     # The paths
-    main_dir = os.path.join(sample_dir, variable, "Combine", f"runFits_{variable}")
+    main_dir = os.path.join(sample_dir, variable+"_allReplica", "Combine", f"runFits_{variable}")
     path_to_hesse = os.path.join(main_dir, "hesse", 'robustHessefirstStep.root')
     toyDir = os.path.join(main_dir, "toyFit")
     combineLL_dir = os.path.join(main_dir, "asimov")
