@@ -222,7 +222,7 @@ def addSyst(l,v,s,p,c,n):
           l += "%-15s "%vstr
     return l
   else:
-    print(" --> [ERROR] systematic %s: value does not have type string or list for (%s,%s). Leaving..."%(s,p,c))
+    print(" --> [ERROR] systematic %s: value does not have type string or list for (%s,%s). Leaving..."%(s['title'],p,c))
     sys.exit(1)
 
 def writeMCStatUncertainty(f,d,options):
