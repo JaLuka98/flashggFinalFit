@@ -976,15 +976,15 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
                 era_suffix = "" if currentEra in ["", "None"] else currentEra
         
                 if currentEra not in ["", "None"]:
-                    signalScriptCfg = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
+                    currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
                 else:
-                    signalScriptCfg = config[f"signalScriptCfg_{self.year}"]
+                    currentConfig = config[f"signalScriptCfg_{self.year}"]
                 # Have to copy over the input to the JOB directory
                 # Don't forget to VOMS!
                 if "/work" in self.output_dir:
                     slurm_copy_command = [
                         'cp', '-rf',
-                        f"{self.output_dir}/outdir_{signalScriptCfg['ext']}",
+                        f"{self.output_dir}/outdir_{currentConfig['ext']}",
                         f"{os.environ['TARGET_PATH']}/"
                     ]
                 else:
@@ -1090,7 +1090,10 @@ class SignalPackaging(law.Task):
             
             era_suffix = "" if currentEra in ["", "None"] else currentEra
 
-            currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
+            if currentEra not in ["", "None"]:
+                currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
+            else:
+                currentConfig = config[f"signalScriptCfg_{self.year}"]
 
             exts.append(currentConfig['ext'])
         
