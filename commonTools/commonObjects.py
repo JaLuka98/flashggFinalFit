@@ -128,7 +128,7 @@ allErasMap = {
     '2022': ["preEE", "postEE"],
     '2023': ["preBPix", "postBPix"],
     '2223': ["preEE", "postEE", "preBPix", "postBPix"],
-    '2024': ["all"],
+    # 2024 does not have eras
     'Run3': ["preEE", "postEE", "preBPix", "postBPix"],
 }
 

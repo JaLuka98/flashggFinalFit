@@ -13,6 +13,7 @@ from Trees2WS.law_trees2ws import *
 from Signal.law_signal import *
 from Combine.law_combine import *
 from Plots.Spectra.law_spectra import *
+from pathlib import Path
 
 # Function to safely create a directory
 def safe_mkdir(path):
@@ -28,7 +29,204 @@ def convert_boolean_string(string):
     else:
         return False
 
-class FinalFits(law.Task):
+class FinalFits(law.WrapperTask):
+    years = law.Parameter(default="2022,2023,2024")
+    variable = law.Parameter(default="")
+    output_dir = law.Parameter(default="")
+    
+    unblinded_fits = law.Parameter(default=False)
+    unblinded_stage_one = law.Parameter(default=False)
+    unblinded_stage_two = law.Parameter(default=False)
+    unblinded_stage_three = law.Parameter(default=False)
+    unblinded_covcorr = law.Parameter(default=False)
+    pvalue = law.Parameter(default=False)
+    asimov_fits = law.Parameter(default=False)
+    asimov_impacts = law.Parameter(default=False)
+    asimov_covcorr = law.Parameter(default=False)
+    unblinded_diff_spectra = law.Parameter(default=False)
+    asimov_diff_spectra = law.Parameter(default=False)
+    batch_system = law.Parameter(default="htcondor")
+    batch_flavor = law.Parameter(default="htcondor")
+
+    def requires(self):
+        years = [y.strip() for y in self.years.split(",") if y.strip()]
+        return [
+            FinalFitsYear(
+                variable=self.variable,
+                output_dir=self.output_dir,
+                year=y,
+                unblinded_fits=self.unblinded_fits,
+                unblinded_stage_one=self.unblinded_stage_one,
+                unblinded_stage_two=self.unblinded_stage_two,
+                unblinded_stage_three=self.unblinded_stage_three,
+                unblinded_covcorr=self.unblinded_covcorr,
+                pvalue=self.pvalue,
+                asimov_fits=self.asimov_fits,
+                asimov_impacts=self.asimov_impacts,
+                asimov_covcorr=self.asimov_covcorr,
+                unblinded_diff_spectra=self.unblinded_diff_spectra,
+                asimov_diff_spectra=self.asimov_diff_spectra,
+                batch_system=self.batch_system,
+                batch_flavor=self.batch_flavor,
+            )
+            for y in years
+        ]
+        
+
+    def run(self):
+        # --- paths relative to 'law' ---
+        law_dir = Path(__file__).resolve().parent
+        base_dir = law_dir.parent  # flashggFinalFit/
+        config_dir = base_dir / "config"
+        combine_dir = base_dir / "Combine"
+
+        years = [y.strip() for y in self.years.split(",") if y.strip()]
+        if len(years) < 2:
+            print(f"Single-year mode: {years[0]}. Nothing to combine.")
+            return True
+
+        combined_label = "_".join(years)
+        combined_output_dir = base_dir / f"output_{combined_label}_inclusive" / "Combine"
+        combined_output_dir.mkdir(parents=True, exist_ok=True)
+        
+        root_path = base_dir / f"output_{combined_label}_inclusive" / "Combine" / f"Datacard_{combined_label}.root"
+
+        if root_path.exists() and root_path.stat().st_size > 0:
+            print(f"Combined workspace already exists: {root_path}")
+            print("Skipping all intermediate steps (datacard/model copy, combine, text2workspace).")
+        else:
+            print("Combined .root file not found or empty — running Combine setup and workspace creation ...")
+            
+            # --- 1. Get output paths from configs ---
+            year_output_paths = {}
+            for y in years:
+                config_path = config_dir / f"{y}_inclusive.yml"
+                if config_path.exists():
+                    with open(config_path) as f:
+                        cfg = yaml.safe_load(f)
+                    year_output_paths[y] = Path(cfg["outputFolder"].rstrip("/"))
+                else:
+                    # fallback
+                    year_output_paths[y] = base_dir / f"output_{y}_inclusive"
+                    print(f"Using default path for {y}: {year_output_paths[y]}")
+
+            # --- 2. Copy Datacards ---
+            for y, out_path in year_output_paths.items():
+                src = out_path / "Combine" / f"Datacard_{y}.txt"
+                dst = combined_output_dir / f"Datacard_{y}.txt"
+                if src.exists():
+                    shutil.copy2(src, dst)
+                    print(f"Copied datacard for {y}")
+                else:
+                    print(f"⚠️  Missing datacard: {src}")
+
+            # --- 3. Copy Models ---
+            for y, out_path in year_output_paths.items():
+                src_models = out_path / "Combine" / "Models"
+                dst_models = combined_output_dir / f"Models_{y}"
+                if src_models.exists():
+                    shutil.copytree(src_models, dst_models, dirs_exist_ok=True)
+                    print(f"Copied models for {y}")
+                else:
+                    print(f"Missing models directory: {src_models}")
+
+            # --- 4. Combine datacards ---
+            os.chdir(combined_output_dir)
+            card_args = " ".join([f"Y{y[-2:]}=Datacard_{y}.txt" for y in years])
+            combined_card = f"Datacard_{combined_label}.txt"
+
+            print("Combining datacards...")
+            subprocess.run(f"combineCards.py {card_args} > {combined_card}", shell=True, check=True)
+
+            # --- 5. Fix model paths per year ---
+            print("Fixing model paths per year...")
+            for y in years:
+                tag = f"Y{y[-2:]}"
+                models_dir = f"./Models_{y}/"
+                subprocess.run(
+                    f"sed -i -E '/^shapes\\s+\\S+\\s+{tag}_/ s|(\\s)\\./Models/|\\1{models_dir}|g' {combined_card}",
+                    shell=True,
+                    check=True,
+                )
+
+            # --- 6. Delete some stuff ---
+            for y in years:
+                tmp_path = combined_output_dir / f"Datacard_{y}.txt"
+                if tmp_path.exists():
+                    tmp_path.unlink()
+
+            # --- 7. run RunText2Workspace for new Datacard ---
+            print("Running RunText2Workspace.py...")
+            runtext2ws_path = combine_dir / "RunText2Workspace.py"
+            output_dir = base_dir / f"output_{combined_label}_inclusive"
+
+            cmd = (
+                f"python3 {runtext2ws_path} "
+                f"--inputName Datacard_{combined_label} "
+                f"--outputDir {output_dir} "
+                f"--outputName Datacard_{combined_label} "
+                "--mode mu_fiducial "
+                "--common_opts \"-m 125.38 higgsMassRange=122,128\" "
+                "--batch local"
+            )
+            subprocess.run(cmd, shell=True, check=True)
+
+            print(f"Combined workspace created in {combined_output_dir}")
+
+        combined_label = "_".join(years)
+        config_path = config_dir / f"{combined_label}_inclusive.yml"
+
+        if config_path.exists():
+            combined_task = FinalFitsYear(
+                variable=self.variable,
+                output_dir=str(base_dir / f"output_{combined_label}_inclusive"),
+                year=combined_label,
+                unblinded_fits=self.unblinded_fits,
+                unblinded_stage_one=self.unblinded_stage_one,
+                unblinded_stage_two=self.unblinded_stage_two,
+                unblinded_stage_three=self.unblinded_stage_three,
+                unblinded_covcorr=self.unblinded_covcorr,
+                pvalue=self.pvalue,
+                asimov_fits=self.asimov_fits,
+                asimov_impacts=self.asimov_impacts,
+                asimov_covcorr=self.asimov_covcorr,
+                unblinded_diff_spectra=self.unblinded_diff_spectra,
+                asimov_diff_spectra=self.asimov_diff_spectra,
+                batch_system=self.batch_system,
+                batch_flavor=self.batch_flavor,
+            )
+
+            luigi.build([combined_task], local_scheduler=True, workers=1)
+
+        else:
+            print(f"No config found for {combined_label}_inclusive.yml, skipping combined fits.")
+
+
+
+    
+    def output(self):
+        years = [y.strip() for y in self.years.split(",") if y.strip()]
+        if len(years) < 2:
+            # No combined output for single year
+            return None
+
+        combined_label = "_".join(years)
+        combined_card_path = os.path.join(
+            os.getcwd(),
+            f"output_{combined_label}_inclusive/Combine/Datacard_{combined_label}.root"
+        )
+        return law.LocalFileTarget(combined_card_path)
+    
+    def complete(self):
+        # WrapperTasks are considered complete if all requirements are complete AND their output exists.
+        output = self.output()
+        if not output:
+            return all(req.complete() for req in law.util.flatten(self.requires()))
+        return output.exists()
+
+
+
+class FinalFitsYear(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
@@ -155,8 +353,10 @@ class FinalFits(law.Task):
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.year}.txt"))
             
             # Background output
-            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{background_config['ext']}"))     
-            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{background_config['ext']}/bkgfTest-Data/fTestResults.txt"))
+            base_path = os.path.join(output_dir, "Background", f"outdir_{background_config['ext']}")
+            output_paths.append(law.LocalFileTarget(base_path))
+            output_paths.append(law.LocalFileTarget(os.path.join(base_path, "bkgfTest-Data", "fTestResults.txt")))
+
         else:
             # Signal+Datacard output
             if datacard_config['saveDataFrame']:
@@ -167,9 +367,10 @@ class FinalFits(law.Task):
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.variable}_{self.year}_unsymmetrized.txt"))
             
             # Background output
-            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{background_config['ext']}_{self.variable}"))
-            output_paths.append(law.LocalFileTarget(output_dir + f"/outdir_{background_config['ext']}_{self.variable}/bkgfTest-Data/fTestResults.txt"))
-        
+            base_path = os.path.join(output_dir, "Background", f"outdir_{background_config['ext']}_{self.variable}")
+            output_paths.append(law.LocalFileTarget(base_path))
+            output_paths.append(law.LocalFileTarget(os.path.join(base_path, "bkgfTest-Data", "fTestResults.txt")))
+ 
         if convert_boolean_string(self.unblinded_fits) or convert_boolean_string(self.unblinded_stage_three):
             output = []
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans')]
