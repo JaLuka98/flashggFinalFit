@@ -95,11 +95,11 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         if workflow_reqs:
             tasks.update(workflow_reqs)
         
-        fitConfig = self.config["combine_fit"]
+        allReplicaGenerationConfig = self.config["allReplicaGeneration"]
         
         if (convert_boolean_string(self.toy_flag) == True):
             from Replicas.law_replica import GenerateAllReplicaData
-            tasks["GenerateAllReplicaData"] = GenerateAllReplicaData(output_dir=self.resolved_output_dir, variable=self.variable if self.variable != "" else "inclusive", version=self.variable if self.variable != "" else "inclusive", year=self.year, number_of_replicas=self.number_of_toys, seed=self.seed, starting_value=self.starting_value, workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+            tasks["GenerateAllReplicaData"] = GenerateAllReplicaData(output_dir=self.resolved_output_dir, variable=self.variable if self.variable != "" else "inclusive", version=self.variable if self.variable != "" else "inclusive", year=self.year, number_of_replicas=self.number_of_toys, seed=self.seed, starting_value=self.starting_value, workflow=allReplicaGenerationConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=allReplicaGenerationConfig['batchPartition'], slurm_memory=allReplicaGenerationConfig['batchMemory'], slurm_max_runtime=allReplicaGenerationConfig['batchMaxRuntime'], htcondor_partition=allReplicaGenerationConfig['batchPartition'], htcondor_memory=allReplicaGenerationConfig['batchMemory'], htcondor_max_runtime=allReplicaGenerationConfig['batchMaxRuntime'])
             
             return tasks
         
@@ -243,7 +243,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             for var in _dataVars:
                 if var == "CMS_hgg_mass":
                     _vars[var] = ROOT.RooRealVar(var, var, 125., 100., 180.)
-                    _vars[var].setBins(80) # 160
+                    _vars[var].setBins(160)
                 elif var == "dZ":
                     _vars[var] = ROOT.RooRealVar(var, var, 0., -20., 20.)
                     _vars[var].setBins(40)

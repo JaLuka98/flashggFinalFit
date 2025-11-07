@@ -49,7 +49,7 @@ def create_folder(folder):
     else:
         os.makedirs(folder, exist_ok=True)
 
-def get_replica(mc_parquet_files, parquet_files):
+def get_replica(mc_parquet_files, parquet_files, columns_to_load):
     
     process_name = parquet_files[0].split("/")[-3].split("_")[0]
     
@@ -65,7 +65,7 @@ def get_replica(mc_parquet_files, parquet_files):
     
     # print(sum_weight_central, sum_genw_beforesel)
     
-    columns_to_load = ["mass", "weight", "genWeight", "pt", "PTJ0", "NJ", "DPhiJ0J1", "rapidity", "lead_mvaID", "sublead_mvaID", "sigma_m_over_m_corr_smeared_decorr"]
+    # columns_to_load = ["mass", "weight", "genWeight", "pt", "PTJ0", "NJ", "DPhiJ0J1", "rapidity", "lead_mvaID", "sublead_mvaID", "sigma_m_over_m_corr_smeared_decorr"]
     
     mc_df = pd.concat((pd.read_parquet(f, columns=columns_to_load) for f in mc_parquet_files), ignore_index=True)
     
@@ -595,7 +595,7 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
         
         if self.variable == "PTH":
             columns_to_load += ["pt"]
-        elif self.variable in jetVariables:
+        elif (self.variable in jetVariables) and (self.variable != "NJ"):
             columns_to_load += [self.variable, "NJ"]
         else:
             columns_to_load += [self.variable]
@@ -618,7 +618,7 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
                 print(f"No parquet files found in {powheg_proc_folder}. Skipping...")
                 continue
             
-            current_proc_replica = get_replica(mc_proc_parquet_files, powheg_proc_parquet_files)
+            current_proc_replica = get_replica(mc_proc_parquet_files, powheg_proc_parquet_files, columns_to_load=columns_to_load)
 
             replica_separated_procs.append(current_proc_replica)
 
@@ -669,6 +669,12 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             
             signal_replica.append(current_cat_signal_replica)
             background_replica.append(current_cat_background_replica)
+            
+            print("Background replica index unique:", current_cat_background_replica.index.is_unique)
+            print("Signal replica index unique:", current_cat_signal_replica.index.is_unique)
+            print("Background replica columns unique:", current_cat_background_replica.columns.is_unique)
+            print("Signal replica columns unique:", current_cat_signal_replica.columns.is_unique)
+
             
             # Merge both dataframes
             current_cat_replica = pd.concat([current_cat_background_replica, current_cat_signal_replica], ignore_index=True)
@@ -1335,7 +1341,7 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         os.chdir(cwd)
 
 
-class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
+class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
@@ -1418,7 +1424,7 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
         
         output_paths = []
 
-        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'))
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'))
 
         outputFileTargets = []
                 
@@ -1457,13 +1463,30 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
         
         seed = int(self.seed) + int(replica_index)
         
+        # arguments = [
+        #     "combine",
+        #     "-M", "MultiDimFit",
+        #     ws_path,
+        #     "--freezeParameters", "MH",
+        #     "-m", "125.38",
+        #     "-n", f"PdfIndices_Toy_{int(replica_index)}",
+        #     "--cminDefaultMinimizerStrategy=0",
+        #     "--saveWorkspace",
+        #     "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+        #     "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+        #     "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+        #     "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+        #     "--floatOtherPOIs", "1",
+        #     # "-D", f"{splusb_toy}:toys/toy_1",
+        # ]
+
         arguments = [
             "combine",
             "-M", "MultiDimFit",
             ws_path,
             "--freezeParameters", "MH",
             "-m", "125.38",
-            "-n", f"PdfIndices_Toy_{int(replica_index)}",
+            "-n", f"AsimovFirstStep_Toy_{int(replica_index)}",
             "--cminDefaultMinimizerStrategy=0",
             "--saveWorkspace",
             "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -1471,13 +1494,14 @@ class GetAsimovBestFitBeforeSplusBFit(Task, SlurmWorkflow, HTCondorWorkflow, law
             "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
             "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
             "--floatOtherPOIs", "1",
-            # "-D", f"{splusb_toy}:toys/toy_1",
+            "--robustFit=1",
+            "-t", "-1",
         ]
         if self.variable == "":
             arguments += ["--saveSpecifiedIndex", ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])]
             arguments += ["--setParameters", "r=1"]
         else:
-            arguments += ["--saveSpecifiedIndex", ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])]
+            # arguments += ["--saveSpecifiedIndex", ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])]
             arguments += ["--setParameters", ",".join(combineVariableDict(self.variable, self.year)['paramStr'])]
 
         # Execute the command and capture the output
@@ -1577,7 +1601,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
 
         SplusB_config = self.config["combine_SplusB_toys"]
         
-        tasks["GetAsimovBestFitBeforeSplusBFit"] = GetAsimovBestFitBeforeSplusBFit(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
+        tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
         
         return tasks
     
@@ -1595,7 +1619,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         self._init_once()
         
         output = []
-        output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombinefirstStep.MultiDimFit.mH125.38.root')]
+        output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombineToyFit.MultiDimFit.mH125.38.root')]
 
         outputFileTargets = []
 
@@ -1669,25 +1693,28 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         arguments = [
             "combine",
             "-M", "MultiDimFit",
-            ws_path,
+            # ws_path,
+            os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'),
             "-m", "125.38",
-            # "-m", "125",
-            "-n", f"firstStep",
+            "--snapshotName", "MultiDimFit",
+            "-n", f"ToyFit",
             "--cminDefaultMinimizerStrategy=0",
             "--saveWorkspace",
-            "--cminApproxPreFitTolerance", f"{self.config['combine_fit']['cminApproxPreFitTolerance']}",
+            # "--cminApproxPreFitTolerance", f"{self.config['combine_fit']['cminApproxPreFitTolerance']}",
+            "--robustFit=1",
             "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
             "--X-rtd", "MINIMIZER_multiMin_hideConstants",
             "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
             "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-            "--algo", "singles",
+            # "--algo", "singles",
             # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
             "--saveFitResult",
             "--setParameters", f"""{pdfIdx}""",
             "--freezeParameters", "MH",
-            # "--freezeParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
+            # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
             # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
             # "-D", f"{splusb_toy}:toys/toy_1",
+            # --toysFrequentist --bypassFrequentistFit
         ]
         command = arguments
         print(command)
