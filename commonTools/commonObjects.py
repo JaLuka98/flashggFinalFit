@@ -23,12 +23,13 @@ lumiMap = {
     '2018':59.83, 
     'combined':137.65, 
     'merged':137.65,
-    '2022preEE':8.00,
-    '2022postEE':26.70,
+    '2022preEE':9.5, #8
+    '2022postEE':9.5, # 26.7
     '2022': 34.7,
     '2023preBPix': 9.5, # 17.8
     '2023postBPix': 9.5,
-    '2023': 27.3
+    '2023': 27.3,
+    '2024': 9.5
 }
 
 def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW, procs=None, eft_variable=None, individual=False):
@@ -163,6 +164,11 @@ bkg_normalizing_factor = { # Factors to account for the mismodelling of the back
         "GG-Box-3Jets": 1.44,
         "GJet-PT-20to40": 2.8,
         "GJet-PT-40": 2.8
+    },
+    "2024": {
+        "GG-Box-3Jets": 1.29,
+        "GJet-PT-20to40": 2.66,
+        "GJet-PT-40": 2.66
     }
 }
 

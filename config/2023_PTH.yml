@@ -21,7 +21,7 @@ inputFiles:
   # powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/ggH24_PU24'
   powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/intermediateRun3NTuples_powheg/onlyGGH_postBPix'
   # bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background_postBPix'
-  bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background' # Want to increase the statistics
+  bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background_222324' # Want to increase the statistics
   data_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/data_postBPix'
   catDict_timestamp: '2025_08_04'
 
@@ -215,6 +215,12 @@ combine_fit:
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "00:45:00" # Slurm max runtime to use
+
+allReplicaGeneration:
+  execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
