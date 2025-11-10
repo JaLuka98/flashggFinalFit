@@ -1,4 +1,5 @@
 import law
+import luigi
 import os
 import subprocess
 import ROOT
@@ -36,6 +37,22 @@ def convert_boolean_string(string):
         return True
     else:
         return False
+
+
+def parse_pdfidx_output(raw_output):
+    """
+    Parse the stdout of checkPdfIdx.C, removing ROOT banners and stray prefixes.
+    """
+    cleaned_entries = []
+    tokens = raw_output.replace("\n", ",").split(",")
+    for token in tokens:
+        token = token.strip()
+        if not token or token.startswith("Processing"):
+            continue
+        if token.startswith("Xpdfindex"):
+            token = token[1:]
+        cleaned_entries.append(token)
+    return ",".join(cleaned_entries)
 
 def execute_command(command, return_output=False, shell=False):
     try:
@@ -320,6 +337,8 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
+    channel_masks = luigi.BoolParameter(default=False, description="Enable Combine channel masks when building the workspace")
+    workspace_suffix = law.Parameter(default="", description="Suffix appended to produced workspace names")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -373,10 +392,17 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             output_dir = self.output_dir
 
         # Define the file paths
+        suffix = self.workspace_suffix
+        if suffix and not suffix.startswith("_"):
+            suffix = f"_{suffix}"
+
         if self.variable == '':
-            output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')]
+            base_name = f"Datacard_{self.year}"
         else:
-            output = [os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
+            base_name = f"Datacard_{self.variable}_{self.year}"
+        workspace_name = f"{base_name}{suffix}"
+
+        output = [os.path.join(output_dir, 'Combine', f"{workspace_name}.root")]
 
         outputFileTargets = []
 
@@ -397,7 +423,10 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_{self.variable}.yml")
             mode = self.variable
             datacard_name = f"Datacard_{self.variable}_{self.year}"
-        workspace_name = datacard_name
+        suffix = self.workspace_suffix
+        if suffix and not suffix.startswith("_"):
+            suffix = f"_{suffix}"
+        workspace_name = datacard_name + suffix
 
         #Load central config file
         with open(configYamlPath, 'r') as file:
@@ -446,6 +475,10 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
         
         datacards_dir = os.path.join(temp_output_dir, 'Combine')
 
+        common_opts = "-m 125.38 higgsMassRange=122,128"
+        if self.channel_masks:
+            common_opts += " --channel-masks"
+
         arguments = [
             "python3",
             script_path,
@@ -453,7 +486,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             "--outputDir", temp_output_dir,
             "--outputName", workspace_name,
             "--mode", mode,
-            "--common_opts", "-m 125.38 higgsMassRange=122,128 --channel-masks",
+            "--common_opts", common_opts,
             "--batch", "local"
         ]
         if self.variable != '':
@@ -893,15 +926,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            cleaned_entries = []
-            for line in result.stdout.splitlines():
-                line = line.strip()
-                if not line or line.startswith("Processing"):
-                    continue
-                if line.endswith(','):
-                    line = line[:-1]
-                cleaned_entries.append(line)
-            pdfIdx = ",".join(cleaned_entries)
+            pdfIdx = parse_pdfidx_output(result.stdout)
             if pdfIdx:
                 print(pdfIdx)
             return pdfIdx
@@ -1132,15 +1157,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            cleaned_entries = []
-            for line in result.stdout.splitlines():
-                line = line.strip()
-                if not line or line.startswith("Processing"):
-                    continue
-                if line.endswith(','):
-                    line = line[:-1]
-                cleaned_entries.append(line)
-            pdfIdx = ",".join(cleaned_entries)
+            pdfIdx = parse_pdfidx_output(result.stdout)
             if pdfIdx:
                 print(pdfIdx)
             return pdfIdx
@@ -1284,6 +1301,15 @@ class AsimovMaskedCategoryFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
             mask_list.append(f"mask_{current_cat}={value}")
         return ",".join(mask_list)
 
+    def _workspace_name(self, suffix=""):
+        if self.variable == '':
+            base_name = f"Datacard_{self.year}"
+        else:
+            base_name = f"Datacard_{self.variable}_{self.year}"
+        if suffix and not suffix.startswith("_"):
+            suffix = f"_{suffix}"
+        return f"{base_name}{suffix}"
+
     def workflow_requires(self):
         workflow_reqs = super().workflow_requires()
         tasks = {}
@@ -1302,6 +1328,24 @@ class AsimovMaskedCategoryFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
+
+        fit_config = config["combine_fit"]
+        tasks["RunT2WSMasked"] = RunText2Workspace(
+            output_dir=output_dir,
+            variable=self.variable,
+            year=self.year,
+            version=self.variable if self.variable != "" else "inclusive",
+            workflow=fit_config["execution"],
+            batch_flavor=self.batch_flavor,
+            slurm_partition=fit_config['batchPartition'],
+            slurm_memory=fit_config['batchMemory'],
+            slurm_max_runtime=fit_config['batchMaxRuntime'],
+            htcondor_partition=fit_config['batchPartition'],
+            htcondor_memory=fit_config['batchMemory'],
+            htcondor_max_runtime=fit_config['batchMaxRuntime'],
+            channel_masks=True,
+            workspace_suffix="masked",
+        )
 
         tasks["CreateAsimovFitFirstStep"] = CreateAsimovFitFirstStep(
             output_dir=output_dir,
@@ -1367,10 +1411,7 @@ class AsimovMaskedCategoryFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
         else:
             output_dir = self.output_dir
 
-        if self.variable == '':
-            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
-        else:
-            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+        datacard_path = os.path.join(output_dir, 'Combine', f'{self._workspace_name("masked")}.root')
 
         cwd = os.getcwd()
         if self.batch_flavor == "slurm/psi":
@@ -1390,17 +1431,10 @@ class AsimovMaskedCategoryFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
         def check_pdf_idx(param):
             command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            pdfIdx = result.stdout.strip()
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            cleaned_entries = []
-            for entry in pdfIdx.split(','):
-                entry = entry.strip()
-                if not entry or entry.startswith("Processing"):
-                    continue
-                cleaned_entries.append(entry)
-            return ",".join(cleaned_entries)
+            return parse_pdfidx_output(result.stdout)
 
         pdfIdx = None
         pdfIdxNames = ""
@@ -2064,15 +2098,7 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            cleaned_entries = []
-            for line in result.stdout.splitlines():
-                line = line.strip()
-                if not line or line.startswith("Processing"):
-                    continue
-                if line.endswith(','):
-                    line = line[:-1]
-                cleaned_entries.append(line)
-            pdfIdx = ",".join(cleaned_entries)
+            pdfIdx = parse_pdfidx_output(result.stdout)
             if pdfIdx:
                 print(pdfIdx)
             return pdfIdx
@@ -2350,15 +2376,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            cleaned_entries = []
-            for line in result.stdout.splitlines():
-                line = line.strip()
-                if not line or line.startswith("Processing"):
-                    continue
-                if line.endswith(','):
-                    line = line[:-1]
-                cleaned_entries.append(line)
-            pdfIdx = ",".join(cleaned_entries)
+            pdfIdx = parse_pdfidx_output(result.stdout)
             if pdfIdx:
                 print(pdfIdx)
             return pdfIdx
@@ -2610,15 +2628,7 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            cleaned_entries = []
-            for line in result.stdout.splitlines():
-                line = line.strip()
-                if not line or line.startswith("Processing"):
-                    continue
-                if line.endswith(','):
-                    line = line[:-1]
-                cleaned_entries.append(line)
-            pdfIdx = ",".join(cleaned_entries)
+            pdfIdx = parse_pdfidx_output(result.stdout)
             if pdfIdx:
                 print(pdfIdx)
             return pdfIdx
