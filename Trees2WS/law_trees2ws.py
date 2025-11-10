@@ -213,7 +213,7 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 stxsVar          = config['stxsVar']
                 diffVar          = config['diffVar']
                 systematicsVars  = config['systematicsVars']
-                theoryWeightContainers = config['theoryWeightContainers']
+                theoryWeightContainers = config['theoryWeightContainers']['standard_recipe'] if productionMode not in config['theoryWeightContainers'].keys() else config['theoryWeightContainers'][productionMode]
                 systematics      = config['systematics']
                 cats             = config['cats']
 

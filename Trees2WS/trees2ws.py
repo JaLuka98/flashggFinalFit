@@ -118,6 +118,7 @@ if opt.inputConfig != '':
     diffVar          = _cfg['diffVar']
     systematicsVars  = _cfg['systematicsVars']
     theoryWeightContainers = _cfg['theoryWeightContainers']
+    theoryWeightContainers = _cfg['theoryWeightContainers']['standard_recipe'] if opt.productionMode not in _cfg['theoryWeightContainers'].keys() else _cfg['theoryWeightContainers'][opt.productionMode]
     systematics      = _cfg['systematics']
     cats             = _cfg['cats']
 
