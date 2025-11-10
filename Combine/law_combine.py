@@ -15,6 +15,8 @@ from scipy.stats import chi2
 from commonTools import *
 from commonObjects import *
 
+DEFAULT_MASK_CATEGORY_LIST = ",".join(BMW)
+
 from Datacard.law_datacard import *
 from Background.law_background import *
 
@@ -451,7 +453,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             "--outputDir", temp_output_dir,
             "--outputName", workspace_name,
             "--mode", mode,
-            "--common_opts", "-m 125.38 higgsMassRange=122,128",
+            "--common_opts", "-m 125.38 higgsMassRange=122,128 --channel-masks",
             "--batch", "local"
         ]
         if self.variable != '':
@@ -886,30 +888,26 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         first_output = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')
 
         def check_pdf_idx(param):
-            # Run the ROOT command
             command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
-            
-            # Execute the command and capture the output
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            
-            # Get the output and check for errors
-            pdfIdx = result.stdout.strip()
-            
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            
-            if pdfIdx.startswith("Processing"):
-                pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
-            
-            # Remove the last comma
-            pdfIdx = pdfIdx.rstrip(',')
-
-            # Print the final result
-            print(pdfIdx)
+            cleaned_entries = []
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if not line or line.startswith("Processing"):
+                    continue
+                if line.endswith(','):
+                    line = line[:-1]
+                cleaned_entries.append(line)
+            pdfIdx = ",".join(cleaned_entries)
+            if pdfIdx:
+                print(pdfIdx)
             return pdfIdx
 
         pdfIdx = check_pdf_idx(self.cat)
+        pdfIdxNames = ",".join([entry.split("=")[0].strip() for entry in pdfIdx.split(",") if entry.strip()]) if pdfIdx else ""
 
         if self.variable == '':
             arguments = [
@@ -939,6 +937,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             if convert_boolean_string(self.set_pdfidx_inclusives):
                 arguments.append("--setParameters")
                 arguments.append(f"""{pdfIdx}""")
+                if pdfIdxNames:
+                    arguments.append("--saveSpecifiedIndex")
+                    arguments.append(pdfIdxNames)
             command = arguments
             print(command)
             try:
@@ -950,6 +951,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             
         else:
             pdfIdx = check_pdf_idx(self.cat)        
+            pdfIdxNames = ",".join([entry.split("=")[0] for entry in pdfIdx.split(",") if entry]) if pdfIdx else ""
             
             arguments = [
                 "combineTool.py",
@@ -1125,30 +1127,27 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         first_output = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')
         
         def check_pdf_idx(param):
-            # Run the ROOT command
             command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
-            
-            # Execute the command and capture the output
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            
-            # Get the output and check for errors
-            pdfIdx = result.stdout.strip()
-            
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            
-            if pdfIdx.startswith("Processing"):
-                pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
-            
-            # Remove the last comma
-            pdfIdx = pdfIdx.rstrip(',')
-
-            # Print the final result
-            print(pdfIdx)
+            cleaned_entries = []
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if not line or line.startswith("Processing"):
+                    continue
+                if line.endswith(','):
+                    line = line[:-1]
+                cleaned_entries.append(line)
+            pdfIdx = ",".join(cleaned_entries)
+            if pdfIdx:
+                print(pdfIdx)
             return pdfIdx
         
-        pdfIdx = check_pdf_idx(self.cat)        
+        pdfIdx = check_pdf_idx(self.cat)
+        pdfIdxNames = ",".join([entry.split("=")[0].strip() for entry in pdfIdx.split(",") if entry.strip()]) if pdfIdx else ""
+        pdfIdxNames = ",".join([entry.split("=")[0] for entry in pdfIdx.split(",") if entry]) if pdfIdx else ""
     
         firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{self.cat}.MultiDimFit.mH125.38.root")
         
@@ -1181,6 +1180,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             if convert_boolean_string(self.set_pdfidx_inclusives):
                 arguments.append("--setParameters")
                 arguments.append(f"""{pdfIdx}""")
+                if pdfIdxNames:
+                    arguments.append("--saveSpecifiedIndex")
+                    arguments.append(pdfIdxNames)
             command = arguments
             print(command)
             try:
@@ -1249,6 +1251,246 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             # Clean up the temporary directory
             shutil.rmtree(os.environ["TARGET_PATH"])
         
+        os.chdir(cwd)
+        
+
+class AsimovMaskedCategoryFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
+    output_dir = law.Parameter(default='', description="Path to the output directory")
+    variable = law.Parameter(default="", description="Variable to be used")
+    year = law.Parameter(default='2022', description="Year")
+    cat = law.Parameter(description="Category that remains unmasked")
+    nPoints = law.Parameter(default=30, description="Number of scan points")
+    mask_categories = law.Parameter(
+        default=DEFAULT_MASK_CATEGORY_LIST,
+        description="Comma-separated list of categories used to build mask_* parameters",
+    )
+    set_pdfidx_inclusives = law.Parameter(default=True, description="Reuse pdfindex assignments from the first step")
+
+    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+
+    def _get_mask_list(self):
+        raw = [entry.strip() for entry in self.mask_categories.split(",") if entry.strip()]
+        if not raw:
+            raw = list(BMW)
+        if self.cat not in raw:
+            raw.append(self.cat)
+        return raw
+
+    def _mask_parameter_string(self):
+        mask_list = []
+        for current_cat in self._get_mask_list():
+            value = 0 if current_cat == self.cat else 1
+            # combine expects mask_<channelName>, so use the raw category name
+            mask_list.append(f"mask_{current_cat}={value}")
+        return ",".join(mask_list)
+
+    def workflow_requires(self):
+        workflow_reqs = super().workflow_requires()
+        tasks = {}
+        if workflow_reqs:
+            tasks.update(workflow_reqs)
+
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml")
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml")
+
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        tasks["CreateAsimovFitFirstStep"] = CreateAsimovFitFirstStep(
+            output_dir=output_dir,
+            variable=self.variable,
+            year=self.year,
+            batch_flavor=self.batch_flavor,
+        )
+
+        return tasks
+
+    def create_branch_map(self):
+        return {i: current_point for i, current_point in enumerate(range(int(self.nPoints)))}
+
+    def output(self):
+        current_point = self.branch_data
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml")
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml")
+
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        if self.variable == '':
+            nominal_fit_folder = 'runFits_mu_fiducial'
+        else:
+            nominal_fit_folder = f'runFits_{self.variable}'
+        masked_fit_folder = f"{nominal_fit_folder}_{self.cat}"
+
+        outputs = [
+            os.path.join(output_dir, 'Combine', masked_fit_folder, 'asimov'),
+            os.path.join(
+                output_dir,
+                'Combine',
+                masked_fit_folder,
+                'asimov',
+                f'higgsCombineAsimovMaskedFit_{self.cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root',
+            ),
+        ]
+        return [law.LocalFileTarget(path) for path in outputs]
+
+    def run(self):
+        current_point = self.branch_data
+
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml")
+            nominal_fit_folder = 'runFits_mu_fiducial'
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml")
+            nominal_fit_folder = f'runFits_{self.variable}'
+        masked_fit_folder = f"{nominal_fit_folder}_{self.cat}"
+
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        if self.variable == '':
+            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+        else:
+            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+
+        cwd = os.getcwd()
+        if self.batch_flavor == "slurm/psi":
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {output_dir}/Combine/{masked_fit_folder}/asimov'], shell=True)
+            else:
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {output_dir}/Combine/{masked_fit_folder}/asimov'], shell=True)
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{masked_fit_folder}/asimov'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', masked_fit_folder, 'asimov'))
+        else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{masked_fit_folder}/asimov'], shell=True)
+            os.chdir(os.path.join(output_dir, 'Combine', masked_fit_folder, 'asimov'))
+
+        first_output = os.path.join(output_dir, 'Combine', nominal_fit_folder, 'asimov')
+
+        def check_pdf_idx(param):
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            pdfIdx = result.stdout.strip()
+            if result.returncode != 0:
+                print("Error executing the command:", result.stderr)
+                return None
+            cleaned_entries = []
+            for entry in pdfIdx.split(','):
+                entry = entry.strip()
+                if not entry or entry.startswith("Processing"):
+                    continue
+                cleaned_entries.append(entry)
+            return ",".join(cleaned_entries)
+
+        pdfIdx = None
+        pdfIdxNames = ""
+        if convert_boolean_string(self.set_pdfidx_inclusives):
+            pdfIdx = check_pdf_idx(self.cat)
+            if pdfIdx:
+                pdfIdxNames = ",".join([entry.split("=")[0].strip() for entry in pdfIdx.split(",") if entry.strip()])
+
+        mask_param_string = self._mask_parameter_string()
+        print(f"Applying channel masks: {mask_param_string}")
+
+        if self.variable == '':
+            arguments = [
+                "combine",
+                "-M", "MultiDimFit",
+                "-d", datacard_path,
+                "--freezeParameters", "MH",
+                "-m", "125.38",
+                "-n", f"AsimovMaskedFit_{self.cat}.POINTS.{current_point}.{current_point}",
+                "--cminDefaultMinimizerStrategy=0",
+                "--algo", "grid",
+                "--points", f"{int(self.nPoints)}",
+                "--expectSignal", "1",
+                "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+                "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+                "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+                "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "-t", "-1",
+                "-P", "r",
+                "--firstPoint", f"{current_point}",
+                "--lastPoint", f"{current_point}",
+                "--floatOtherPOIs", "1",
+                "--alignEdges", "1",
+                "--setParameterRanges", f"{config['combine_fit']['setParameterRange']}",
+            ]
+            set_param_components = [mask_param_string]
+            if convert_boolean_string(self.set_pdfidx_inclusives) and pdfIdx:
+                set_param_components.append(pdfIdx)
+                if pdfIdxNames:
+                    arguments.append("--saveSpecifiedIndex")
+                    arguments.append(pdfIdxNames)
+            combined_set_parameters = ",".join([entry for entry in set_param_components if entry])
+            if combined_set_parameters:
+                arguments.append("--setParameters")
+                arguments.append(combined_set_parameters)
+        else:
+            arguments = [
+                "combineTool.py",
+                "-M", "MultiDimFit",
+                datacard_path,
+                "--freezeParameters", "MH",
+                "-m", "125.38",
+                "-n", f"AsimovMaskedFit_{self.cat}.POINTS.{current_point}.{current_point}",
+                "--cminDefaultMinimizerStrategy=0",
+                "--algo", "grid",
+                "--points", f"{int(self.nPoints)}",
+                "--expectSignal", "1",
+                "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+                "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+                "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+                "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "-t", "-1",
+                "-P", f"{self.cat}",
+                "--firstPoint", f"{current_point}",
+                "--lastPoint", f"{current_point}",
+                "--saveFitResult",
+                "--floatOtherPOIs", "1",
+                "--alignEdges", "1",
+                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+            ]
+            set_param_entries = [mask_param_string]
+            if convert_boolean_string(self.set_pdfidx_inclusives) and pdfIdx:
+                set_param_entries.append(pdfIdx)
+            set_param_entries.append(",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr']))
+            combined_set_parameters = ",".join([entry for entry in set_param_entries if entry])
+            if combined_set_parameters:
+                arguments.append("--setParameters")
+                arguments.append(combined_set_parameters)
+
+        print(arguments)
+        try:
+            result = subprocess.run(arguments, check=True, text=True, capture_output=True)
+            print("Script output:", result.stdout)
+            print("Script executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Error executing script:", e.stderr)
+            raise
+
+        if self.batch_flavor == "slurm/psi":
+            shutil.rmtree(os.environ["TARGET_PATH"])
         os.chdir(cwd)
         
 class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
@@ -1515,6 +1757,187 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             
         os.chdir(cwd)
         
+class CreateAsimovMaskedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
+    output_dir = law.Parameter(default='', description="Path to the output directory")
+    variable = law.Parameter(default="", description="Variable to be used")
+    year = law.Parameter(default='2022', description="Year")
+    cat = law.Parameter(description="Category that remains unmasked")
+    nPoints = law.Parameter(default=30, description="Number of points for the scan")
+    mask_categories = law.Parameter(
+        default=DEFAULT_MASK_CATEGORY_LIST,
+        description="Comma-separated list of categories used to build mask_* parameters",
+    )
+    set_pdfidx_inclusives = law.Parameter(default=True, description="Reuse pdfindex assignments from the first step")
+
+    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+
+    def _prepare_paths(self):
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml")
+            nominal_fit_folder = 'runFits_mu_fiducial'
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml")
+            nominal_fit_folder = f'runFits_{self.variable}'
+
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        masked_fit_folder = f"{nominal_fit_folder}_{self.cat}"
+
+        return config, output_dir, nominal_fit_folder, masked_fit_folder
+
+    def requires(self):
+        _, output_dir, _, _ = self._prepare_paths()
+        return {
+            "masked_points": AsimovMaskedCategoryFit(
+                output_dir=output_dir,
+                variable=self.variable,
+                year=self.year,
+                cat=self.cat,
+                nPoints=self.nPoints,
+                mask_categories=self.mask_categories,
+                set_pdfidx_inclusives=self.set_pdfidx_inclusives,
+                batch_flavor=self.batch_flavor,
+                workflow=self.workflow,
+                slurm_partition=self.slurm_partition,
+                slurm_memory=self.slurm_memory,
+                slurm_max_runtime=self.slurm_max_runtime,
+                htcondor_partition=self.htcondor_partition,
+                htcondor_memory=self.htcondor_memory,
+                htcondor_max_runtime=self.htcondor_max_runtime,
+                version=self.version,
+            )
+        }
+
+    def output(self):
+        _, output_dir, _, masked_fit_folder = self._prepare_paths()
+        base_path = os.path.join(output_dir, 'Combine', masked_fit_folder, 'asimov')
+        scans_path = os.path.join(base_path, 'scans')
+        outputs = [
+            scans_path,
+            os.path.join(base_path, f'higgsCombineAsimovMaskedFit_{self.cat}.root'),
+            os.path.join(scans_path, f'scan_{self.cat}.root'),
+            os.path.join(scans_path, f'scan_{self.cat}.pdf'),
+            os.path.join(scans_path, f'scan_{self.cat}.png'),
+        ]
+        return [law.LocalFileTarget(path) for path in outputs]
+
+    def create_branch_map(self):
+        branch_list = [0]
+        return {i: branch for i, branch in enumerate(branch_list)}
+
+    def run(self):
+        _, output_dir, _, masked_fit_folder = self._prepare_paths()
+        masked_asimov_dir = os.path.join(output_dir, 'Combine', masked_fit_folder, 'asimov')
+        scans_dir = os.path.join(masked_asimov_dir, 'scans')
+        n_points = int(self.nPoints)
+
+        cwd = os.getcwd()
+
+        if self.batch_flavor == "slurm/psi":
+            if "/work" in output_dir:
+                execute_command([f'mkdir -p {masked_asimov_dir}/scans'], shell=True)
+            else:
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {masked_asimov_dir}/scans'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{masked_fit_folder}/asimov/scans'], shell=True)
+
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f'{masked_asimov_dir}',
+                    f"{os.environ['TARGET_PATH']}/Combine/{masked_fit_folder}"
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f'root://t3dcachedb03.psi.ch:1094//{masked_asimov_dir}',
+                    f"{os.environ['TARGET_PATH']}/Combine/{masked_fit_folder}"
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            local_asimov_dir = os.path.join(os.environ["TARGET_PATH"], 'Combine', masked_fit_folder, 'asimov')
+        else:
+            execute_command([f'mkdir -p {scans_dir}'], shell=True)
+            local_asimov_dir = masked_asimov_dir
+
+        local_scans_dir = os.path.join(local_asimov_dir, 'scans')
+        os.chdir(local_asimov_dir)
+
+        combined_file = os.path.join(local_asimov_dir, f'higgsCombineAsimovMaskedFit_{self.cat}.root')
+        hadd_command = ["hadd", "-f", combined_file]
+        missing_points = []
+        for i in range(n_points):
+            point_file = os.path.join(
+                local_asimov_dir,
+                f'higgsCombineAsimovMaskedFit_{self.cat}.POINTS.{i}.{i}.MultiDimFit.mH125.38.root'
+            )
+            if not os.path.exists(point_file):
+                missing_points.append(point_file)
+            hadd_command.append(point_file)
+
+        if missing_points:
+            raise FileNotFoundError(f"Missing scan point files: {missing_points}")
+
+        print(hadd_command)
+        try:
+            subprocess.run(hadd_command, check=True, text=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            print("Error executing hadd:", e.stderr)
+            raise
+
+        os.chdir(local_scans_dir)
+        poi_name = "r" if self.variable == '' else self.cat
+        limit_entries = 0
+        tf = ROOT.TFile.Open(combined_file)
+        if tf and not tf.IsZombie():
+            tree = tf.Get("limit")
+            if tree:
+                limit_entries = tree.GetEntries()
+            tf.Close()
+        if limit_entries == 0:
+            print(f"No entries found in 'limit' tree for {combined_file}, skipping plot1DScan.")
+        else:
+            plot_command = [
+                "python3", f"{os.environ['CMSSW_BASE']}/bin/{os.environ['SCRAM_ARCH']}/plot1DScan.py",
+                combined_file,
+                "-o", f"scan_{self.cat}",
+                "--POI", poi_name,
+                "--main-label", f"Expected ({self.cat})",
+                "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
+            ]
+            print(plot_command)
+            try:
+                subprocess.run(plot_command, check=True, text=True, capture_output=True)
+            except subprocess.CalledProcessError as e:
+                print("Error executing plot1DScan:", e.stderr)
+                raise
+
+        if self.batch_flavor == "slurm/psi":
+            if "/work" in output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Combine/",
+                    'root://t3dcachedb03.psi.ch:1094//'+output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            shutil.rmtree(os.environ["TARGET_PATH"])
+
+        os.chdir(cwd)
+        
 class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
@@ -1638,14 +2061,20 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         def check_pdf_idx(param):
             command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            pdfIdx = result.stdout.strip()
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            if pdfIdx.startswith("Processing"):
-                pdfIdx = pdfIdx.split('X', 1)[-1]
-            pdfIdx = pdfIdx.rstrip(',')
-            print(pdfIdx)
+            cleaned_entries = []
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if not line or line.startswith("Processing"):
+                    continue
+                if line.endswith(','):
+                    line = line[:-1]
+                cleaned_entries.append(line)
+            pdfIdx = ",".join(cleaned_entries)
+            if pdfIdx:
+                print(pdfIdx)
             return pdfIdx
 
         pdfIdx = None
@@ -1918,14 +2347,20 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         def check_pdf_idx(param):
             command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            pdfIdx = result.stdout.strip()
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            if pdfIdx.startswith("Processing"):
-                pdfIdx = pdfIdx.split('X', 1)[-1]
-            pdfIdx = pdfIdx.rstrip(',')
-            print(pdfIdx)
+            cleaned_entries = []
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if not line or line.startswith("Processing"):
+                    continue
+                if line.endswith(','):
+                    line = line[:-1]
+                cleaned_entries.append(line)
+            pdfIdx = ",".join(cleaned_entries)
+            if pdfIdx:
+                print(pdfIdx)
             return pdfIdx
 
         pdfIdx = None
@@ -2172,14 +2607,20 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         def check_pdf_idx(param):
             command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            pdfIdx = result.stdout.strip()
             if result.returncode != 0:
                 print("Error executing the command:", result.stderr)
                 return None
-            if pdfIdx.startswith("Processing"):
-                pdfIdx = pdfIdx.split('X', 1)[-1]
-            pdfIdx = pdfIdx.rstrip(',')
-            print(pdfIdx)
+            cleaned_entries = []
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if not line or line.startswith("Processing"):
+                    continue
+                if line.endswith(','):
+                    line = line[:-1]
+                cleaned_entries.append(line)
+            pdfIdx = ",".join(cleaned_entries)
+            if pdfIdx:
+                print(pdfIdx)
             return pdfIdx
 
         pdfIdx = None
