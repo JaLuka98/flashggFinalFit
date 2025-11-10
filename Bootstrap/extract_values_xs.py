@@ -800,6 +800,7 @@ for variable in variables:
 
     # The paths
     main_dir = os.path.join(sample_dir, variable+"_allReplica", "Combine", f"runFits_{variable}")
+    # main_dir = os.path.join(sample_dir, variable+"", "Combine", f"runFits_{variable}")
     path_to_hesse = os.path.join(main_dir, "hesse", 'robustHessefirstStep.root')
     toyDir = os.path.join(main_dir, "toyFit")
     combineLL_dir = os.path.join(main_dir, "asimov")
