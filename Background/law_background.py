@@ -121,18 +121,23 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
         cat_list = [
             (config['cats'].split(",")[categoryIndex], str(int(config['catOffset'])+categoryIndex))
             for categoryIndex in range(nCats)
-        ]        
+        ]
         if convert_boolean_string(self.bootstrap_flag) == True:
             branch_map = {
                 i * int(self.number_of_bootstraps) + j: (cat_catOffset, bootstrap_index)
                 for i, cat_catOffset in enumerate(cat_list)
                 for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
             }
-        if convert_boolean_string(self.toy_flag) == True:
+        # if convert_boolean_string(self.toy_flag) == True:
+        #     branch_map = {
+        #         i * int(self.number_of_toys) + j: (cat_catOffset, toy_index)
+        #         for i, cat_catOffset in enumerate(cat_list)
+        #         for j, toy_index in enumerate(range(int(self.number_of_toys)))
+        #     }
+        elif convert_boolean_string(self.toy_flag) == True:
             branch_map = {
-                i * int(self.number_of_toys) + j: (cat_catOffset, toy_index)
-                for i, cat_catOffset in enumerate(cat_list)
-                for j, toy_index in enumerate(range(int(self.number_of_toys)))
+                i: toy_index
+                for i, toy_index in enumerate(range(int(self.number_of_toys)))
             }
         else:
             branch_map = {i: cat_catOffset for i, cat_catOffset in enumerate(cat_list)}
@@ -149,24 +154,50 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             cat, cat_offset = cat_cat_offset
             outdir_ext = os.path.join(self.resolved_output_dir, 'Background', f'outdir_{config["ext"]}_{bootstrap_index}')
         elif convert_boolean_string(self.toy_flag) == True:
-            cat_cat_offset, toy_index = self.branch_data
-            cat, cat_offset = cat_cat_offset
+            # cat_cat_offset, toy_index = self.branch_data
+            # cat, cat_offset = cat_cat_offset
+            toy_index = self.branch_data
             outdir_ext = os.path.join(self.resolved_output_dir, 'Background', f'outdir_{config["ext"]}_{toy_index}')
         else:
             cat, cat_offset = self.branch_data
             outdir_ext = os.path.join(self.resolved_output_dir, 'Background', f'outdir_{config["ext"]}')
 
-        
         outputFileTargets = []
         
         if convert_boolean_string(self.bootstrap_flag) == False:
-            bkg_plots = glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.png'))
-            bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf'))
-            bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf_gofTest.pdf'))
+            if convert_boolean_string(self.toy_flag) == False:
+                bkg_plots = glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.png'))
+                bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf'))
+                bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf_gofTest.pdf'))
 
-            output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.pdf'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.png')]
+                output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.pdf'), os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.png')]
 
-            output_paths += bkg_plots
+                output_paths += bkg_plots
+            else:
+                # Process everything for each toy using one node to avoid overloading the SLURM schedd
+                bkg_plots = []
+                output_paths = []
+                config = self.bkgConfig
+
+                nCats = len(config['cats'].split(","))
+                    
+                cat_list = [
+                    (config['cats'].split(",")[categoryIndex], str(int(config['catOffset'])+categoryIndex))
+                    for categoryIndex in range(nCats)
+                ]
+                
+                for cat_cat_offset in cat_list:
+                    cat, cat_offset = cat_cat_offset
+                    bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.png'))
+                    bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf'))
+                    bkg_plots += glob.glob(os.path.join(outdir_ext, f'bkgfTest-Data/*_cat{cat_offset}.pdf_gofTest.pdf'))
+
+                    output_paths.append(os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root'))
+                    output_paths.append(os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.pdf'))
+                    output_paths.append(os.path.join(outdir_ext, f'bkgfTest-Data/multipdf_{cat}.png'))
+                
+                output_paths += bkg_plots
+
         else: # Skip the plots for the bootstrap case
              output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root')]
    
@@ -209,8 +240,9 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             # Have to add the _{bootstrap_index}/ws/allData.root to the path manually, since we need the bootstrap index
             input_path = os.path.join(all_data_input_path+f"_{bootstrap_index}", "ws/allData.root")
         elif convert_boolean_string(self.toy_flag) == True:
-            cat_cat_offset, toy_index = self.branch_data
-            cat, cat_offset = cat_cat_offset
+            # cat_cat_offset, toy_index = self.branch_data
+            # cat, cat_offset = cat_cat_offset
+            toy_index = self.branch_data
             input_path = os.path.join(all_data_input_path+f"_{toy_index}", "ws/allData.root")
         else:
             cat, cat_offset = self.branch_data
@@ -238,39 +270,86 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             temp_output_dir += "/"
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Background/runBackgroundScripts.sh")
-        arguments = [
-            "-i", input_path,
-            "-p", "none",
-            "-f", cat,
-            "--outputFolder", f"{temp_output_dir}",
-            "--catOffset", cat_offset,
-            "--intLumi", f"{lumiMap[self.year]}",
-            "--year", f"{self.year}",
-            "--batch", "local",
-            "--queue", "microcentury",
-            "--sigFile", "none",
-            "--isData",
-            "--fTest"
-        ]
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            arguments += ["--ext", f'{config["ext"]}_{bootstrap_index}']
-        elif convert_boolean_string(self.toy_flag) == True:
-            arguments += ["--ext", f'{config["ext"]}_{toy_index}']
-        else:
-            arguments += ["--ext", f'{config["ext"]}']
-        command = [script_path] + arguments
-        # print("Output:", command)
         
-        # Move to background folder
-        original_dir = os.getcwd()
-        os.chdir(os.path.join(os.environ["ANALYSIS_PATH"], "Background"))
-        try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
-            print("Script output:", result.stdout)
-            print("Script executed successfully.")
-        except subprocess.CalledProcessError as e:
-            print("Error executing script:", e.stderr)
-        os.chdir(original_dir)
+        if convert_boolean_string(self.toy_flag) == False:
+            arguments = [
+                "-i", input_path,
+                "-p", "none",
+                "-f", cat,
+                "--outputFolder", f"{temp_output_dir}",
+                "--catOffset", cat_offset,
+                "--intLumi", f"{lumiMap[self.year]}",
+                "--year", f"{self.year}",
+                "--batch", "local",
+                "--queue", "microcentury",
+                "--sigFile", "none",
+                "--isData",
+                "--fTest"
+            ]
+            if convert_boolean_string(self.bootstrap_flag) == True:
+                arguments += ["--ext", f'{config["ext"]}_{bootstrap_index}']
+            elif convert_boolean_string(self.toy_flag) == True:
+                arguments += ["--ext", f'{config["ext"]}_{toy_index}']
+            else:
+                arguments += ["--ext", f'{config["ext"]}']
+            command = [script_path] + arguments
+            # print("Output:", command)
+            
+            # Move to background folder
+            original_dir = os.getcwd()
+            os.chdir(os.path.join(os.environ["ANALYSIS_PATH"], "Background"))
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                print("Error executing script:", e.stderr)
+        else:
+            config = self.bkgConfig
+
+            nCats = len(config['cats'].split(","))
+                
+            cat_list = [
+                (config['cats'].split(",")[categoryIndex], str(int(config['catOffset'])+categoryIndex))
+                for categoryIndex in range(nCats)
+            ]
+            
+            for cat_cat_offset in cat_list:
+                cat, cat_offset = cat_cat_offset
+            
+                arguments = [
+                    "-i", input_path,
+                    "-p", "none",
+                    "-f", cat,
+                    "--outputFolder", f"{temp_output_dir}",
+                    "--catOffset", cat_offset,
+                    "--intLumi", f"{lumiMap[self.year]}",
+                    "--year", f"{self.year}",
+                    "--batch", "local",
+                    "--queue", "microcentury",
+                    "--sigFile", "none",
+                    "--isData",
+                    "--fTest"
+                ]
+                if convert_boolean_string(self.bootstrap_flag) == True:
+                    arguments += ["--ext", f'{config["ext"]}_{bootstrap_index}']
+                elif convert_boolean_string(self.toy_flag) == True:
+                    arguments += ["--ext", f'{config["ext"]}_{toy_index}']
+                else:
+                    arguments += ["--ext", f'{config["ext"]}']
+                command = [script_path] + arguments
+                # print("Output:", command)
+                
+                # Move to background folder
+                original_dir = os.getcwd()
+                os.chdir(os.path.join(os.environ["ANALYSIS_PATH"], "Background"))
+                try:
+                    result = subprocess.run(command, check=True, text=True, capture_output=True)
+                    print("Script output:", result.stdout)
+                    print("Script executed successfully.")
+                except subprocess.CalledProcessError as e:
+                    print("Error executing script:", e.stderr)
+                os.chdir(original_dir)
 
         if self.batch_flavor == "slurm/psi":
             if convert_boolean_string(self.bootstrap_flag) == True:

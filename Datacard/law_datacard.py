@@ -112,11 +112,16 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 for i, cat in enumerate(cat_list)
                 for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
             }
+        # elif convert_boolean_string(self.toy_flag) == True:
+        #     branch_map = {
+        #         i * int(self.number_of_toys) + j: (cat, toy_index)
+        #         for i, cat in enumerate(cat_list)
+        #         for j, toy_index in enumerate(range(int(self.number_of_toys)))
+        #     }
         elif convert_boolean_string(self.toy_flag) == True:
             branch_map = {
-                i * int(self.number_of_toys) + j: (cat, toy_index)
-                for i, cat in enumerate(cat_list)
-                for j, toy_index in enumerate(range(int(self.number_of_toys)))
+                i: toy_index
+                for i, toy_index in enumerate(range(int(self.number_of_toys)))
             }
         else:
             branch_map = {i: cat for i, cat in enumerate(cat_list)}
@@ -124,9 +129,20 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
 
     def output(self):
         
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
+        if (convert_boolean_string(self.bootstrap_flag) == True):# or (convert_boolean_string(self.toy_flag) == True):
             cat, index = self.branch_data
             output = [law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}_{index}/{cat}.pkl'))]
+        elif (convert_boolean_string(self.toy_flag) == True):
+            index = self.branch_data
+            output = []
+
+            nCats = len(self.cats.split(","))
+            cat_list = [
+                self.cats.split(",")[categoryIndex]
+                for categoryIndex in range(nCats)
+            ]
+            for cat in cat_list:
+                output.append(law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}_{index}/{cat}.pkl')))
         else:
             cat = self.branch_data
             output = [law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}/{cat}.pkl'))]
@@ -135,7 +151,10 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     def run(self):
 
         if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            cat, index = self.branch_data
+            if convert_boolean_string(self.bootstrap_flag) == True:
+                cat, index = self.branch_data
+            elif convert_boolean_string(self.toy_flag) == True:
+                index = self.branch_data
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
                 execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{index}")}'], shell=True)
@@ -165,35 +184,73 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             bkgModelWSDir = self.bkgModelWSDir
                 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Datacard/makeYields.py")
-        arguments = [
-            "python3",
-            script_path,
-            "--inputWSDirMap", f"{self.inputWSDirMap}",
-            "--cat", cat,
-            "--outputDir", f"{temp_output_dir}",
-            "--ext", ext,
-            "--procs", f"{self.procs}",
-            "--mass", f"{self.mass}",
-            "--bkgScaler", f"{self.bkgScaler}",
-            "--sigModelWSDir", f"{self.sigModelWSDir}",
-            "--sigModelExt", f"{self.sigModelExt}",
-            "--bkgModelWSDir", f"{bkgModelWSDir}",
-            "--bkgModelExt", f"{self.bkgModelExt}"
-            ]
-        if self.variable != '':
-            arguments.append("--variable")
-            arguments.append(f"{self.variable}")
         
-        if convert_boolean_string(self.doSystematics): arguments.append("--doSystematics")
-        if convert_boolean_string(self.mergeYears): arguments.append("--mergeYears")
-        if convert_boolean_string(self.skipZeroes): arguments.append("--skipZeroes")
-        if convert_boolean_string(self.ignore_warnings): arguments.append("--ignore-warnings")
-        if convert_boolean_string(self.skipBkg): arguments.append("--skipBkg")
-        if convert_boolean_string(self.skipCOWCorr): arguments.append("--skipCOWCorr")
+        if convert_boolean_string(self.toy_flag) == True:
+            nCats = len(self.cats.split(","))
+            cat_list = [
+                self.cats.split(",")[categoryIndex]
+                for categoryIndex in range(nCats)
+            ]
+            for cat in cat_list:
+                arguments = [
+                    "python3",
+                    script_path,
+                    "--inputWSDirMap", f"{self.inputWSDirMap}",
+                    "--cat", cat,
+                    "--outputDir", f"{temp_output_dir}",
+                    "--ext", ext,
+                    "--procs", f"{self.procs}",
+                    "--mass", f"{self.mass}",
+                    "--bkgScaler", f"{self.bkgScaler}",
+                    "--sigModelWSDir", f"{self.sigModelWSDir}",
+                    "--sigModelExt", f"{self.sigModelExt}",
+                    "--bkgModelWSDir", f"{bkgModelWSDir}",
+                    "--bkgModelExt", f"{self.bkgModelExt}"
+                    ]
+                if self.variable != '':
+                    arguments.append("--variable")
+                    arguments.append(f"{self.variable}")
+                
+                if convert_boolean_string(self.doSystematics): arguments.append("--doSystematics")
+                if convert_boolean_string(self.mergeYears): arguments.append("--mergeYears")
+                if convert_boolean_string(self.skipZeroes): arguments.append("--skipZeroes")
+                if convert_boolean_string(self.ignore_warnings): arguments.append("--ignore-warnings")
+                if convert_boolean_string(self.skipBkg): arguments.append("--skipBkg")
+                if convert_boolean_string(self.skipCOWCorr): arguments.append("--skipCOWCorr")
 
-        command = arguments
-        # print("Output:", command)
-        execute_command(command)
+                command = arguments
+                # print("Output:", command)
+                execute_command(command)
+        else:
+            arguments = [
+                "python3",
+                script_path,
+                "--inputWSDirMap", f"{self.inputWSDirMap}",
+                "--cat", cat,
+                "--outputDir", f"{temp_output_dir}",
+                "--ext", ext,
+                "--procs", f"{self.procs}",
+                "--mass", f"{self.mass}",
+                "--bkgScaler", f"{self.bkgScaler}",
+                "--sigModelWSDir", f"{self.sigModelWSDir}",
+                "--sigModelExt", f"{self.sigModelExt}",
+                "--bkgModelWSDir", f"{bkgModelWSDir}",
+                "--bkgModelExt", f"{self.bkgModelExt}"
+                ]
+            if self.variable != '':
+                arguments.append("--variable")
+                arguments.append(f"{self.variable}")
+            
+            if convert_boolean_string(self.doSystematics): arguments.append("--doSystematics")
+            if convert_boolean_string(self.mergeYears): arguments.append("--mergeYears")
+            if convert_boolean_string(self.skipZeroes): arguments.append("--skipZeroes")
+            if convert_boolean_string(self.ignore_warnings): arguments.append("--ignore-warnings")
+            if convert_boolean_string(self.skipBkg): arguments.append("--skipBkg")
+            if convert_boolean_string(self.skipCOWCorr): arguments.append("--skipCOWCorr")
+
+            command = arguments
+            # print("Output:", command)
+            execute_command(command)
         
         if self.batch_flavor == "slurm/psi":
             if "/work" in self.output_dir:
