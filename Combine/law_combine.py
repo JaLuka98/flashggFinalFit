@@ -550,17 +550,19 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
 
     def create_branch_map(self):
 
+        raw_cats = []
+        if isinstance(self.cats, str) and self.cats:
+            raw_cats = [entry.strip() for entry in self.cats.split(",") if entry.strip()]
+        elif isinstance(self.cats, (list, tuple)):
+            raw_cats = list(self.cats)
+
         if self.variable == '':
-            branch_map = {i: cat for i, cat in enumerate(["r"])}
-        else:
-            nCats = len(self.cats.split(","))
-            
-            cat_list = [
-                self.cats.split(",")[categoryIndex]
-                for categoryIndex in range(nCats)
-            ]
-            
-            branch_map = {i: cat for i, cat in enumerate(cat_list)}
+            if not raw_cats:
+                raw_cats = ["r"]
+        elif not raw_cats:
+            raw_cats = [self.cats]
+
+        branch_map = {i: cat for i, cat in enumerate(raw_cats)}
         return branch_map
 
     def output(self):
@@ -600,6 +602,8 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
     def run(self):
         current_branch = self.branch_data
         
+        mask_parameters = None
+
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
             fitFolderName = f'runFits_mu_fiducial'
@@ -638,6 +642,13 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/asimov'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov'))
 
+        if self.variable == '' and current_branch != "r" and current_branch in BMW:
+            mask_entries = []
+            for category in BMW:
+                value = 0 if category == current_branch else 1
+                mask_entries.append(f"mask_{category}={value}")
+            mask_parameters = ",".join(mask_entries)
+
         if self.variable == '':
             arguments = [
                 "combine",
@@ -659,6 +670,9 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
                 "--saveSpecifiedIndex", f"""{",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
                 "--floatOtherPOIs", "1"
             ]
+            if mask_parameters:
+                arguments.append("--setParameters")
+                arguments.append(mask_parameters)
             command = arguments
             # print(command)
             try:
@@ -749,7 +763,8 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
             
         tasks = []
         if self.variable == '':
-            cats = ["r"]
+            cat_list = ["r"] + list(BMW)
+            cats = ",".join(cat_list)
             version = "inclusive_v1"
         else:
             cats = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'])

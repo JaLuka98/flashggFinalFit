@@ -45,7 +45,7 @@ class FinalFits(law.Task):
     asimov_fits = law.Parameter(default=False, description="Produce the Asimov fits")
     asimov_impacts = law.Parameter(default=False, description="Produce the Asimov impacts")
     asimov_covcorr = law.Parameter(default=False, description="Produce the Asimov covariance and correlation matrices")
-    asimov_masked_categories = law.Parameter(default=False, description="Run Asimov fits per category while masking the others")
+    asimov_fit_per_category = law.Parameter(default=False, description="Run Asimov fits per category while masking the others")
 
     # Differentials
     unblinded_diff_spectra = law.Parameter(default=False, description="Produce unblinded differential spectra for the given variable")
@@ -100,7 +100,7 @@ class FinalFits(law.Task):
             tasks["PValueCalculation"] = PValueCalculation(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != '' else 'inclusive', workflow=self.batch_system, slurm_partition=hesseConfig['batchPartition'], slurm_memory=hesseConfig['batchMemory'], slurm_max_runtime=hesseConfig['batchMaxRuntime'], htcondor_partition=hesseConfig['batchPartition'], htcondor_memory=hesseConfig['batchMemory'], htcondor_max_runtime=hesseConfig['batchMaxRuntime'])
         if convert_boolean_string(self.asimov_fits):
             tasks["CreateAsimovFit"] = CreateAsimovFit(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != '' else 'inclusive', workflow=self.batch_system)
-        if convert_boolean_string(self.asimov_masked_categories):
+        if convert_boolean_string(self.asimov_fit_per_category):
             maskConfig = config["combine_fit"]
             mask_list = BMW
             mask_string = ",".join(mask_list)
