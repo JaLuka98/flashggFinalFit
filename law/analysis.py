@@ -45,8 +45,8 @@ class FinalFits(law.WrapperTask):
     asimov_covcorr = law.Parameter(default=False)
     unblinded_diff_spectra = law.Parameter(default=False)
     asimov_diff_spectra = law.Parameter(default=False)
-    batch_system = law.Parameter(default="htcondor")
-    batch_flavor = law.Parameter(default="htcondor")
+    batch_system = law.Parameter(default="local")
+    batch_flavor = law.Parameter(default="local")
 
     def requires(self):
         years = [y.strip() for y in self.years.split(",") if y.strip()]
@@ -86,10 +86,16 @@ class FinalFits(law.WrapperTask):
             return True
 
         combined_label = "_".join(years)
-        combined_output_dir = base_dir / f"output_{combined_label}_inclusive" / "Combine"
+        if self.variable == '':
+            combined_output_dir = base_dir / f"output_{combined_label}_inclusive" / "Combine"
+        else:
+            combined_output_dir = base_dir / f"output_{combined_label}_{self.variable}" / "Combine"
         combined_output_dir.mkdir(parents=True, exist_ok=True)
         
-        root_path = base_dir / f"output_{combined_label}_inclusive" / "Combine" / f"Datacard_{combined_label}.root"
+        if self.variable == '':
+            root_path = base_dir / f"output_{combined_label}_inclusive" / "Combine" / f"Datacard_{combined_label}.root"
+        else:
+            root_path = base_dir / f"output_{combined_label}_{self.variable}" / "Combine" / f"Datacard_{self.variable}_{combined_label}.root"
 
         if root_path.exists() and root_path.stat().st_size > 0:
             print(f"Combined workspace already exists: {root_path}")
@@ -100,20 +106,30 @@ class FinalFits(law.WrapperTask):
             # --- 1. Get output paths from configs ---
             year_output_paths = {}
             for y in years:
-                config_path = config_dir / f"{y}_inclusive.yml"
+                if self.variable == '':
+                    config_path = config_dir / f"{y}_inclusive.yml"
+                else:
+                    config_path = config_dir / f"{y}_{self.variable}.yml"
                 if config_path.exists():
                     with open(config_path) as f:
                         cfg = yaml.safe_load(f)
                     year_output_paths[y] = Path(cfg["outputFolder"].rstrip("/"))
                 else:
                     # fallback
-                    year_output_paths[y] = base_dir / f"output_{y}_inclusive"
+                    if self.variable == '':
+                        year_output_paths[y] = base_dir / f"output_{y}_inclusive"
+                    else:
+                        year_output_paths[y] = base_dir / f"output_{y}_{self.variable}"
                     print(f"Using default path for {y}: {year_output_paths[y]}")
 
             # --- 2. Copy Datacards ---
             for y, out_path in year_output_paths.items():
-                src = out_path / "Combine" / f"Datacard_{y}.txt"
-                dst = combined_output_dir / f"Datacard_{y}.txt"
+                if self.variable == '':
+                    src = out_path / "Combine" / f"Datacard_{y}.txt"
+                    dst = combined_output_dir / f"Datacard_{y}.txt"
+                else:
+                    src = out_path / "Combine" / f"Datacard_{self.variable}_{y}.txt"
+                    dst = combined_output_dir / f"Datacard_{self.variable}_{y}.txt"
                 if src.exists():
                     shutil.copy2(src, dst)
                     print(f"Copied datacard for {y}")
@@ -121,65 +137,116 @@ class FinalFits(law.WrapperTask):
                     print(f"⚠️  Missing datacard: {src}")
 
             # --- 3. Copy Models ---
-            for y, out_path in year_output_paths.items():
-                src_models = out_path / "Combine" / "Models"
-                dst_models = combined_output_dir / f"Models_{y}"
-                if src_models.exists():
-                    shutil.copytree(src_models, dst_models, dirs_exist_ok=True)
-                    print(f"Copied models for {y}")
-                else:
-                    print(f"Missing models directory: {src_models}")
+            if self.variable == '':
+                for y, out_path in year_output_paths.items():
+                    src_models = out_path / "Combine" / "Models"
+                    dst_models = combined_output_dir / f"Models_{y}"
+                    if src_models.exists():
+                        shutil.copytree(src_models, dst_models, dirs_exist_ok=True)
+                        print(f"Copied models for {y}")
+                    else:
+                        print(f"Missing models directory: {src_models}")
+            else:
+                for y, out_path in year_output_paths.items():
+                    src_models = out_path / "Combine" / f"Models_{self.variable}"
+                    dst_models = combined_output_dir / f"Models_{self.variable}_{y}"
+                    if src_models.exists():
+                        shutil.copytree(src_models, dst_models, dirs_exist_ok=True)
+                        print(f"Copied models for {y}")
+                    else:
+                        print(f"Missing models directory: {src_models}")
 
             # --- 4. Combine datacards ---
             os.chdir(combined_output_dir)
-            card_args = " ".join([f"Y{y[-2:]}=Datacard_{y}.txt" for y in years])
-            combined_card = f"Datacard_{combined_label}.txt"
+            if self.variable == '':
+                card_args = " ".join([f"Y{y[-2:]}=Datacard_{y}.txt" for y in years])
+                combined_card = f"Datacard_{combined_label}.txt"
+            else:
+                card_args = " ".join([f"Y{y[-2:]}=Datacard_{self.variable}_{y}.txt" for y in years])
+                combined_card = f"Datacard_{self.variable}_{combined_label}.txt"
 
             print("Combining datacards...")
             subprocess.run(f"combineCards.py {card_args} > {combined_card}", shell=True, check=True)
 
             # --- 5. Fix model paths per year ---
             print("Fixing model paths per year...")
-            for y in years:
-                tag = f"Y{y[-2:]}"
-                models_dir = f"./Models_{y}/"
-                subprocess.run(
-                    f"sed -i -E '/^shapes\\s+\\S+\\s+{tag}_/ s|(\\s)\\./Models/|\\1{models_dir}|g' {combined_card}",
-                    shell=True,
-                    check=True,
-                )
+            if self.variable == '':
+                for y in years:
+                    tag = f"Y{y[-2:]}"
+                    models_dir = f"./Models_{y}/"
+                    subprocess.run(
+                        f"sed -i -E '/^shapes\\s+\\S+\\s+{tag}_/ s|(\\s)\\./Models/|\\1{models_dir}|g' {combined_card}",
+                        shell=True,
+                        check=True,
+                    )
+            else:
+                for y in years:
+                    tag = f"Y{y[-2:]}"
+                    models_dir = f"./Models_{self.variable}_{y}/"
+                    subprocess.run(
+                        f"sed -i -E '/^shapes\\s+\\S+\\s+{tag}_/ s|(\\s)\\./Models_{self.variable}/|\\1{models_dir}|g' {combined_card}",
+                        shell=True,
+                        check=True,
+                    )
 
             # --- 6. Delete some stuff ---
-            for y in years:
-                tmp_path = combined_output_dir / f"Datacard_{y}.txt"
-                if tmp_path.exists():
-                    tmp_path.unlink()
+            if self.variable == '':
+                for y in years:
+                    tmp_path = combined_output_dir / f"Datacard_{y}.txt"
+                    if tmp_path.exists():
+                        tmp_path.unlink()
+            else:
+                for y in years:
+                    tmp_path = combined_output_dir / f"Datacard_{self.variable}_{y}.txt"
+                    if tmp_path.exists():
+                        tmp_path.unlink()
 
             # --- 7. run RunText2Workspace for new Datacard ---
             print("Running RunText2Workspace.py...")
             runtext2ws_path = combine_dir / "RunText2Workspace.py"
-            output_dir = base_dir / f"output_{combined_label}_inclusive"
+            if self.variable == '':
+                # Inclusive case
+                output_dir = base_dir / f"output_{combined_label}_inclusive"
 
-            cmd = (
-                f"python3 {runtext2ws_path} "
-                f"--inputName Datacard_{combined_label} "
-                f"--outputDir {output_dir} "
-                f"--outputName Datacard_{combined_label} "
-                "--mode mu_fiducial "
-                "--common_opts \"-m 125.38 higgsMassRange=122,128\" "
-                "--batch local"
-            )
+                cmd = (
+                    f"python3 {runtext2ws_path} "
+                    f"--inputName Datacard_{combined_label} "
+                    f"--outputDir {output_dir} "
+                    f"--outputName Datacard_{combined_label} "
+                    "--mode mu_fiducial "
+                    "--common_opts \"-m 125.38 higgsMassRange=122,128\" "
+                    "--batch local"
+                )
+            else:
+                # Differential variable case (correct mode = variable)
+                output_dir = base_dir / f"output_{combined_label}_{self.variable}"
+
+                cmd = (
+                    f"python3 {runtext2ws_path} "
+                    f"--inputName Datacard_{self.variable}_{combined_label} "
+                    f"--outputDir {output_dir} "
+                    f"--outputName Datacard_{self.variable}_{combined_label} "
+                    f"--mode {self.variable} "
+                    "--common_opts \"-m 125.38 higgsMassRange=122,128\" "
+                    "--batch local "
+                    f"--ext {self.variable}"
+                )
+
             subprocess.run(cmd, shell=True, check=True)
 
             print(f"Combined workspace created in {combined_output_dir}")
 
+
         combined_label = "_".join(years)
-        config_path = config_dir / f"{combined_label}_inclusive.yml"
+        if self.variable == '':
+            config_path = config_dir / f"{combined_label}_inclusive.yml"
+        else:
+            config_path = config_dir / f"{combined_label}_{self.variable}.yml"
 
         if config_path.exists():
             combined_task = FinalFitsYear(
                 variable=self.variable,
-                output_dir=str(base_dir / f"output_{combined_label}_inclusive"),
+                output_dir=str(base_dir / f"output_{combined_label}_inclusive" if self.variable == '' else base_dir / f"output_{combined_label}_{self.variable}"),
                 year=combined_label,
                 unblinded_fits=self.unblinded_fits,
                 unblinded_stage_one=self.unblinded_stage_one,
@@ -196,7 +263,7 @@ class FinalFits(law.WrapperTask):
                 batch_flavor=self.batch_flavor,
             )
 
-            luigi.build([combined_task], local_scheduler=True, workers=1)
+            yield combined_task
 
         else:
             print(f"No config found for {combined_label}_inclusive.yml, skipping combined fits.")
@@ -211,10 +278,16 @@ class FinalFits(law.WrapperTask):
             return None
 
         combined_label = "_".join(years)
-        combined_card_path = os.path.join(
-            os.getcwd(),
-            f"output_{combined_label}_inclusive/Combine/Datacard_{combined_label}.root"
-        )
+        if self.variable == '':
+            combined_card_path = os.path.join(
+                os.getcwd(),
+                f"output_{combined_label}_inclusive/Combine/Datacard_{combined_label}.root"
+            )
+        else:
+            combined_card_path = os.path.join(
+                os.getcwd(),
+                f"output_{combined_label}_{self.variable}/Combine/Datacard_{self.variable}_{combined_label}.root"
+            )
         return law.LocalFileTarget(combined_card_path)
     
     def complete(self):
@@ -248,8 +321,8 @@ class FinalFitsYear(law.Task):
     unblinded_diff_spectra = law.Parameter(default=False, description="Produce unblinded differential spectra for the given variable")
     asimov_diff_spectra = law.Parameter(default=False, description="Produce Asimov differential spectra for the given variable")
     
-    batch_system = law.Parameter(default="htcondor", description="Batch system to use")
-    batch_flavor = law.Parameter(default="htcondor", description="Special treatment for PSI Slurm batch system")
+    batch_system = law.Parameter(default="local", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Special treatment for PSI Slurm batch system")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
@@ -367,7 +440,7 @@ class FinalFitsYear(law.Task):
             output_paths.append(law.LocalFileTarget(output_dir+ f"/Datacards/Datacard_{self.variable}_{self.year}_unsymmetrized.txt"))
             
             # Background output
-            base_path = os.path.join(output_dir, "Background", f"outdir_{background_config['ext']}_{self.variable}")
+            base_path = os.path.join(output_dir, "Background", f"outdir_{background_config['ext']}") # because config for diffs already has variable suffix
             output_paths.append(law.LocalFileTarget(base_path))
             output_paths.append(law.LocalFileTarget(os.path.join(base_path, "bkgfTest-Data", "fTestResults.txt")))
  

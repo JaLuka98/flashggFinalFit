@@ -97,7 +97,7 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -319,7 +319,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -482,7 +482,7 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
     year = law.Parameter(default='2022', description="Year")
     cats = law.Parameter(description="Current category")
     
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -694,7 +694,7 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
     
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
         
     def requires(self):
         
@@ -777,7 +777,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
     set_pdfidx_inclusives = law.Parameter(default=True, description="Year") # convert_boolean_string
     
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -1018,7 +1018,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
     set_pdfidx_inclusives = law.Parameter(default=True, description="Year")
     
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -1257,7 +1257,7 @@ class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     year = law.Parameter(default='2022', description="Year")
     set_pdfidx_inclusives = law.Parameter(default=True, description="Year")
     
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -1520,7 +1520,7 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
     
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -1709,7 +1709,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -1965,7 +1965,7 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -2209,7 +2209,7 @@ class AsimovCovCorrHesse(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -2386,7 +2386,7 @@ class AsimovCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #
     year = law.Parameter(default='2022', description="Year")
     noPreliminary = law.Parameter(default=False, description="Flag, if final plot should bear the Preliminary.")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
 
     # def requires(self):
@@ -2589,7 +2589,7 @@ class UnblindedFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -2779,7 +2779,7 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
     
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -2982,7 +2982,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
     year = law.Parameter(default='2022', description="Year")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
     
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -3184,7 +3184,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
     year = law.Parameter(default='2022', description="Year")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
     
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -3384,7 +3384,7 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -3570,7 +3570,7 @@ class UnblindedCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -3736,7 +3736,7 @@ class UnblindedCovCorr(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
     year = law.Parameter(default='2022', description="Year")
     noPreliminary = law.Parameter(default=False, description="Flag, if final plot should bear the Preliminary.")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -3937,7 +3937,7 @@ class UnblindedImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -4122,7 +4122,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -4412,7 +4412,7 @@ class UnblindedImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalW
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -4686,7 +4686,7 @@ class MggBestFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(la
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -4859,7 +4859,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
     year = law.Parameter(default='2022', description="Year")
     is_postfit = law.Parameter(default=False, description="Flag that signifies if toys are created for postfit mass distributions.")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -5425,7 +5425,7 @@ class MggDistribution(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     year = law.Parameter(default='2022', description="Year")
     is_postfit = law.Parameter(default=False, description="Flag that signifies if toys are created for postfit mass distributions.")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
@@ -5741,7 +5741,7 @@ class PValueCalculation(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Batch system to use")
 
     # def requires(self):
     def workflow_requires(self):
