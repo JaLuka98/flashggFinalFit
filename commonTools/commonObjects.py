@@ -1,4 +1,5 @@
 import os
+import copy
 
 # Paths and directory
 cmsswbase__ = os.environ['CMSSW_BASE']
@@ -233,6 +234,7 @@ combineVariableDict = {
         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2022", BMW=BMW),
         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2022", BMW=BMW),
         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022", BMW=BMW),
+        #"PTHvsDPhiJ0J1": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022", BMW=BMW)
     },
     "2023":{
         "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW),
@@ -258,4 +260,47 @@ combineVariableDict = {
         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2022_2023", BMW=BMW),
         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022_2023", BMW=BMW)
     },
+    "2022_2023_2024":{
+        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2022_2023_2024", BMW=BMW),
+        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2022_2023_2024", BMW=BMW),
+        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2022_2023_2024", BMW=BMW),
+        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022_2023_2024", BMW=BMW)
+    },
 }
+
+
+def _register_combined_year(name, year_list):
+    """
+    Build a combined entry in combineVariableDict by reusing the parameter
+    definitions from the first year and concatenating the pdf index lists across
+    all requested years.
+    """
+    if name in combineVariableDict:
+        return
+
+    missing_years = [year for year in year_list if year not in combineVariableDict]
+    if missing_years:
+        raise KeyError(f"Cannot build combined year '{name}' without definitions for: {', '.join(missing_years)}")
+
+    template_year = year_list[0]
+    combined_entry = {}
+    template_variables = combineVariableDict[template_year].keys()
+
+    for variable in template_variables:
+        combined_payload = copy.deepcopy(combineVariableDict[template_year][variable])
+        combined_payload["pdfIndeces"] = []
+        for year in year_list:
+            year_payload = combineVariableDict[year][variable]
+            combined_payload["pdfIndeces"].extend(year_payload["pdfIndeces"])
+        combined_entry[variable] = combined_payload
+
+    combineVariableDict[name] = combined_entry
+
+
+_combined_year_map = {
+    "2022_2023": ["2022", "2023"],
+    "2022_2023_2024": ["2022", "2023", "2024"],
+}
+
+for combined_name, year_sequence in _combined_year_map.items():
+    _register_combined_year(combined_name, year_sequence)
