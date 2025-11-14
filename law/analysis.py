@@ -266,7 +266,10 @@ class FinalFits(law.WrapperTask):
             yield combined_task
 
         else:
-            print(f"No config found for {combined_label}_inclusive.yml, skipping combined fits.")
+            if self.variable == '':
+                print(f"No config found for {combined_label}_inclusive.yml, skipping combined fits.")
+            else:
+                print(f"No config found for {combined_label}_{self.variable}.yml, skipping combined fits.")
 
 
 
