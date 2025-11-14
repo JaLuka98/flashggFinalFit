@@ -45,8 +45,8 @@ class FinalFits(law.WrapperTask):
     asimov_covcorr = law.Parameter(default=False)
     unblinded_diff_spectra = law.Parameter(default=False)
     asimov_diff_spectra = law.Parameter(default=False)
-    batch_system = law.Parameter(default="htcondor")
-    batch_flavor = law.Parameter(default="htcondor")
+    batch_system = law.Parameter(default="local")
+    batch_flavor = law.Parameter(default="local")
 
     def requires(self):
         years = [y.strip() for y in self.years.split(",") if y.strip()]
@@ -326,8 +326,8 @@ class FinalFitsYear(law.Task):
     unblinded_diff_spectra = law.Parameter(default=False, description="Produce unblinded differential spectra for the given variable")
     asimov_diff_spectra = law.Parameter(default=False, description="Produce Asimov differential spectra for the given variable")
     
-    batch_system = law.Parameter(default="htcondor", description="Batch system to use")
-    batch_flavor = law.Parameter(default="htcondor", description="Special treatment for PSI Slurm batch system")
+    batch_system = law.Parameter(default="local", description="Batch system to use")
+    batch_flavor = law.Parameter(default="local", description="Special treatment for PSI Slurm batch system")
     
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
