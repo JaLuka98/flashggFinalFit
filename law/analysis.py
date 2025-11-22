@@ -296,11 +296,49 @@ class FinalFits(law.WrapperTask):
         return law.LocalFileTarget(combined_card_path)
     
     def complete(self):
-        # WrapperTasks are considered complete if all requirements are complete AND their output exists.
+        years = [y.strip() for y in self.years.split(",") if y.strip()]
+        yearly_done = all(req.complete() for req in law.util.flatten(self.requires()))
+
         output = self.output()
-        if not output:
-            return all(req.complete() for req in law.util.flatten(self.requires()))
-        return output.exists()
+        if not output or not output.exists():
+            return False
+
+        if len(years) < 2:
+            return yearly_done and output.exists()
+
+        base_dir = Path(__file__).resolve().parent.parent
+        config_dir = base_dir / "config"
+        combined_label = "_".join(years)
+        if self.variable == '':
+            config_path = config_dir / f"{combined_label}_inclusive.yml"
+            combined_output_dir = base_dir / f"output_{combined_label}_inclusive"
+        else:
+            config_path = config_dir / f"{combined_label}_{self.variable}.yml"
+            combined_output_dir = base_dir / f"output_{combined_label}_{self.variable}"
+
+        if not config_path.exists():
+            return yearly_done and output.exists()
+
+        combined_task = FinalFitsYear(
+            variable=self.variable,
+            output_dir=str(combined_output_dir),
+            year=combined_label,
+            unblinded_fits=self.unblinded_fits,
+            unblinded_stage_one=self.unblinded_stage_one,
+            unblinded_stage_two=self.unblinded_stage_two,
+            unblinded_stage_three=self.unblinded_stage_three,
+            unblinded_covcorr=self.unblinded_covcorr,
+            pvalue=self.pvalue,
+            asimov_fits=self.asimov_fits,
+            asimov_impacts=self.asimov_impacts,
+            asimov_covcorr=self.asimov_covcorr,
+            unblinded_diff_spectra=self.unblinded_diff_spectra,
+            asimov_diff_spectra=self.asimov_diff_spectra,
+            batch_system=self.batch_system,
+            batch_flavor=self.batch_flavor,
+        )
+
+        return yearly_done and combined_task.complete()
 
 
 

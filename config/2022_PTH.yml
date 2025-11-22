@@ -4,8 +4,8 @@ outputFolder: '/net/data_cms3a-1/wrabetz/CMSSW_14_1_0_pre4/src/flashggFinalFit/o
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04_fixedFNUF/PTH/2022/data/allData_2022.root'
-  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04_fixedFNUF/PTH/2022/signal/'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_11_13/PTH/2022/data/allData_2022.root'
+  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_11_13/PTH/2022/signal/'
 
 backgroundScriptCfg:
   # Setup
@@ -83,7 +83,7 @@ signalScriptCfg_2022_preEE:
   analysisRM: 'Run3FidXSAnalysisPTH' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2022preEE' # Use 'combined' if merging all years: not recommended
-  replacementThreshold: '50'
+  replacementThreshold: '25'
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
@@ -112,7 +112,7 @@ signalScriptCfg_2022_postEE:
   analysisRM: 'Run3FidXSAnalysisPTH' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2022postEE' # Use 'combined' if merging all years: not recommended
-  replacementThreshold: '50'
+  replacementThreshold: '25'
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
@@ -190,7 +190,7 @@ datacard_clean:
   verbose: False # Spit out all the cleaning being done
 
 combine_fit:
-  asimov_numPoints: 100 # Number of points the Asimov generator should generate for the NLL scan
+  asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,3"
   execution: 'local'
