@@ -925,7 +925,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
                 "--snapshotName", "MultiDimFit",
-                "--freezeParameters", "MH",
+                #"--freezeParameters", "MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -972,7 +972,6 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         else:
             pdfIdx = check_pdf_idx(self.cat)   
 
-            # pdfIdx = "pdfindex_B_2023_13TeV=1,pdfindex_M_2023_13TeV=0,..."
             pdfNames = [p.split("=")[0] for p in pdfIdx.split(",") if p]
             freezePdf = ",".join(pdfNames)
 
@@ -982,7 +981,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "combineTool.py",
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
-                "--freezeParameters", "MH",
+                #"--freezeParameters", "MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -1198,7 +1197,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
                 "--snapshotName", "MultiDimFit",
-                "--freezeParameters", "allConstrainedNuisances,MH",
+                #"--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -1250,7 +1249,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "combineTool.py",
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
-                "--freezeParameters", "allConstrainedNuisances,MH",
+                #"--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
