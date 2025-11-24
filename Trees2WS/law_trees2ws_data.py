@@ -104,7 +104,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             return tasks
         
         else:
-            return True
+            return {} 
 
     def create_branch_map(self):
         if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
