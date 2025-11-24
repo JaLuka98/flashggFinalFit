@@ -781,7 +781,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     year = law.Parameter(default='2022', description="Year")
     cat = law.Parameter(description="Current category")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
-    set_pdfidx_inclusives = law.Parameter(default=True, description="Year") # convert_boolean_string
+    set_pdfidx_inclusives = law.Parameter(default=False, description="Year") # convert_boolean_string
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -925,7 +925,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
                 "--snapshotName", "MultiDimFit",
-                #"--freezeParameters", "MH",
+                "--freezeParameters", "MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -947,19 +947,8 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             ]
 
             if convert_boolean_string(self.set_pdfidx_inclusives):
-
-                # pdfIdx looks like:  "pdfindex_B_2022_13TeV=1,pdfindex_M_2022_13TeV=0"
-                pdfNames = [p.split("=")[0] for p in pdfIdx.split(",") if p]
-                freezePdf = ",".join(pdfNames)
-
-                # Set the pdfIndex values from the FirstStep
                 arguments.append("--setParameters")
-                arguments.append(pdfIdx)
-
-                # Freeze MASS + all pdfIndex parameters
-                arguments.append("--freezeParameters")
-                arguments.append(f"MH,{freezePdf}")
-
+                arguments.append(f"""{pdfIdx}""")
             command = arguments
             print(command)
             try:
@@ -970,18 +959,13 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Error executing script:", e.stderr)
             
         else:
-            pdfIdx = check_pdf_idx(self.cat)   
-
-            pdfNames = [p.split("=")[0] for p in pdfIdx.split(",") if p]
-            freezePdf = ",".join(pdfNames)
-
             saveSpecifiedIndex = ",".join(combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces'])
 
             arguments = [
                 "combineTool.py",
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
-                #"--freezeParameters", "MH",
+                "--freezeParameters", "MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -1002,18 +986,8 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--snapshotName", "MultiDimFit",
                 "--saveSpecifiedIndex", saveSpecifiedIndex,
             ]
-
-            if convert_boolean_string(self.set_pdfidx_inclusives):
-
-                arguments.append("--setParameters")
-                arguments.append(pdfIdx + "," +
-                                ",".join(combineVariableDict[f'{self.year}'][self.variable]['paramStr']))
-
-                arguments.append("--freezeParameters")
-                arguments.append(f"MH,{freezePdf}")
-
             command = arguments
-            # print(command)
+            print(command)
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
                 print("Script output:", result.stdout)
@@ -1050,7 +1024,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     year = law.Parameter(default='2022', description="Year")
     cat = law.Parameter(description="Current category")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
-    set_pdfidx_inclusives = law.Parameter(default=True, description="Year")
+    set_pdfidx_inclusives = law.Parameter(default=False, description="Year")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -1187,17 +1161,11 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{self.cat}.MultiDimFit.mH125.38.root")
         
         if self.variable == '':
-            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
-
-            pdfNames = [p.split("=")[0] for p in pdfIdx.split(",") if p]
-            freezePdf = ",".join(pdfNames)
-
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
-                "--snapshotName", "MultiDimFit",
-                #"--freezeParameters", "allConstrainedNuisances,MH",
+                "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -1221,10 +1189,6 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             if convert_boolean_string(self.set_pdfidx_inclusives):
                 arguments.append("--setParameters")
                 arguments.append(pdfIdx)
-
-                arguments.append("--freezeParameters")
-                arguments.append(f"allConstrainedNuisances,MH,{freezePdf}")
-
             command = arguments
 
             print(command)
@@ -1236,20 +1200,13 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Error executing script:", e.stderr)
             
         else:
-            pdfIdx = check_pdf_idx(self.cat)
-
-            pdfNames = [p.split("=")[0] for p in pdfIdx.split(",") if p]
-            freezePdf = ",".join(pdfNames)
-
-            saveSpecifiedIndex = ",".join(
-                combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces']
-            )
+            saveSpecifiedIndex = ",".join(combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces'])
 
             arguments = [
                 "combineTool.py",
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
-                #"--freezeParameters", "allConstrainedNuisances,MH",
+                "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -1270,18 +1227,6 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--snapshotName", "MultiDimFit",
                 "--saveSpecifiedIndex", saveSpecifiedIndex,
             ]
-
-            if convert_boolean_string(self.set_pdfidx_inclusives):
-
-                arguments.append("--setParameters")
-                arguments.append(
-                    pdfIdx + "," +
-                    ",".join(combineVariableDict[f'{self.year}'][self.variable]['paramStr'])
-                )
-
-                arguments.append("--freezeParameters")
-                arguments.append(f"allConstrainedNuisances,MH,{freezePdf}")
-
             command = arguments
             print(command)
             try:
@@ -1314,11 +1259,11 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         
         os.chdir(cwd)
         
-class CreateAsimovFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
-    set_pdfidx_inclusives = law.Parameter(default=True, description="Year")
+    set_pdfidx_inclusives = law.Parameter(default=False, description="Year")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
