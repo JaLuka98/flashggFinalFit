@@ -49,6 +49,86 @@ def create_folder(folder):
     else:
         os.makedirs(folder, exist_ok=True)
 
+def get_replica_bin_by_bin(mc_parquet_files, cat_dict_, parquet_files, columns_to_load):
+        
+    process_name = mc_parquet_files[0].split("/")[-3].split("_")[0]
+    
+    era = mc_parquet_files[0].split("/")[-3].split("_")[-1]
+    
+    mc_sum_genw_beforesel = 0
+    for i in range(len(mc_parquet_files)):
+        mc_sum_genw_beforesel += float(pq.read_table(mc_parquet_files[i]).schema.metadata[b'sum_genw_presel'])
+
+    sum_genw_beforesel = 0
+    for i in range(len(parquet_files)):
+        sum_genw_beforesel += float(pq.read_table(parquet_files[i]).schema.metadata[b'sum_genw_presel'])
+    
+    mc_df = pd.concat((pd.read_parquet(f, columns=columns_to_load) for f in mc_parquet_files), ignore_index=True)
+    
+    df = pd.concat((pd.read_parquet(f, columns=columns_to_load) for f in parquet_files), ignore_index=True)
+    
+    all_binned_df = []
+    
+    # Now merge the procs per category
+    for cat in cat_dict_:
+        try:
+            query_str = " and ".join(
+                f"{col} {op} {val}" for col, op, val in cat_dict_[cat]["cat_filter"]
+            )
+        except:
+            # Have a variable using absolute values.
+            query_str = "("
+            for k, set_of_conditions in enumerate(cat_dict_[cat]["cat_filter"]):
+                if k > 0:
+                    query_str += ") or ("
+                query_str += " and ".join(
+                    f"{col} {op} {val}" for col, op, val in set_of_conditions
+                )
+            query_str += ")"
+        # Merge the replicas for the current category
+        binned_mc_df = pd.concat([mc_df.query(query_str)], ignore_index=True)
+                
+        binned_mc_df["weight_norm"] = binned_mc_df["weight"] / mc_sum_genw_beforesel# (sum_genw_beforesel * sum_weight_central)
+        
+        # binned_mc_df["genWeight_norm"] = binned_mc_df["genWeight"] / mc_sum_genw_beforesel
+        ## Probability should be normalised to one
+        # binned_mc_df["prob"] = binned_mc_df["weight_norm"] / sum(binned_mc_df["weight_norm"])
+
+        ## Compute the expected number of events
+        ## This is scaled to the full Run3 lumi and the individual production XS (=ggH or VBF or VH or ttH or bbH); Taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageAt13TeV
+        binned_mc_exp = sum(binned_mc_df["weight_norm"]) * production_XS[process_name] * 0.2270/100 * 1000 * lumiMap[era] # 55.65
+    
+        binned_df = pd.concat([df.query(query_str)], ignore_index=True)
+        
+        negative_weights = binned_df[binned_df["weight"] < 0.0].to_numpy()
+        if len(negative_weights) > 0:
+            # Why the HELL are they there?
+            print(f"Warning: Negative weights found in the dataset: {len(negative_weights)}")
+        
+        binned_df = binned_df[binned_df["weight"] >= 0.0]
+        
+        binned_df = binned_df[(binned_df["lead_mvaID"] > photonMVA_cut[era]) & (binned_df["sublead_mvaID"] > photonMVA_cut[era])]
+
+        binned_df["weight_norm"] = binned_df["weight"] / sum_genw_beforesel
+        binned_df["prob"] = binned_df["weight_norm"] / sum(binned_df["weight_norm"])
+        
+        ## Extract from a Poisson distribution the number of events for each replica
+        binned_exp_replicas = poisson.rvs(mu=binned_mc_exp, size=(1))
+        
+        ## Indeces corresponding to the events to pick up in each replica
+        ## NB! replace MUST be True, otherwise the sampling is not independent anymore and it is no longer a Poisson process
+        binned_idx_replicas = [np.random.choice(np.array(binned_df.index), replace=True, size=(binned_exp_replicas[0]), p=binned_df["prob"])]
+
+        ## Extract the events for each replica
+        binned_replica = binned_df.loc[binned_idx_replicas[0]]
+        
+        
+        all_binned_df.append(binned_replica)
+
+    replica = pd.concat(all_binned_df, ignore_index=True)
+
+    return replica
+
 def get_replica(mc_parquet_files, parquet_files, columns_to_load):
     
     process_name = parquet_files[0].split("/")[-3].split("_")[0]
@@ -592,7 +672,16 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             "mass", "weight", "lead_mvaID", "sublead_mvaID",
             "sigma_m_over_m_corr_smeared_decorr"
         ]
-        
+
+        # Load the considered variable
+        cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", self.config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
+        if not os.path.exists(cat_dict_path):
+            print(f"Category dictionary {cat_dict_path} does not exist. Check path in law_replica.py. Exiting...")
+            exit(1)
+        else:
+            with open(cat_dict_path) as pf:
+                cat_dict = json.load(pf)
+
         if self.variable == "PTH":
             columns_to_load += ["pt"]
         elif (self.variable in jetVariables) and (self.variable != "NJ"):
@@ -619,17 +708,9 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
                 continue
             
             current_proc_replica = get_replica(mc_proc_parquet_files, powheg_proc_parquet_files, columns_to_load=columns_to_load)
+            # current_proc_replica = get_replica_bin_by_bin(mc_parquet_files=mc_proc_parquet_files, cat_dict_=cat_dict, parquet_files=powheg_proc_parquet_files, columns_to_load=columns_to_load)
 
             replica_separated_procs.append(current_proc_replica)
-
-        # Load the considered variable
-        cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", self.config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
-        if not os.path.exists(cat_dict_path):
-            print(f"Category dictionary {cat_dict_path} does not exist. Check path in law_replica.py. Exiting...")
-            exit(1)
-        else:
-            with open(cat_dict_path) as pf:
-                cat_dict = json.load(pf)
 
         output_bkg_rootfile = ROOT.TFile(f"./allReplica_{int(replica_index)}.{seed}.root", "RECREATE")
 
@@ -678,6 +759,7 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             
             # Merge both dataframes
             current_cat_replica = pd.concat([current_cat_background_replica, current_cat_signal_replica], ignore_index=True)
+            # current_cat_replica = pd.concat([current_cat_background_replica], ignore_index=True)
 
             splusb_replica.append(current_cat_replica)
             
@@ -978,7 +1060,7 @@ class GenerateBOnlyToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow
 
         # Create the CMS_hgg_mass variable
         CMS_hgg_mass = ROOT.RooRealVar("CMS_hgg_mass", "CMS_hgg_mass", 100.0, 100.0, 180.0)
-        CMS_hgg_mass.setBins(160) # 320
+        CMS_hgg_mass.setBins(320) # 320
         argset = ROOT.RooArgSet(CMS_hgg_mass, CMS_channel)
 
         output_bkg_rootfile.mkdir("toys")
@@ -1503,6 +1585,7 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
         else:
             # arguments += ["--saveSpecifiedIndex", ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])]
             arguments += ["--setParameters", ",".join(combineVariableDict(self.variable, self.year)['paramStr'])]
+            # arguments += ["--setParameters", ",".join(combineVariableDict(self.variable, self.year)['paramStrZero'])]
 
         # Execute the command and capture the output
         command = arguments
@@ -1709,7 +1792,7 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             "--algo", "singles",
             # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
             "--saveFitResult",
-            "--setParameters", f"""{pdfIdx}""",
+            # "--setParameters", f"""{pdfIdx}""",
             "--freezeParameters", "MH",
             # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
             # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
