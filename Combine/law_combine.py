@@ -1556,6 +1556,7 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         impactConfig = config["combine_impacts"]    
         
         tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=impactConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=impactConfig['batchPartition'], slurm_memory=impactConfig['batchMemory'], slurm_max_runtime=impactConfig['batchMaxRuntime'], htcondor_partition=impactConfig['batchPartition'], htcondor_memory=impactConfig['batchMemory'], htcondor_max_runtime=impactConfig['batchMaxRuntime'])
+        tasks["CreateAsimovFitFirstStep"] = CreateAsimovFitFirstStep(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)
         
         return tasks
 
@@ -1635,8 +1636,37 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         else:
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/impact'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'impact'))
+
+        first_output = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')
+        if self.variable == '':
+            pdf_idx_param = "r"
+        else:
+            pdf_idx_param = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'][0]
+
+        def check_pdf_idx(param):
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            pdfIdx = result.stdout.strip()
+            if result.returncode != 0:
+                print("Error executing the command:", result.stderr)
+                return None
+            if pdfIdx.startswith("Processing"):
+                pdfIdx = pdfIdx.split('X', 1)[-1]
+            pdfIdx = pdfIdx.rstrip(',')
+            print(pdfIdx)
+            return pdfIdx
+
+        pdfIdx = None
+        first_step_path = os.path.join(first_output, f"higgsCombinefirstStep_{pdf_idx_param}.MultiDimFit.mH125.38.root")
+        if os.path.exists(first_step_path):
+            pdfIdx = check_pdf_idx(pdf_idx_param)
+        else:
+            print(f"First-step file not found for PDF index extraction: {first_step_path}")
         
         if self.variable == '':
+            set_param_string = "r=1"
+            if pdfIdx:
+                set_param_string = f"{set_param_string},{pdfIdx}"
             arguments = [
                 "combineTool.py",
                 "-M", "Impacts",
@@ -1651,7 +1681,7 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "--setParameters", "r=1"
+                "--setParameters", f"{set_param_string}"
             ]
             command = arguments
             # print(command)
@@ -1662,6 +1692,9 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
         else:
+            set_param_string = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])
+            if pdfIdx:
+                set_param_string = f"{set_param_string},{pdfIdx}"
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
@@ -1677,7 +1710,7 @@ class AsimovImpactFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
+                "--setParameters", f"{set_param_string}"
             ]
             command = arguments
             # print(command)
@@ -1884,7 +1917,36 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/impact'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'impact'))
 
+        first_output = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')
         if self.variable == '':
+            pdf_idx_param = "r"
+        else:
+            pdf_idx_param = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'][0]
+
+        def check_pdf_idx(param):
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            pdfIdx = result.stdout.strip()
+            if result.returncode != 0:
+                print("Error executing the command:", result.stderr)
+                return None
+            if pdfIdx.startswith("Processing"):
+                pdfIdx = pdfIdx.split('X', 1)[-1]
+            pdfIdx = pdfIdx.rstrip(',')
+            print(pdfIdx)
+            return pdfIdx
+
+        pdfIdx = None
+        first_step_path = os.path.join(first_output, f"higgsCombinefirstStep_{pdf_idx_param}.MultiDimFit.mH125.38.root")
+        if os.path.exists(first_step_path):
+            pdfIdx = check_pdf_idx(pdf_idx_param)
+        else:
+            print(f"First-step file not found for PDF index extraction: {first_step_path}")
+
+        if self.variable == '':
+            set_param_string = "r=1"
+            if pdfIdx:
+                set_param_string = f"{set_param_string},{pdfIdx}"
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
@@ -1904,7 +1966,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "--setParameters", "r=1"
+                "--setParameters", f"{set_param_string}"
             ]
             command = arguments
             # print(command)
@@ -1915,6 +1977,9 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
         else:
+            set_param_string = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])
+            if pdfIdx:
+                set_param_string = f"{set_param_string},{pdfIdx}"
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
@@ -1934,7 +1999,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "--setParameters", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])}"""
+                "--setParameters", f"{set_param_string}"
             ]
             command = arguments
             # print(command)
@@ -2104,6 +2169,38 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'impact'))
             temp_output_dir = output_dir
 
+        first_output = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')
+        if self.variable == '':
+            pdf_idx_param = "r"
+            base_param_string = "r=1"
+        else:
+            pdf_idx_param = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'][0]
+            base_param_string = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])
+
+        def check_pdf_idx(param):
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{first_output}/higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root")\''
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            pdfIdx = result.stdout.strip()
+            if result.returncode != 0:
+                print("Error executing the command:", result.stderr)
+                return None
+            if pdfIdx.startswith("Processing"):
+                pdfIdx = pdfIdx.split('X', 1)[-1]
+            pdfIdx = pdfIdx.rstrip(',')
+            print(pdfIdx)
+            return pdfIdx
+
+        pdfIdx = None
+        first_step_path = os.path.join(first_output, f"higgsCombinefirstStep_{pdf_idx_param}.MultiDimFit.mH125.38.root")
+        if os.path.exists(first_step_path):
+            pdfIdx = check_pdf_idx(pdf_idx_param)
+        else:
+            print(f"First-step file not found for PDF index extraction: {first_step_path}")
+
+        set_param_string = None
+        if pdfIdx:
+            set_param_string = f"{base_param_string},{pdfIdx}"
+
         if self.variable == '':
             arguments = [
                 "combineTool.py",
@@ -2112,6 +2209,8 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 "-m", "125.38",
                 "-o", "impacts/impacts.json"
             ]
+            if set_param_string is not None:
+                arguments.extend(["--setParameters", set_param_string])
             command = arguments
             # print(command)
             try:
@@ -2163,6 +2262,8 @@ class AsimovImpactThirdStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             if (config["combine_impacts"]["exclude"] != ""):
                 arguments.append("--exclude")
                 arguments.append(config["combine_impacts"]["exclude"])
+            if set_param_string is not None:
+                arguments.extend(["--setParameters", set_param_string])
             command = arguments
             # print(command)
             try:
