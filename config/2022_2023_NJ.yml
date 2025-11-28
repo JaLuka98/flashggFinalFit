@@ -1,18 +1,18 @@
 # Config file: options for signal fitting
 
-outputFolder: '/net/data_cms3a-1/wrabetz/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2023_NJ/'
+outputFolder: '/net/data_cms3a-1/wrabetz/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_2023_NJ/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04_fixedFNUF/Njets2p5/2023/data/allData_2023.root'
-  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04_fixedFNUF/Njets2p5/2023/signal/'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04_fixedFNUF/Njets2p5/2223/data/allData.root'
+  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04_fixedFNUF/Njets2p5/2223/signal/'
 
 backgroundScriptCfg:
   # Setup
   cats: 'auto' # auto: automatically inferred from input ws
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
   ext: 'Run3FidXSAnalysis_NJ' # extension to add to output directory
-  # year: '2023' # Use combined when merging all years in category (for plots)
+  # year: '2223' # Use combined when merging all years in category (for plots)
   execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
@@ -75,14 +75,70 @@ trees2wsCfg:
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
-signalScriptCfg_2023_preBPix:
+signalScriptCfg_2223_preEE:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_NJ_2023preBPix' # output directory extension
+  ext: 'Run3FidXSAnalysis_NJ_2223preEE' # output directory extension
   analysisRM: 'Run3FidXSAnalysisNJ' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
-  year: '2023preBPix' # Use 'combined' if merging all years: not recommended
+  year: '2223preEE' # Use 'combined' if merging all years: not recommended
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+  replacementThreshold: '50'
+  # Photon shape systematics  
+  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
+  scalesCorr: 'FNUF,Material' # correlated across years
+  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  smears: 'Smearing' # separate nuisance per year
+
+  doPlots: True
+
+  beamspotWidthData: '3.2'
+  beamspotWidthMC: '3.732'
+
+
+  # Job submission options
+  execution: 'local'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use 
+
+signalScriptCfg_2223_postEE:
+  # Setup
+  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  ext: 'Run3FidXSAnalysis_NJ_2223postEE' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisNJ' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
+  year: '2223postEE' # Use 'combined' if merging all years: not recommended
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+  replacementThreshold: '50'
+  # Photon shape systematics  
+  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
+  scalesCorr: 'FNUF,Material' # correlated across years
+  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  smears: 'Smearing' # separate nuisance per year
+
+  doPlots: True
+
+  
+  beamspotWidthData: '3.5'
+  beamspotWidthMC: '3.732'
+
+  # Job submission options
+  execution: 'local'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+signalScriptCfg_2223_preBPix:
+  # Setup
+  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  ext: 'Run3FidXSAnalysis_NJ_2223preBPix' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisNJ' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
+  year: '2223preBPix' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
@@ -103,14 +159,14 @@ signalScriptCfg_2023_preBPix:
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use 
 
-signalScriptCfg_2023_postBPix:
+signalScriptCfg_2223_postBPix:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_NJ_2023postBPix' # output directory extension
+  ext: 'Run3FidXSAnalysis_NJ_2223postBPix' # output directory extension
   analysisRM: 'Run3FidXSAnalysisNJ' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
-  year: '2023postBPix' # Use 'combined' if merging all years: not recommended
+  year: '2223postBPix' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
@@ -131,7 +187,7 @@ signalScriptCfg_2023_postBPix:
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
-packaged_2023:
+packaged_2022_2023:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
@@ -145,7 +201,7 @@ datacard_yields:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   procs: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'Run3FidXSAnalysis' # Extension for saving
-  # inputWSDirMap: '2023preBPix,2023postBPix'
+  # inputWSDirMap: '2223preEE,2223postEE'
   sigModelWSDir: './Models_NJ/signal' # Input signal model WS directory
   bkgModelWSDir: './Models_NJ/background' # Input background model WS directory
   bkgModelExt: 'multipdf' # Extension used when saving background model
@@ -178,7 +234,7 @@ datacard:
 
   # For output:
   saveDataFrame: False # Save final dataframe as pkl file
-  output: 'Datacard_NJ_2023' # Datacard name
+  output: 'Datacard_NJ_2022_2023' # Datacard name
 
 datacard_clean:
   factor: 10000 # Factor beyond which uncertainty is considered incorrect and is removed

@@ -4,10 +4,8 @@ outputFolder: '/net/data_cms3a-1/wrabetz/CMSSW_14_1_0_pre4/src/flashggFinalFit/o
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_08_04_fixedFNUF/data/allData_2024.root'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_08_04_fixedFNUF/data/allData_2024_allRuns.root'
   Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_08_04_fixedFNUF/signal/2024/'
-
-  catDict_timestamp: '2025_08_04'
 
 backgroundScriptCfg:
   # Setup
@@ -74,14 +72,14 @@ trees2wsCfg:
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
-signalScriptCfg_2024_all:
+signalScriptCfg_2024:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'Run3FidXSAnalysis_2024' # output directory extension
   analysisRM: 'Run3FidXSAnalysisInclusive' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
-  year: '2024all' # Use 'combined' if merging all years: not recommended
+  year: '2024' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
