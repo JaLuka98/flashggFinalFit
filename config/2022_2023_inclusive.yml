@@ -4,6 +4,7 @@ outputFolder: '/net/data_cms3a-1/spaeh/private/PhD/analyses/partial_Run3_differe
 
 inputFiles:
   # Trees2WS
+  # These do not matter, because the combined workflow only starts from pre-prepared outputs of the single years
   Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_08_04_fixedFNUF/data/allData.root'
   Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_08_04_fixedFNUF/signal/2223/'
 
