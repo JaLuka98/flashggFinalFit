@@ -925,7 +925,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
                 "--snapshotName", "MultiDimFit",
-                #"--freezeParameters", "MH",
+                "--freezeParameters", "MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -949,6 +949,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             if convert_boolean_string(self.set_pdfidx_inclusives):
                 arguments.append("--setParameters")
                 arguments.append(f"""{pdfIdx}""")
+            else:
+                arguments.append("--setParameters")
+                arguments.append("r=1")
             command = arguments
             print(command)
             try:
@@ -1167,6 +1170,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "combine",
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
+                "--snapshotName", "MultiDimFit",
                 "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
@@ -1190,7 +1194,10 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
 
             if convert_boolean_string(self.set_pdfidx_inclusives):
                 arguments.append("--setParameters")
-                arguments.append(pdfIdx)
+                arguments.append(f"""{pdfIdx}""")
+            else:
+                arguments.append("--setParameters")
+                arguments.append("r=1")
             command = arguments
 
             print(command)
