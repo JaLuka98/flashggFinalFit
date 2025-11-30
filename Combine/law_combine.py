@@ -960,6 +960,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             
         else:
             saveSpecifiedIndex = ",".join(combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces'])
+            paramStr = ",".join(combineVariableDict[f'{self.year}'][self.variable]['paramStr'])
 
             arguments = [
                 "combineTool.py",
@@ -985,6 +986,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
                 "--saveSpecifiedIndex", saveSpecifiedIndex,
+                "--setParameters", paramStr,
             ]
             command = arguments
             print(command)
@@ -1201,12 +1203,13 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             
         else:
             saveSpecifiedIndex = ",".join(combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces'])
+            paramStr = ",".join(combineVariableDict[f'{self.year}'][self.variable]['paramStr'])
 
             arguments = [
                 "combineTool.py",
                 "-M", "MultiDimFit",
                 "-d", firstStepPath,
-                #"--freezeParameters", "allConstrainedNuisances,MH",
+                "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -1226,6 +1229,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
                 "--saveSpecifiedIndex", saveSpecifiedIndex,
+                "--setParameters", paramStr,
             ]
             command = arguments
             print(command)
