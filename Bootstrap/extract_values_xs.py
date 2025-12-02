@@ -62,7 +62,7 @@ def compute_rho_ij(_ci, _cj, _bi, _bj, _m2ij):
     else:
         return (1/(4*_ci*_cj)) * (np.sqrt(abs((_bi*_bj)**2 + 8*_ci*_cj*(_m2ij))) - _bi*_bj)
 
-def chi_vector(mu_exp, mu_obs, _a, _b, _c, _current_poi):
+def chi_vector(mu_exp, mu_obs, _a, _b, _c):
     # mu_obs is the observed value of mu and should not be translated, or is it?
     if _c == 0:
         chi_exp = (mu_exp - _a) / _b
@@ -585,7 +585,7 @@ def pois_untrimmed(toyDir_, poi_list_):
             print(f"Processing fit_{i}")
 
         try:
-            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.root")
+            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.38.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             for current_poi in poi_list_:
@@ -628,7 +628,7 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
             print(f"Processing fit_{i}")
 
         try:
-            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombinefirstStep.MultiDimFit.mH125.38.root")
+            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.38.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             for current_poi in poi_list_:
@@ -715,7 +715,7 @@ def create_json_trimmed(variable_, toyDir_, pois_untrimmed_, poi_list_, subfolde
         mean = np.mean(r)
         s = np.std(r)
         
-        bins = 30
+        bins = 80
         
         counts, bin_edges = np.histogram(r, bins=bins, density=False)
         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
@@ -770,13 +770,16 @@ def create_json_trimmed(variable_, toyDir_, pois_untrimmed_, poi_list_, subfolde
     return pois
 
 def plot_correlation(pois_, poi_list_, variable_):
-
+    
+    df_pois = pd.DataFrame({key: np.array(pois_[key]) for key in poi_list_})
+    df_pois = df_pois[(df_pois != -999).all(axis=1)]
+    
     unique_pairings = list(combinations(poi_list_, 2))
 
     for current_tuple in unique_pairings:
         r_1, r_2 = current_tuple
 
-        plot_individual_correlation(pois_[r_1], pois_[r_2], r_1, r_2, np.corrcoef(pois_[r_1], pois_[r_2])[0,1], folder=f"Plots/{variable_}")
+        plot_individual_correlation(df_pois[r_1], df_pois[r_2], r_1, r_2, np.corrcoef(df_pois[r_1], df_pois[r_2])[0,1], folder=f"Plots/{variable_}")
 
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_07_17_powheg/finalfits'
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
@@ -799,7 +802,7 @@ for variable in variables:
         poi_list = ["r_YH_0p0_0p15", "r_YH_0p15_0p3", "r_YH_0p3_0p6", "r_YH_0p6_0p9", "r_YH_0p9_2p5"]
 
     # The paths
-    main_dir = os.path.join(sample_dir, variable+"_allReplica", "Combine", f"runFits_{variable}")
+    main_dir = os.path.join(sample_dir, variable+"_allReplica_powheg_powheg_noSignal_hundredfold", "Combine", f"runFits_{variable}")
     # main_dir = os.path.join(sample_dir, variable+"", "Combine", f"runFits_{variable}")
     path_to_hesse = os.path.join(main_dir, "hesse", 'robustHessefirstStep.root')
     toyDir = os.path.join(main_dir, "toyFit")
