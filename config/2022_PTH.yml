@@ -1,12 +1,17 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/finalfits/PTH'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_11_14_bootstrapping/2022/finalfits/PTH'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/variables_old/PTH/data_postprocessing/root/Data/allData_2022.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/variables_old/PTH/signal_postprocessing/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_11_14_bootstrapping/2022/variables/PTH/root/Data/allData_2022.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables/PTH/root'
   catDict_timestamp: '2025_08_04'
+
+  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/ggH_preEE_MG5_125'
+  powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/signal'
+  bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background_2022preEE'
+  data_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/data_onlypreEE'
 
 backgroundScriptCfg:
   # Setup
@@ -43,6 +48,7 @@ trees2wsCfg:
   dataVars:
     - "CMS_hgg_mass"
     - "weight" # Vars to be added for data
+    - "weight_bootstrap" # Vars to be added for bootstrapping
     
   stxsVar: ''
   diffVar: 'diffVariable_GenPTH'
@@ -189,6 +195,12 @@ datacard_clean:
   removeNonDiagonal: False # Remove any nuisances which are affect processes unimportant in that category
   symmetrizeNuisance: 'CMS_hgg_SigmaEOverEShift,CMS_hgg_scale_0_shape,CMS_hgg_scale_1_shape,CMS_hgg_scale_3_shape' # Symmetrizes asymmetric nuisance. Enter in the format nuisance1,nuisance2,nuisance3,etc.
   verbose: False # Spit out all the cleaning being done
+
+allReplicaGeneration:
+  execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_fit:
   asimov_numPoints: 100 # Number of points the Asimov generator should generate for the NLL scan
