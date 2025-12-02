@@ -106,18 +106,23 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             self.cats.split(",")[categoryIndex]
             for categoryIndex in range(nCats)
         ]
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            branch_map = {
-                i * int(self.number_of_bootstraps) + j: (cat, bootstrap_index)
-                for i, cat in enumerate(cat_list)
-                for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
-            }
+        # if convert_boolean_string(self.bootstrap_flag) == True:
+        #     branch_map = {
+        #         i * int(self.number_of_bootstraps) + j: (cat, bootstrap_index)
+        #         for i, cat in enumerate(cat_list)
+        #         for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+        #     }
         # elif convert_boolean_string(self.toy_flag) == True:
         #     branch_map = {
         #         i * int(self.number_of_toys) + j: (cat, toy_index)
         #         for i, cat in enumerate(cat_list)
         #         for j, toy_index in enumerate(range(int(self.number_of_toys)))
         #     }
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            branch_map = {
+                i: bootstrap_index
+                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+            }
         elif convert_boolean_string(self.toy_flag) == True:
             branch_map = {
                 i: toy_index
@@ -129,10 +134,10 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
 
     def output(self):
         
-        if (convert_boolean_string(self.bootstrap_flag) == True):# or (convert_boolean_string(self.toy_flag) == True):
-            cat, index = self.branch_data
-            output = [law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}_{index}/{cat}.pkl'))]
-        elif (convert_boolean_string(self.toy_flag) == True):
+        # if (convert_boolean_string(self.bootstrap_flag) == True):# or (convert_boolean_string(self.toy_flag) == True):
+        #     cat, index = self.branch_data
+        #     output = [law.LocalFileTarget(os.path.join(self.output_dir, f'Datacards/yields_{self.ext}_{index}/{cat}.pkl'))]
+        if (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
             index = self.branch_data
             output = []
 
@@ -151,10 +156,9 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     def run(self):
 
         if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            if convert_boolean_string(self.bootstrap_flag) == True:
-                cat, index = self.branch_data
-            elif convert_boolean_string(self.toy_flag) == True:
-                index = self.branch_data
+            # if convert_boolean_string(self.bootstrap_flag) == True:
+            #     cat, index = self.branch_data
+            index = self.branch_data
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
                 execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}_{index}")}'], shell=True)
@@ -185,7 +189,7 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Datacard/makeYields.py")
         
-        if convert_boolean_string(self.toy_flag) == True:
+        if (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
             nCats = len(self.cats.split(","))
             cat_list = [
                 self.cats.split(",")[categoryIndex]

@@ -122,18 +122,23 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             (config['cats'].split(",")[categoryIndex], str(int(config['catOffset'])+categoryIndex))
             for categoryIndex in range(nCats)
         ]
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            branch_map = {
-                i * int(self.number_of_bootstraps) + j: (cat_catOffset, bootstrap_index)
-                for i, cat_catOffset in enumerate(cat_list)
-                for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
-            }
+        # if convert_boolean_string(self.bootstrap_flag) == True:
+        #     branch_map = {
+        #         i * int(self.number_of_bootstraps) + j: (cat_catOffset, bootstrap_index)
+        #         for i, cat_catOffset in enumerate(cat_list)
+        #         for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+        #     }
         # if convert_boolean_string(self.toy_flag) == True:
         #     branch_map = {
         #         i * int(self.number_of_toys) + j: (cat_catOffset, toy_index)
         #         for i, cat_catOffset in enumerate(cat_list)
         #         for j, toy_index in enumerate(range(int(self.number_of_toys)))
         #     }
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            branch_map = {
+                i: bootstrap_index
+                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+            }
         elif convert_boolean_string(self.toy_flag) == True:
             branch_map = {
                 i: toy_index
@@ -150,8 +155,9 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
         config = self.bkgConfig
         
         if convert_boolean_string(self.bootstrap_flag) == True:
-            cat_cat_offset, bootstrap_index = self.branch_data
-            cat, cat_offset = cat_cat_offset
+            # cat_cat_offset, bootstrap_index = self.branch_data
+            # cat, cat_offset = cat_cat_offset
+            bootstrap_index = self.branch_data
             outdir_ext = os.path.join(self.resolved_output_dir, 'Background', f'outdir_{config["ext"]}_{bootstrap_index}')
         elif convert_boolean_string(self.toy_flag) == True:
             # cat_cat_offset, toy_index = self.branch_data
@@ -199,7 +205,21 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
                 output_paths += bkg_plots
 
         else: # Skip the plots for the bootstrap case
-             output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root')]
+                # Process everything for each toy using one node to avoid overloading the SLURM schedd
+                bkg_plots = []
+                output_paths = []
+                config = self.bkgConfig
+
+                nCats = len(config['cats'].split(","))
+                    
+                cat_list = [
+                    (config['cats'].split(",")[categoryIndex], str(int(config['catOffset'])+categoryIndex))
+                    for categoryIndex in range(nCats)
+                ]
+                
+                for cat_cat_offset in cat_list:
+                    cat, cat_offset = cat_cat_offset
+                    output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root')]
    
         for _, current_output_path in enumerate(output_paths):
             outputFileTargets.append(law.LocalFileTarget(current_output_path))
@@ -234,8 +254,9 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
                 all_data_input_path = os.path.join(self.resolved_output_dir, "input_output_data", f"input_output_data_{self.variable}_{self.year}")
 
         if convert_boolean_string(self.bootstrap_flag) == True:
-            cat_cat_offset, bootstrap_index = self.branch_data
-            cat, cat_offset = cat_cat_offset
+            # cat_cat_offset, bootstrap_index = self.branch_data
+            # cat, cat_offset = cat_cat_offset
+            bootstrap_index = self.branch_data
             # In this case self.input_path is self.output_path/input_output_data_{self.year}
             # Have to add the _{bootstrap_index}/ws/allData.root to the path manually, since we need the bootstrap index
             input_path = os.path.join(all_data_input_path+f"_{bootstrap_index}", "ws/allData.root")
@@ -271,7 +292,7 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Background/runBackgroundScripts.sh")
         
-        if convert_boolean_string(self.toy_flag) == False:
+        if (convert_boolean_string(self.toy_flag) == False) & (convert_boolean_string(self.bootstrap_flag) == False):
             arguments = [
                 "-i", input_path,
                 "-p", "none",
@@ -286,12 +307,12 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
                 "--isData",
                 "--fTest"
             ]
-            if convert_boolean_string(self.bootstrap_flag) == True:
-                arguments += ["--ext", f'{config["ext"]}_{bootstrap_index}']
-            elif convert_boolean_string(self.toy_flag) == True:
-                arguments += ["--ext", f'{config["ext"]}_{toy_index}']
-            else:
-                arguments += ["--ext", f'{config["ext"]}']
+            # if convert_boolean_string(self.bootstrap_flag) == True:
+            #     arguments += ["--ext", f'{config["ext"]}_{bootstrap_index}']
+            # elif convert_boolean_string(self.toy_flag) == True:
+            #     arguments += ["--ext", f'{config["ext"]}_{toy_index}']
+            # else:
+            arguments += ["--ext", f'{config["ext"]}']
             command = [script_path] + arguments
             # print("Output:", command)
             

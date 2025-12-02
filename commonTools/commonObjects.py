@@ -23,8 +23,8 @@ lumiMap = {
     '2018':59.83, 
     'combined':137.65, 
     'merged':137.65,
-    '2022preEE':9.5, #8
-    '2022postEE':9.5, # 26.7
+    '2022preEE':8, #8
+    '2022postEE': 26.7, # 26.7
     '2022': 34.7,
     '2023preBPix': 9.5, # 17.8
     '2023postBPix': 9.5,
@@ -98,8 +98,8 @@ outputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':'','scalesGlobal':'
 bkgWSName__ = "multipdf"
 
 # Define an array of input masses
-# input_masses = [120, 125, 130]
-input_masses = [125]
+input_masses = [120, 125, 130]
+# input_masses = [125]
 
 # Define an array of production modes and corresponding process strings
 # JLS 23th Jan 2025, also adding 2G naming conventions

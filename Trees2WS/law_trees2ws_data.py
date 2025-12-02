@@ -259,7 +259,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             return _vars.keys()
 
         if convert_boolean_string(self.bootstrap_flag) == True:
-            # Rename the weight columns for bootstrapping        
+            # Rename the weight columns for bootstrapping
             data_vars = [f"weight_bootstrap_{bootstrap_index}" if "weight_bootstrap" in item else item for item in data_vars]
             data_vars.remove("weight")
 
