@@ -50,22 +50,25 @@ class FinalFits(law.WrapperTask):
 
     def requires(self):
         years = [y.strip() for y in self.years.split(",") if y.strip()]
+        multi_year = len(years) > 1  # when combining years, only force per-year datacards
+
         return [
             FinalFitsYear(
                 variable=self.variable,
                 output_dir=self.output_dir,
                 year=y,
-                unblinded_fits=self.unblinded_fits,
-                unblinded_stage_one=self.unblinded_stage_one,
-                unblinded_stage_two=self.unblinded_stage_two,
-                unblinded_stage_three=self.unblinded_stage_three,
-                unblinded_covcorr=self.unblinded_covcorr,
-                pvalue=self.pvalue,
-                asimov_fits=self.asimov_fits,
-                asimov_impacts=self.asimov_impacts,
-                asimov_covcorr=self.asimov_covcorr,
-                unblinded_diff_spectra=self.unblinded_diff_spectra,
-                asimov_diff_spectra=self.asimov_diff_spectra,
+                datacard_only=multi_year,
+                unblinded_fits=self.unblinded_fits if not multi_year else False,
+                unblinded_stage_one=self.unblinded_stage_one if not multi_year else False,
+                unblinded_stage_two=self.unblinded_stage_two if not multi_year else False,
+                unblinded_stage_three=self.unblinded_stage_three if not multi_year else False,
+                unblinded_covcorr=self.unblinded_covcorr if not multi_year else False,
+                pvalue=self.pvalue if not multi_year else False,
+                asimov_fits=self.asimov_fits if not multi_year else False,
+                asimov_impacts=self.asimov_impacts if not multi_year else False,
+                asimov_covcorr=self.asimov_covcorr if not multi_year else False,
+                unblinded_diff_spectra=self.unblinded_diff_spectra if not multi_year else False,
+                asimov_diff_spectra=self.asimov_diff_spectra if not multi_year else False,
                 batch_system=self.batch_system,
                 batch_flavor=self.batch_flavor,
             )
@@ -244,10 +247,27 @@ class FinalFits(law.WrapperTask):
             config_path = config_dir / f"{combined_label}_{self.variable}.yml"
 
         if config_path.exists():
+            combined_datacard_only = not any(
+                convert_boolean_string(flag)
+                for flag in [
+                    self.unblinded_fits,
+                    self.unblinded_stage_one,
+                    self.unblinded_stage_two,
+                    self.unblinded_stage_three,
+                    self.unblinded_covcorr,
+                    self.pvalue,
+                    self.asimov_fits,
+                    self.asimov_impacts,
+                    self.asimov_covcorr,
+                    self.unblinded_diff_spectra,
+                    self.asimov_diff_spectra,
+                ]
+            )
             combined_task = FinalFitsYear(
                 variable=self.variable,
                 output_dir=str(base_dir / f"output_{combined_label}_inclusive" if self.variable == '' else base_dir / f"output_{combined_label}_{self.variable}"),
                 year=combined_label,
+                datacard_only=combined_datacard_only,
                 unblinded_fits=self.unblinded_fits,
                 unblinded_stage_one=self.unblinded_stage_one,
                 unblinded_stage_two=self.unblinded_stage_two,
@@ -346,6 +366,7 @@ class FinalFitsYear(law.Task):
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    datacard_only = law.Parameter(default=False, description="If True, stop after building datacards/text2workspace")
     
     # Unblinded fits and impacts
     unblinded_fits = law.Parameter(default=False, description="Produce unblinded fits")
@@ -388,6 +409,24 @@ class FinalFitsYear(law.Task):
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
+
+        if convert_boolean_string(self.datacard_only):
+            fitConfig = config["combine_fit"]
+            tasks["RunT2WS"] = RunText2Workspace(
+                output_dir=output_dir,
+                variable=self.variable,
+                year=self.year,
+                version=self.variable if self.variable != "" else "inclusive",
+                batch_flavor=self.batch_flavor,
+                workflow=fitConfig["execution"],
+                slurm_partition=fitConfig['batchPartition'],
+                slurm_memory=fitConfig['batchMemory'],
+                slurm_max_runtime=fitConfig['batchMaxRuntime'],
+                htcondor_partition=fitConfig['batchPartition'],
+                htcondor_memory=fitConfig['batchMemory'],
+                htcondor_max_runtime=fitConfig['batchMaxRuntime'],
+            )
+            return tasks
 
         if convert_boolean_string(self.unblinded_fits):
             tasks["CreateUnblindedFit"] = CreateUnblindedFit(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", workflow=self.batch_system)
@@ -450,6 +489,17 @@ class FinalFitsYear(law.Task):
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
+
+        if convert_boolean_string(self.datacard_only):
+            if self.variable == '':
+                return [
+                    law.LocalFileTarget(os.path.join(output_dir, "Combine", f"Datacard_{self.year}.txt")),
+                    law.LocalFileTarget(os.path.join(output_dir, "Combine", f"Datacard_{self.year}.root")),
+                ]
+            return [
+                law.LocalFileTarget(os.path.join(output_dir, "Combine", f"Datacard_{self.variable}_{self.year}.txt")),
+                law.LocalFileTarget(os.path.join(output_dir, "Combine", f"Datacard_{self.variable}_{self.year}.root")),
+            ]
             
         datacard_config = config["datacard"]
         background_config = config["backgroundScriptCfg"] 
