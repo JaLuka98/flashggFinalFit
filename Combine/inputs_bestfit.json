@@ -21,7 +21,7 @@
     },
 
     "PTH":{
-        "pois":"r_PTH_0p0_15p0,r_PTH_15p0_30p0,r_PTH_30p0_45p0,r_PTH_45p0_80p0,r_PTH_80p0_120p0,r_PTH_120p0_200p0,r_PTH_200p0_350p0,r_PTH_350p0_10000p0",
+        "pois":"r_PTH_0p0_5p0,r_PTH_5p0_10p0,r_PTH_10p0_15p0,r_PTH_15p0_20p0,r_PTH_20p0_25p0,r_PTH_25p0_30p0,r_PTH_30p0_35p0,r_PTH_35p0_45p0,r_PTH_45p0_60p0,r_PTH_60p0_80p0,r_PTH_80p0_100p0,r_PTH_100p0_120p0,r_PTH_120p0_140p0,r_PTH_140p0_170p0,r_PTH_170p0_200p0,r_PTH_200p0_250p0,r_PTH_250p0_350p0,r_PTH_350p0_450p0,r_PTH_450p0_10000p0",
         "fits":"bestfit:syst:all",
         "points":"1",
         "fit_opts":"-m 125.38 --freezeParameters MH --saveInactivePOI 1 --saveWorkspace --saveSpecifiedNuis all"

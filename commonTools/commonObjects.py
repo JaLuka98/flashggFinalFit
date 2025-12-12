@@ -164,18 +164,55 @@ jetVariables = [
     "AbsYHJ0"
 ]
 
+PTH_BINS = [
+    "0p0_5p0",
+    "5p0_10p0",
+    "10p0_15p0",
+    "15p0_20p0",
+    "20p0_25p0",
+    "25p0_30p0",
+    "30p0_35p0",
+    "35p0_45p0",
+    "45p0_60p0",
+    "60p0_80p0",
+    "80p0_100p0",
+    "100p0_120p0",
+    "120p0_140p0",
+    "140p0_170p0",
+    "170p0_200p0",
+    "200p0_250p0",
+    "250p0_350p0",
+    "350p0_450p0",
+    "450p0_10000p0",
+]
+
+
 differentialProcTable_ = {
+    # HiggsDNA encodes the out-of-acceptance bin with id 0 even though the
+    # fiducial bins start at _PTH_START_ID. Map that explicit value to the
+    # "_out" label so downstream code can request the proper targets.
     "PTH": [
-        (10, "PTH_0p0_15p0_in"),
-        (11, "PTH_15p0_30p0_in"),
-        (12, "PTH_30p0_45p0_in"),
-        (13, "PTH_45p0_80p0_in"),
-        (14, "PTH_80p0_120p0_in"),
-        (15, "PTH_120p0_200p0_in"),
-        (16, "PTH_200p0_350p0_in"),
-        (17, "PTH_350p0_10000p0_in"),
-        (18, "PTH_0p0_10000p0_out")
-    ],
+        (10, "PTH_0p0_5p0_in"),
+        (11, "PTH_5p0_10p0_in"),
+        (12, "PTH_10p0_15p0_in"),
+        (13, "PTH_15p0_20p0_in"),
+        (14, "PTH_20p0_25p0_in"),
+        (15, "PTH_25p0_30p0_in"),
+        (16, "PTH_30p0_35p0_in"),
+        (17, "PTH_35p0_45p0_in"),
+        (18, "PTH_45p0_60p0_in"),
+        (19, "PTH_60p0_80p0_in"),
+        (20, "PTH_80p0_100p0_in"),
+        (21, "PTH_100p0_120p0_in"),
+        (22, "PTH_120p0_140p0_in"),
+        (23, "PTH_140p0_170p0_in"),
+        (24, "PTH_170p0_200p0_in"),
+        (25, "PTH_200p0_250p0_in"),
+        (26, "PTH_250p0_350p0_in"),
+        (27, "PTH_350p0_450p0_in"),
+        (28, "PTH_450p0_10000p0_in"),
+        (29, "PTH_0p0_10000p0_out")
+    ], 
     "rapidity": [
         (20, "YH_0p0_0p15_in"),
         (21, "YH_0p15_0p3_in"),
@@ -230,38 +267,38 @@ BMW = ['cat0', 'cat1', 'cat2']
 
 combineVariableDict = {
     "2022": {
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2022", BMW=BMW),
+        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2022", BMW=BMW),
         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2022", BMW=BMW),
         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2022", BMW=BMW),
         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022", BMW=BMW),
         #"PTHvsDPhiJ0J1": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022", BMW=BMW)
     },
     "2023":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2023", BMW=BMW),
+        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2023", BMW=BMW),
         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2023", BMW=BMW),
         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2023", BMW=BMW),
         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2023", BMW=BMW)
     },
     "2223":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2223", BMW=BMW),
+        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2223", BMW=BMW),
         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2223", BMW=BMW),
         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2223", BMW=BMW),
         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2223", BMW=BMW)
     },
     "2024":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2024", BMW=BMW),
+        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2024", BMW=BMW),
         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2024", BMW=BMW),
         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2024", BMW=BMW),
         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2024", BMW=BMW)
     },
     "2022_2023":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2022_2023", BMW=BMW),
+        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2022_2023", BMW=BMW),
         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2022_2023", BMW=BMW),
         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2022_2023", BMW=BMW),
         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022_2023", BMW=BMW)
     },
     "2022_2023_2024":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=["0p0_15p0","15p0_30p0","30p0_45p0","45p0_80p0","80p0_120p0","120p0_200p0","200p0_350p0","350p0_10000p0"], year="2022_2023_2024", BMW=BMW),
+        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2022_2023_2024", BMW=BMW),
         "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"], year="2022_2023_2024", BMW=BMW),
         "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"], year="2022_2023_2024", BMW=BMW),
         "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022_2023_2024", BMW=BMW)

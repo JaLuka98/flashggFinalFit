@@ -2,15 +2,32 @@
 from collections import OrderedDict as od
 
 diffDict = od()
-diffDict[10] = "PTH_0p0_15p0_in"
-diffDict[11] = "PTH_15p0_30p0_in"
-diffDict[12] = "PTH_30p0_45p0_in"
-diffDict[13] = "PTH_45p0_80p0_in"
-diffDict[14] = "PTH_80p0_120p0_in"
-diffDict[15] = "PTH_120p0_200p0_in"
-diffDict[16] = "PTH_200p0_350p0_in"
-diffDict[17] = "PTH_350p0_10000p0_in"
-diffDict[18] = "PTH_0p0_10000p0_out"
+
+_PTH_BINS = [
+    "0p0_5p0",
+    "5p0_10p0",
+    "10p0_15p0",
+    "15p0_20p0",
+    "20p0_25p0",
+    "25p0_30p0",
+    "30p0_35p0",
+    "35p0_45p0",
+    "45p0_60p0",
+    "60p0_80p0",
+    "80p0_100p0",
+    "100p0_120p0",
+    "120p0_140p0",
+    "140p0_170p0",
+    "170p0_200p0",
+    "200p0_250p0",
+    "250p0_350p0",
+    "350p0_450p0",
+    "450p0_10000p0",
+]
+_PTH_START_ID = 10
+for idx, label in enumerate(_PTH_BINS):
+    diffDict[_PTH_START_ID + idx] = f"PTH_{label}_in"
+diffDict[0] = "PTH_0p0_10000p0_out"
 
 diffDict[20] = "YH_0p0_0p15_in"
 diffDict[21] = "YH_0p15_0p3_in"

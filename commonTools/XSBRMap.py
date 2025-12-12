@@ -184,55 +184,17 @@ globalXSBRMap['Run3FidXSAnalysis']['bbh_out'] = {'mode':'constant','factor':0.49
 
 
 
-globalXSBRMap['Run3FidXSAnalysis']['ggh_PTH_0p0_15p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_PTH_15p0_30p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_PTH_30p0_45p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_PTH_45p0_80p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_PTH_80p0_120p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_PTH_120p0_200p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_PTH_200p0_350p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_PTH_350p0_10000p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_PTH_0p0_10000p0_out'] = {'mode':'constant','factor':51.96}
-
-globalXSBRMap['Run3FidXSAnalysis']['vbf_PTH_0p0_15p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_PTH_15p0_30p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_PTH_30p0_45p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_PTH_45p0_80p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_PTH_80p0_120p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_PTH_120p0_200p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_PTH_200p0_350p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_PTH_350p0_10000p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_PTH_0p0_10000p0_out'] = {'mode':'constant','factor':4.067}
-
-globalXSBRMap['Run3FidXSAnalysis']['vh_PTH_0p0_15p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_PTH_15p0_30p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_PTH_30p0_45p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_PTH_45p0_80p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_PTH_80p0_120p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_PTH_120p0_200p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_PTH_200p0_350p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_PTH_350p0_10000p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_PTH_0p0_10000p0_out'] = {'mode':'constant','factor':2.3781}
-
-globalXSBRMap['Run3FidXSAnalysis']['tth_PTH_0p0_15p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_PTH_15p0_30p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_PTH_30p0_45p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_PTH_45p0_80p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_PTH_80p0_120p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_PTH_120p0_200p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_PTH_200p0_350p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_PTH_350p0_10000p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_PTH_0p0_10000p0_out'] = {'mode':'constant','factor':0.5638}
-
-globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_0p0_15p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_15p0_30p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_30p0_45p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_45p0_80p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_80p0_120p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_120p0_200p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_200p0_350p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_350p0_10000p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_0p0_10000p0_out'] = {'mode':'constant','factor':0.49}
+for _mode, _factor in [
+    ("ggh", 51.96),
+    ("vbf", 4.067),
+    ("vh", 2.3781),
+    ("tth", 0.5638),
+    ("bbh", 0.49),
+]:
+    for _bin in PTH_BINS:
+        key = f"{_mode}_PTH_{_bin}_in"
+        globalXSBRMap['Run3FidXSAnalysis'][key] = {'mode':'constant','factor':_factor}
+    globalXSBRMap['Run3FidXSAnalysis'][f"{_mode}_PTH_0p0_10000p0_out"] = {'mode':'constant','factor':_factor}
 
 
 
