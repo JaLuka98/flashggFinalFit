@@ -6,18 +6,25 @@
 
 # outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/NJ_onlyPreEEGGH/'
 # outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/finalfits/NJ'
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_11_14_bootstrapping/2022/finalfits/NJ'
+# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_11_14_bootstrapping/2022/finalfits/NJ'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/finalfits/NJ'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_11_14_bootstrapping/2022/variables/NJ/root/Data/allData_2022.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables/NJ/root'
+  # Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_11_14_bootstrapping/2022/variables/NJ/root/Data/allData_2022.root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables_preEE/NJ/allData_2022.root'
+  # Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables/NJ/root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/variables_preEE/NJ/root'
 
-  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/ggH_preEE_MG5_125'
-  powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/signal'
+  # mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/ggH_preEE_MG5_125'
+  # powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/signal'
+  # bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background_2022preEE'
+  # data_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/data_onlypreEE'
+  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/signal'
+  powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/signal' 
   bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background_2022preEE'
   data_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/data_onlypreEE'
-  catDict_timestamp: '2025_08_04'
+  catDict_timestamp: '2025_10_31'
 
 backgroundScriptCfg:
   # Setup
@@ -27,7 +34,7 @@ backgroundScriptCfg:
   # year: '2022' # Use combined when merging all years in category (for plots)
   execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 10000 # Slurm memory to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 trees2wsCfg:
@@ -54,7 +61,7 @@ trees2wsCfg:
   dataVars:
     - "CMS_hgg_mass"
     - "weight" # Vars to be added for data
-    - "weight_bootstrap" # Vars to be added for bootstrapping
+    # - "weight_bootstrap" # Vars to be added for bootstrapping
     
   stxsVar: ''
   diffVar: 'diffVariable_GenNJ'
@@ -96,7 +103,7 @@ signalScriptCfg_2022_preEE:
   analysisRM: 'Run3FidXSAnalysisNJ' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2022preEE' # Use 'combined' if merging all years: not recommended
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+  massPoints: '125' # '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
@@ -125,7 +132,7 @@ signalScriptCfg_2022_postEE:
   analysisRM: 'Run3FidXSAnalysisNJ' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2022postEE' # Use 'combined' if merging all years: not recommended
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+  massPoints: '125' # '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
@@ -148,7 +155,7 @@ signalScriptCfg_2022_postEE:
 
 packaged_2022:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+  massPoints: '125' # '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
   execution: 'local'
@@ -207,6 +214,12 @@ allReplicaGeneration:
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+combine_SplusB_toys:
+  execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 11000 # Slurm memory to use for job submission
+  batchMaxRuntime: "00:50:00" # Slurm max runtime to use
 
 combine_fit:
   asimov_numPoints: 200 # Number of points the Asimov generator should generate for the NLL scan
