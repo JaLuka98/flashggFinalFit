@@ -163,7 +163,7 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 outputWSFile = os.path.join(outputWSDir,re.sub(r"\.root","_{}.root".format(diffBin),os.path.basename(input_path)))
 
                 outputFileTargets.append(law.LocalFileTarget(os.path.join(self.output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt')))
-                outputFileTargets.append(law.LocalFileTarget(outputWSFile))        
+                outputFileTargets.append(law.LocalFileTarget(outputWSFile))
         return outputFileTargets
 
     def run(self):

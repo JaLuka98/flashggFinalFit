@@ -687,7 +687,7 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 print("Copy command:", slurm_copy_command)
                 execute_command(slurm_copy_command, shell=True)
                 # Clean up the temporary directory
-                # shutil.rmtree(temp_output_dir)
+                shutil.rmtree(temp_output_dir)
             
                 # After datacard has been moved to pnfs, the datacard_path has to be changed.
                 datacard_path = os.path.join(output_dir, datacard_config["output"] + ".txt")
@@ -701,4 +701,24 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
             else:
                 execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
                 execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+        
+        else:
+            # Move the datacard to the final directory
+            if self.batch_flavor == "slurm/psi":
+                if "/work" in output_dir:
+                    slurm_copy_command = [
+                        f'cp -rf {temp_output_dir}/* {output_dir}'
+                    ]
+                # Have to copy over the output to the final directory
+                # Don't forget to VOMS!
+                else:
+                    slurm_copy_command = [
+                        f'xrdcp -rf {temp_output_dir}/* root://t3dcachedb03.psi.ch:1094//'+output_dir
+                    ]
+                print("Copy command:", slurm_copy_command)
+                execute_command(slurm_copy_command, shell=True)
+                # Clean up the temporary directory
+                shutil.rmtree(temp_output_dir)
+            
+
         
