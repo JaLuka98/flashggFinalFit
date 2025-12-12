@@ -386,11 +386,13 @@ if opt.doDiffSplitting:
     sdf = None
     if opt.doSystematics: sdf = sdata[sdata[diffVar]==diffId]
 
-    # For the moment, skip these events (as their count is usually very small)
-    if int(diffId) == 0: continue
+    diffId_int = int(diffId)
+    if diffId_int not in diffDict:
+      print(" --> Skipping diffId %s for variable %s (no mapping)" % (diffId_int, diffVar))
+      continue
 
     # Extract diffBin
-    diffBin = diffDict[int(diffId)]
+    diffBin = diffDict[diffId_int]
     diffBin = opt.productionMode + "_" + diffBin
     print(diffBin)
 
