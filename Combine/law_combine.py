@@ -511,6 +511,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
         if self.variable == '':
             mode = "mu_fiducial"
             datacard_name = f"Datacard_{self.year}"+bootstrap_suffix
+            workspace_name = datacard_name
         else:
             mode = self.variable
             datacard_name = f"Datacard_{self.variable}_{self.year}"+bootstrap_suffix
