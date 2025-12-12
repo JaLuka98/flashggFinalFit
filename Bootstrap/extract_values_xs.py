@@ -28,7 +28,7 @@ def produce_bf_combine(poi_list_, combineLL_dir_):
     bf_combine = []
     for current_poi in poi_list_:
 
-        with uproot.open(os.path.join(combineLL_dir_, f"higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.38.root")) as file:
+        with uproot.open(os.path.join(combineLL_dir_, f"higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.root")) as file:
             # Get the TGraphs - note that uproot reads them as pairs of arrays
             tree = file[f"limit;1"]
             # Extract minimum value
@@ -534,7 +534,7 @@ def produce_LLPlots(pois_, poi_list_, combineLL_dir_, path_to_hesse_, folder="",
             x0_points = graph.member("fX")  # Gets x values
             y0_points = graph.member("fY")  # Gets y values
 
-        with uproot.open(os.path.join(combineLL_dir_, f"higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.38.root")) as file:
+        with uproot.open(os.path.join(combineLL_dir_, f"higgsCombinefirstStep_{current_poi}.MultiDimFit.mH125.root")) as file:
             # Get the TGraphs - note that uproot reads them as pairs of arrays
             tree = file[f"limit;1"]
             # Extract minimum value
@@ -585,7 +585,7 @@ def pois_untrimmed(toyDir_, poi_list_):
             print(f"Processing fit_{i}")
 
         try:
-            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.38.root")
+            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             for current_poi in poi_list_:
@@ -628,7 +628,7 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
             print(f"Processing fit_{i}")
 
         try:
-            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.38.root")
+            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             for current_poi in poi_list_:
@@ -785,10 +785,13 @@ def plot_correlation(pois_, poi_list_, variable_):
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_06_12/intermediateRun3/finalfits'
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/finalfits'
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/finalfits'
-sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_14_intermediate/finalfits_postBPix'
+# sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_14_intermediate/finalfits_postBPix'
+# sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits'
+sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/finalfits'
 
 # variables = ["rapidity", "NJ"]
-variables = ["PTH"]
+# variables = ["PTH", "NJ"]
+variables = ["NJ"]
 
 for variable in variables:
     
@@ -802,8 +805,8 @@ for variable in variables:
         poi_list = ["r_YH_0p0_0p15", "r_YH_0p15_0p3", "r_YH_0p3_0p6", "r_YH_0p6_0p9", "r_YH_0p9_2p5"]
 
     # The paths
-    main_dir = os.path.join(sample_dir, variable+"_allReplica_powheg_powheg_noSignal_hundredfold", "Combine", f"runFits_{variable}")
-    # main_dir = os.path.join(sample_dir, variable+"", "Combine", f"runFits_{variable}")
+    # main_dir = os.path.join(sample_dir, variable+"_allReplica_powheg_powheg_noSignal_hundredfold", "Combine", f"runFits_{variable}")
+    main_dir = os.path.join(sample_dir, variable+"", "Combine", f"runFits_{variable}")
     path_to_hesse = os.path.join(main_dir, "hesse", 'robustHessefirstStep.root')
     toyDir = os.path.join(main_dir, "toyFit")
     combineLL_dir = os.path.join(main_dir, "asimov")
