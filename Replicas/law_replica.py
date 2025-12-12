@@ -19,6 +19,18 @@ from commonObjects import *
 
 from Combine.law_combine import *
 
+# Flow stuff
+from scipy import stats
+from Replicas.hgg_kinflow.dataset_loader import load_dataset
+import Replicas.hgg_kinflow.dataset_loader as dataset_loader
+import zuko
+from zuko.nn import MLP
+import torch.nn as nn
+import torch
+from torch.utils.data import Dataset, random_split, Subset
+from torch.utils.data import DataLoader
+import cloudpickle
+
 # Function to safely create a directory
 def safe_mkdir(path):
     try:
@@ -48,6 +60,76 @@ def create_folder(folder):
         execute_command([f"xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {os.realpath(folder)}"], shell=True)
     else:
         os.makedirs(folder, exist_ok=True)
+
+def roo_dataset_to_pandas(roo_data):
+    """Convert a RooDataSet into a pandas DataFrame."""
+    data = {var.GetName(): [] for var in roo_data.get()}   # initialize columns
+
+    # Loop over entries
+    for i in range(roo_data.numEntries()):
+        obs = roo_data.get(i)  # RooArgSet for this event
+        for var in data.keys():
+            data[var].append(obs[var].getVal())
+
+    return pd.DataFrame(data)
+
+def getCategoryName(filename: str) -> str:
+    """
+    Extract category name from filename: CMS-HGG_multipdf_<catname>.root
+    """
+    key = "CMS-HGG_multipdf_"
+    start = filename.find(key)
+    if start == -1:
+        return ""
+    start += len(key)
+    end = filename.rfind(".root")
+    if end == -1 or end <= start:
+        return ""
+    return filename[start:end]
+
+def parse_pdf_indices(input_str):
+    result = []
+    items = input_str.split(',')
+
+    for item in items:
+        if '=' in item:
+            name, value_str = item.split('=', 1)
+            result.append((name, int(value_str)))
+
+    return result
+
+def getDataHistName(filename: str, inclusive_file: bool) -> str:
+    if inclusive_file:
+        # Find "_cat"
+        cat_pos = filename.find("_cat")
+        if cat_pos == -1:
+            return ""
+
+        # Start of category name
+        cat_start = cat_pos + 4  # len("_cat")
+
+        # End before ".root"
+        root_pos = filename.rfind(".root")
+        if root_pos == -1 or root_pos <= cat_start:
+            return ""
+
+        cat = filename[cat_start:root_pos]
+        return f"roohist_data_mass_cat{cat}"
+
+    else:
+        # Find "RECO_"
+        reco_pos = filename.find("RECO_")
+        if reco_pos == -1:
+            return ""
+
+        cat_start = reco_pos + 5  # len("RECO_")
+
+        root_pos = filename.rfind(".root")
+        if root_pos == -1 or root_pos <= cat_start:
+            return ""
+
+        cat = filename[cat_start:root_pos]
+        return f"roohist_data_mass_RECO_{cat}"
 
 def get_replica_bin_by_bin(mc_parquet_files, cat_dict_, parquet_files, columns_to_load):
         
@@ -398,7 +480,7 @@ class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow)
         
         fitConfig = self.config["combine_fit"]
         
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], toy_flag=self.toy_flag, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, seed=self.seed)
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], toy_flag=self.toy_flag, number_of_toys=self.number_of_replicas, seed=self.seed)
 
         return tasks
 
@@ -643,44 +725,35 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
         powheg_proc_dirs = glob.glob(os.path.join(self.config['inputFiles']['powheg_src_files'], "*"))
         data_parquet_files = glob.glob(os.path.join(self.config['inputFiles']['data_src_files'], "*/nominal/*.parquet"))
         
-        all_parquet_files = []
-        for proc_dir in bkg_proc_dirs:
-            # if "GG-Box-3Jets" in proc_dir: continue
-            parquet_files = glob.glob(os.path.join(proc_dir, "nominal", "*.parquet"))
-            all_parquet_files.append(parquet_files)
+        # all_parquet_files = []
+        # for proc_dir in bkg_proc_dirs:
+        #     # if "GG-Box-3Jets" in proc_dir: continue
+        #     parquet_files = glob.glob(os.path.join(proc_dir, "nominal", "*.parquet"))
+        #     all_parquet_files.append(parquet_files)
 
-        all_MC_parquet_files = []
-        for proc_dir in mg5_proc_dirs:
-            # if "GG-Box-3Jets" in proc_dir: continue
-            parquet_files = glob.glob(os.path.join(proc_dir, "nominal", "*.parquet"))
-            all_MC_parquet_files.append(parquet_files)
+        # all_MC_parquet_files = []
+        # for proc_dir in mg5_proc_dirs:
+        #     # if "GG-Box-3Jets" in proc_dir: continue
+        #     parquet_files = glob.glob(os.path.join(proc_dir, "nominal", "*.parquet"))
+        #     all_MC_parquet_files.append(parquet_files)
         
-        # Extract the expected number of events from MC (MG5)
-        inclusive_signal_yield = get_mg5_exp(all_MC_parquet_files)
+        # # Extract the expected number of events from MC (MG5)
+        # inclusive_signal_yield = get_mg5_exp(all_MC_parquet_files)
         
-        # Extract the expected number of sideband events from data
-        yield_with_signal, _ = get_data_exp(data_parquet_files)
+        # # Extract the expected number of sideband events from data
+        # yield_with_signal, _ = get_data_exp(data_parquet_files)
 
-        # For the moment like this
-        yield_without_signal = yield_with_signal - inclusive_signal_yield
+        # # For the moment like this
+        # yield_without_signal = yield_with_signal - inclusive_signal_yield
         
-        print("inclusive_signal_yield:", inclusive_signal_yield)
-        print("yield_with_signal:", yield_with_signal)
+        # print("inclusive_signal_yield:", inclusive_signal_yield)
+        # print("yield_with_signal:", yield_with_signal)
 
         
         columns_to_load = [
             "mass", "weight", "lead_mvaID", "sublead_mvaID",
             "sigma_m_over_m_corr_smeared_decorr"
         ]
-
-        # Load the considered variable
-        cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", self.config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
-        if not os.path.exists(cat_dict_path):
-            print(f"Category dictionary {cat_dict_path} does not exist. Check path in law_replica.py. Exiting...")
-            exit(1)
-        else:
-            with open(cat_dict_path) as pf:
-                cat_dict = json.load(pf)
 
         if self.variable == "PTH":
             columns_to_load += ["pt"]
@@ -690,7 +763,291 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             columns_to_load += [self.variable]
         
         np.random.seed(seed)
-        inclusive_bkg_replica = get_bkg_replica(yield_without_signal, all_parquet_files, columns_to_load)
+        # inclusive_bkg_replica = get_bkg_replica(yield_without_signal, all_parquet_files, columns_to_load)
+
+        # Get first the mass distribution that serves as the input for the flows
+
+        def check_pdf_idx():
+            # Run the ROOT command
+            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/inclusive/Replicas/higgsCombineFirstStep.MultiDimFit.mH125.38.root")\''
+            
+            # Execute the command and capture the output
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            
+            # Get the output and check for errors
+            pdfIdx = result.stdout.strip()
+            
+            if result.returncode != 0:
+                print("Error executing the command:", result.stderr)
+                return None
+
+            if pdfIdx.startswith("Processing"):
+                pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
+            
+            # Remove the last comma
+            pdfIdx = pdfIdx.rstrip(',')
+
+            # Print the final result
+            print(pdfIdx)
+            return pdfIdx
+
+        indices_str = check_pdf_idx()
+        input_folder = glob.glob("/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/inclusive/Background/outdir_Run3FidXSAnalysis/*.root")
+        
+        cats_df = []
+
+        for idx, file in enumerate(input_folder):
+            
+            filename = file
+            fileIdx = idx + 1
+
+            sideband_file = ROOT.TFile(filename)
+            ws = sideband_file.Get("multipdf")
+
+            mass = ws.var("CMS_hgg_mass")
+            mass.setBins(320)
+            
+            catName = getCategoryName(filename)
+
+            indices = parse_pdf_indices(indices_str)
+
+            bestFit_idx = -1
+            for name, val in indices:
+                if catName in name:      # same as name.find(catName) != -1
+                    bestFit_idx = val
+                    break
+
+            pdfs = ws.allPdfs()
+
+            multipdf = None
+            pdf_iter = pdfs.createIterator()
+
+            pdf_obj = pdf_iter.Next()
+            while pdf_obj:
+                # In PyROOT, use IsA() or ClassName() to check inheritance/type
+                if pdf_obj.InheritsFrom("RooMultiPdf"):
+                    multipdf = pdf_obj
+                    break
+                pdf_obj = pdf_iter.Next()
+
+            bestFit_pdf = multipdf.getPdf(bestFit_idx)
+
+            # Inclusive file flag
+            inclusive_file = catName in ["cat0", "cat1", "cat2"]
+
+            # Get the data histogram name
+            dataHistName = getDataHistName(filename, inclusive_file)
+
+            data = ws.data(dataHistName)
+
+            # Create yield parameter
+            n_yield = ROOT.RooRealVar("n_yield", "Fitted yield", 1000, 0, 1e6)
+
+            # Create extended PDF
+            extPdf = ROOT.RooExtendPdf("extPdf", "extended pdf", bestFit_pdf, n_yield)
+
+            # Fit
+            extPdf.fitTo(
+                data,
+                ROOT.RooFit.Extended(),
+                ROOT.RooFit.PrintLevel(-1)
+            )
+
+            fitted_yield = n_yield.getVal()
+
+            # Category-specific seed
+            catSeed = seed + 1_000_000 * fileIdx
+
+            # RNG for Poisson
+            rng = ROOT.TRandom3(catSeed)
+            nToys = rng.Poisson(fitted_yield)
+
+            # Generate toys using only obs
+            genVars = ROOT.RooArgSet(mass)
+
+            ROOT.RooRandom.randomGenerator().SetSeed(catSeed)
+
+            toyData = bestFit_pdf.generate(genVars, nToys)
+
+            cats_df.append(roo_dataset_to_pandas(toyData))
+
+        mass_df = pd.concat(cats_df, ignore_index=True)
+        # Rename the mass column in order to be compatible with the flows
+        mass_df.rename(columns={"CMS_hgg_mass": "mass"}, inplace=True)
+        
+        input_mass = pd.DataFrame(mass_df, columns=['mass'])
+        
+        # Set a seed
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        
+        # Load the flows
+        pt_eta_sigmam_H_flow = zuko.flows.spline.NSF(features=3, # PTH, Eta and sigma_m_over_m
+                                              context=1, # mass
+                                              bins=50,
+                                              passes=2, # Models the PTH, eta as well as sigma_m_over_m conditional on mass twice
+                                              hidden_features=[128,128],
+                                              transforms=2
+                                              ).to("cpu")
+
+        model_b =  MLP(in_features=4, out_features=11, hidden_features=[128,128,128],
+                            activation=nn.GELU, normalize=True).to("cpu")
+
+        ptj_flow = zuko.flows.spline.NSF(features=1,
+                                              context=5,
+                                              bins=30,
+                                              passes=1, 
+                                              hidden_features=[128,128],
+                                              transforms=1
+                                              ).to("cpu")
+        
+        DPhiJ0J1_flow = zuko.flows.spline.NCSF(features=1,
+                                              context=6,
+                                              bins=30,
+                                              passes=1, 
+                                              hidden_features=[128,128],
+                                              transforms=1
+                                              ).to("cpu")
+
+        pt_eta_sigmam_H_flow.load_state_dict(torch.load("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_flow_pt_eta_sigmam_H.pth", map_location=torch.device('cpu')))
+        model_b.load_state_dict(torch.load("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_NJ_NN.pth", map_location=torch.device('cpu')))
+        ptj_flow.load_state_dict(torch.load("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_flow_ptj0.pth", map_location=torch.device('cpu')))
+        DPhiJ0J1_flow.load_state_dict(torch.load("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_flow_dphij0j1.pth", map_location=torch.device('cpu')))
+        
+        dataset = dataset_loader.PandasDataset(input_mass, ["mass"], ["mass"], "/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/preprocessing_pipeline_v1.pkl", device="cpu")
+        
+        # Move model + data to CPU
+        pt_eta_sigmam_H_flow = pt_eta_sigmam_H_flow.cpu()
+        mass = dataset.c.cpu()
+
+        BATCH_SIZE = 1024
+        all_samples = []
+
+        with torch.no_grad():
+            for i in range(0, mass.shape[0], BATCH_SIZE):
+                batch_mass = mass[i:i+BATCH_SIZE]          # already on CPU
+                flow = pt_eta_sigmam_H_flow(batch_mass)    # CPU forward pass
+                samples = flow.sample((1,))                # CPU sampling
+                all_samples.append(samples.squeeze(0))
+
+        # Combine batches
+        pt_eta_sigmam = torch.cat(all_samples, dim=0)
+
+        pt_eta_sigmam_mass = torch.concat([pt_eta_sigmam, mass], dim=1)
+        
+        model_b = model_b.cpu()
+        probs = torch.softmax(model_b(pt_eta_sigmam_mass), axis=-1)
+        
+        probs = probs.cpu()
+        all_samples = []
+
+        with torch.no_grad():
+            for i in range(0, probs.shape[0], BATCH_SIZE):
+                batch_probs = probs[i:i + BATCH_SIZE]     # already on CPU
+
+                batch_samples = torch.multinomial(
+                    input=batch_probs,
+                    num_samples=1,
+                    replacement=False
+                )
+
+                all_samples.append(batch_samples)
+
+        sampled_NJ = torch.cat(all_samples, dim=0)
+        
+        ptj_flow = ptj_flow.cpu()
+        DPhiJ0J1_flow = DPhiJ0J1_flow.cpu()
+        pt_eta_sigmam_mass_NJ = torch.concat([sampled_NJ.float(), pt_eta_sigmam_mass], dim=1)
+
+        # Ensure everything is on CPU
+        sampled_NJ = sampled_NJ.cpu()
+        pt_eta_sigmam_mass_NJ = pt_eta_sigmam_mass_NJ.cpu()
+
+        BATCH_SIZE = 256
+        all_ptj0 = []
+        all_dphij0j1 = []
+
+        with torch.no_grad():
+            for i in range(0, sampled_NJ.shape[0], BATCH_SIZE):
+                # --------------------
+                # 1) Batch inputs
+                # --------------------
+                batch_NJ = sampled_NJ[i:i+BATCH_SIZE].float()
+                batch_pt_eta_sigmam_mass_NJ = pt_eta_sigmam_mass_NJ[i:i+BATCH_SIZE]
+
+                # --------------------
+                # 2) Sample ptj0
+                # --------------------
+                batch_ptj0 = ptj_flow(batch_pt_eta_sigmam_mass_NJ).sample((1,)).squeeze(0)
+                all_ptj0.append(batch_ptj0)
+
+                # --------------------
+                # 3) Sample dphij0j1
+                # --------------------
+                batch_ptj0_nj_pt_eta_mass = torch.cat([batch_ptj0, batch_pt_eta_sigmam_mass_NJ], dim=1)
+                batch_dphij0j1 = DPhiJ0J1_flow(batch_ptj0_nj_pt_eta_mass).sample((1,)).squeeze(0)
+                all_dphij0j1.append(batch_dphij0j1)
+
+        # --------------------
+        # 4) Combine all results
+        # --------------------
+        sample_ptj0 = torch.cat(all_ptj0, dim=0)
+        sample_dphij0j1 = torch.cat(all_dphij0j1, dim=0)
+        
+        ptj0_nj_pt_eta_sigmam_mass = torch.concat([sample_ptj0, pt_eta_sigmam_mass_NJ], dim=1)
+
+        final_sample = torch.concat([sample_dphij0j1, ptj0_nj_pt_eta_sigmam_mass], dim=1)
+        
+        tensor = final_sample.clone()
+        NJ = tensor[:, 2]
+        # Masks
+        mask_NJ0 = (NJ == 0)
+        mask_NJ1 = (NJ == 1)
+
+        # 1) For NJ == 0 --- set DPhiJ0J1 = -999
+        tensor[mask_NJ0, 0] = -999.0
+
+        # 2) For NJ == 0 --- set PTJ0 to some x that YOU choose
+        # Replace this with the correct value once equation is clarified
+        # x = torch.tensor([-990.0], device=tensor.device)  
+        x = torch.tensor([float("nan")], device=tensor.device)  
+        tensor[mask_NJ0, 1] = x
+
+        # 3) For NJ == 1 --- set DPhiJ0J1 = -999
+        tensor[mask_NJ1, 0] = -999.0
+        
+        pipelines = cloudpickle.load(open("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/preprocessing_pipeline_v1.pkl", "rb"))
+
+        columns = ["DPhiJ0J1", "PTJ0","NJ","pt","rapidity", "sigma_m_over_m_corr_smeared_decorr","mass"]
+        out = [] 
+        for d, col in enumerate(columns):
+            out.append(pipelines[col].inverse_transform(tensor[:, d].cpu().numpy().reshape(-1,1)).squeeze())
+        unscaled_dataset = torch.from_numpy(np.stack(out).T)
+
+        NJ = unscaled_dataset[:, 2]
+
+        # Masks
+        mask_NJ0 = (NJ == 0)
+        mask_NJ1 = (NJ == 1)
+
+        x = torch.tensor([-999.0], device=tensor.device)  
+        unscaled_dataset[mask_NJ0, 1] = x
+
+        inclusive_bkg_replica = pd.DataFrame(unscaled_dataset.detach().cpu().numpy(), columns=["DPhiJ0J1", "PTJ0","NJ","pt","rapidity", "sigma_m_over_m_corr_smeared_decorr","CMS_hgg_mass"])
+
+        # add lead_mvaID column with constant 1.0 (float32 to match replica dtypes) (mvaID cut in this approach not relevant)
+        inclusive_bkg_replica['lead_mvaID'] = np.ones(len(inclusive_bkg_replica), dtype=np.float32)
+        inclusive_bkg_replica['sublead_mvaID'] = np.ones(len(inclusive_bkg_replica), dtype=np.float32)
+        inclusive_bkg_replica['weight'] = np.ones(len(inclusive_bkg_replica), dtype=np.float32)
+        
+        # Load the considered variable
+        cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", self.config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
+        if not os.path.exists(cat_dict_path):
+            print(f"Category dictionary {cat_dict_path} does not exist. Check path in law_replica.py. Exiting...")
+            exit(1)
+        else:
+            with open(cat_dict_path) as pf:
+                cat_dict = json.load(pf)
         
         # Generate Signal Only
         replica_separated_procs = []
@@ -706,7 +1063,6 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             if len(powheg_proc_parquet_files) == 0:
                 print(f"No parquet files found in {powheg_proc_folder}. Skipping...")
                 continue
-            
             current_proc_replica = get_replica(mc_proc_parquet_files, powheg_proc_parquet_files, columns_to_load=columns_to_load)
             # current_proc_replica = get_replica_bin_by_bin(mc_parquet_files=mc_proc_parquet_files, cat_dict_=cat_dict, parquet_files=powheg_proc_parquet_files, columns_to_load=columns_to_load)
 
@@ -717,13 +1073,13 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
         output_bkg_rootfile.mkdir("DiphotonTree")
         output_bkg_rootfile.cd("DiphotonTree")
 
-        inclusive_bkg_replica.rename(columns={"mass": "CMS_hgg_mass"}, inplace=True)
+        # inclusive_bkg_replica.rename(columns={"mass": "CMS_hgg_mass"}, inplace=True)
 
         signal_replica = []
         background_replica = []
         splusb_replica = []
             
-        # Now categorize the background replica
+        # Now categorize the replica
         for cat in cat_dict:
             try:
                 query_str = " and ".join(
@@ -1506,7 +1862,8 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
         
         output_paths = []
 
-        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'))
+        # output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'))
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.root'))
 
         outputFileTargets = []
                 
@@ -1567,7 +1924,8 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             "-M", "MultiDimFit",
             ws_path,
             "--freezeParameters", "MH",
-            "-m", "125.38",
+            # "-m", "125.38",
+            "-m", "125",
             "-n", f"AsimovFirstStep_Toy_{int(replica_index)}",
             "--cminDefaultMinimizerStrategy=0",
             "--saveWorkspace",
@@ -1702,7 +2060,8 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         self._init_once()
         
         output = []
-        output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombineToyFit.MultiDimFit.mH125.38.root')]
+        # output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombineToyFit.MultiDimFit.mH125.38.root')]
+        output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombineToyFit.MultiDimFit.mH125.root')]
 
         outputFileTargets = []
 
@@ -1743,7 +2102,8 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
                 
         # pdfIndicesStr = ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])
 
-        pdfindex_file = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root')
+        # pdfindex_file = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root')
+        pdfindex_file = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.root')
 
         def check_pdf_idx():
             # Run the ROOT command
@@ -1777,8 +2137,10 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
             "combine",
             "-M", "MultiDimFit",
             # ws_path,
-            os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'),
-            "-m", "125.38",
+            # os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'),
+            os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.root'),
+            # "-m", "125.38",
+            "-m", "125",
             "--snapshotName", "MultiDimFit",
             "-n", f"ToyFit",
             "--cminDefaultMinimizerStrategy=0",

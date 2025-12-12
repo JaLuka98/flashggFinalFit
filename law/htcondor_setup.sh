@@ -36,6 +36,7 @@ action() {
     export PYTHONPATH="${this_dir}/Plots/Spectra:${PYTHONPATH}"
     export PYTHONPATH="${this_dir}/Plots/Spectra/fidXS:${PYTHONPATH}"
     export PYTHONPATH="${this_dir}/law/:${PYTHONPATH}"
+    export PYTHONPATH="${this_dir}/Replicas:${PYTHONPATH}"
     export LAW_HOME="${this_dir}/law/.law"
     export LAW_CONFIG_FILE="${this_dir}/law/law.cfg"
     export LAW_DIR="${this_dir}/law"

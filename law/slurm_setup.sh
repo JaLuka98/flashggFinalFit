@@ -5,6 +5,7 @@ action() {
     cd /work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit
     export ANALYSIS_PATH="$(pwd)"
     cmsenv
+    # source ./Replicas/hgg_kinflow/cmssw_venv/bin/activate
     local shell_is_zsh="$( [ -z "${ZSH_VERSION}" ] && echo "false" || echo "true" )"
     local this_file="$( ${shell_is_zsh} && echo "${(%):-%x}" || echo "${BASH_SOURCE[0]}" )"
     local this_dir="$( cd "$( dirname "${this_file}" )" && pwd )"
@@ -32,10 +33,12 @@ action() {
     export PYTHONPATH="${this_dir}/../Combine:${PYTHONPATH}"
     export PYTHONPATH="${this_dir}/../Plots/Spectra:${PYTHONPATH}"
     export PYTHONPATH="${this_dir}/../Plots/Spectra/fidXS:${PYTHONPATH}"
+    export PYTHONPATH="${this_dir}/../Replicas:${PYTHONPATH}"
     export LAW_HOME="${this_dir}/.law"
     export LAW_CONFIG_FILE="${this_dir}/law.cfg"
     export LAW_DIR="${this_dir}"
 
     source "$( law completion )" ""
+    source ./Replicas/hgg_kinflow/cmssw_venv/bin/activate
 }
 action
