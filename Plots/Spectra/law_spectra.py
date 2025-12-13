@@ -428,7 +428,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         else:
             cms_label = "Preliminary"
         # print(args.no_preliminary, cms_label)
-        hep.cms.label(cms_label, data=convert_boolean_string(self.is_unblinded), lumi=lumiMap[f'{self.year}'], fontsize=20, com=13.6)
+        intLumi = plotting_config["lumi"] if "lumi" in plotting_config else lumiMap[f'{self.year}']
+        hep.cms.label(cms_label, data=convert_boolean_string(self.is_unblinded), lumi=intLumi, fontsize=20, com=13.6)
 
         # Plot theoretical predictions and experimental data
         plt.stairs((ggh_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + NNLOPS + Pythia) + xH', color='tab:blue')
