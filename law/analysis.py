@@ -661,6 +661,15 @@ class FinalFitsYear(law.Task):
 
             for _, current_output_path in enumerate(output):
                 output_paths.append(law.LocalFileTarget(current_output_path))
+        
+        if self.variable != '':
+            spectra_dir = os.path.join(output_dir, 'Combine', fitFolderName)
+            if convert_boolean_string(self.asimov_diff_spectra):
+                output_paths.append(law.LocalFileTarget(os.path.join(spectra_dir, 'spectra_blinded.pdf')))
+                output_paths.append(law.LocalFileTarget(os.path.join(spectra_dir, 'spectra_blinded.png')))
+            if convert_boolean_string(self.unblinded_diff_spectra):
+                output_paths.append(law.LocalFileTarget(os.path.join(spectra_dir, 'spectra.pdf')))
+                output_paths.append(law.LocalFileTarget(os.path.join(spectra_dir, 'spectra.png')))
 
         if convert_boolean_string(self.asimov_impacts):
         
