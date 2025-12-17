@@ -41,7 +41,7 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(description="Year")    
     
-    era = law.Parameter(description="Current Era")    
+    era = law.Parameter(default="", description="Current Era")    
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 

@@ -54,7 +54,7 @@ def convert_boolean_string(string):
 
 class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_paths = law.Parameter(description="Paths to the data input ROOT files")
-    era = law.Parameter(description="Current era.")
+    era = law.Parameter(default="", description="Current era.")
     output_dir = law.Parameter(description="Path to the output directory")
     variable = law.Parameter(default='', description="Variable to be used for output folder naming")
     year = law.Parameter(default='2022', description="Year")
