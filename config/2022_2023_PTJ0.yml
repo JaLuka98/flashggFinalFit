@@ -71,7 +71,8 @@ combine_mggToys:
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 spectra:
-  no_preliminary: True # Flag that determines, if Preliminary label should be printed.
+  no_preliminary: True # Flag that determines if Preliminary label should be printed.
+  private_work : False
   ggh_xs: "fidXS_PTJ0_ggH"
   vbf_xs: "fidXS_PTJ0_VBFH"
   vh_xs: "fidXS_PTJ0_VH"

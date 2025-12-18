@@ -1,3 +1,5 @@
+lumi: 62.4
+
 frame1:
   custom_xtick_labels:
     - "0"

@@ -425,10 +425,23 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         # frame1 = fig.add_axes((.1, .35, .8, .8))
         if current_config['no_preliminary']:
             cms_label = ""
+        elif current_config['private_work']:
+            cms_label = "Private Work"
         else:
             cms_label = "Preliminary"
         # print(args.no_preliminary, cms_label)
-        hep.cms.label(cms_label, data=convert_boolean_string(self.is_unblinded), lumi=lumiMap[f'{self.year}'], fontsize=20, com=13.6)
+        # Use lumi from config if available, else build it from the individual years if something like 2022_2023 is queried
+        # If that is also not the case, it is a single year, so take lumi from the map
+        if "lumi" in plotting_config:
+            intLumi = plotting_config["lumi"]
+        else:
+            year_str = str(self.year)
+            if "_" in year_str:
+                years = year_str.split("_")
+                intLumi = sum(lumiMap[y] for y in years)
+            else:
+                intLumi = lumiMap[year_str]
+        hep.cms.label(cms_label, data=convert_boolean_string(self.is_unblinded), lumi=intLumi, fontsize=20, com=13.6)
 
         # Plot theoretical predictions and experimental data
         plt.stairs((ggh_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + NNLOPS + Pythia) + xH', color='tab:blue')
