@@ -72,6 +72,7 @@ combine_mggToys:
 
 spectra:
   no_preliminary: True # Flag that determines, if Preliminary label should be printed.
+  private_work : False
   ggh_xs: "fidXS_YH_ggH"
   vbf_xs: "fidXS_YH_VBFH"
   vh_xs: "fidXS_YH_VH"
