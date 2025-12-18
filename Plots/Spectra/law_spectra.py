@@ -425,6 +425,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         # frame1 = fig.add_axes((.1, .35, .8, .8))
         if current_config['no_preliminary']:
             cms_label = ""
+        elif current_config['private_work']:
+            cms_label = "Private Work"
         else:
             cms_label = "Preliminary"
         # print(args.no_preliminary, cms_label)
