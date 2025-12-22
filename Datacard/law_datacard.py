@@ -6,6 +6,7 @@ import errno
 import shutil
 
 from commonTools import *
+from pdfindex_utils import extract_pdf_indices, update_override_file
 from commonObjects import *
 
 from Signal.law_signal import *
@@ -506,6 +507,14 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+
+        # record which pdfindex categories actually exist for downstream combine steps
+        datacard_root = os.path.join(temp_output_dir, datacard_config["output"] + ".root")
+        pdf_indices = extract_pdf_indices(datacard_root)
+        if pdf_indices:
+            override_path = os.path.join(os.environ["ANALYSIS_PATH"], "config", "pdfindex_overrides.json")
+            variable_key = self.variable if self.variable != '' else 'inclusive'
+            update_override_file(override_path, self.year, variable_key, pdf_indices)
                             
         # Move the datacard to the final directory
         if self.batch_flavor == "slurm/psi":

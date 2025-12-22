@@ -11,6 +11,7 @@ and only needs to be defined once per user / group / etc.
 
 import os
 import math
+import re
 
 import luigi
 import law
@@ -53,6 +54,11 @@ class HTCondorWorkflow(law.htcondor.HTCondorWorkflow):
     configuration is required.
     """
 
+    parallel_jobs = luigi.IntParameter(
+        default=300,
+        significant=False,
+        description="maximum number of parallel htcondor jobs; default: 300",
+    )
     htcondor_partition = luigi.Parameter(
         default="workday",
         significant=False,
@@ -118,6 +124,9 @@ class HTCondorWorkflow(law.htcondor.HTCondorWorkflow):
         # the CERN htcondor setup requires a "log" config, but we can safely set it to /dev/null
         # if you are interested in the logs of the batch system itself, set a meaningful value here
         config.custom_content.append(("log", "/dev/null"))
+        # ensure jobs vanish as soon as output transfer is done to avoid clogging the schedd
+        config.custom_content.append(("leave_in_queue", "False"))
+        config.custom_content.append(("periodic_remove", "(JobStatus == 4)"))
 
         return config
 

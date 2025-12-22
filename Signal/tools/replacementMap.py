@@ -309,7 +309,7 @@ globalReplacementMap["Run3FidXSAnalysisInclusive"]["catRVMap"]["cat2"]   = "cat2
 
 # Differential PT
 globalReplacementMap["Run3FidXSAnalysisPTH"] = od()
-_PTH_RECO_CATS = ['cat0', 'cat1', 'cat2']
+_PTH_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
 _PTH_FIRST_BIN = PTH_BINS[0]
 _PTH_SECOND_BIN = PTH_BINS[1] if len(PTH_BINS) > 1 else PTH_BINS[0]
 _PTH_WV_BIN = "45p0_60p0"

@@ -14,6 +14,7 @@ from scipy.stats import chi2
 
 from commonTools import *
 from commonObjects import *
+from pdfindex_utils import extract_pdf_indices, update_override_file
 
 from Datacard.law_datacard import *
 from Background.law_background import *
@@ -34,6 +35,9 @@ def convert_boolean_string(string):
         return True
     else:
         return False
+
+
+_PDFINDEX_CACHE = {}
 
 def execute_command(command, return_output=False, shell=False):
     try:
@@ -475,6 +479,13 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/'], shell=True)
             execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/')} root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
             shutil.rmtree(temp_output_dir)
+
+        final_root_path = os.path.join(output_dir, 'Combine', f'{datacard_name}.root')
+        pdf_indices = extract_pdf_indices(final_root_path)
+        if pdf_indices:
+            override_path = os.path.join(os.environ["ANALYSIS_PATH"], "config", "pdfindex_overrides.json")
+            variable_key = self.variable if self.variable != '' else 'inclusive'
+            update_override_file(override_path, self.year, variable_key, pdf_indices)
         
 class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
@@ -962,7 +973,15 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Error executing script:", e.stderr)
             
         else:
-            saveSpecifiedIndex = ",".join(combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces'])
+            pdf_indices = combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces']
+            cache_key = (datacard_path,)
+            if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
+                datacard_pdf_indices = extract_pdf_indices(datacard_path)
+                if datacard_pdf_indices:
+                    _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
+            if cache_key in _PDFINDEX_CACHE:
+                pdf_indices = _PDFINDEX_CACHE[cache_key]
+            saveSpecifiedIndex = ",".join(pdf_indices)
             paramStr = ",".join(combineVariableDict[f'{self.year}'][self.variable]['paramStr'])
 
             arguments = [

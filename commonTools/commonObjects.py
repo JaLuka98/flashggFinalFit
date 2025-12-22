@@ -1,5 +1,6 @@
 import os
 import copy
+import json
 
 # Paths and directory
 cmsswbase__ = os.environ['CMSSW_BASE']
@@ -37,7 +38,9 @@ lumiMap = {
     '2223': 62.4081,
     '2024': 109.0,
     '2024all': 109.0,
-    'Run3': 171.4081
+    'Run3': 171.4081,
+    '2022_2023_2024': 171.4081,
+    '222324': 171.4081,
 }
 
 def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW):
@@ -138,6 +141,7 @@ allErasMap = {
     '2022': ["preEE", "postEE"],
     '2023': ["preBPix", "postBPix"],
     '2223': ["preEE", "postEE", "preBPix", "postBPix"],
+    '2022_2023_2024': ["preEE", "postEE", "preBPix", "postBPix"],
     # 2024 does not have eras
     'Run3': ["preEE", "postEE", "preBPix", "postBPix"],
 }
@@ -306,15 +310,39 @@ combineVariableDict = {
 }
 
 
+def _apply_pdfindex_overrides():
+    override_path = os.path.join(cwd__, "config", "pdfindex_overrides.json")
+    if not os.path.exists(override_path):
+        return
+
+    try:
+        with open(override_path, "r", encoding="utf-8") as handle:
+            overrides = json.load(handle)
+    except json.JSONDecodeError:
+        return
+
+    for year, variable_map in overrides.items():
+        if year not in combineVariableDict:
+            continue
+        for variable, pdf_indices in variable_map.items():
+            if variable not in combineVariableDict[year]:
+                continue
+            if not isinstance(pdf_indices, list):
+                continue
+            combineVariableDict[year][variable]["pdfIndeces"] = list(pdf_indices)
+
+
+# First apply overrides to the base (single year) entries so combined
+# definitions inherit any per-year customisations (e.g. catMerged bins).
+_apply_pdfindex_overrides()
+
+
 def _register_combined_year(name, year_list):
     """
     Build a combined entry in combineVariableDict by reusing the parameter
     definitions from the first year and concatenating the pdf index lists across
     all requested years.
     """
-    if name in combineVariableDict:
-        return
-
     missing_years = [year for year in year_list if year not in combineVariableDict]
     if missing_years:
         raise KeyError(f"Cannot build combined year '{name}' without definitions for: {', '.join(missing_years)}")
@@ -341,3 +369,8 @@ _combined_year_map = {
 
 for combined_name, year_sequence in _combined_year_map.items():
     _register_combined_year(combined_name, year_sequence)
+
+
+# Re-apply overrides so combined entries can also be customised (the JSON may
+# contain blocks for keys such as "2022_2023_2024").
+_apply_pdfindex_overrides()
