@@ -790,7 +790,8 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
-    cat = law.Parameter(description="Current category")
+    cat = law.Parameter(default="", description="Current category")
+    cats = law.Parameter(default="", description="Comma separated list of categories to process")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
     set_pdfidx_inclusives = law.Parameter(default=False, description="Year") # convert_boolean_string
     
@@ -824,11 +825,29 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return tasks
     
     def create_branch_map(self):
-        branch_map = {i: current_point for i, current_point in enumerate(range(int(self.nPoints)))}
+        points = list(range(int(self.nPoints)))
+        if not self.cats:
+            return {i: point for i, point in enumerate(points)}
+
+        cat_list = [cat.strip() for cat in self.cats.split(",") if cat.strip()]
+        branch_map = {}
+        idx = 0
+        for cat in cat_list:
+            for point in points:
+                branch_map[idx] = (cat, point)
+                idx += 1
         return branch_map
 
+    def _current_branch_info(self):
+        data = self.branch_data
+        if isinstance(data, tuple):
+            return data
+        if not self.cat:
+            raise ValueError("Category not set for branch without tuple data")
+        return (self.cat, data)
+
     def output(self):
-        current_point = self.branch_data
+        current_cat, current_point = self._current_branch_info()
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -851,7 +870,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             
         output = [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')]
         
-        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
         
         outputFileTargets = []
                 
@@ -861,7 +880,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return outputFileTargets
 
     def run(self):
-        current_point = self.branch_data
+        current_cat, current_point = self._current_branch_info()
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -926,9 +945,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             print(pdfIdx)
             return pdfIdx
 
-        pdfIdx = check_pdf_idx(self.cat)
+        pdfIdx = check_pdf_idx(current_cat)
 
-        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{self.cat}.MultiDimFit.mH125.38.root")
+        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{current_cat}.MultiDimFit.mH125.38.root")
 
         if self.variable == '':
             arguments = [
@@ -938,7 +957,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--snapshotName", "MultiDimFit",
                 "--freezeParameters", "MH",
                 "-m", "125.38",
-                "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
+                "-n", f"AsimovPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
@@ -990,7 +1009,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-d", firstStepPath,
                 "--freezeParameters", "MH",
                 "-m", "125.38",
-                "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
+                "-n", f"AsimovPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
@@ -1000,7 +1019,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "-P", f"{self.cat}",
+                "-P", f"{current_cat}",
                 "--firstPoint", f"{current_point}",
                 "--lastPoint", f"{current_point}",
                 "--saveFitResult",
@@ -1046,7 +1065,8 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
-    cat = law.Parameter(description="Current category")
+    cat = law.Parameter(default="", description="Current category")
+    cats = law.Parameter(default="", description="Comma separated list of categories to process")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
     set_pdfidx_inclusives = law.Parameter(default=False, description="Year")
     
@@ -1080,11 +1100,29 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return tasks
     
     def create_branch_map(self):
-        branch_map = {i: current_point for i, current_point in enumerate(range(int(self.nPoints)))}
+        points = list(range(int(self.nPoints)))
+        if not self.cats:
+            return {i: point for i, point in enumerate(points)}
+
+        cat_list = [cat.strip() for cat in self.cats.split(",") if cat.strip()]
+        branch_map = {}
+        idx = 0
+        for cat in cat_list:
+            for point in points:
+                branch_map[idx] = (cat, point)
+                idx += 1
         return branch_map
 
+    def _current_branch_info(self):
+        data = self.branch_data
+        if isinstance(data, tuple):
+            return data
+        if not self.cat:
+            raise ValueError("Category not set for branch without tuple data")
+        return (self.cat, data)
+
     def output(self):
-        current_point = self.branch_data
+        current_cat, current_point = self._current_branch_info()
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -1108,7 +1146,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         # output = [os.path.join(output_dir, 'Combine', fitFolderName)]
         output = [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')]
         
-        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{current_cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
         
         outputFileTargets = []
                 
@@ -1120,7 +1158,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return outputFileTargets
 
     def run(self):
-        current_point = self.branch_data
+        current_cat, current_point = self._current_branch_info()
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -1180,9 +1218,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             print(pdfIdx)
             return pdfIdx
         
-        pdfIdx = check_pdf_idx(self.cat)        
-    
-        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{self.cat}.MultiDimFit.mH125.38.root")
+        pdfIdx = check_pdf_idx(current_cat)        
+
+        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{current_cat}.MultiDimFit.mH125.38.root")
         
         if self.variable == '':
             arguments = [
@@ -1192,7 +1230,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--snapshotName", "MultiDimFit",
                 "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
-                "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
+                "-n", f"AsimovPostFitScanStat_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
@@ -1237,7 +1275,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-d", firstStepPath,
                 "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
-                "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
+                "-n", f"AsimovPostFitScanStat_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
@@ -1247,7 +1285,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "-P", f"{self.cat}",
+                "-P", f"{current_cat}",
                 "--firstPoint", f"{current_point}",
                 "--lastPoint", f"{current_point}",
                 "--saveFitResult",
@@ -1325,11 +1363,10 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             tasks["AsimovFitCategorySyst"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
             tasks["AsimovFitCategoryStat"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
         else:
-            version_index = 1
-            for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
-                tasks[f"AsimovFitCategorySyst_{cat}"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
-                tasks[f"AsimovFitCategoryStat_{cat}"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
-                version_index += 1
+            cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+            cats_csv = ",".join(cat_list)
+            tasks["AsimovFitCategorySyst_all"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats_csv, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
+            tasks["AsimovFitCategoryStat_all"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats_csv, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
         
         return tasks
     

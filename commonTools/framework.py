@@ -55,9 +55,9 @@ class HTCondorWorkflow(law.htcondor.HTCondorWorkflow):
     """
 
     parallel_jobs = luigi.IntParameter(
-        default=300,
+        default=600,
         significant=False,
-        description="maximum number of parallel htcondor jobs; default: 300",
+        description="maximum number of parallel htcondor jobs; default: 600",
     )
     htcondor_partition = luigi.Parameter(
         default="workday",
