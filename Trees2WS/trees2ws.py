@@ -387,13 +387,18 @@ if opt.doDiffSplitting:
     if opt.doSystematics: sdf = sdata[sdata[diffVar]==diffId]
 
     diffId_int = int(diffId)
-    if diffId_int not in diffDict:
-      print(" --> Skipping diffId %s for variable %s (no mapping)" % (diffId_int, diffVar))
+    variable_key = DIFFVAR_TO_VARIABLE.get(diffVar)
+    if variable_key is None:
+      print(" --> Skipping diffId %s for unknown variable key %s" % (diffId_int, diffVar))
+      continue
+
+    currentBin = getBinNameByHiggsDNANumber(variable_key, diffId_int)
+    if currentBin is None:
+      print(" --> Skipping diffId %s for variable %s (no mapping)" % (diffId_int, variable_key))
       continue
 
     # Extract diffBin
-    diffBin = diffDict[diffId_int]
-    diffBin = opt.productionMode + "_" + diffBin
+    diffBin = opt.productionMode + "_" + currentBin
     print(diffBin)
 
     # Define output workspace file

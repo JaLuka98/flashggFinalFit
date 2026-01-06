@@ -3,6 +3,16 @@ from collections import OrderedDict as od
 
 diffDict = od()
 
+DIFFVAR_TO_VARIABLE = {
+    'diffVariable_GenPTH': 'PTH',
+    'diffVariable_GenYH': 'rapidity',
+    'diffVariable_GenNJ': 'NJ',
+    'diffVariable_GenPTJ0': 'PTJ0',
+    'diffVariable_GenYJ0': 'YJ0',
+    'diffVariable_GenAbsPhiHJ0': 'AbsPhiHJ0',
+    'diffVariable_GenAbsYHJ0': 'AbsYHJ0',
+}
+
 _PTH_BINS = [
     "0p0_5p0",
     "5p0_10p0",
@@ -31,9 +41,14 @@ diffDict[0] = "PTH_0p0_10000p0_out"
 
 diffDict[20] = "YH_0p0_0p15_in"
 diffDict[21] = "YH_0p15_0p3_in"
-diffDict[22] = "YH_0p3_0p6_in"
-diffDict[23] = "YH_0p6_0p9_in"
-diffDict[24] = "YH_0p9_2p5_in"
+diffDict[22] = "YH_0p3_0p45_in"
+diffDict[23] = "YH_0p45_0p6_in"
+diffDict[34] = "YH_0p6_0p75_in"
+diffDict[24] = "YH_0p75_0p9_in"
+diffDict[36] = "YH_0p9_1p2_in"
+diffDict[37] = "YH_1p2_1p6_in"
+diffDict[38] = "YH_1p6_2p0_in"
+diffDict[39] = "YH_2p0_2p5_in"
 diffDict[25] = "YH_0p0_2p5_out"
 
 diffDict[30] = "NJ_0p0_1p0_in"
@@ -44,24 +59,16 @@ diffDict[33] = "NJ_3p0_100p0_in"
 # diffDict[34] = "NJ_4p0_100p0_in"
 diffDict[34] = "NJ_0p0_100p0_out"
 
-# diffDict[40] = "PTJ0_0p0_30p0_in"
-# diffDict[41] = "PTJ0_30p0_45p0_in"
-# diffDict[42] = "PTJ0_45p0_70p0_in"
-# diffDict[43] = "PTJ0_70p0_110p0_in"
-# diffDict[44] = "PTJ0_110p0_200p0_in"
-# diffDict[45] = "PTJ0_200p0_10000p0_in"
-# diffDict[46] = "PTJ0_0p0_10000p0_out"
-
-diffDict[40] = "PTJ0_0p0_30p0_in"
-diffDict[41] = "PTJ0_30p0_75p0_in"
-diffDict[42] = "PTJ0_75p0_120p0_in"
-diffDict[43] = "PTJ0_120p0_200p0_in"
-diffDict[44] = "PTJ0_200p0_10000p0_in"
-diffDict[45] = "PTJ0_0p0_10000p0_out"
-
-# diffDict[40] = "PTJ0_0p0_30p0_in"
-# diffDict[41] = "PTJ0_30p0_10000p0_in"
-# diffDict[45] = "PTJ0_0p0_10000p0_out"
+diffDict[50] = "PTJ0_0p0_30p0_in"
+diffDict[51] = "PTJ0_30p0_40p0_in"
+diffDict[52] = "PTJ0_40p0_55p0_in"
+diffDict[53] = "PTJ0_55p0_75p0_in"
+diffDict[54] = "PTJ0_75p0_95p0_in"
+diffDict[55] = "PTJ0_95p0_120p0_in"
+diffDict[56] = "PTJ0_120p0_150p0_in"
+diffDict[57] = "PTJ0_150p0_200p0_in"
+diffDict[58] = "PTJ0_200p0_10000p0_in"
+diffDict[59] = "PTJ0_0p0_10000p0_out"
 
 diffDict[50] = "YJ0_0p0_0p5_in"
 diffDict[51] = "YJ0_0p5_1p2_in"

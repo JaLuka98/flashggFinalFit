@@ -4463,7 +4463,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
             if not tree:
                 print("Error: Tree 'limit' not found in the file.")
                 exit(1)
-            # Access the branch 'r_YH_0p9_2p5' and get its first value
+            # Access the branch 'r_YH_2p0_2p5' and get its first value
             if hasattr(tree, 'r'):
                 tree.GetEntry(0)  # Load the first entry
                 poi_bf_value = getattr(tree, 'r')  # Access the branch value
@@ -4519,7 +4519,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 exit(1)
 
             for poi in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
-                # Access the branch 'r_YH_0p9_2p5' and get its first value
+                # Access the branch 'r_YH_2p0_2p5' and get its first value
                 if hasattr(tree, poi):
                     tree.GetEntry(0)  # Load the first entry
                     first_value = getattr(tree, poi)  # Access the branch value
