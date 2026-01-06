@@ -243,12 +243,12 @@ differentialProcTable_ = {
         (29, "PTH_0p0_10000p0_out")
     ], 
     "rapidity": [
-        (20, "YH_0p0_0p15_in"),
-        (21, "YH_0p15_0p3_in"),
-        (22, "YH_0p3_0p45_in"),
-        (23, "YH_0p45_0p6_in"),
+        (30, "YH_0p0_0p15_in"),
+        (31, "YH_0p15_0p3_in"),
+        (32, "YH_0p3_0p45_in"),
+        (33, "YH_0p45_0p6_in"),
         (34, "YH_0p6_0p75_in"),
-        (24, "YH_0p75_0p9_in"),
+        (35, "YH_0p75_0p9_in"),
         (36, "YH_0p9_1p2_in"),
         (37, "YH_1p2_1p6_in"),
         (38, "YH_1p6_2p0_in"),
