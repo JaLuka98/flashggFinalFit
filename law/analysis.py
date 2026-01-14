@@ -411,38 +411,6 @@ class FinalFitsYear(law.Task):
 
         fitConfig = config["combine_fit"]
 
-        def ensure_unblinded_scan_prereqs():
-            if "UnblindedFitSystSingle" not in tasks:
-                tasks["UnblindedFitSystSingle"] = UnblindedFitSystSingle(
-                    output_dir=output_dir,
-                    variable=self.variable,
-                    year=self.year,
-                    batch_flavor=self.batch_flavor,
-                    version=self.variable if self.variable != "" else "inclusive",
-                    workflow=fitConfig["execution"],
-                    slurm_partition=fitConfig['batchPartition'],
-                    slurm_memory=fitConfig['batchMemory'],
-                    slurm_max_runtime=fitConfig['batchMaxRuntime'],
-                    htcondor_partition=fitConfig['batchPartition'],
-                    htcondor_memory=fitConfig['batchMemory'],
-                    htcondor_max_runtime=fitConfig['batchMaxRuntime'],
-                )
-            if "UnblindedFitStatSingle" not in tasks:
-                tasks["UnblindedFitStatSingle"] = UnblindedFitStatSingle(
-                    output_dir=output_dir,
-                    variable=self.variable,
-                    year=self.year,
-                    batch_flavor=self.batch_flavor,
-                    version=self.variable if self.variable != "" else "inclusive",
-                    workflow=fitConfig["execution"],
-                    slurm_partition=fitConfig['batchPartition'],
-                    slurm_memory=fitConfig['batchMemory'],
-                    slurm_max_runtime=fitConfig['batchMaxRuntime'],
-                    htcondor_partition=fitConfig['batchPartition'],
-                    htcondor_memory=fitConfig['batchMemory'],
-                    htcondor_max_runtime=fitConfig['batchMaxRuntime'],
-                )
-
         if convert_boolean_string(self.datacard_only):
             tasks["RunT2WS"] = RunText2Workspace(
                 output_dir=output_dir,
@@ -461,7 +429,6 @@ class FinalFitsYear(law.Task):
             return tasks
 
         if convert_boolean_string(self.unblinded_fits):
-            ensure_unblinded_scan_prereqs()
             tasks["CreateUnblindedFit"] = CreateUnblindedFit(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", workflow=self.batch_system)
         if convert_boolean_string(self.unblinded_stage_one):
             impactConfig = config["combine_impacts"]
@@ -475,7 +442,6 @@ class FinalFitsYear(law.Task):
             impactConfig = config["combine_impacts"]
             mggConfig = config["combine_mggToys"]
             tasks["UnblindedImpactThirdStep"] = UnblindedImpactThirdStep(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", workflow=impactConfig["execution"], slurm_partition=impactConfig['batchPartition'], slurm_memory=impactConfig['batchMemory'], slurm_max_runtime=impactConfig['batchMaxRuntime'], htcondor_partition=impactConfig['batchPartition'], htcondor_memory=impactConfig['batchMemory'], htcondor_max_runtime=impactConfig['batchMaxRuntime'])
-            ensure_unblinded_scan_prereqs()
             tasks["CreateUnblindedFit"] = CreateUnblindedFit(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != '' else 'inclusive', workflow=self.batch_system)
             tasks["MggDistribution"] = MggDistribution(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", workflow=mggConfig["execution"], slurm_partition=mggConfig['batchPartition'], slurm_memory=mggConfig['batchMemory'], slurm_max_runtime=mggConfig['batchMaxRuntime'], htcondor_partition=mggConfig['batchPartition'], htcondor_memory=mggConfig['batchMemory'], htcondor_max_runtime=mggConfig['batchMaxRuntime'], is_postfit=True)
         if convert_boolean_string(self.unblinded_covcorr):
