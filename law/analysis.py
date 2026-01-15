@@ -585,7 +585,15 @@ class FinalFitsYear(law.Task):
         
         if convert_boolean_string(self.unblinded_stage_two) or convert_boolean_string(self.unblinded_stage_three):
             if self.variable == '':
-                reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
+                reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
+                if "_" in self.year:
+                    cats = []
+                    for y in self.year.split("_"):
+                        y2 = y[-2:]
+                        for c in reco_cats_with_bmw:
+                            cats.append(f"Y{y2}_{c}")
+                    reco_cats_with_bmw = cats
+
                 cat_list = ["r"]
             else:
                 reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
