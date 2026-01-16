@@ -2800,7 +2800,12 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_fit", {}).get("cminApproxPreFitTolerance", 0.01)
+        rMin = config.get("combine_fit", {}).get("rMin", 0.7)
+        rMax = config.get("combine_fit", {}).get("rMax", 1.6)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -2840,9 +2845,9 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--floatOtherPOIs", "1",
                 "--saveWorkspace",
                 "--saveFitResult",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
-                "--rMin", f"{config['combine_fit']['rMin']}",
-                "--rMax", f"{config['combine_fit']['rMax']}"
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
+                "--rMin", f"{rMin}",
+                "--rMax", f"{rMax}",
             ]
             command = arguments
             # print(command)
@@ -2868,7 +2873,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", f"{current_cat}",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
                 # "--stepSize", "0.05", 
                 # "--setCrossingTolerance", "0.00005",
                 "--saveFitResult",
@@ -2993,7 +2998,12 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_fit", {}).get("cminApproxPreFitTolerance", 0.01)
+        rMin = config.get("combine_fit", {}).get("rMin", 0.7)
+        rMax = config.get("combine_fit", {}).get("rMax", 1.6)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -3032,8 +3042,8 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "-n", f"DataPostFitBestFitStat_{cat}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "singles",
-                "--rMin", f"{config['combine_fit']['rMin']}",
-                "--rMax", f"{config['combine_fit']['rMax']}",
+                "--rMin", f"{rMin}",
+                "--rMax", f"{rMax}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -3044,7 +3054,7 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--saveFitResult",
                 "--snapshotName", "MultiDimFit",
                 "-w", "w",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}"
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
             ]
             command = arguments
             # print(command)
@@ -3203,7 +3213,12 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_fit", {}).get("cminApproxPreFitTolerance", 0.01)
+        rMin = config.get("combine_fit", {}).get("rMin", 0.7)
+        rMax = config.get("combine_fit", {}).get("rMax", 1.6)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -3238,8 +3253,8 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
                 "--points", f"{n_points}",
-                "--rMin", f"{config['combine_fit']['rMin']}",
-                "--rMax", f"{config['combine_fit']['rMax']}",
+                "--rMin", f"{rMin}",
+                "--rMax", f"{rMax}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -3252,7 +3267,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--firstPoint", f"{current_point}",
                 "--lastPoint", f"{current_point}",
                 "--setParameterRanges", f"{config['combine_fit']['setParameterRange']}",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
                 "-w", "w",
             ]
         else:
@@ -3404,7 +3419,12 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_fit", {}).get("cminApproxPreFitTolerance", 0.01)
+        rMin = config.get("combine_fit", {}).get("rMin", 0.7)
+        rMax = config.get("combine_fit", {}).get("rMax", 1.6)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -3444,8 +3464,8 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-n", f"DataPostFitScanStat_{cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
-                "--rMin", f"{config['combine_fit']['rMin']}",
-                "--rMax", f"{config['combine_fit']['rMax']}",
+                "--rMin", f"{rMin}",
+                "--rMax", f"{rMax}",
                 "--points", f"{n_points}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
@@ -3458,7 +3478,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--alignEdges", "1",
                 "--firstPoint", f"{current_point}",
                 "--lastPoint", f"{current_point}",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
                 "-w", "w",
             ]
         else:
@@ -4185,7 +4205,11 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_impacts", {}).get("cminApproxPreFitTolerance", 0.01)
+        setParameters = config.get("combine_impacts", {}).get("setParameters", 1.000)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -4226,8 +4250,8 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                "--cminApproxPreFitTolerance", f"{config['combine_impacts']['cminApproxPreFitTolerance']}",
-                "--setParameters", f"{config['combine_impacts']['setParameters']}"
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
+                "--setParameter", f"{setParameters}",
             ]
             command = arguments
             # print(command)
@@ -4419,7 +4443,12 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_impacts", {}).get("cminApproxPreFitTolerance", 0.01)
+        stepSize = config.get("combine_impacts", {}).get("stepSize", 0.05)
+        setCrossingTolerance = config.get("combine_impacts", {}).get("setCrossingTolerance", 0.00005)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -4485,9 +4514,9 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                "--cminApproxPreFitTolerance", f"{config['combine_impacts']['cminApproxPreFitTolerance']}",
-                "--stepSize", f"{config['combine_impacts']['stepSize']}",
-                "--setCrossingTolerance", f"{config['combine_impacts']['setCrossingTolerance']}",
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
+                "--stepSize", f"{stepSize}",
+                "--setCrossingTolerance", f"{setCrossingTolerance}",
                 "--robustHesse", "1"
             ]
             command = arguments
