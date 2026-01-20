@@ -5707,29 +5707,35 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         else:
             fitFolderName = f'runFits_{self.variable}'
             reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-            
+            if "_" in self.year:
+                cats = []
+                for y in self.year.split("_"):
+                    y2 = y[-2:]
+                    for c in reco_cats_with_bmw:
+                        cats.append(f"Y{y2}_{c}")
+                reco_cats_with_bmw = cats
         
         output = []
         if convert_boolean_string(self.is_postfit):
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
             
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.pdf')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.png')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.pdf')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.png')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.png')]
         else:
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
             
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.pdf')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.png')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.pdf')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.png')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.png')]
                 
         
         outputFileTargets = []
@@ -5810,7 +5816,13 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             else:
                 # firstStep_path = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
                 reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-
+                if "_" in self.year:
+                    cats = []
+                    for y in self.year.split("_"):
+                        y2 = y[-2:]
+                        for c in reco_cats_with_bmw:
+                            cats.append(f"Y{y2}_{c}")
+                    reco_cats_with_bmw = cats
             arguments = [
                 "python3",
                 f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeSplusBModelPlot.py')}",
@@ -5912,7 +5924,15 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
 
             else:
                 reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-                
+
+                if "_" in self.year:
+                    cats = []
+                    for y in self.year.split("_"):
+                        y2 = y[-2:]
+                        for c in reco_cats_with_bmw:
+                            cats.append(f"Y{y2}_{c}")
+                    reco_cats_with_bmw = cats
+
             arguments = [
                 "python3",
                 f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeSplusBModelPlot.py')}",
