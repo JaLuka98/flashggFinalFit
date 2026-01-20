@@ -600,7 +600,7 @@ class FinalFitsYear(law.Task):
             
             output = []
             for cat in cat_list:
-                if convert_boolean_string(self.unblinded_stage_two):
+                if self.variable != '':
                     reco_cats_with_bmw = [
                         element
                         for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW']
@@ -613,6 +613,8 @@ class FinalFitsYear(law.Task):
                             for c in reco_cats_with_bmw:
                                 cats.append(f"Y{y2}_{c}")
                         reco_cats_with_bmw = cats
+
+                if convert_boolean_string(self.unblinded_stage_two):
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
                     
