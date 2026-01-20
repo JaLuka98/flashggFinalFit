@@ -368,6 +368,36 @@ models = {
 --PO \"map=.*/vh_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,0,3]\" \
 --PO \"map=.*/vbf_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,0,3]\"",
 
+  "CosThetaStarCS":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/ggh_CosThetaStarCS_0p07_0p15.*:r_CosThetaStarCS_0p07_0p15[1,-16,16]\" \
+--PO \"map=.*/tth_CosThetaStarCS_0p07_0p15.*:r_CosThetaStarCS_0p07_0p15[1,-16,16]\" \
+--PO \"map=.*/vh_CosThetaStarCS_0p07_0p15.*:r_CosThetaStarCS_0p07_0p15[1,-16,16]\" \
+--PO \"map=.*/vbf_CosThetaStarCS_0p07_0p15.*:r_CosThetaStarCS_0p07_0p15[1,-16,16]\" \
+--PO \"map=.*/ggh_CosThetaStarCS_0p0_0p07.*:r_CosThetaStarCS_0p0_0p07[1,-16,16]\" \
+--PO \"map=.*/tth_CosThetaStarCS_0p0_0p07.*:r_CosThetaStarCS_0p0_0p07[1,-16,16]\" \
+--PO \"map=.*/vh_CosThetaStarCS_0p0_0p07.*:r_CosThetaStarCS_0p0_0p07[1,-16,16]\" \
+--PO \"map=.*/vbf_CosThetaStarCS_0p0_0p07.*:r_CosThetaStarCS_0p0_0p07[1,-16,16]\" \
+--PO \"map=.*/ggh_CosThetaStarCS_0p15_0p22.*:r_CosThetaStarCS_0p15_0p22[1,-16,16]\" \
+--PO \"map=.*/tth_CosThetaStarCS_0p15_0p22.*:r_CosThetaStarCS_0p15_0p22[1,-16,16]\" \
+--PO \"map=.*/vh_CosThetaStarCS_0p15_0p22.*:r_CosThetaStarCS_0p15_0p22[1,-16,16]\" \
+--PO \"map=.*/vbf_CosThetaStarCS_0p15_0p22.*:r_CosThetaStarCS_0p15_0p22[1,-16,16]\" \
+--PO \"map=.*/ggh_CosThetaStarCS_0p22_0p35.*:r_CosThetaStarCS_0p22_0p35[1,-16,16]\" \
+--PO \"map=.*/tth_CosThetaStarCS_0p22_0p35.*:r_CosThetaStarCS_0p22_0p35[1,-16,16]\" \
+--PO \"map=.*/vh_CosThetaStarCS_0p22_0p35.*:r_CosThetaStarCS_0p22_0p35[1,-16,16]\" \
+--PO \"map=.*/vbf_CosThetaStarCS_0p22_0p35.*:r_CosThetaStarCS_0p22_0p35[1,-16,16]\" \
+--PO \"map=.*/ggh_CosThetaStarCS_0p35_0p45.*:r_CosThetaStarCS_0p35_0p45[1,-16,16]\" \
+--PO \"map=.*/tth_CosThetaStarCS_0p35_0p45.*:r_CosThetaStarCS_0p35_0p45[1,-16,16]\" \
+--PO \"map=.*/vh_CosThetaStarCS_0p35_0p45.*:r_CosThetaStarCS_0p35_0p45[1,-16,16]\" \
+--PO \"map=.*/vbf_CosThetaStarCS_0p35_0p45.*:r_CosThetaStarCS_0p35_0p45[1,-16,16]\" \
+--PO \"map=.*/ggh_CosThetaStarCS_0p45_0p55.*:r_CosThetaStarCS_0p45_0p55[1,-16,16]\" \
+--PO \"map=.*/tth_CosThetaStarCS_0p45_0p55.*:r_CosThetaStarCS_0p45_0p55[1,-16,16]\" \
+--PO \"map=.*/vh_CosThetaStarCS_0p45_0p55.*:r_CosThetaStarCS_0p45_0p55[1,-16,16]\" \
+--PO \"map=.*/vbf_CosThetaStarCS_0p45_0p55.*:r_CosThetaStarCS_0p45_0p55[1,-16,16]\" \
+--PO \"map=.*/ggh_CosThetaStarCS_0p55_0p75.*:r_CosThetaStarCS_0p55_0p75[1,-16,16]\" \
+--PO \"map=.*/tth_CosThetaStarCS_0p55_0p75.*:r_CosThetaStarCS_0p55_0p75[1,-16,16]\" \
+--PO \"map=.*/vh_CosThetaStarCS_0p55_0p75.*:r_CosThetaStarCS_0p55_0p75[1,-16,16]\" \
+--PO \"map=.*/vbf_CosThetaStarCS_0p55_0p75.*:r_CosThetaStarCS_0p55_0p75[1,-16,16]\"",
+
   "PTJ0":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggh_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,-8,8]\" \
 --PO \"map=.*/tth_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,-8,8]\" \

@@ -1978,13 +1978,14 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
 
         os.chdir(cwd)
 
-class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
     
     # save_sonly = law.Parameter(default=False, description="If True, will save the s-only replica as well.")
 
+    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     toy_flag = law.Parameter(default=False, description="Toy flag")
     number_of_replicas = law.Parameter(default=1000, description="Number of replicas to run.")
     starting_value = law.Parameter(default=0, description="Starting toy computation from this index. This can be useful for preventing overloading schedds.")
@@ -2038,16 +2039,21 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
-        
 
-        SplusB_config = self.config["combine_SplusB_toys"]
-        
-        tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
+        if convert_boolean_string(self.toy_flag) == True:        
+
+            SplusB_config = self.config["combine_SplusB_toys"]
+            
+            tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
+            
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            fitConfig = self.config["combine_fit"]
+            
+            tasks["RunT2WS"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_replicas, seed=self.seed)
         
         return tasks
     
     def create_branch_map(self):
-        
         branch_map = {
             j: replica_index
             for j, replica_index in enumerate(range(int(self.starting_value), (int(self.starting_value) + int(self.number_of_replicas))))
@@ -2060,8 +2066,12 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         self._init_once()
         
         output = []
-        # output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombineToyFit.MultiDimFit.mH125.38.root')]
-        output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombineToyFit.MultiDimFit.mH125.root')]
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'bootstrapFit', f'bootstrap_{replica_index}', f'higgsCombineBootstrapFit.MultiDimFit.mH125.38.root')]
+        
+        if convert_boolean_string(self.toy_flag) == True:
+            # output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombineToyFit.MultiDimFit.mH125.38.root')]
+            output += [os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}', f'higgsCombineToyFit.MultiDimFit.mH125.root')]
 
         outputFileTargets = []
 
@@ -2072,9 +2082,16 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
 
     def run(self):
         replica_index = self.branch_data
-        
+
+        if convert_boolean_string(self.toy_flag) == True:
+            datase_type_folder_name = "toyFit"
+            dataset_type_prefix = "toy"
+        else:
+            dataset_type_folder_name = "bootstrapFit"
+            dataset_type_prefix = "bootstrap"
+
         self._init_once()
-        
+
         cwd = os.getcwd()
 
         if self.variable == '':
@@ -2087,80 +2104,106 @@ class FitSplusBToy(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
             if "/work" in self.resolved_output_dir:
-                execute_command([f'mkdir -p {self.resolved_output_dir}/Combine/{self.fitFolderName}/toyFit/toy_{replica_index}'], shell=True)
-            else:   
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Combine/{self.fitFolderName}/toyFit/toy_{replica_index}'], shell=True)
+                execute_command([f'mkdir -p {self.resolved_output_dir}/Combine/{self.fitFolderName}/{dataset_type_folder_name}/{dataset_type_prefix}_{replica_index}'], shell=True)
+            else:
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Combine/{self.fitFolderName}/{dataset_type_folder_name}/{dataset_type_prefix}_{replica_index}'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-            execute_command([f'mkdir -p $TARGET_PATH/Combine/{self.fitFolderName}/toyFit/toy_{replica_index}'], shell=True)
-            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}'))
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{self.fitFolderName}/{dataset_type_folder_name}/{dataset_type_prefix}_{replica_index}'], shell=True)                
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', self.fitFolderName, dataset_type_folder_name, f'{dataset_type_prefix}_{replica_index}'))
         else:
-            execute_command([f'mkdir -p {self.resolved_output_dir}/Combine/{self.fitFolderName}/toyFit/toy_{replica_index}'], shell=True)
-            os.chdir(os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, f'toyFit', f'toy_{replica_index}'))
+            execute_command([f'mkdir -p {self.resolved_output_dir}/Combine/{self.fitFolderName}/{dataset_type_folder_name}/{dataset_type_prefix}_{replica_index}'], shell=True)
+            os.chdir(os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, dataset_type_folder_name, f'{dataset_type_prefix}_{replica_index}'))
 
         seed = int(self.seed) + int(replica_index)
                 
         # pdfIndicesStr = ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])
 
         # pdfindex_file = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root')
-        pdfindex_file = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.root')
+        if convert_boolean_string(self.toy_flag) == True:
+            pdfindex_file = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.root')
 
-        def check_pdf_idx():
-            # Run the ROOT command
-            command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{pdfindex_file}")\''
-            
-            # Execute the command and capture the output
-            result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            
-            # Get the output and check for errors
-            pdfIdx = result.stdout.strip()
-            
-            if result.returncode != 0:
-                print("Error executing the command:", result.stderr)
-                return None
+            def check_pdf_idx():
+                # Run the ROOT command
+                command = f'root -l -q \'{os.environ["ANALYSIS_PATH"]}/Combine/checkPdfIdx.C("{pdfindex_file}")\''
+                
+                # Execute the command and capture the output
+                result = subprocess.run(command, shell=True, capture_output=True, text=True)
+                
+                # Get the output and check for errors
+                pdfIdx = result.stdout.strip()
+                
+                if result.returncode != 0:
+                    print("Error executing the command:", result.stderr)
+                    return None
 
-            if pdfIdx.startswith("Processing"):
-                pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
-            
-            # Remove the last comma
-            pdfIdx = pdfIdx.rstrip(',')
+                if pdfIdx.startswith("Processing"):
+                    pdfIdx = pdfIdx.split('X', 1)[-1]  # Split on the first 'X'
+                
+                # Remove the last comma
+                pdfIdx = pdfIdx.rstrip(',')
 
-            # Print the final result
-            print(pdfIdx)
-            return pdfIdx
+                # Print the final result
+                print(pdfIdx)
+                return pdfIdx
+            
+            pdfIdx = check_pdf_idx()
         
-        pdfIdx = check_pdf_idx()
-        
-        # splusb_toy = os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
+            # splusb_toy = os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
 
-        arguments = [
-            "combine",
-            "-M", "MultiDimFit",
-            # ws_path,
-            # os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'),
-            os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.root'),
-            # "-m", "125.38",
-            "-m", "125",
-            "--snapshotName", "MultiDimFit",
-            "-n", f"ToyFit",
-            "--cminDefaultMinimizerStrategy=0",
-            "--saveWorkspace",
-            # "--cminApproxPreFitTolerance", f"{self.config['combine_fit']['cminApproxPreFitTolerance']}",
-            "--robustFit=1",
-            "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
-            "--X-rtd", "MINIMIZER_multiMin_hideConstants",
-            "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
-            "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-            "--algo", "singles",
-            # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
-            "--saveFitResult",
-            # "--setParameters", f"""{pdfIdx}""",
-            "--freezeParameters", "MH",
-            # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
-            # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
-            # "-D", f"{splusb_toy}:toys/toy_1",
-            # --toysFrequentist --bypassFrequentistFit
-        ]
+            arguments = [
+                "combine",
+                "-M", "MultiDimFit",
+                # ws_path,
+                # os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'),
+                os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.root'),
+                # "-m", "125.38",
+                "-m", "125",
+                "--snapshotName", "MultiDimFit",
+                "-n", f"ToyFit",
+                "--cminDefaultMinimizerStrategy=0",
+                "--saveWorkspace",
+                # "--cminApproxPreFitTolerance", f"{self.config['combine_fit']['cminApproxPreFitTolerance']}",
+                "--robustFit=1",
+                "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+                "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+                "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+                "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "--algo", "singles",
+                # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
+                "--saveFitResult",
+                # "--setParameters", f"""{pdfIdx}""",
+                "--freezeParameters", "MH",
+                # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
+                # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
+                # "-D", f"{splusb_toy}:toys/toy_1",
+                # --toysFrequentist --bypassFrequentistFit
+            ]
+        else:
+            arguments = [
+                "combine",
+                "-M", "MultiDimFit",
+                ws_path,
+                "-m", "125.38",
+                "-n", f"BootstrapFit",
+                "--cminDefaultMinimizerStrategy=0",
+                "--saveWorkspace",
+                # "--cminApproxPreFitTolerance", f"{self.config['combine_fit']['cminApproxPreFitTolerance']}",
+                "--robustFit=1",
+                "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+                "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+                "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+                "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "--algo", "singles",
+                # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
+                "--saveFitResult",
+                # "--setParameters", f"""{pdfIdx}""",
+                "--freezeParameters", "MH",
+                # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
+                # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
+                # "-D", f"{splusb_toy}:toys/toy_1",
+                # --toysFrequentist --bypassFrequentistFit
+            ]
         command = arguments
         print(command)
         try:
