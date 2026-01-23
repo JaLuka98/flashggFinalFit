@@ -32,6 +32,19 @@ lumiMap = {
     '2024': 9.5
 }
 
+# Flow era map
+flowEraMap = {
+    '2022': {
+        'preEE': 0,
+        'postEE': 1
+    },
+    '2023': {
+        'preBPix': 2,
+        'postBPix': 3
+    },
+    '2024': 4
+}
+
 def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW, procs=None, eft_variable=None, individual=False):
     paramStr = [f"r_{gen_variable}_{bin}=1" for bin in bins]
     paramStrZero = [f"r_{gen_variable}_{bin}=0" for bin in bins]

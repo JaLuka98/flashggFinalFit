@@ -20,6 +20,7 @@ from commonObjects import *
 from Combine.law_combine import *
 
 # Flow stuff
+import random
 from scipy import stats
 from Replicas.hgg_kinflow.dataset_loader import load_dataset
 import Replicas.hgg_kinflow.dataset_loader as dataset_loader
@@ -27,6 +28,7 @@ import zuko
 from zuko.nn import MLP
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 from torch.utils.data import Dataset, random_split, Subset
 from torch.utils.data import DataLoader
 import cloudpickle
@@ -415,6 +417,58 @@ def get_category_name(filename: str) -> str:
     if not match:
         return ""
     return match.group(1)
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+
+def load_ensemble(ensemble_size=4, base_seed=42):
+    models = []
+
+    for i in range(ensemble_size):
+        print(f"\n🚀 Loading model {i+1}/{ensemble_size}")
+        current_seed = base_seed + i
+        set_seed(current_seed)
+
+        g = torch.Generator().manual_seed(current_seed)
+
+        model = MLP(
+            in_features=5,
+            out_features=13,
+            hidden_features=[128,128,128],
+            activation=nn.GELU,
+            normalize=True
+        ).to("cpu")
+
+        model.load_state_dict(torch.load(f"/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_NJ_NN_{i}.pth", map_location=torch.device('cpu')))
+
+        models.append(model)
+
+    return models
+
+def ensemble_predict(models, dataset_):
+    all_probs = []
+    all_pred_class = []
+
+    for model in models:
+        model.eval()
+
+    with torch.no_grad():
+        logits = []
+        for i, model in enumerate(models):
+            logits.append(model(dataset_))
+
+        logits_mean = torch.stack(logits).mean(dim=0)
+        probs = F.softmax(logits_mean, dim=1)
+
+        pred_class = probs.argmax(dim=1)
+
+        all_pred_class.append(pred_class.cpu())
+        all_probs.append(probs.cpu())
+
+    return torch.cat(all_probs), torch.cat(all_pred_class)
 
 class GetAsimovBestFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
     variable = law.Parameter(default="", description="Variable to be used")
@@ -864,60 +918,82 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
 
             # Generate toys using only obs
             genVars = ROOT.RooArgSet(mass)
+            
+            cat_index = int(catName.split("cat")[-1])
+            
+            # Get the flow mapping for the year
+            # note, if in the allErasMap there is only one era selected, do NOT scale the lumi
+            eras = allErasMap[self.year]
+            
+            current_allEra_df = pd.DataFrame()
 
-            ROOT.RooRandom.randomGenerator().SetSeed(catSeed)
+            for era in eras: # note we have max only two eras per year
+                lumi_scale = lumiMap[self.year+era] / sum([lumiMap[self.year+era] for era in eras])
 
-            toyData = bestFit_pdf.generate(genVars, nToys)
+                current_flowEraIdx = flowEraMap[self.year][era]
 
-            cats_df.append(roo_dataset_to_pandas(toyData))
+                # Category-specific seed
+                catSeed = seed + (1_000_000 * fileIdx) + (2_000_000 * current_flowEraIdx)
+
+                ROOT.RooRandom.randomGenerator().SetSeed(catSeed)
+
+                era_toyData = bestFit_pdf.generate(genVars, nToys*lumi_scale)
+
+                current_era_df = roo_dataset_to_pandas(era_toyData)
+
+                current_era_df['cat'] = cat_index
+                current_era_df['year'] = current_flowEraIdx
+
+                current_allEra_df = pd.concat([current_allEra_df, current_era_df], ignore_index=True)
+
+            cats_df.append(current_allEra_df)
 
         mass_df = pd.concat(cats_df, ignore_index=True)
         # Rename the mass column in order to be compatible with the flows
         mass_df.rename(columns={"CMS_hgg_mass": "mass"}, inplace=True)
         
-        input_mass = pd.DataFrame(mass_df, columns=['mass'])
+        input_mass = pd.DataFrame(mass_df, columns=['mass', 'cat', 'year'])
+        input_mass['cat'] = input_mass['cat'].astype(int)
         
         # Set a seed
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        
+        set_seed(seed)
+
         # Load the flows
-        pt_eta_sigmam_H_flow = zuko.flows.spline.NSF(features=3, # PTH, Eta and sigma_m_over_m
-                                              context=1, # mass
+        pt_eta_H_flow = zuko.flows.spline.NSF(features=2, # PTH, Eta
+                                              context=3, # mass, cat, year
                                               bins=50,
-                                              passes=2, # Models the PTH, eta as well as sigma_m_over_m conditional on mass twice
-                                              hidden_features=[128,128],
-                                              transforms=2
+                                              passes=4,
+                                              hidden_features=[128,128,128],
+                                              transforms=3
                                               ).to("cpu")
 
-        model_b =  MLP(in_features=4, out_features=11, hidden_features=[128,128,128],
-                            activation=nn.GELU, normalize=True).to("cpu")
+        models_b = load_ensemble(ensemble_size=4, base_seed=seed)
 
         ptj_flow = zuko.flows.spline.NSF(features=1,
-                                              context=5,
-                                              bins=30,
-                                              passes=1, 
-                                              hidden_features=[128,128],
-                                              transforms=1
-                                              ).to("cpu")
-        
-        DPhiJ0J1_flow = zuko.flows.spline.NCSF(features=1,
                                               context=6,
                                               bins=30,
                                               passes=1, 
-                                              hidden_features=[128,128],
+                                              hidden_features=[128,128,128,128],
+                                              transforms=1
+                                              ).to("cpu")
+        
+        DPhiJ0J1_flow = zuko.flows.spline.NSF(features=1,
+                                              context=7,
+                                              bins=30,
+                                              passes=None, 
+                                              hidden_features=[128,128,128,128],
                                               transforms=1
                                               ).to("cpu")
 
-        pt_eta_sigmam_H_flow.load_state_dict(torch.load("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_flow_pt_eta_sigmam_H.pth", map_location=torch.device('cpu')))
-        model_b.load_state_dict(torch.load("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_NJ_NN.pth", map_location=torch.device('cpu')))
+        pt_eta_H_flow.load_state_dict(torch.load("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_flow_pt_eta_H.pth", map_location=torch.device('cpu')))
         ptj_flow.load_state_dict(torch.load("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_flow_ptj0.pth", map_location=torch.device('cpu')))
         DPhiJ0J1_flow.load_state_dict(torch.load("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/model_flow_dphij0j1.pth", map_location=torch.device('cpu')))
         
-        dataset = dataset_loader.PandasDataset(input_mass, ["mass"], ["mass"], "/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/preprocessing_pipeline_v1.pkl", device="cpu")
-        
-        # Move model + data to CPU
-        pt_eta_sigmam_H_flow = pt_eta_sigmam_H_flow.cpu()
+        dataset = dataset_loader.PandasDataset(input_mass, ["mass", "cat", "year"], ["mass", "cat", "year"], "/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/preprocessing_pipeline_v1.pkl", device="cpu")
+
+        number_of_samples = 1
+
+        pt_eta_H_flow = pt_eta_H_flow.cpu()
         mass = dataset.c.cpu()
 
         BATCH_SIZE = 1024
@@ -925,20 +1001,25 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
 
         with torch.no_grad():
             for i in range(0, mass.shape[0], BATCH_SIZE):
-                batch_mass = mass[i:i+BATCH_SIZE]          # already on CPU
-                flow = pt_eta_sigmam_H_flow(batch_mass)    # CPU forward pass
-                samples = flow.sample((1,))                # CPU sampling
-                all_samples.append(samples.squeeze(0))
+                batch_mass = mass[i:i+BATCH_SIZE]
+                flow = pt_eta_H_flow(batch_mass)
 
-        # Combine batches
-        pt_eta_sigmam = torch.cat(all_samples, dim=0)
+                # samples: (num_samples, batch_size, D)
+                samples = flow.sample((number_of_samples,))
 
-        pt_eta_sigmam_mass = torch.concat([pt_eta_sigmam, mass], dim=1)
-        
-        model_b = model_b.cpu()
-        probs = torch.softmax(model_b(pt_eta_sigmam_mass), axis=-1)
-        
-        probs = probs.cpu()
+                # flatten the first 2 dims → (num_samples * batch_size, D)
+                samples = samples.reshape(-1, samples.shape[-1])
+
+                all_samples.append(samples)
+
+        pt_eta = torch.cat(all_samples, dim=0)
+
+        pt_eta_mass = torch.concat([pt_eta, mass], dim=1)
+
+        probs, pred = ensemble_predict(models_b, pt_eta_mass)
+
+        probs = probs.cpu() # ensure CPU
+        BATCH_SIZE = 1024
         all_samples = []
 
         with torch.no_grad():
@@ -947,21 +1028,20 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
 
                 batch_samples = torch.multinomial(
                     input=batch_probs,
-                    num_samples=1,
-                    replacement=False
+                    num_samples=number_of_samples,
+                    replacement=False 
                 )
 
                 all_samples.append(batch_samples)
 
         sampled_NJ = torch.cat(all_samples, dim=0)
-        
+
         ptj_flow = ptj_flow.cpu()
         DPhiJ0J1_flow = DPhiJ0J1_flow.cpu()
-        pt_eta_sigmam_mass_NJ = torch.concat([sampled_NJ.float(), pt_eta_sigmam_mass], dim=1)
+        pt_eta_mass_NJ = torch.concat([sampled_NJ.float(), pt_eta_mass], dim=1)
 
-        # Ensure everything is on CPU
         sampled_NJ = sampled_NJ.cpu()
-        pt_eta_sigmam_mass_NJ = pt_eta_sigmam_mass_NJ.cpu()
+        pt_eta_mass_NJ = pt_eta_mass_NJ.cpu()
 
         BATCH_SIZE = 256
         all_ptj0 = []
@@ -973,18 +1053,18 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
                 # 1) Batch inputs
                 # --------------------
                 batch_NJ = sampled_NJ[i:i+BATCH_SIZE].float()
-                batch_pt_eta_sigmam_mass_NJ = pt_eta_sigmam_mass_NJ[i:i+BATCH_SIZE]
+                batch_pt_eta_mass_NJ = pt_eta_mass_NJ[i:i+BATCH_SIZE]
 
                 # --------------------
                 # 2) Sample ptj0
                 # --------------------
-                batch_ptj0 = ptj_flow(batch_pt_eta_sigmam_mass_NJ).sample((1,)).squeeze(0)
+                batch_ptj0 = ptj_flow(batch_pt_eta_mass_NJ).sample((1,)).squeeze(0)
                 all_ptj0.append(batch_ptj0)
 
                 # --------------------
                 # 3) Sample dphij0j1
                 # --------------------
-                batch_ptj0_nj_pt_eta_mass = torch.cat([batch_ptj0, batch_pt_eta_sigmam_mass_NJ], dim=1)
+                batch_ptj0_nj_pt_eta_mass = torch.cat([batch_ptj0, batch_pt_eta_mass_NJ], dim=1)
                 batch_dphij0j1 = DPhiJ0J1_flow(batch_ptj0_nj_pt_eta_mass).sample((1,)).squeeze(0)
                 all_dphij0j1.append(batch_dphij0j1)
 
@@ -994,9 +1074,9 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
         sample_ptj0 = torch.cat(all_ptj0, dim=0)
         sample_dphij0j1 = torch.cat(all_dphij0j1, dim=0)
         
-        ptj0_nj_pt_eta_sigmam_mass = torch.concat([sample_ptj0, pt_eta_sigmam_mass_NJ], dim=1)
+        ptj0_nj_pt_eta_mass = torch.concat([sample_ptj0, pt_eta_mass_NJ], dim=1)
 
-        final_sample = torch.concat([sample_dphij0j1, ptj0_nj_pt_eta_sigmam_mass], dim=1)
+        final_sample = torch.concat([sample_dphij0j1, ptj0_nj_pt_eta_mass], dim=1)
         
         tensor = final_sample.clone()
         NJ = tensor[:, 2]
@@ -1018,7 +1098,7 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
         
         pipelines = cloudpickle.load(open("/work/niharrin/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/Replicas/hgg_kinflow/preprocessing_pipeline_v1.pkl", "rb"))
 
-        columns = ["DPhiJ0J1", "PTJ0","NJ","pt","rapidity", "sigma_m_over_m_corr_smeared_decorr","mass"]
+        columns = ["DPhiJ0J1", "PTJ0","NJ","pt","rapidity","mass","cat","year"]
         out = [] 
         for d, col in enumerate(columns):
             out.append(pipelines[col].inverse_transform(tensor[:, d].cpu().numpy().reshape(-1,1)).squeeze())
@@ -1033,13 +1113,38 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
         x = torch.tensor([-999.0], device=tensor.device)  
         unscaled_dataset[mask_NJ0, 1] = x
 
-        inclusive_bkg_replica = pd.DataFrame(unscaled_dataset.detach().cpu().numpy(), columns=["DPhiJ0J1", "PTJ0","NJ","pt","rapidity", "sigma_m_over_m_corr_smeared_decorr","CMS_hgg_mass"])
+        inclusive_bkg_replica = pd.DataFrame(unscaled_dataset.detach().cpu().numpy(), columns=["DPhiJ0J1", "PTJ0","NJ","pt","rapidity","CMS_hgg_mass","cat","year"])
 
         # add lead_mvaID column with constant 1.0 (float32 to match replica dtypes) (mvaID cut in this approach not relevant)
         inclusive_bkg_replica['lead_mvaID'] = np.ones(len(inclusive_bkg_replica), dtype=np.float32)
         inclusive_bkg_replica['sublead_mvaID'] = np.ones(len(inclusive_bkg_replica), dtype=np.float32)
         inclusive_bkg_replica['weight'] = np.ones(len(inclusive_bkg_replica), dtype=np.float32)
-        
+
+        # depending on the cat, assign a sensible sigmaMoverM value such that the category is chosen in the next step
+        sigmaMoverM_values = {
+            "2022": {
+                "cat0": 0.00525,  # cat 0
+                "cat1": 0.01175,  # cat 1
+                "cat2": 0.02225   # cat 2
+            },
+            "2023": {
+                "cat0": 0.0055,  # cat 0
+                "cat1": 0.0125,  # cat 1
+                "cat2": 0.02275   # cat 2
+            },
+            "2024": {
+                "cat0": 0.0055,  # cat 0
+                "cat1": 0.0125,  # cat 1
+                "cat2": 0.02275   # cat 2
+            }
+        }
+
+        inclusive_bkg_replica['cat'] = inclusive_bkg_replica['cat'].astype(int)
+
+        inclusive_bkg_replica.loc[inclusive_bkg_replica["cat"] == 0,'sigma_m_over_m_corr_smeared_decorr'] = sigmaMoverM_values[self.year]["cat0"]
+        inclusive_bkg_replica.loc[inclusive_bkg_replica["cat"] == 1,'sigma_m_over_m_corr_smeared_decorr'] = sigmaMoverM_values[self.year]["cat1"]
+        inclusive_bkg_replica.loc[inclusive_bkg_replica["cat"] == 2,'sigma_m_over_m_corr_smeared_decorr'] = sigmaMoverM_values[self.year]["cat2"]
+
         # Load the considered variable
         cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", self.config['inputFiles']['catDict_timestamp'], f"{self.variable}_MC.json")
         if not os.path.exists(cat_dict_path):
@@ -1942,6 +2047,7 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             arguments += ["--setParameters", "r=1"]
         else:
             # arguments += ["--saveSpecifiedIndex", ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])]
+
             arguments += ["--setParameters", ",".join(combineVariableDict(self.variable, self.year)['paramStr'])]
             # arguments += ["--setParameters", ",".join(combineVariableDict(self.variable, self.year)['paramStrZero'])]
 
@@ -2084,7 +2190,7 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
         replica_index = self.branch_data
 
         if convert_boolean_string(self.toy_flag) == True:
-            datase_type_folder_name = "toyFit"
+            dataset_type_folder_name = "toyFit"
             dataset_type_prefix = "toy"
         else:
             dataset_type_folder_name = "bootstrapFit"
