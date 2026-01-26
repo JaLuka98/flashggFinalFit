@@ -368,10 +368,14 @@ models = {
 --PO \"map=.*/tth_NJ_2p0_3p0.*:r_NJ_2p0_3p0[1,-3,3]\" \
 --PO \"map=.*/vh_NJ_2p0_3p0.*:r_NJ_2p0_3p0[1,-3,3]\" \
 --PO \"map=.*/vbf_NJ_2p0_3p0.*:r_NJ_2p0_3p0[1,-3,3]\" \
---PO \"map=.*/ggh_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,-3,3]\" \
---PO \"map=.*/tth_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,-3,3]\" \
---PO \"map=.*/vh_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,-3,3]\" \
---PO \"map=.*/vbf_NJ_3p0_100p0.*:r_NJ_3p0_100p0[1,-3,3]\"",
+--PO \"map=.*/ggh_NJ_3p0_4p0.*:r_NJ_3p0_4p0[1,-3,3]\" \
+--PO \"map=.*/tth_NJ_3p0_4p0.*:r_NJ_3p0_4p0[1,-3,3]\" \
+--PO \"map=.*/vh_NJ_3p0_4p0.*:r_NJ_3p0_4p0[1,-3,3]\" \
+--PO \"map=.*/vbf_NJ_3p0_4p0.*:r_NJ_3p0_4p0[1,-3,3]\" \
+--PO \"map=.*/ggh_NJ_4p0_100p0.*:r_NJ_4p0_100p0[1,-3,3]\" \
+--PO \"map=.*/tth_NJ_4p0_100p0.*:r_NJ_4p0_100p0[1,-3,3]\" \
+--PO \"map=.*/vh_NJ_4p0_100p0.*:r_NJ_4p0_100p0[1,-3,3]\" \
+--PO \"map=.*/vbf_NJ_4p0_100p0.*:r_NJ_4p0_100p0[1,-3,3]\"",
 
   "Njets2p5_0_3_fine":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggh_NJ_0p0_1p0.*:r_NJ_0p0_1p0[1,0,3]\" \

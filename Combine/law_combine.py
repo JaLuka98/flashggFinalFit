@@ -629,6 +629,11 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
                 "-m", "125.38",
                 "-n", f"firstStep_{current_branch}",
                 "--cminDefaultMinimizerStrategy=0",
+                # Robust minimizer settings keep the low-stat bins from looping
+                # forever; combine prints a warning for the first failure but
+                # immediately retries with the safer configuration below.
+                "--robustFit", "1",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--expectSignal", "1",
                 "--saveWorkspace",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -660,6 +665,11 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
                 "-m", "125.38",
                 "-n", f"firstStep_{current_branch}",
                 "--cminDefaultMinimizerStrategy=0",
+                # Without these the migrad call keeps retrying the same
+                # strategy 0 point in the sparsely populated jet bins, so we
+                # force combine to fall back to the robust configuration.
+                "--robustFit", "1",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--expectSignal", "1",
                 "--saveWorkspace",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",

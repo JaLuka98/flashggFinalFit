@@ -379,34 +379,19 @@ globalReplacementMap["Run3FidXSAnalysisNJ"]['procWV'] = "ggh_NJ_1p0_2p0_in"
 globalReplacementMap["Run3FidXSAnalysisNJ"]['catWV'] = "RECO_NJ_2p0_3p0_cat2"
 # Relacement processes for RV
 globalReplacementMap["Run3FidXSAnalysisNJ"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_0p0_1p0_cat0"] = "ggh_NJ_0p0_1p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_0p0_1p0_cat1"] = "ggh_NJ_0p0_1p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_0p0_1p0_cat2"] = "ggh_NJ_0p0_1p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_1p0_2p0_cat0"] = "ggh_NJ_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_1p0_2p0_cat1"] = "ggh_NJ_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_1p0_2p0_cat2"] = "ggh_NJ_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_2p0_3p0_cat0"] = "ggh_NJ_2p0_3p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_2p0_3p0_cat1"] = "ggh_NJ_2p0_3p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_2p0_3p0_cat2"] = "ggh_NJ_2p0_3p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_3p0_100p0_cat0"] = "ggh_NJ_3p0_100p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_3p0_100p0_cat1"] = "ggh_NJ_3p0_100p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_3p0_100p0_cat2"] = "ggh_NJ_3p0_100p0_in"
+for _bin in ["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"]:
+    for _cat in ["cat0", "cat1", "cat2"]:
+        reco_key = f"RECO_NJ_{_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"][reco_key] = f"ggh_NJ_{_bin}_in"
 
 
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_0p0_1p0_cat0"] = "RECO_NJ_0p0_1p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_0p0_1p0_cat1"] = "RECO_NJ_0p0_1p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_0p0_1p0_cat2"] = "RECO_NJ_0p0_1p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_1p0_2p0_cat0"] = "RECO_NJ_1p0_2p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_1p0_2p0_cat1"] = "RECO_NJ_1p0_2p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_1p0_2p0_cat2"] = "RECO_NJ_1p0_2p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_2p0_3p0_cat0"] = "RECO_NJ_2p0_3p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_2p0_3p0_cat1"] = "RECO_NJ_2p0_3p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_2p0_3p0_cat2"] = "RECO_NJ_2p0_3p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_3p0_100p0_cat0"] = "RECO_NJ_3p0_100p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_3p0_100p0_cat1"] = "RECO_NJ_3p0_100p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_3p0_100p0_cat2"] = "RECO_NJ_3p0_100p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"] = od()
+for _bin in ["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"]:
+    for _cat in ["cat0", "cat1", "cat2"]:
+        reco_key = f"RECO_NJ_{_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"][reco_key] = reco_key
 
 # Differential PTJ0 (PT of the leading jet)
 globalReplacementMap["Run3FidXSAnalysisPTJ0"] = od()

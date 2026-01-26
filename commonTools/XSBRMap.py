@@ -212,6 +212,14 @@ RAPIDITY_BINS = [
     "2p0_2p5",
 ]
 
+NJ_BINS_IN = [
+    "0p0_1p0",
+    "1p0_2p0",
+    "2p0_3p0",
+    "3p0_4p0",
+    "4p0_100p0",
+]
+
 for _mode, _factor in [
     ("ggh", 51.96),
     ("vbf", 4.067),
@@ -225,38 +233,17 @@ for _mode, _factor in [
     globalXSBRMap['Run3FidXSAnalysis'][f"{_mode}_YH_0p0_2p5_out"] = {'mode':'constant','factor':_factor}
 
 
-
-
-globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_0p0_1p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_1p0_2p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_2p0_3p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_3p0_100p0_in'] = {'mode':'constant','factor':51.96}
-globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_0p0_100p0_out'] = {'mode':'constant','factor':51.96}
-
-globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_0p0_1p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_1p0_2p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_2p0_3p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_3p0_100p0_in'] = {'mode':'constant','factor':4.067}
-globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_0p0_100p0_out'] = {'mode':'constant','factor':4.067}
-
-globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_0p0_1p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_1p0_2p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_2p0_3p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_3p0_100p0_in'] = {'mode':'constant','factor':2.3781}
-globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_0p0_100p0_out'] = {'mode':'constant','factor':2.3781}
-
-globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_0p0_1p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_1p0_2p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_2p0_3p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_3p0_100p0_in'] = {'mode':'constant','factor':0.5638}
-globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_0p0_100p0_out'] = {'mode':'constant','factor':0.5638}
-
-globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_0p0_1p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_1p0_2p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_2p0_3p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_3p0_100p0_in'] = {'mode':'constant','factor':0.49}
-globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_0p0_100p0_out'] = {'mode':'constant','factor':0.49}
-
+for _mode, _factor in [
+    ("ggh", 51.96),
+    ("vbf", 4.067),
+    ("vh", 2.3781),
+    ("tth", 0.5638),
+    ("bbh", 0.49),
+]:
+    for _bin in NJ_BINS_IN:
+        key = f"{_mode}_NJ_{_bin}_in"
+        globalXSBRMap['Run3FidXSAnalysis'][key] = {'mode':'constant','factor':_factor}
+    globalXSBRMap['Run3FidXSAnalysis'][f"{_mode}_NJ_0p0_100p0_out"] = {'mode':'constant','factor':_factor}
 
 
 
