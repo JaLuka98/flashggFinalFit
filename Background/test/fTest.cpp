@@ -890,6 +890,16 @@ int main(int argc, char* argv[]){
     }
 
 
+    if (dataFull && dataFull->sumEntries() == 0) {
+    std::cout << "[INFO] Injecting one dummy event into empty dataset" << std::endl;
+
+    mass->setVal(100.);
+
+    // If dataset is weighted, this works for both weighted & unweighted
+    dataFull->add(RooArgSet(*mass), 1.0);
+  }
+
+
 		mass->setBins(nBinsForMass);
 		RooDataSet *data;
 		//	RooDataHist thisdataBinned(Form("roohist_data_mass_cat%d",cat),"data",*mass,*dataFull);
