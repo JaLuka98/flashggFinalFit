@@ -42,8 +42,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
     toy_flag = law.Parameter(default=False, description="Toy flag")
     seed = law.Parameter(default=123456, description="Seed for the replica generation")
     starting_value = law.Parameter(default=0, description="Starting replica computation from this index. This can be useful for preventing overloading schedds.")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
-    number_of_toys = law.Parameter(default=1000, description="Number of toys")
+    number_of_replicas = law.Parameter(default=1000, description="Number of replicas")
 
     _class_cache = {}
     
@@ -94,15 +93,21 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
-        
+
         allReplicaGenerationConfig = self.config["allReplicaGeneration"]
-        
+
         if (convert_boolean_string(self.toy_flag) == True):
             from Replicas.law_replica import GenerateAllReplicaData
-            tasks["GenerateAllReplicaData"] = GenerateAllReplicaData(output_dir=self.resolved_output_dir, variable=self.variable if self.variable != "" else "inclusive", version=self.variable if self.variable != "" else "inclusive", year=self.year, number_of_replicas=self.number_of_toys, seed=self.seed, starting_value=self.starting_value, workflow=allReplicaGenerationConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=allReplicaGenerationConfig['batchPartition'], slurm_memory=allReplicaGenerationConfig['batchMemory'], slurm_max_runtime=allReplicaGenerationConfig['batchMaxRuntime'], htcondor_partition=allReplicaGenerationConfig['batchPartition'], htcondor_memory=allReplicaGenerationConfig['batchMemory'], htcondor_max_runtime=allReplicaGenerationConfig['batchMaxRuntime'])
-            
+            tasks["GenerateAllReplicaData"] = GenerateAllReplicaData(output_dir=self.resolved_output_dir, variable=self.variable if self.variable != "" else "inclusive", version=self.variable if self.variable != "" else "inclusive", year=self.year, number_of_replicas=self.number_of_replicas, seed=self.seed, starting_value=self.starting_value, workflow=allReplicaGenerationConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=allReplicaGenerationConfig['batchPartition'], slurm_memory=allReplicaGenerationConfig['batchMemory'], slurm_max_runtime=allReplicaGenerationConfig['batchMaxRuntime'], htcondor_partition=allReplicaGenerationConfig['batchPartition'], htcondor_memory=allReplicaGenerationConfig['batchMemory'], htcondor_max_runtime=allReplicaGenerationConfig['batchMaxRuntime'])
+
             return tasks
-        
+
+        elif (convert_boolean_string(self.bootstrap_flag) == True):
+            from Replicas.law_replica import GenerateBootstrapData
+            tasks["GenerateBootstrapData"] = GenerateBootstrapData(output_dir=self.resolved_output_dir, variable=self.variable if self.variable != "" else "inclusive", version=self.variable if self.variable != "" else "inclusive", year=self.year, number_of_replicas=self.number_of_replicas, seed=self.seed, starting_value=self.starting_value, workflow=allReplicaGenerationConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=allReplicaGenerationConfig['batchPartition'], slurm_memory=allReplicaGenerationConfig['batchMemory'], slurm_max_runtime=allReplicaGenerationConfig['batchMaxRuntime'], htcondor_partition=allReplicaGenerationConfig['batchPartition'], htcondor_memory=allReplicaGenerationConfig['batchMemory'], htcondor_max_runtime=allReplicaGenerationConfig['batchMaxRuntime'])
+
+            return tasks
+
         else:
             return {} 
 
@@ -110,10 +115,8 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
             branch_map = {i: val for i, val in enumerate(range(1))}
             return branch_map
-        elif convert_boolean_string(self.toy_flag) == True:
-            branch_map = {i: toy_index for i, toy_index in enumerate(range(int(self.number_of_toys)))}
-        else:
-            branch_map = {i: bootstrap_index for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))}
+        elif (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
+            branch_map = {i: replica_index for i, replica_index in enumerate(range(int(self.number_of_replicas)))}
 
         return branch_map
 
@@ -121,25 +124,19 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         
         self._init_once()
         
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            bootstrap_index = self.branch_data
-        elif convert_boolean_string(self.toy_flag) == True:
-            toy_index = self.branch_data
+        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
+            replica_index = self.branch_data
             
         if self.variable == '':
             if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
                 ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
-            elif convert_boolean_string(self.toy_flag) == True:
-                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{toy_index}/ws/")
-            else:
-                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+            elif (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
+                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{replica_index}/ws/")
         else:
             if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
                 ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
-            elif convert_boolean_string(self.toy_flag) == True:
-                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{toy_index}/ws/")
-            else:
-                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+            elif (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
+                ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{replica_index}/ws/")
                 
         return law.LocalFileTarget(os.path.join(ws_dir, "allData.root"))
 
@@ -147,10 +144,8 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         
         self._init_once()
         
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            bootstrap_index = self.branch_data
-        elif convert_boolean_string(self.toy_flag) == True:
-            toy_index = self.branch_data
+        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
+            replica_index = self.branch_data
         
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
@@ -163,33 +158,25 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         if self.variable == '':
             if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
                 temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
-            elif convert_boolean_string(self.toy_flag) == True:
-                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}_{toy_index}/ws/")
-            else:
-                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+            elif (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
+                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.year}_{replica_index}/ws/")
         else:
             if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
                 temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
-            elif convert_boolean_string(self.toy_flag) == True:
-                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{toy_index}/ws/")
-            else:
-                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+            elif (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
+                temp_ws_dir = os.path.join(temp_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{replica_index}/ws/")
 
         if self.batch_flavor == "slurm/psi":
             if self.variable == '':
                 if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
                     final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}/ws/")
-                elif convert_boolean_string(self.toy_flag) == True:
-                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{toy_index}/ws/")
-                else:
-                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{bootstrap_index}/ws/")
+                elif (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
+                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.year}_{replica_index}/ws/")
             else:
                 if (convert_boolean_string(self.bootstrap_flag) == False) and (convert_boolean_string(self.toy_flag) == False):
                     final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}/ws/")
-                elif convert_boolean_string(self.toy_flag) == True:
-                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{toy_index}/ws/")
-                else:
-                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{bootstrap_index}/ws/")
+                elif (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
+                    final_ws_dir = os.path.join(self.resolved_output_dir, 'input_output_data', f"input_output_data_{self.variable}_{self.year}_{replica_index}/ws/")
 
             # Have to use the xrdfs for the pnfs file system while on PSI Tier 3.
             execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {final_ws_dir}'], shell=True)
@@ -209,23 +196,33 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         # Step 2: Convert data trees to RooWorkspace
         # Open the input ROOT file
         if convert_boolean_string(self.toy_flag) == True:
-            seed = int(self.seed) + int(toy_index)
-            f = uproot.open(os.path.join(self.resolved_output_dir, "Replicas", "allReplicas", f"allReplica_{int(toy_index)}.{seed}.root"))
+            seed = int(self.seed) + int(replica_index)
+            f = ROOT.TFile.Open(os.path.join(self.resolved_output_dir, "Replicas", "allReplicas", f"allReplica_{int(replica_index)}.{seed}.root"), "READ")
+        if convert_boolean_string(self.bootstrap_flag) == True:
+            seed = int(self.seed) + int(replica_index)
+            # f = uproot.open(os.path.join(self.resolved_output_dir, "Replicas", "Bootstrap", f"bootstrapData_{int(replica_index)}.{seed}.root"))
+            f = ROOT.TFile.Open(os.path.join(self.resolved_output_dir,"Replicas","Bootstrap",f"bootstrapData_{int(replica_index)}.{seed}.root"),"READ")
         else:
-            f = uproot.open(input_path)
-        list_of_tree_names = f.keys() if input_tree_dir == '' else f[input_tree_dir].keys()
-
+            f = ROOT.TFile.Open(input_path,"READ")
+        if not f or f.IsZombie():
+            raise RuntimeError("Failed to open ROOT file")
+        if input_tree_dir == '':
+            list_of_tree_names = [
+                key.GetName()
+                for key in f.GetListOfKeys()
+            ]
+        else:
+            d = f.Get(input_tree_dir)
+            list_of_tree_names = [
+                key.GetName()
+                for key in d.GetListOfKeys()
+            ]
         if categories == 'auto':
             categories = []
         for tn in list_of_tree_names:
             if "sigma" in tn: continue
             c = tn.split("_%s_"%sqrts__)[-1].split(";")[0]
             categories.append(c)
-
-        if convert_boolean_string(self.toy_flag) == True:
-            f = ROOT.TFile(os.path.join(self.resolved_output_dir, "Replicas", "allReplicas", f"allReplica_{int(toy_index)}.{seed}.root"))
-        else:
-            f = ROOT.TFile(input_path)
 
         # Create ROOT output workspace
         output_ws_file = os.path.join(temp_ws_dir, f"allData_{self.year}.root")
@@ -249,19 +246,11 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                     _vars[var].setBins(40)
                 elif (var == "weight"):
                     _vars[var] = ROOT.RooRealVar(var, var, 0.)
-                elif (convert_boolean_string(self.bootstrap_flag) == True):
-                    if var == "weight_bootstrap_%s"%bootstrap_index:
-                        _vars[var] = ROOT.RooRealVar(var, var, 0.)
                 else:
                     _vars[var] = ROOT.RooRealVar(var, var, 1., -999999, 999999)
                     _vars[var].setBins(1)
                 getattr(_ws, 'import')(_vars[var], ROOT.RooFit.Silence())
             return _vars.keys()
-
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            # Rename the weight columns for bootstrapping
-            data_vars = [f"weight_bootstrap_{bootstrap_index}" if "weight_bootstrap" in item else item for item in data_vars]
-            data_vars.remove("weight")
 
         # Add variables to the workspace
         var_names = add_vars_to_workspace(ws, data_vars)
@@ -286,20 +275,15 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
 
             # Define dataset for the category
             dname = "Data_%s_%s"%(sqrts__,cat)  
-            if convert_boolean_string(self.bootstrap_flag) == True:
-                d = ROOT.RooDataSet(dname, dname, aset, 'weight_bootstrap_%s'%bootstrap_index)
-            else:
-                d = ROOT.RooDataSet(dname, dname, aset, 'weight')
+            d = ROOT.RooDataSet(dname, dname, aset, 'weight')
                 
             # Loop over events in the tree and add to the dataset
             for ev in t:
                 if self.apply_mass_cut:
                     if(getattr(ev,"CMS_hgg_mass") < float(massCutRange.split(",")[0])) | (getattr(ev,"CMS_hgg_mass") > float(massCutRange.split(",")[1])): continue
                 for var in data_vars: 
-                    if var == "weight": continue
-                    # if convert_boolean_string(self.bootstrap_flag) == True:
-                    #     if var == "weight_bootstrap_%s"%bootstrap_index: continue
-                    if "weight_bootstrap" in var:
+                    if (var == "weight") and (convert_boolean_string(self.bootstrap_flag) == False): continue
+                    if (var == "weight") and (convert_boolean_string(self.bootstrap_flag) == True):
                         branch = t.GetBranch(var)
                         leaf = branch.GetLeaf(var)
                         branch.GetEntry(ev.GetReadEntry())
@@ -308,7 +292,9 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                         value = getattr(ev, var)
                     ws.var(var).setVal(value)
                 if convert_boolean_string(self.bootstrap_flag) == True:
-                    d.add(aset,aset.getRealValue("weight_bootstrap_%s"%bootstrap_index))
+                    # for _ in range(value):
+                    #     d.add(aset,1.)
+                    d.add(aset,aset.getRealValue("weight"))
                 else:
                     d.add(aset,1.)
 

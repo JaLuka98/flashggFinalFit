@@ -13,6 +13,7 @@ import pandas as pd
 from tqdm import tqdm
 import re
 import array
+from itertools import islice
 
 from commonTools import *
 from commonObjects import *
@@ -1245,6 +1246,215 @@ class GenerateAllReplicaData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
                 
         # Close the file
         output_bkg_rootfile.Close()
+    
+        # Copy the files back to pnfs if we are on slurm/psi
+        if self.batch_flavor == "slurm/psi":
+            # Have to copy over the output to the final directory
+            # Don't forget to VOMS!
+            if "/work" in self.resolved_output_dir:
+                slurm_copy_command = [
+                    'cp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Replicas/",
+                    self.resolved_output_dir
+                ]
+            else:
+                slurm_copy_command = [
+                    'xrdcp', '-rf',
+                    f"{os.environ['TARGET_PATH']}/Replicas/",
+                    'root://t3dcachedb03.psi.ch:1094//'+self.resolved_output_dir
+                ]
+            print(slurm_copy_command)
+            execute_command(slurm_copy_command)
+            # Clean up the temporary directory
+            shutil.rmtree(os.environ["TARGET_PATH"])
+
+        os.chdir(cwd)
+
+class GenerateBootstrapData(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
+    # Generate a SplusB replica dataset
+    variable = law.Parameter(default="", description="Variable to be used")
+    output_dir = law.Parameter(default = '', description="Path to the output directory")
+    year = law.Parameter(default='2022', description="Year")
+    
+    batch_flavor = law.Parameter(default="slurm", description="Special treatment for PSI Slurm batch system")
+    # batch_system = law.Parameter(default="slurm", description="Batch system to use")
+    number_of_replicas = law.Parameter(default=2000, description="Number of replicas to run. If empty, will run the standard workflow.")
+    starting_value = law.Parameter(default=0, description="Starting replica computation from this index. This can be useful for preventing overloading schedds.")
+    seed = law.Parameter(default=123456, description="Seed for the replica generation")
+
+    _class_cache = {}
+
+    def _init_once(self):
+        key = (self.year, self.variable, self.output_dir)
+        if key in self._class_cache:
+            (
+                self.configYamlPath,
+                self.config,
+                self.resolved_output_dir,
+                self.fitFolderName
+            ) = self._class_cache[key]
+            return
+
+        # compute config path
+        if self.variable == "":
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml"
+            )
+        else:
+            configYamlPath = os.path.join(
+                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml"
+            )
+
+        with open(configYamlPath, "r") as f:
+            config = yaml.safe_load(f)
+
+        resolved_output_dir = self.output_dir or config["outputFolder"]
+        fitFolderName = "runFits_mu_fiducial" if self.variable == "" else f"runFits_{self.variable}"
+
+        self.configYamlPath = configYamlPath
+        self.config = config
+        self.resolved_output_dir = resolved_output_dir
+        self.fitFolderName = fitFolderName
+
+        # store in class-level cache
+        self._class_cache[key] = (configYamlPath, config, resolved_output_dir, fitFolderName)
+
+    def create_branch_map(self):
+        branch_map = {
+            i: replica_index
+            for i, replica_index in enumerate(range(int(self.starting_value), (int(self.starting_value) + int(self.number_of_replicas))))
+        }
+        return branch_map
+
+    def output(self):
+        # returns output folder
+        replica_index = self.branch_data
+        
+        self._init_once()
+        
+        output_paths = []
+        
+        seed = int(self.seed) + int(replica_index)
+
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'Bootstrap', f'bootstrapData_{int(replica_index)}.{seed}.root'))
+
+        outputFileTargets = []
+                
+        for _, current_output_path in enumerate(output_paths):
+            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+        
+        return outputFileTargets
+
+    def run(self):
+        replica_index = self.branch_data
+        
+        self._init_once()
+        
+        cwd = os.getcwd()
+                    
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            if "/work" in self.resolved_output_dir:
+                execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/Bootstrap'], shell=True)
+            else:   
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/Bootstrap'], shell=True)
+
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Replicas/Bootstrap'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas', 'Bootstrap'))
+        else:
+            execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/Bootstrap'], shell=True)
+            os.chdir(os.path.join(self.resolved_output_dir, 'Replicas', 'Bootstrap'))
+
+        seed = int(self.seed) + int(replica_index)
+                
+        print("Generating Bootstrap replica with seed {}".format(seed))
+
+        # Load the considered variable
+        cat_dict_path = os.path.join("/work/niharrin/analyses/MidRun3_Code/postprocessing/configs/cat_dicts", f"{self.year}", self.config['inputFiles']['catDict_timestamp'], f"{self.variable}_data.json")
+        if not os.path.exists(cat_dict_path):
+            print(f"Category dictionary {cat_dict_path} does not exist. Check path in law_replica.py. Exiting...")
+            exit(1)
+        else:
+            with open(cat_dict_path) as pf:
+                cat_dict = json.load(pf)
+
+        def chunked(iterable, size):
+            it = iter(iterable)
+            while True:
+                batch = list(islice(it, size))
+                if not batch:
+                    break
+                yield batch
+
+        data_parquet_files = glob.glob(os.path.join(self.config['inputFiles']['data_src_files'], "*/nominal/*.parquet"))
+
+        chunks = []
+
+        for file_batch in tqdm(
+            chunked(data_parquet_files, size=10),
+            total=(len(data_parquet_files) + 9) // 10,
+            desc="Loading parquet chunks"
+        ):
+            df_chunk = pd.concat(
+                (pd.read_parquet(f) for f in file_batch),
+                ignore_index=True
+            )
+            chunks.append(df_chunk)
+
+        data_df = pd.concat(chunks, ignore_index=True)
+
+        # Now create Poissonian weights
+        rng = np.random.default_rng(seed=seed)
+        weight_poissonian = rng.poisson(1, size=len(data_df))
+        data_df["weight"] = weight_poissonian
+        data_df["weight_central"] = weight_poissonian
+        
+        data_df = data_df.rename(columns={"mass": "CMS_hgg_mass"})
+
+        if "nweight_LHEScale" not in data_df.columns:
+            data_df["nweight_LHEScale"] = np.full(len(data_df), 9, dtype=np.int32)
+
+        with uproot.recreate(f'./bootstrapData_{int(replica_index)}.{seed}.root') as f:
+            # Create directory
+            f.mkdir("DiphotonTree")
+
+            # Now categorize the background replica
+            for cat in cat_dict:
+                try:
+                    query_str = " and ".join(
+                        f"{col} {op} {val}" for col, op, val in cat_dict[cat]["cat_filter"]
+                    )
+                except:
+                    # Have a variable using absolute values.
+                    query_str = "("
+                    for k, set_of_conditions in enumerate(cat_dict[cat]["cat_filter"]):
+                        if k > 0:
+                            query_str += ") or ("
+                        query_str += " and ".join(
+                            f"{col} {op} {val}" for col, op, val in set_of_conditions
+                        )
+                    query_str += ")"
+                print(f"Processing category {cat} with query: {query_str}")
+
+                current_cat_bootstrap = data_df.query(query_str).copy()
+                
+                print("Sum of weights:", current_cat_bootstrap["weight"].sum())
+
+                tree_name = "Data_13TeV_" + cat
+                # Convert pandas DataFrame to dict of lists
+                data_dict = current_cat_bootstrap.to_dict(orient="list")
+
+                # Determine branch types (float32 is safe for HEP)
+                branches = {col: "float32" for col in data_dict.keys()}
+
+                # Create the tree inside the DiphotonTree directory
+                tree = f.mktree(f"DiphotonTree/{tree_name}", branches)
+
+                # Fill the tree with your data
+                tree.extend(data_dict)
+
+            f.close()
     
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
