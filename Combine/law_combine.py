@@ -98,11 +98,10 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
     year = law.Parameter(default='2022', description="Year")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of replicas")
 
     toy_flag = law.Parameter(default=False, description="Toy flag")
     seed = law.Parameter(default=123456, description="Seed for the replica generation")
-    number_of_toys = law.Parameter(default=1000, description="Number of toys")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -164,21 +163,16 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         
         yieldsConfig = self.config['datacard_yields']
                     
-        tasks["MakeDatacard"] = MakeDatacard(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=yieldsConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=yieldsConfig['batchPartition'], slurm_memory=yieldsConfig['batchMemory'], slurm_max_runtime=yieldsConfig['batchMaxRuntime'], htcondor_partition=yieldsConfig['batchPartition'], htcondor_memory=yieldsConfig['batchMemory'], htcondor_max_runtime=yieldsConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, toy_flag=self.toy_flag, number_of_toys=self.number_of_toys)
-        tasks["Background"] = Background(variable=self.variable, output_dir=self.resolved_output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", slurm_partition=self.bkgConfig['batchPartition'], slurm_memory=self.bkgConfig['batchMemory'], slurm_max_runtime=self.bkgConfig['batchMaxRuntime'], htcondor_partition=self.bkgConfig['batchPartition'], htcondor_memory=self.bkgConfig['batchMemory'], htcondor_max_runtime=self.bkgConfig['batchMaxRuntime'], workflow=self.bkgConfig["execution"], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, toy_flag=self.toy_flag, seed=self.seed, number_of_toys=self.number_of_toys)
+        tasks["MakeDatacard"] = MakeDatacard(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=yieldsConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=yieldsConfig['batchPartition'], slurm_memory=yieldsConfig['batchMemory'], slurm_max_runtime=yieldsConfig['batchMaxRuntime'], htcondor_partition=yieldsConfig['batchPartition'], htcondor_memory=yieldsConfig['batchMemory'], htcondor_max_runtime=yieldsConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas, toy_flag=self.toy_flag)
+        tasks["Background"] = Background(variable=self.variable, output_dir=self.resolved_output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", slurm_partition=self.bkgConfig['batchPartition'], slurm_memory=self.bkgConfig['batchMemory'], slurm_max_runtime=self.bkgConfig['batchMaxRuntime'], htcondor_partition=self.bkgConfig['batchPartition'], htcondor_memory=self.bkgConfig['batchMemory'], htcondor_max_runtime=self.bkgConfig['batchMaxRuntime'], workflow=self.bkgConfig["execution"], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas, toy_flag=self.toy_flag, seed=self.seed)
         
         return tasks
     
     def create_branch_map(self):
-        if convert_boolean_string(self.bootstrap_flag) == True:
+        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
             branch_map = {
-                i: bootstrap_index
-                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
-            }
-        elif convert_boolean_string(self.toy_flag) == True:
-            branch_map = {
-                i: toy_index
-                for i, toy_index in enumerate(range(int(self.number_of_toys)))
+                i: replica_index
+                for i, replica_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             branch_map = {i: i for i in range(1)}
@@ -382,11 +376,10 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
     year = law.Parameter(default='2022', description="Year")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of replicas")
 
     toy_flag = law.Parameter(default=False, description="Toy flag")
     seed = law.Parameter(default=123456, description="Seed for the replica generation")
-    number_of_toys = law.Parameter(default=1000, description="Number of toys")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -439,20 +432,15 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             
         fitConfig = self.config['combine_fit']
 
-        tasks["PrepareTheDirectory"] = PrepareTheDirectory(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, toy_flag=self.toy_flag, seed=self.seed, number_of_toys=self.number_of_toys)
+        tasks["PrepareTheDirectory"] = PrepareTheDirectory(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas, toy_flag=self.toy_flag, seed=self.seed)
         
         return tasks
     
     def create_branch_map(self):
-        if convert_boolean_string(self.bootstrap_flag) == True:
+        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
             branch_map = {
-                i: bootstrap_index
-                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
-            }
-        elif convert_boolean_string(self.toy_flag) == True:
-            branch_map = {
-                i: toy_index
-                for i, toy_index in enumerate(range(int(self.number_of_toys)))
+                i: replica_index
+                for i, replica_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             branch_map = {i: i for i in range(1)}

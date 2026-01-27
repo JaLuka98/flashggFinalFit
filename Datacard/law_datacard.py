@@ -59,10 +59,9 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     doSystematics = law.Parameter(default=False, description="Include systematics calculations and add to datacard")
     ignore_warnings = law.Parameter(default=False, description="Skip errors for missing systematics. Instead output warning message")
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of replicas")
 
     toy_flag = law.Parameter(default=False, description="Toy flag")
-    number_of_toys = law.Parameter(default=1000, description="Number of toys")
 
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
@@ -106,27 +105,10 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             self.cats.split(",")[categoryIndex]
             for categoryIndex in range(nCats)
         ]
-        # if convert_boolean_string(self.bootstrap_flag) == True:
-        #     branch_map = {
-        #         i * int(self.number_of_bootstraps) + j: (cat, bootstrap_index)
-        #         for i, cat in enumerate(cat_list)
-        #         for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
-        #     }
-        # elif convert_boolean_string(self.toy_flag) == True:
-        #     branch_map = {
-        #         i * int(self.number_of_toys) + j: (cat, toy_index)
-        #         for i, cat in enumerate(cat_list)
-        #         for j, toy_index in enumerate(range(int(self.number_of_toys)))
-        #     }
-        if convert_boolean_string(self.bootstrap_flag) == True:
+        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
             branch_map = {
-                i: bootstrap_index
-                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
-            }
-        elif convert_boolean_string(self.toy_flag) == True:
-            branch_map = {
-                i: toy_index
-                for i, toy_index in enumerate(range(int(self.number_of_toys)))
+                i: replica_index
+                for i, replica_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             branch_map = {i: cat for i, cat in enumerate(cat_list)}
@@ -282,10 +264,9 @@ class MakeYields(law.Task): #law.Task
     year = law.Parameter(default='2022', description="Year")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of replicas")
 
     toy_flag = law.Parameter(default=False, description="Toy flag")
-    number_of_toys = law.Parameter(default=1000, description="Number of toys")
     
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
@@ -347,7 +328,7 @@ class MakeYields(law.Task): #law.Task
                 else:
                     inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
         
-        tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version=self.variable if self.variable != "" else "inclusive", workflow=datacard_config['execution'], batch_flavor=self.batch_flavor, slurm_partition=datacard_config['batchPartition'], slurm_memory=datacard_config['batchMemory'], slurm_max_runtime=datacard_config['batchMaxRuntime'], htcondor_partition=datacard_config['batchPartition'], htcondor_memory=datacard_config['batchMemory'], htcondor_max_runtime=datacard_config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, toy_flag=self.toy_flag, number_of_toys=self.number_of_toys)]
+        tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version=self.variable if self.variable != "" else "inclusive", workflow=datacard_config['execution'], batch_flavor=self.batch_flavor, slurm_partition=datacard_config['batchPartition'], slurm_memory=datacard_config['batchMemory'], slurm_max_runtime=datacard_config['batchMaxRuntime'], htcondor_partition=datacard_config['batchPartition'], htcondor_memory=datacard_config['batchMemory'], htcondor_max_runtime=datacard_config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas, toy_flag=self.toy_flag)]
         
         return tasks
         
@@ -374,11 +355,8 @@ class MakeYields(law.Task): #law.Task
         
         output_paths = []
         
-        if (convert_boolean_string(self.bootstrap_flag) == True): # iterating over bootstraps
-            for i in range(int(self.number_of_bootstraps)):
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}_{i}")))
-        elif (convert_boolean_string(self.toy_flag) == True): # iterating over bootstraps
-            for i in range(int(self.number_of_toys)):
+        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True): # iterating over replicas
+            for i in range(int(self.number_of_replicas)):
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}_{i}")))
         else:
             output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}")))
@@ -387,12 +365,8 @@ class MakeYields(law.Task): #law.Task
             datacard_config['cats'] = (extractListOfCatsFromHiggsDNAAllData(input_path))
         datacard_config['nCats'] = len(datacard_config['cats'].split(","))
 
-        if (convert_boolean_string(self.bootstrap_flag) == True): # iterating over bootstraps
-            for i in range(int(self.number_of_bootstraps)):
-                for cat in datacard_config['cats'].split(","):
-                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}_{i}/{cat}.pkl")))
-        elif (convert_boolean_string(self.toy_flag) == True): # iterating over bootstraps
-            for i in range(int(self.number_of_toys)):
+        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True): # iterating over replicas
+            for i in range(int(self.number_of_replicas)):
                 for cat in datacard_config['cats'].split(","):
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/yields_{datacard_config['ext']}_{i}/{cat}.pkl")))
         else:
@@ -411,23 +385,17 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
     year = law.Parameter(default='2022', description="Year")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of replicas")
 
     toy_flag = law.Parameter(default=False, description="Toy flag")
-    number_of_toys = law.Parameter(default=1000, description="Number of toys")
 
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
     def create_branch_map(self):
-        if convert_boolean_string(self.bootstrap_flag) == True:
+        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
             branch_map = {
-                i: bootstrap_index
-                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
-            }
-        elif convert_boolean_string(self.toy_flag) == True:
-            branch_map = {
-                i: toy_index
-                for i, toy_index in enumerate(range(int(self.number_of_toys)))
+                i: replica_index
+                for i, replica_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             branch_map = {i: i for i in range(1)}
@@ -458,7 +426,7 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
         else:
             output_dir = self.output_dir
         
-        tasks["MakeYields"] = MakeYields(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, toy_flag=self.toy_flag, number_of_toys=self.number_of_toys)
+        tasks["MakeYields"] = MakeYields(variable=self.variable, output_dir=output_dir, year=self.year, batch_flavor=self.batch_flavor, bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas, toy_flag=self.toy_flag)
         
         return tasks    
 

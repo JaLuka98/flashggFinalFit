@@ -2157,12 +2157,12 @@ class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
             SplusB_config = self.config["combine_SplusB_toys"]
             
-            tasks["GenerateAllReplicaData"] = GenerateAllReplicaData(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
+            tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag)
             
         if convert_boolean_string(self.bootstrap_flag) == True:
             fitConfig = self.config["combine_fit"]
 
-            tasks["GenerateBootstrapData"] = GenerateBootstrapData(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value)
+            tasks["RunText2Workspace"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag)
 
         return tasks
     
@@ -2181,10 +2181,10 @@ class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         output = []
 
         if (convert_boolean_string(self.toy_flag) == True):
-            output += [os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_{replica_index}.MultiDimFit.mH125.root')]
+            output += [os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'randomized', f'higgsCombineAsimovFirstStep_{replica_index}.MultiDimFit.mH125.root')]
         
         elif (convert_boolean_string(self.bootstrap_flag) == True):
-            output += [os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'DatacardRandomizedAux_{replica_index}.MultiDimFit.mH125.root')]
+            output += [os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'randomized', f'DatacardRandomizedAux_{replica_index}.MultiDimFit.mH125.root')]
 
         outputFileTargets = []
 
@@ -2202,24 +2202,24 @@ class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         
         
         if (convert_boolean_string(self.toy_flag) == True):
-            ws_path = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep.MultiDimFit.mH125.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'nominal', f'higgsCombineAsimovFirstStep_{replica_index}.MultiDimFit.mH125.root')
         elif (convert_boolean_string(self.bootstrap_flag) == True):
-            ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.root') if self.variable == '' else os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.year}_{replica_index}.root') if self.variable == '' else os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.year}_{replica_index}.root')
                     
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
             if "/work" in self.resolved_output_dir:
-                execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices'], shell=True)
+                execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices/randomized'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices/randomized'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-            execute_command([f'mkdir -p $TARGET_PATH/Replicas/pdfIndices/'], shell=True)
-            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas', "pdfIndices"))
+            execute_command([f'mkdir -p $TARGET_PATH/Replicas/pdfIndices/randomized'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas', "pdfIndices", "randomized"))
             temp_output_dir = os.environ["TARGET_PATH"]
         else:
-            execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices'], shell=True)
-            os.chdir(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices'))
+            execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices/randomized'], shell=True)
+            os.chdir(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'randomized'))
             temp_output_dir = self.resolved_output_dir
 
         seed = int(self.seed) + int(replica_index)
@@ -2244,9 +2244,9 @@ class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
         # Save the modified workspace to a new file
         if (convert_boolean_string(self.toy_flag) == True):
-            file_out = ROOT.TFile(os.path.join(temp_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_{replica_index}.MultiDimFit.mH125.root'), "RECREATE")
+            file_out = ROOT.TFile(os.path.join(temp_output_dir, 'Replicas', 'pdfIndices', 'randomized', f'higgsCombineAsimovFirstStep_{replica_index}.MultiDimFit.mH125.root'), "RECREATE")
         elif (convert_boolean_string(self.bootstrap_flag) == True):
-            file_out = ROOT.TFile(os.path.join(temp_output_dir, 'Replicas', 'pdfIndices', f'DatacardRandomizedAux_{replica_index}.MultiDimFit.mH125.root'), "RECREATE")
+            file_out = ROOT.TFile(os.path.join(temp_output_dir, 'Replicas', 'pdfIndices', 'randomized', f'DatacardRandomizedAux_{replica_index}.MultiDimFit.mH125.root'), "RECREATE")
         ws_in.Write()
 
         file_out.Close()
@@ -2359,7 +2359,7 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
         output_paths = []
 
         # output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'))
-        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.root'))
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'nominal', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.root'))
 
         outputFileTargets = []
                 
@@ -2385,35 +2385,18 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
             if "/work" in self.resolved_output_dir:
-                execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices'], shell=True)
+                execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices/nominal'], shell=True)
             else:   
-                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices'], shell=True)
+                execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices/nominal'], shell=True)
 
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-            execute_command([f'mkdir -p $TARGET_PATH/Replicas/pdfIndices/'], shell=True)
-            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas', "pdfIndices"))
+            execute_command([f'mkdir -p $TARGET_PATH/Replicas/pdfIndices/nominal'], shell=True)
+            os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Replicas', "pdfIndices", 'nominal'))
         else:
-            execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices'], shell=True)
-            os.chdir(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices'))
-        
+            execute_command([f'mkdir -p {self.resolved_output_dir}/Replicas/pdfIndices/nominal'], shell=True)
+            os.chdir(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'nominal'))
+
         seed = int(self.seed) + int(replica_index)
-        
-        # arguments = [
-        #     "combine",
-        #     "-M", "MultiDimFit",
-        #     ws_path,
-        #     "--freezeParameters", "MH",
-        #     "-m", "125.38",
-        #     "-n", f"PdfIndices_Toy_{int(replica_index)}",
-        #     "--cminDefaultMinimizerStrategy=0",
-        #     "--saveWorkspace",
-        #     "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
-        #     "--X-rtd", "MINIMIZER_multiMin_hideConstants",
-        #     "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
-        #     "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-        #     "--floatOtherPOIs", "1",
-        #     # "-D", f"{splusb_toy}:toys/toy_1",
-        # ]
 
         arguments = [
             "combine",
@@ -2537,16 +2520,21 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
         if workflow_reqs:
             tasks.update(workflow_reqs)
 
-        if convert_boolean_string(self.toy_flag) == True:        
+        # if convert_boolean_string(self.toy_flag) == True:        
 
-            SplusB_config = self.config["combine_SplusB_toys"]
+        #     SplusB_config = self.config["combine_SplusB_toys"]
             
-            tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
+        #     tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
             
-        if convert_boolean_string(self.bootstrap_flag) == True:
+        # if convert_boolean_string(self.bootstrap_flag) == True:
+        #     fitConfig = self.config["combine_fit"]
+            
+        #     tasks["RunT2WS"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_replicas, seed=self.seed)
+            
+        if (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
             fitConfig = self.config["combine_fit"]
-            
-            tasks["RunT2WS"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_replicas, seed=self.seed)
+
+            tasks["RandomizeGlobalObs"] = RandomizeGlobalObs(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag, number_of_replicas=self.number_of_replicas, seed=self.seed)
         
         return tasks
     
@@ -2596,7 +2584,7 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
             ws_path = os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.year}_{replica_index}.root')
         else:
             # ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
-            ws_path = os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.year}_{replica_index}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'randomized', f'DatacardRandomizedAux_{replica_index}.MultiDimFit.mH125.root')
                     
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
@@ -2618,7 +2606,7 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
 
         # pdfindex_file = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root')
         if convert_boolean_string(self.toy_flag) == True:
-            pdfindex_file = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombinePdfIndices_Toy_{int(replica_index)}.MultiDimFit.mH125.root')
+            pdfindex_file = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'nominal', f'higgsCombineAsimovFirstStep_{replica_index}.MultiDimFit.mH125.root')
 
             def check_pdf_idx():
                 # Run the ROOT command
@@ -2653,7 +2641,7 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
                 "-M", "MultiDimFit",
                 # ws_path,
                 # os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'),
-                os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.root'),
+                os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'randomized', f'higgsCombineAsimovFirstStep_{replica_index}.MultiDimFit.mH125.root'),
                 # "-m", "125.38",
                 "-m", "125",
                 "--snapshotName", "MultiDimFit",
@@ -2670,6 +2658,7 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
                 # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
                 "--saveFitResult",
                 # "--setParameters", f"""{pdfIdx}""",
+                "--setParameters", "MH=125",
                 "--freezeParameters", "MH",
                 # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
                 # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
@@ -2695,6 +2684,7 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
                 # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
                 "--saveFitResult",
                 # "--setParameters", f"""{pdfIdx}""",
+                "--setParameters", "MH=125.38",
                 "--freezeParameters", "MH",
                 # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
                 # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
