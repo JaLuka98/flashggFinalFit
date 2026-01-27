@@ -97,13 +97,6 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
 
-    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
-
-    toy_flag = law.Parameter(default=False, description="Toy flag")
-    seed = law.Parameter(default=123456, description="Seed for the replica generation")
-    number_of_toys = law.Parameter(default=1000, description="Number of toys")
-
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
     _class_cache = {}
@@ -154,45 +147,28 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
 
     def workflow_requires(self):
         workflow_reqs = super().workflow_requires()
-        
+
         self._init_once()
 
         tasks = {}
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
-        
+
         yieldsConfig = self.config['datacard_yields']
-                    
-        tasks["MakeDatacard"] = MakeDatacard(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=yieldsConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=yieldsConfig['batchPartition'], slurm_memory=yieldsConfig['batchMemory'], slurm_max_runtime=yieldsConfig['batchMaxRuntime'], htcondor_partition=yieldsConfig['batchPartition'], htcondor_memory=yieldsConfig['batchMemory'], htcondor_max_runtime=yieldsConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, toy_flag=self.toy_flag, number_of_toys=self.number_of_toys)
-        tasks["Background"] = Background(variable=self.variable, output_dir=self.resolved_output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", slurm_partition=self.bkgConfig['batchPartition'], slurm_memory=self.bkgConfig['batchMemory'], slurm_max_runtime=self.bkgConfig['batchMaxRuntime'], htcondor_partition=self.bkgConfig['batchPartition'], htcondor_memory=self.bkgConfig['batchMemory'], htcondor_max_runtime=self.bkgConfig['batchMaxRuntime'], workflow=self.bkgConfig["execution"], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, toy_flag=self.toy_flag, seed=self.seed, number_of_toys=self.number_of_toys)
-        
+
+        tasks["MakeDatacard"] = MakeDatacard(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=yieldsConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=yieldsConfig['batchPartition'], slurm_memory=yieldsConfig['batchMemory'], slurm_max_runtime=yieldsConfig['batchMaxRuntime'], htcondor_partition=yieldsConfig['batchPartition'], htcondor_memory=yieldsConfig['batchMemory'], htcondor_max_runtime=yieldsConfig['batchMaxRuntime'])
+        tasks["Background"] = Background(variable=self.variable, output_dir=self.resolved_output_dir, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", slurm_partition=self.bkgConfig['batchPartition'], slurm_memory=self.bkgConfig['batchMemory'], slurm_max_runtime=self.bkgConfig['batchMaxRuntime'], htcondor_partition=self.bkgConfig['batchPartition'], htcondor_memory=self.bkgConfig['batchMemory'], htcondor_max_runtime=self.bkgConfig['batchMaxRuntime'], workflow=self.bkgConfig["execution"])
+
         return tasks
-    
+
     def create_branch_map(self):
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            branch_map = {
-                i: bootstrap_index
-                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
-            }
-        elif convert_boolean_string(self.toy_flag) == True:
-            branch_map = {
-                i: toy_index
-                for i, toy_index in enumerate(range(int(self.number_of_toys)))
-            }
-        else:
-            branch_map = {i: i for i in range(1)}
+        branch_map = {i: i for i in range(1)}
         return branch_map
 
     def output(self):
-        
+
         self._init_once()
-        
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            index = self.branch_data
-            background_suffix = f"_{index}"
-        else:
-            background_suffix = ""
 
         packagedConfig = self.config[f"packaged_{self.year}"]
         outputExt = packagedConfig['ext']
@@ -211,30 +187,23 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         if signal_model_folder_name == background_model_folder_name:
             model_folder_name = signal_model_folder_name
             output_data.append(os.path.join(self.resolved_output_dir, 'Combine', model_folder_name))
-            output_data.append(os.path.join(self.resolved_output_dir, 'Combine', model_folder_name, 'background'+background_suffix))
+            output_data.append(os.path.join(self.resolved_output_dir, 'Combine', model_folder_name, 'background'))
             output_data.append(os.path.join(self.resolved_output_dir, 'Combine', model_folder_name, 'signal'))
         else:
             output_data.append(os.path.join(self.resolved_output_dir, 'Combine', signal_model_folder_name))
             output_data.append(os.path.join(self.resolved_output_dir, 'Combine', signal_model_folder_name, 'signal'))
 
             output_data.append(os.path.join(self.resolved_output_dir, 'Combine', background_model_folder_name))
-            output_data.append(os.path.join(self.resolved_output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix))
+            output_data.append(os.path.join(self.resolved_output_dir, 'Combine', background_model_folder_name, 'background'))
 
         for cat in cat_list:
-            output_data.append(os.path.join(self.resolved_output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix, f'CMS-HGG_multipdf_{cat}.root'))
+            output_data.append(os.path.join(self.resolved_output_dir, 'Combine', background_model_folder_name, 'background', f'CMS-HGG_multipdf_{cat}.root'))
             output_data.append(os.path.join(self.resolved_output_dir, 'Combine', model_folder_name, 'signal', f'CMS-HGG_sigfit_packaged{outputExt}_{cat}.root'))
 
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            output_data.append(os.path.join(self.resolved_output_dir, 'Combine', f'Datacards'))
-            if self.variable == '':
-                output_data.append(os.path.join(self.resolved_output_dir, 'Combine', 'Datacards', f'Datacard_{self.year}_{index}.txt'))
-            else:
-                output_data.append(os.path.join(self.resolved_output_dir, 'Combine', 'Datacards', f'Datacard_{self.variable}_{self.year}_{index}.txt'))
+        if self.variable == '':
+            output_data.append(os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.txt'))
         else:
-            if self.variable == '':
-                output_data.append(os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.txt'))
-            else:
-                output_data.append(os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt'))
+            output_data.append(os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt'))
 
         for i, output in enumerate(output_data):
             output_data[i] = law.LocalFileTarget(output)
@@ -243,12 +212,6 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
 
     def run(self):
         self._init_once()
-        
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            index = self.branch_data
-            background_suffix = f"_{index}"
-        else:
-            background_suffix = f""
 
         # Creating the Combine directory alongside the Models dir
         if self.batch_flavor == "slurm/psi":
@@ -263,7 +226,7 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         if signal_model_folder_name == background_model_folder_name:
             model_folder_name = signal_model_folder_name
             Model_dst_path = os.path.join(self.resolved_output_dir, 'Combine', model_folder_name)
-            background_dst_path = os.path.join(self.resolved_output_dir, 'Combine', model_folder_name, 'background'+background_suffix)
+            background_dst_path = os.path.join(self.resolved_output_dir, 'Combine', model_folder_name, 'background')
             signal_dst_path = os.path.join(self.resolved_output_dir, 'Combine', model_folder_name, 'signal')
             if self.batch_flavor == "slurm/psi":
                 execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {Model_dst_path}'], shell=True)
@@ -276,9 +239,9 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
                 execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {signalModel_dst_path}'], shell=True)
             else:
                 safe_mkdir(signalModel_dst_path)
-            
+
             backgroundModel_dst_path = os.path.join(self.resolved_output_dir, 'Combine', background_model_folder_name)
-            background_dst_path = os.path.join(self.resolved_output_dir, 'Combine', background_model_folder_name, 'background'+background_suffix)
+            background_dst_path = os.path.join(self.resolved_output_dir, 'Combine', background_model_folder_name, 'background')
             if self.batch_flavor == "slurm/psi":
                 execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {backgroundModel_dst_path}'], shell=True)
             else:
@@ -292,32 +255,15 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
             safe_mkdir(background_dst_path)
 
         # Copying relevant files in Models directory
-        # if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-        #     background_src_path = os.path.join(self.resolved_output_dir, "Background", f"outdir_{self.config['backgroundScriptCfg']['ext']}"+background_suffix)
-        # else:
-        background_src_path = os.path.join(self.resolved_output_dir, "Background", f"outdir_{self.config['backgroundScriptCfg']['ext']}"+background_suffix)
+        background_src_path = os.path.join(self.resolved_output_dir, "Background", f"outdir_{self.config['backgroundScriptCfg']['ext']}")
         signal_src_path = os.path.join(self.resolved_output_dir, f"outdir_packaged{self.config[f'packaged_{self.year}']['ext']}/")
 
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            if index == 0: # Copy the signal model only once (it is always the same)
-                if self.batch_flavor == "slurm/psi":
-                    manually_copy_t3(signal_src_path, signal_dst_path)
-                    manually_copy_t3(background_src_path, background_dst_path)
-                else:
-                    shutil.copytree(signal_src_path, signal_dst_path, dirs_exist_ok=True)
-                    shutil.copytree(background_src_path, background_dst_path, dirs_exist_ok=True)
-            else:
-                if self.batch_flavor == "slurm/psi":
-                    manually_copy_t3(background_src_path, background_dst_path)
-                else:
-                    shutil.copytree(background_src_path, background_dst_path, dirs_exist_ok=True)
+        if self.batch_flavor == "slurm/psi":
+            manually_copy_t3(background_src_path, background_dst_path)
+            manually_copy_t3(signal_src_path, signal_dst_path)
         else:
-            if self.batch_flavor == "slurm/psi":
-                manually_copy_t3(background_src_path, background_dst_path)
-                manually_copy_t3(signal_src_path, signal_dst_path)
-            else:
-                shutil.copytree(background_src_path, background_dst_path, dirs_exist_ok=True)
-                shutil.copytree(signal_src_path, signal_dst_path, dirs_exist_ok=True)
+            shutil.copytree(background_src_path, background_dst_path, dirs_exist_ok=True)
+            shutil.copytree(signal_src_path, signal_dst_path, dirs_exist_ok=True)
 
         # IDK for what that is useful
         path_pattern = f"{signal_model_folder_name}/signal/*_{self.year}.root"
@@ -327,36 +273,21 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
             if os.path.isfile(file_path):  # Check if it's a file
                 # Remove "_{self.year}" from the filename
                 new_name = file_path.replace(f"_{self.year}.root", ".root")
-                
+
                 # Rename the file
                 os.rename(file_path, new_name)
-                
+
                 print(f"Renamed {file_path} to {new_name}")
 
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            # Define the file paths
-            if self.batch_flavor == "slurm/psi":
-                execute_command([f"xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {os.path.join(self.resolved_output_dir, 'Combine', 'Datacards')}"], shell=True)
-            else:
-                safe_mkdir(os.path.join(self.resolved_output_dir, 'Combine', 'Datacards'))
-            if self.variable == '':
-                datacard_file_cleaned = os.path.join(self.resolved_output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.year}_cleaned.txt')
-                datacard_file = os.path.join(self.resolved_output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.year}.txt')
-                destination_file = os.path.join(self.resolved_output_dir, 'Combine', 'Datacards', f'Datacard_{self.year}_{index}.txt')
-            else:
-                datacard_file_cleaned = os.path.join(self.resolved_output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.variable}_{self.year}_cleaned.txt')
-                datacard_file = os.path.join(self.resolved_output_dir, 'Datacards', 'Datacard'+background_suffix, f'Datacard_{self.variable}_{self.year}.txt')
-                destination_file = os.path.join(self.resolved_output_dir, 'Combine', 'Datacards', f'Datacard_{self.variable}_{self.year}_{index}.txt')
+        # Define the file paths
+        if self.variable == '':
+            datacard_file_cleaned = os.path.join(self.resolved_output_dir, 'Datacards', f'Datacard_{self.year}_cleaned.txt')
+            datacard_file = os.path.join(self.resolved_output_dir, 'Datacards', f'Datacard_{self.year}.txt')
+            destination_file = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.txt')
         else:
-            # Define the file paths
-            if self.variable == '':
-                datacard_file_cleaned = os.path.join(self.resolved_output_dir, 'Datacards', f'Datacard_{self.year}_cleaned.txt')
-                datacard_file = os.path.join(self.resolved_output_dir, 'Datacards', f'Datacard_{self.year}.txt')
-                destination_file = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.txt')
-            else:
-                datacard_file_cleaned = os.path.join(self.resolved_output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}_cleaned.txt')
-                datacard_file = os.path.join(self.resolved_output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}.txt')
-                destination_file = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt')
+            datacard_file_cleaned = os.path.join(self.resolved_output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}_cleaned.txt')
+            datacard_file = os.path.join(self.resolved_output_dir, 'Datacards', f'Datacard_{self.variable}_{self.year}.txt')
+            destination_file = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt')
 
         # Check if the cleaned file exists
         if os.path.exists(datacard_file_cleaned):
@@ -380,13 +311,6 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
     variable = law.Parameter(default="", description="Variable to be used")
     eft_variable = law.Parameter(default="", description="EFT Variable to be used")
     year = law.Parameter(default='2022', description="Year")
-
-    bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
-
-    toy_flag = law.Parameter(default=False, description="Toy flag")
-    seed = law.Parameter(default=123456, description="Seed for the replica generation")
-    number_of_toys = law.Parameter(default=1000, description="Number of toys")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -429,292 +353,134 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
 
     def workflow_requires(self):
         workflow_reqs = super().workflow_requires()
-        
+
         self._init_once()
 
         tasks = {}
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
-            
+
         fitConfig = self.config['combine_fit']
 
-        tasks["PrepareTheDirectory"] = PrepareTheDirectory(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps, toy_flag=self.toy_flag, seed=self.seed, number_of_toys=self.number_of_toys)
-        
+        tasks["PrepareTheDirectory"] = PrepareTheDirectory(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+
         return tasks
     
     def create_branch_map(self):
-        if convert_boolean_string(self.bootstrap_flag) == True:
-            branch_map = {
-                i: bootstrap_index
-                for i, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
-            }
-        elif convert_boolean_string(self.toy_flag) == True:
-            branch_map = {
-                i: toy_index
-                for i, toy_index in enumerate(range(int(self.number_of_toys)))
-            }
-        else:
-            branch_map = {i: i for i in range(1)}
+        branch_map = {i: i for i in range(1)}
         return branch_map
 
     def output(self):
-        
+
         self._init_once()
 
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            index = self.branch_data
-
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            # Define the file paths
-            if self.variable == '':
-                output = [os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.year}_{index}.root')]
-                output += [os.path.join(self.resolved_output_dir, 'Combine', f't2w_jobs', f't2w_mu_fiducial_{index}.sh')]
-                output += [os.path.join(self.resolved_output_dir, 'Combine', f't2w_jobs')]
-            else:
-                if self.eft_variable == '':
-                    output = [os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.year}_{index}.root')]
-                    output += [os.path.join(self.resolved_output_dir, 'Combine', f't2w_jobs', f't2w_{self.variable}_{index}.sh')]
-                else:
-                    output = [os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}_{index}.root')]
-                    output += [os.path.join(self.resolved_output_dir, 'Combine', f't2w_jobs', f'EFT_t2w_{self.variable}_{self.eft_variable}_{index}.sh')]
-                output += [os.path.join(self.resolved_output_dir, 'Combine', f't2w_jobs')]
-            output += [os.path.join(self.resolved_output_dir, 'Combine', f'Workspaces')]
+        # Define the file paths
+        if self.variable == '':
+            output = [os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.root')]
         else:
-            # Define the file paths
-            if self.variable == '':
-                output = [os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.root')]
+            if self.eft_variable == '':
+                output = [os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
             else:
-                if self.eft_variable == '':
-                    output = [os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')]
-                else:
-                    output = [os.path.join(self.resolved_output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')]
+                output = [os.path.join(self.resolved_output_dir, 'Combine', f'EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}.root')]
 
         outputFileTargets = []
 
         for _, current_output_path in enumerate(output):
             outputFileTargets.append(law.LocalFileTarget(current_output_path))
-        
-        # print(outputFileTargets)
 
         return outputFileTargets
 
     def run(self):
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            index = self.branch_data
-            bootstrap_suffix = f"_{index}"
-        else:
-            bootstrap_suffix = ""
         
         self._init_once()
 
         if self.variable == '':
             mode = "mu_fiducial"
-            datacard_name = f"Datacard_{self.year}"+bootstrap_suffix
+            datacard_name = f"Datacard_{self.year}"
             workspace_name = datacard_name
         else:
             mode = self.variable
-            datacard_name = f"Datacard_{self.variable}_{self.year}"+bootstrap_suffix
+            datacard_name = f"Datacard_{self.variable}_{self.year}"
             if self.eft_variable != '':
-                workspace_name = f"EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}"+bootstrap_suffix
+                workspace_name = f"EFT_Datacard_{self.variable}_{self.eft_variable}_{self.year}"
             else:
                 workspace_name = datacard_name
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"],"Combine/RunText2Workspace.py")
 
-        if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-            if self.eft_variable != '':
-                print("EFT variable is not supported for bootstrapping yet.")
-                exit(1)
-            current_dir = os.getcwd()
-            if self.batch_flavor == "slurm/psi":
-                # Have to use /scratch/batch_username/ for slurm/psi
-                os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/Workspaces'], shell=True)
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/Datacards'], shell=True)
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/Datacards/{self.config["datacard_yields"]["sigModelWSDir"]}'], shell=True)
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/Datacards/{self.config["datacard_yields"]["bkgModelWSDir"]}'+bootstrap_suffix], shell=True)
-                # Keep t2w_jobs for debugging purposes
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/t2w_jobs'], shell=True)
-                temp_output_dir = os.environ["TARGET_PATH"]
-                
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/{self.config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'], shell=True)
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/{self.config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'], shell=True)
-                
-                # Copy concerning datacard + Model to scratch dir, cause of how RunText2Workspace works.--
-                # Copying datacard...
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Combine/Datacards/{datacard_name}.txt',
-                    f'{temp_output_dir}/Combine/'
-                ]
-                execute_command(slurm_copy_command)
-                # Copying Signal Model...
-                if "/work" in self.resolved_output_dir:
-                    slurm_copy_command = [
-                    'cp', '-rf',
-                    f'{self.resolved_output_dir}/Combine/{self.config["datacard_yields"]["sigModelWSDir"]}',
-                    f'{temp_output_dir}/Combine/{self.config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
-                ]
-                else:
-                    slurm_copy_command = [
-                        'xrdcp', '-rf',
-                        'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Combine/{self.config["datacard_yields"]["sigModelWSDir"]}',
-                        f'{temp_output_dir}/Combine/{self.config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
-                    ]
-                execute_command(slurm_copy_command)
-                # Copying Background Model...
-                if "/work" in self.resolved_output_dir:
-                    slurm_copy_command = [
-                    'cp', '-rf',
-                    f'{self.resolved_output_dir}/Combine/{self.config["datacard_yields"]["bkgModelWSDir"]}' + bootstrap_suffix,
-                    f'{temp_output_dir}/Combine/{self.config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
-                ]
-                else:
-                    slurm_copy_command = [
-                        'xrdcp', '-rf',
-                        'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Combine/{self.config["datacard_yields"]["bkgModelWSDir"]}' + bootstrap_suffix,
-                        f'{temp_output_dir}/Combine/{self.config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
-                    ]
-                execute_command(slurm_copy_command)
-                
-                if "/work" in self.resolved_output_dir:
-                    execute_command([f'mkdir -p {self.resolved_output_dir}/Combine/Workspaces'], shell=True)
-                    execute_command([f'mkdir -p {self.resolved_output_dir}/Combine/Datacards'], shell=True)
-                    # Keep t2w_jobs for debugging purposes
-                    execute_command([f'mkdir -p {self.resolved_output_dir}/Combine/t2w_jobs'], shell=True)
-                else:
-                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Combine/Workspaces'], shell=True)
-                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Combine/Datacards'], shell=True)
-                    # Keep t2w_jobs for debugging purposes
-                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {self.resolved_output_dir}/Combine/t2w_jobs'], shell=True)
-            else:
-                temp_output_dir = self.resolved_output_dir
-                execute_command([f'mkdir -p {temp_output_dir}/Combine/Workspaces'], shell=True)
-                execute_command([f'mkdir -p {temp_output_dir}/Combine/Datacards'], shell=True)
-                # Keep t2w_jobs for debugging purposes
-                execute_command([f'mkdir -p {temp_output_dir}/Combine/t2w_jobs'], shell=True)
-            
-            os.chdir(temp_output_dir)
-            # Create Workspaces in Datacard folder
-            datacards_dir = os.path.join(temp_output_dir, 'Combine')
-            arguments = [
-                "python3",
-                script_path,
-                "--inputName", datacard_name,
-                "--outputDir", datacards_dir,
-                "--outputName", workspace_name,
-                "--mode", mode,
-                "--common_opts", "-m 125.38 higgsMassRange=122,128",
-                "--batch", "local",
-                "--bootstrapping"
-            ]
-            if self.variable != '':
-                arguments.append("--ext")
-                arguments.append(f"{self.variable}"+bootstrap_suffix)
-            command = arguments
-            print(command)
-            try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
-                print("Script output:", result.stdout)
-                print("Script executed successfully.")
-            except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
-                
-            # Copy workspaces to workspaces folder
-            if "/work" in self.resolved_output_dir:
-                execute_command([f'cp -rf {datacards_dir}/{datacard_name}.root {self.resolved_output_dir}/Combine/Workspaces/'], shell=True)
-                execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {self.resolved_output_dir}/Combine/t2w_jobs/"], shell=True)
-            else:
-                execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb03.psi.ch:1094//{self.resolved_output_dir}/Combine/Workspaces/'], shell=True)
-                execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb03.psi.ch:1094//{self.resolved_output_dir}/Combine/t2w_jobs/"], shell=True)
-                
-            shutil.rmtree(temp_output_dir)
+        if self.batch_flavor == "slurm/psi":
+            # Have to use /scratch/batch_username/ for slurm/psi
+            os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{self.config["datacard_yields"]["sigModelWSDir"]}'], shell=True)
+            execute_command([f'mkdir -p $TARGET_PATH/Combine/{self.config["datacard_yields"]["bkgModelWSDir"]}'], shell=True)
+            # Keep t2w_jobs for debugging purposes
+            execute_command([f'mkdir -p $TARGET_PATH/Co2mbine/t2w_jobs'], shell=True)    
+            temp_output_dir = os.environ["TARGET_PATH"]
 
-            os.chdir(current_dir)
-            
+            # Copy concerning datacard + Model to scratch dir, cause of how RunText2Workspace works..
+            # Copying datacard...
+            slurm_copy_command = [
+                'xrdcp', '-rf',
+                'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Combine/{datacard_name}.txt',
+                f'{temp_output_dir}/Combine'
+            ]
+            execute_command(slurm_copy_command)
+            # Copying Signal Model...
+            slurm_copy_command = [
+                'xrdcp', '-rf',
+                'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Combine/{self.config["datacard_yields"]["sigModelWSDir"]}',
+                f'{temp_output_dir}/Combine/{self.config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
+            ]
+            execute_command(slurm_copy_command)
+            # Copying Background Model...
+            slurm_copy_command = [
+                'xrdcp', '-rf',
+                'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Combine/{self.config["datacard_yields"]["bkgModelWSDir"]}',
+                f'{temp_output_dir}/Combine/{self.config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
+            ]
+            execute_command(slurm_copy_command)
         else:
-        
-            if self.batch_flavor == "slurm/psi":
-                # Have to use /scratch/batch_username/ for slurm/psi
-                os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/{self.config["datacard_yields"]["sigModelWSDir"]}'], shell=True)
-                execute_command([f'mkdir -p $TARGET_PATH/Combine/{self.config["datacard_yields"]["bkgModelWSDir"]}'], shell=True)
-                # Keep t2w_jobs for debugging purposes
-                execute_command([f'mkdir -p $TARGET_PATH/Co2mbine/t2w_jobs'], shell=True)    
-                temp_output_dir = os.environ["TARGET_PATH"]
-                
-                # Copy concerning datacard + Model to scratch dir, cause of how RunText2Workspace works..
-                # Copying datacard...
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Combine/{datacard_name}.txt',
-                    f'{temp_output_dir}/Combine'
-                ]
-                execute_command(slurm_copy_command)
-                # Copying Signal Model...
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Combine/{self.config["datacard_yields"]["sigModelWSDir"]}',
-                    f'{temp_output_dir}/Combine/{self.config["datacard_yields"]["sigModelWSDir"].split("/")[-2]}'
-                ]
-                execute_command(slurm_copy_command)
-                # Copying Background Model...
-                slurm_copy_command = [
-                    'xrdcp', '-rf',
-                    'root://t3dcachedb03.psi.ch:1094//'+ f'{self.resolved_output_dir}/Combine/{self.config["datacard_yields"]["bkgModelWSDir"]}',
-                    f'{temp_output_dir}/Combine/{self.config["datacard_yields"]["bkgModelWSDir"].split("/")[-2]}'
-                ]
-                execute_command(slurm_copy_command)
-            else:
-                temp_output_dir = self.resolved_output_dir
-            
-            datacards_dir = os.path.join(temp_output_dir, 'Combine')
+            temp_output_dir = self.resolved_output_dir
 
-            arguments = [
-                "python3",
-                script_path,
-                "--inputName", datacard_name,
-                "--outputDir", temp_output_dir,
-                "--outputName", workspace_name,
-                "--mode", mode,
-                "--common_opts", "-m 125.38 higgsMassRange=122,128",
-                "--batch", "local"
-            ]
-            if self.variable != '':
-                arguments.append("--ext")
-                arguments.append(f"{self.variable}")
+        datacards_dir = os.path.join(temp_output_dir, 'Combine')
 
-            if self.eft_variable != '':
-                arguments.append("--eft-mode")
-                arguments.append(self.eft_variable)
-            command = arguments
-            print(command)
-            try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
-                print("Script output:", result.stdout)
-                print("Script executed successfully.")
-            except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
-        
-            if self.batch_flavor == "slurm/psi":
-                if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
-                    if "/work" in self.resolved_output_dir:
-                        execute_command([f'cp -rf {datacards_dir}/{workspace_name}.root {self.resolved_output_dir}/Combine/Workspaces/'], shell=True)
-                        # execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {output_dir}/Combine/t2w_jobs/"], shell=True)
-                        execute_command([f"cp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} {self.resolved_output_dir}/Combine/"], shell=True)
-                    else:
-                        execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb03.psi.ch:1094//{self.resolved_output_dir}/Combine/Workspaces/'], shell=True)
-                        execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/*')} root://t3dcachedb03.psi.ch:1094//{self.resolved_output_dir}/Combine/t2w_jobs/"], shell=True)
-                else:
-                    # Copy workspaces to workspaces folder
-                    list_command = ["ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
-                    file_list = subprocess.check_output(list_command).decode().splitlines()
+        arguments = [
+            "python3",
+            script_path,
+            "--inputName", datacard_name,
+            "--outputDir", temp_output_dir,
+            "--outputName", workspace_name,
+            "--mode", mode,
+            "--common_opts", "-m 125.38 higgsMassRange=122,128",
+            "--batch", "local"
+        ]
+        if self.variable != '':
+            arguments.append("--ext")
+            arguments.append(f"{self.variable}")
 
-                    print(file_list)
-                    execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb03.psi.ch:1094//{self.resolved_output_dir}/Combine/'], shell=True)
-                    execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine')} root://t3dcachedb03.psi.ch:1094//{self.resolved_output_dir}/"], shell=True)                
-                shutil.rmtree(temp_output_dir)
+        if self.eft_variable != '':
+            arguments.append("--eft-mode")
+            arguments.append(self.eft_variable)
+        command = arguments
+        print(command)
+        try:
+            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            print("Script output:", result.stdout)
+            print("Script executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Error executing script:", e.stderr)
+
+        if self.batch_flavor == "slurm/psi":
+
+            # Copy workspaces to workspaces folder
+            list_command = ["ls", os.path.join(temp_output_dir, 'Combine', 't2w_jobs')]
+            file_list = subprocess.check_output(list_command).decode().splitlines()
+
+            print(file_list)
+            execute_command([f'xrdcp -rf {datacards_dir}/{workspace_name}.root root://t3dcachedb03.psi.ch:1094//{self.resolved_output_dir}/Combine/'], shell=True)
+            execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine')} root://t3dcachedb03.psi.ch:1094//{self.resolved_output_dir}/"], shell=True)                
+        shutil.rmtree(temp_output_dir)
         
 class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
