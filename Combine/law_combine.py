@@ -14,6 +14,7 @@ from scipy.stats import chi2
 
 from commonTools import *
 from commonObjects import *
+# Helpers to extract/save pdfindex information for merged category flows
 from pdfindex_utils import extract_pdf_indices, update_override_file
 
 from Datacard.law_datacard import *
@@ -480,6 +481,8 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/')} root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
             shutil.rmtree(temp_output_dir)
 
+        # Persist the pdfindex values from the produced workspace so downstream
+        # cat-merged fits can reuse the same indices without recomputing them.
         final_root_path = os.path.join(output_dir, 'Combine', f'{datacard_name}.root')
         pdf_indices = extract_pdf_indices(final_root_path)
         if pdf_indices:
@@ -786,6 +789,8 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
         
         return True
 
+# Handles both standard per-category scans and the merged-category flow by
+# optionally branching over a comma-separated list of categories.
 class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
@@ -839,6 +844,8 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return branch_map
 
     def _current_branch_info(self):
+        # Branch data can be just the point index (legacy behaviour) or a
+        # (category, point) tuple when running in cat-merged mode.
         data = self.branch_data
         if isinstance(data, tuple):
             return data
@@ -1061,6 +1068,8 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             
         os.chdir(cwd)
         
+# Statistical scan task mirrors the syst version and therefore also supports
+# cat-merged execution through the optional csv list.
 class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
@@ -1114,6 +1123,8 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return branch_map
 
     def _current_branch_info(self):
+        # Keep supporting the legacy single-cat behaviour while allowing the
+        # merged workload to pack multiple categories per task.
         data = self.branch_data
         if isinstance(data, tuple):
             return data
@@ -1363,6 +1374,8 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             tasks["AsimovFitCategorySyst"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
             tasks["AsimovFitCategoryStat"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
         else:
+            # Cat-merged differential fits run all categories within a single task
+            # by passing the comma-separated list down to the Syst/Stat tasks.
             cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
             cats_csv = ",".join(cat_list)
             tasks["AsimovFitCategorySyst_all"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats_csv, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
