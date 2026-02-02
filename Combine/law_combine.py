@@ -1,5 +1,6 @@
 import law
 import os
+import re
 import subprocess
 import ROOT
 import uproot
@@ -49,6 +50,83 @@ def execute_command(command, return_output=False, shell=False):
             return (result.stdout).split("\n")[0]
     except subprocess.CalledProcessError as e:
         print("Error executing script:", e.stderr)
+
+def _parse_exclude_tokens(exclude_expr):
+    """
+    Parse exclude expressions into literal names + compiled regex patterns.
+
+    Supported token forms (comma-separated):
+    - literal parameter names
+    - regex tokens in combineTool.py style: rgx{...}
+    - regex tokens in /.../ style (convenience)
+    """
+    exclude_tokens = [t.strip() for t in (exclude_expr or "").split(",") if t.strip()]
+    exclude_regex = []
+    exclude_names = set()
+    for tok in exclude_tokens:
+        if tok.startswith("rgx{") and tok.endswith("}"):
+            pattern = tok[4:-1]
+            try:
+                exclude_regex.append(re.compile(pattern))
+            except Exception:
+                exclude_names.add(tok)
+            continue
+
+        if len(tok) >= 2 and tok.startswith("/") and tok.endswith("/"):
+            try:
+                exclude_regex.append(re.compile(tok[1:-1]))
+            except Exception:
+                exclude_names.add(tok)
+            continue
+
+        exclude_names.add(tok)
+    return exclude_names, exclude_regex
+
+def _filter_names_by_exclude(names, exclude_expr):
+    exclude_names, exclude_regex = _parse_exclude_tokens(exclude_expr)
+    if not exclude_names and not exclude_regex:
+        return list(names)
+
+    kept = []
+    for name in names:
+        if name in exclude_names:
+            continue
+        if any(r.search(name) for r in exclude_regex):
+            continue
+        kept.append(name)
+    return kept
+
+def _list_modelconfig_nuisances(datacard_path, poi_list, exclude_expr=""):
+    """
+    Return nuisance parameter names from the workspace ModelConfig, excluding POIs and optional
+    exclude patterns/names.
+    """
+    ws_file = ROOT.TFile.Open(datacard_path)
+    if not ws_file or ws_file.IsZombie():
+        raise RuntimeError(f"Could not open workspace file: {datacard_path}")
+    w = ws_file.Get("w")
+    if not w:
+        raise RuntimeError(f"Workspace 'w' not found in: {datacard_path}")
+    config = w.genobj("ModelConfig")
+    if not config:
+        raise RuntimeError(f"ModelConfig not found in workspace 'w' in: {datacard_path}")
+
+    nuis = config.GetNuisanceParameters()
+    if not nuis:
+        return []
+
+    names = []
+    it = nuis.createIterator()
+    var = it.Next()
+    while var:
+        name = var.GetName()
+        if name not in poi_list and (not var.isConstant()) and var.InheritsFrom("RooRealVar"):
+            names.append(name)
+        var = it.Next()
+
+    names = _filter_names_by_exclude(names, exclude_expr)
+    names.sort()
+    return names
         
 def manually_copy_t3(src, dst):
     # List files in the directory
@@ -652,9 +730,15 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 print("Error executing script:", e.stderr)
             
         elif self.variable != '':
-            saveSpecifiedIndex = ",".join(
-                combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces']
-            )
+            pdf_indices = combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces']
+            cache_key = (datacard_path,)
+            if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
+                datacard_pdf_indices = extract_pdf_indices(datacard_path)
+                if datacard_pdf_indices:
+                    _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
+            if cache_key in _PDFINDEX_CACHE:
+                pdf_indices = _PDFINDEX_CACHE[cache_key]
+            saveSpecifiedIndex = ",".join(pdf_indices)
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
@@ -685,6 +769,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
         
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -1015,6 +1100,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 pdf_indices = _PDFINDEX_CACHE[cache_key]
             saveSpecifiedIndex = ",".join(pdf_indices)
             paramStr = ",".join(combineVariableDict[f'{self.year}'][self.variable]['paramStr'])
+            set_param_string = paramStr
+            if pdfIdx:
+                set_param_string = f"{set_param_string},{pdfIdx}"
 
             arguments = [
                 "combineTool.py",
@@ -1040,7 +1128,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
                 "--saveSpecifiedIndex", saveSpecifiedIndex,
-                "--setParameters", paramStr,
+                "--setParameters", set_param_string,
             ]
             command = arguments
             # print(command)
@@ -1050,6 +1138,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
             
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -1197,6 +1286,13 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir  
+
+        # Needed for pdfindex discovery in the differential (variable != "") flow.
+        # This points to the original text2workspace output, not the first-step snapshot file.
+        if self.variable == '':
+            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+        else:
+            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
         
         cwd = os.getcwd()
         if self.batch_flavor == "slurm/psi":
@@ -1287,8 +1383,19 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Error executing script:", e.stderr)
             
         else:
-            saveSpecifiedIndex = ",".join(combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces'])
+            pdf_indices = combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces']
+            cache_key = (datacard_path,)
+            if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
+                datacard_pdf_indices = extract_pdf_indices(datacard_path)
+                if datacard_pdf_indices:
+                    _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
+            if cache_key in _PDFINDEX_CACHE:
+                pdf_indices = _PDFINDEX_CACHE[cache_key]
+            saveSpecifiedIndex = ",".join(pdf_indices)
             paramStr = ",".join(combineVariableDict[f'{self.year}'][self.variable]['paramStr'])
+            set_param_string = paramStr
+            if pdfIdx:
+                set_param_string = f"{set_param_string},{pdfIdx}"
 
             arguments = [
                 "combineTool.py",
@@ -1314,7 +1421,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
                 "--saveSpecifiedIndex", saveSpecifiedIndex,
-                "--setParameters", paramStr,
+                "--setParameters", set_param_string,
             ]
             command = arguments
             # print(command)
@@ -1324,6 +1431,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
         
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -1531,6 +1639,7 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
                 
             
             arguments = [
@@ -1893,20 +2002,33 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         else:
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
     
-        # As seen in CMSSW_14_1_0_pre4/src/CombineHarvester/CombineTools/python/combine/Impacts.py
-        def all_free_parameters(file, wsp, mc, pois):
-            res = []
+        # IMPORTANT:
+        # For differential impacts we only want *constrained nuisance parameters* (i.e. those listed in
+        # ModelConfig's nuisance set). Using "all free pdf parameters" (equivalent to combineTool.py's
+        # --allPars) also includes background-model / envelope parameters (e.g. env_pdf_*) that often
+        # have no meaningful +/-1sigma crossing in multi-POI fits, leading to
+        #   "[ERROR] Closed range without finding crossing!"
+        # and missing per-parameter output root files.
+        def list_nuisance_parameters(file, wsp, mc, pois, exclude_expr=""):
             wsFile = ROOT.TFile.Open(file)
             w = wsFile.Get(wsp)
             config = w.genobj(mc)
-            pdfvars = config.GetPdf().getParameters(config.GetObservables())
-            it = pdfvars.createIterator()
+            nuis = config.GetNuisanceParameters()
+            if not nuis:
+                return []
+
+            names = []
+            it = nuis.createIterator()
             var = it.Next()
             while var:
-                if var.GetName() not in pois and (not var.isConstant()) and var.InheritsFrom("RooRealVar"):
-                    res.append(var.GetName())
+                name = var.GetName()
+                if name not in pois and (not var.isConstant()) and var.InheritsFrom("RooRealVar"):
+                    names.append(name)
                 var = it.Next()
-            return res
+
+            names = _filter_names_by_exclude(names, exclude_expr)
+            names.sort()
+            return names
         
         # def list_from_workspace(file, workspace, set):
         #     """Create a list of strings from a RooWorkspace set"""
@@ -1926,7 +2048,10 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         else:
             poiList = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
         
-        paramList = all_free_parameters(datacard_path, 'w', 'ModelConfig', poiList)
+        exclude_expr = ""
+        if "combine_impacts" in config:
+            exclude_expr = config["combine_impacts"].get("exclude", "")
+        paramList = list_nuisance_parameters(datacard_path, "w", "ModelConfig", poiList, exclude_expr=exclude_expr)
 
         
         branch_map = {i: current_param for i, current_param in enumerate(paramList)}
@@ -2350,6 +2475,19 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-m", "125.38",
                 "-o", "impacts/impacts.json",
             ]
+            # combineTool.py currently uses "all free parameters" by default (equivalent to --allPars),
+            # which pulls in background-model parameters (env_pdf_*) and can crash when old/corrupt
+            # param-fit root files are present. Restrict to ModelConfig nuisances by explicitly
+            # providing the parameter list via --named.
+            exclude_expr = config.get("combine_impacts", {}).get("exclude", "")
+            poi_list = combineVariableDict[f"{self.year}"][f"{self.variable}"]["paramStrNoOne"]
+            named_params = _list_modelconfig_nuisances(datacard_path, poi_list, exclude_expr=exclude_expr)
+            if not named_params:
+                raise RuntimeError(
+                    f"No nuisance parameters found for impacts (variable={self.variable}, year={self.year}). "
+                    f"Check workspace ModelConfig nuisances and combine_impacts.exclude='{exclude_expr}'."
+                )
+            arguments.extend(["--named", ",".join(named_params)])
             if (config["combine_impacts"]["exclude"] != ""):
                 arguments.append("--exclude")
                 arguments.append(config["combine_impacts"]["exclude"])
@@ -2379,6 +2517,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                     print("Script executed successfully.")
                 except subprocess.CalledProcessError as e:
                     print("Error executing script:", e.stderr)
+                    raise
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
