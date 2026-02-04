@@ -44,7 +44,7 @@ translatePOIs = {} if opt.translatePOIs is None else LoadTranslations(opt.transl
 
 # Dict to store regexp for systematics
 ExpSystGroups_rgx = od()
-ExpSystGroups_rgx['Integrated luminosity'] = ['lumi_13TeV_*']
+ExpSystGroups_rgx['Integrated luminosity'] = ['lumi_']
 ExpSystGroups_rgx['Photon identification'] = ['CMS_hgg_phoIdMva']
 ExpSystGroups_rgx['Photon energy scale and smearing'] = ['CMS_hgg_nuisance_*scale','CMS_hgg_nuisance_*smear']
 ExpSystGroups_rgx['Per photon energy resolution estimate'] = ['CMS_hgg_SigmaEOverEShift_*']
