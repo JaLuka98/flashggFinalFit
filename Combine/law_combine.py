@@ -2674,6 +2674,19 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         else:
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse'))
+
+        # Determine which discrete pdfindex categories actually exist in the workspace.
+        # This is important when some bins use merged categories (e.g. *_catMerged_*)
+        # and therefore do not define the usual *_cat0/cat1/cat2_* RooCategories.
+        pdf_indices = combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces']
+        cache_key = (datacard_path,)
+        if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
+            datacard_pdf_indices = extract_pdf_indices(datacard_path)
+            if datacard_pdf_indices:
+                _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
+        if cache_key in _PDFINDEX_CACHE:
+            pdf_indices = _PDFINDEX_CACHE[cache_key]
+        saveSpecifiedIndex = ",".join(pdf_indices)
                     
         arguments = [
             "combine",
@@ -2684,7 +2697,7 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             "-n", "firstStep",
             "--saveWorkspace",
             "--saveFitResult",
-            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+            "--saveSpecifiedIndex", saveSpecifiedIndex,
             "--floatOtherPOIs", "1",
             "--robustHesse", "1",
             "--robustHesseSave", "1",
