@@ -889,7 +889,6 @@ int main(int argc, char* argv[]){
 		if (verbose) std::cout << "[INFO] opened data for  "  << Form("data_mass_%s",catname.c_str()) <<" - " << dataFull <<std::endl;
     }
 
-
     if (dataFull && dataFull->sumEntries() == 0) {
     std::cout << "[INFO] Injecting one dummy event into empty dataset" << std::endl;
 
@@ -898,7 +897,6 @@ int main(int argc, char* argv[]){
     // If dataset is weighted, this works for both weighted & unweighted
     dataFull->add(RooArgSet(*mass), 1.0);
   }
-
 
 		mass->setBins(nBinsForMass);
 		RooDataSet *data;
