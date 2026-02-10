@@ -194,7 +194,9 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
 
                 for cat_cat_offset in cat_list:
                     cat, cat_offset = cat_cat_offset
-                    output_paths = [os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root')]
+                    output_paths.append(os.path.join(outdir_ext, f'CMS-HGG_multipdf_{cat}.root'))
+                    output_paths.append(os.path.join(outdir_ext, 'bkgfTest-Data', f'multipdf_{cat}.png'))
+                    output_paths.append(os.path.join(outdir_ext, 'bkgfTest-Data', f'multipdf_{cat}.pdf'))
 
         for _, current_output_path in enumerate(output_paths):
             outputFileTargets.append(law.LocalFileTarget(current_output_path))
