@@ -111,8 +111,8 @@ outputNuisanceExtMap = {'scales':'','scalesCorr':'','smears':'','scalesGlobal':'
 bkgWSName__ = "multipdf"
 
 # Define an array of input masses
-# input_masses = [120, 125, 130]
-input_masses = [125]
+input_masses = [120, 125, 130]
+# input_masses = [125]
 
 # Define an array of production modes and corresponding process strings
 # JLS 23th Jan 2025, also adding 2G naming conventions
@@ -191,8 +191,8 @@ eft_variables = ["chg", "chb", "chw", "chwb", "chbox", "chd", "chl3", "cll1", "c
 
 # Define an array of eras
 # JLS 22th of Jan 2025: This syntax looks pretty criminal and should be improved at some point
-# TwentyTwentyTwoEras = ["preEE", "postEE"]
-TwentyTwentyTwoEras = ["preEE"]
+TwentyTwentyTwoEras = ["preEE", "postEE"]
+# TwentyTwentyTwoEras = ["preEE"]
 # TwentyTwentyThreeEras = ["preBPix", "postBPix"]
 TwentyTwentyThreeEras = ["postBPix"]
 
