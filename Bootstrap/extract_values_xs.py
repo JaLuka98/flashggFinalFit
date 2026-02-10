@@ -579,15 +579,15 @@ def pois_untrimmed(toyDir_, poi_list_):
 
         pois[current_poi] = []
 
-    for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
-    # for i in range(len(glob.glob(os.path.join(toyDir_, "bootstrap_*")))):
+    # for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
+    for i in range(len(glob.glob(os.path.join(toyDir_, "bootstrap_*")))):
 
         if i%100==0:
             print(f"Processing fit_{i}")
 
         try:
-            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.root")
-            # current_root_files = uproot.open(f"{toyDir_}/bootstrap_{i}/higgsCombineBootstrapFit.MultiDimFit.mH125.38.root")
+            # current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.root")
+            current_root_files = uproot.open(f"{toyDir_}/bootstrap_{i}/higgsCombineBootstrapFit.MultiDimFit.mH125.38.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             for current_poi in poi_list_:
@@ -624,15 +624,15 @@ def pois_trimmed(toyDir_, poi_list_, trimming_value_left_, trimming_value_right_
 
         pois[current_poi] = []
     
-    for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
-    # for i in range(len(glob.glob(os.path.join(toyDir_, "bootstrap_*")))):
+    # for i in range(len(glob.glob(os.path.join(toyDir_, "toy_*")))):
+    for i in range(len(glob.glob(os.path.join(toyDir_, "bootstrap_*")))):
 
         if i%100==0:
             print(f"Processing fit_{i}")
 
         try:
-            current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.root")
-            # current_root_files = uproot.open(f"{toyDir_}/bootstrap_{i}/higgsCombineBootstrapFit.MultiDimFit.mH125.38.root")
+            # current_root_files = uproot.open(f"{toyDir_}/toy_{i}/higgsCombineToyFit.MultiDimFit.mH125.root")
+            current_root_files = uproot.open(f"{toyDir_}/bootstrap_{i}/higgsCombineBootstrapFit.MultiDimFit.mH125.38.root")
         except:
             print(f"Skipping fit_{i}: Required scan files not found")
             for current_poi in poi_list_:
@@ -790,13 +790,13 @@ def plot_correlation(pois_, poi_list_, variable_):
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/finalfits'
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/finalfits'
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_14_intermediate/finalfits_postBPix'
-# sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits'
-sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/finalfits'
+sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits'
+# sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/finalfits'
 # sample_dir = '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_11_14_bootstrapping/2022/finalfits'
 
 # variables = ["rapidity", "NJ"]
 # variables = ["PTH", "NJ"]
-variables = ["NJ"]
+variables = ["PTH"]
 
 for variable in variables:
     
@@ -811,10 +811,10 @@ for variable in variables:
 
     # The paths
     # main_dir = os.path.join(sample_dir, variable+"_allReplica_powheg_powheg_noSignal_hundredfold", "Combine", f"runFits_{variable}")
-    main_dir = os.path.join(sample_dir, variable+"_flows_01_20_26", "Combine", f"runFits_{variable}")
+    main_dir = os.path.join(sample_dir, variable+"_onlyPreEE_RandomizeAux_separateDatasets", "Combine", f"runFits_{variable}")
     path_to_hesse = os.path.join(main_dir, "hesse", 'robustHessefirstStep.root')
-    toyDir = os.path.join(main_dir, "toyFit")
-    # toyDir = os.path.join(main_dir, "bootstrapFit")
+    # toyDir = os.path.join(main_dir, "toyFit")
+    toyDir = os.path.join(main_dir, "bootstrapFit")
     combineLL_dir = os.path.join(main_dir, "asimov")
     
     # XS Toys
