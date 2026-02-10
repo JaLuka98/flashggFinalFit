@@ -737,7 +737,7 @@ class AsimovFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.Loca
         
         fitConfig = config['combine_fit']
             
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=False, number_of_bootstraps=1000)
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=False, number_of_replicas=1000)
         
         return tasks
 
@@ -2800,7 +2800,7 @@ class UnblindedFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
     year = law.Parameter(default='2022', description="Year")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of bootstraps")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -2827,7 +2827,7 @@ class UnblindedFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
         else:
             output_dir = self.output_dir
                
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -2838,9 +2838,9 @@ class UnblindedFitSystSingle(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWor
             else:
                 param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {
-                i * int(self.number_of_bootstraps) + j: (current_cat, bootstrap_index)
+                i * int(self.number_of_replicas) + j: (current_cat, bootstrap_index)
                 for i, current_cat in enumerate(param_list)
-                for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+                for j, bootstrap_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             if self.variable == '':
@@ -3031,7 +3031,7 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
     year = law.Parameter(default='2022', description="Year")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of bootstraps")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -3061,9 +3061,9 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         fitConfig = config["combine_fit"]        
         
         if self.variable == '':
-            tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version="inclusive", workflow=fitConfig['execution'], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+            tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version="inclusive", workflow=fitConfig['execution'], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas)
         else:
-            tasks["UnblindedFitSystSingle"] = UnblindedFitSystSingle(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version=f'{self.variable}', workflow=fitConfig['execution'], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+            tasks["UnblindedFitSystSingle"] = UnblindedFitSystSingle(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version=f'{self.variable}', workflow=fitConfig['execution'], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -3074,9 +3074,9 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             else:
                 param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {
-                i * int(self.number_of_bootstraps) + j: (current_cat, bootstrap_index)
+                i * int(self.number_of_replicas) + j: (current_cat, bootstrap_index)
                 for i, current_cat in enumerate(param_list)
-                for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+                for j, bootstrap_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             if self.variable == '':
@@ -3267,7 +3267,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of bootstraps")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -3294,7 +3294,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         else:
             output_dir = self.output_dir
                
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, workflow=config["combine_fit"]["execution"], version=self.variable if self.variable != "" else "inclusive", slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, workflow=config["combine_fit"]["execution"], version=self.variable if self.variable != "" else "inclusive", slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -3305,9 +3305,9 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             else:
                 param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {
-                i * int(self.number_of_bootstraps) + j: (current_cat, bootstrap_index)
+                i * int(self.number_of_replicas) + j: (current_cat, bootstrap_index)
                 for i, current_cat in enumerate(param_list)
-                for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+                for j, bootstrap_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             if self.variable == '':
@@ -3512,7 +3512,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of bootstraps")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -3542,9 +3542,9 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         fitConfig = config["combine_fit"]
                 
         if self.variable == '':
-            tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version='inclusive', workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+            tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version='inclusive', workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas)
         else:
-            tasks["UnblindedFitCategorySyst"] = UnblindedFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, nPoints=self.nPoints, batch_flavor=self.batch_flavor, version=f'{self.variable}', workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+            tasks["UnblindedFitCategorySyst"] = UnblindedFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, nPoints=self.nPoints, batch_flavor=self.batch_flavor, version=f'{self.variable}', workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -3555,9 +3555,9 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             else:
                 param_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             branch_map = {
-                i * int(self.number_of_bootstraps) + j: (current_cat, bootstrap_index)
+                i * int(self.number_of_replicas) + j: (current_cat, bootstrap_index)
                 for i, current_cat in enumerate(param_list)
-                for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+                for j, bootstrap_index in enumerate(range(int(self.number_of_replicas)))
             }
         else:
             if self.variable == '':
@@ -3747,7 +3747,7 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
     year = law.Parameter(default='2022', description="Year")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
-    number_of_bootstraps = law.Parameter(default=1000, description="Number of bootstraps")
+    number_of_replicas = law.Parameter(default=1000, description="Number of bootstraps")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -3776,8 +3776,8 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
         fitConfig = config["combine_fit"]
             
-        tasks["UnblindedFitCategorySyst"] = UnblindedFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, nPoints=fitConfig["unblindedFit_numPoints"], version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
-        tasks["UnblindedFitCategoryStat"] = UnblindedFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, nPoints=fitConfig["unblindedFit_numPoints"], version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_bootstraps)
+        tasks["UnblindedFitCategorySyst"] = UnblindedFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, nPoints=fitConfig["unblindedFit_numPoints"], version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas)
+        tasks["UnblindedFitCategoryStat"] = UnblindedFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, nPoints=fitConfig["unblindedFit_numPoints"], version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas)
         
         return tasks
     
@@ -3785,7 +3785,7 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         if convert_boolean_string(self.bootstrap_flag) == True:
             branch_map = {
                 j: bootstrap_index
-                for j, bootstrap_index in enumerate(range(int(self.number_of_bootstraps)))
+                for j, bootstrap_index in enumerate(range(int(self.number_of_replicas)))
             }  
         else:
             branch_list = [0]
@@ -3889,22 +3889,22 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             if convert_boolean_string(self.bootstrap_flag) == True:
                 execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/dataFit/bootstrap_{bootstrap_index}/scans'], shell=True)
                 os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}'))
-                syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
-                stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
-            else:
-                syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
-                stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
+            #     syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
+            #     stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
+            # else:
+            #     syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
+            #     stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
         else:
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit/scans'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit'))
             if convert_boolean_string(self.bootstrap_flag) == True:
                 execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit/bootstrap_{bootstrap_index}/scans'], shell=True)
                 os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}'))
-                syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
-                stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
-            else:
-                syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
-                stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
+            #     syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
+            #     stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
+            # else:
+            #     syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
+            #     stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
         
         if self.variable == '':
             cats = ["r"]
@@ -3930,6 +3930,13 @@ class CreateUnblindedFit(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             execute_command(slurm_copy_command)
         
         for cat in cats:
+            if convert_boolean_string(self.bootstrap_flag) == True:
+                syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
+                stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'bootstrap_{bootstrap_index}', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
+            else:
+                syst_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
+                stat_fit_file = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
+            
             arguments = [
                 "plot1DScan.py",
                 syst_fit_file,
@@ -6387,7 +6394,7 @@ class AsimovEFTFitCategoryFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.L
         fitConfig = config["combine_fit"]
             
         # TODO: Implement EFT RunText2Workspace
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], eft_variable=self.eft_variable, bootstrap_flag=False, number_of_bootstraps=1000)
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], eft_variable=self.eft_variable, bootstrap_flag=False, number_of_replicas=1000)
         
         return tasks
 
@@ -7163,7 +7170,7 @@ class ToyFitCategoryOneFile(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         
         fitConfig = config["combine_fit"]
         
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], eft_variable=self.eft_variable, bootstrap_flag=False, number_of_bootstraps=1000)
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], eft_variable=self.eft_variable, bootstrap_flag=False, number_of_replicas=1000)
         
         return tasks
     
