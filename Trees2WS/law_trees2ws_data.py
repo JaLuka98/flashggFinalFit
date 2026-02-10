@@ -198,7 +198,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         if convert_boolean_string(self.toy_flag) == True:
             seed = int(self.seed) + int(replica_index)
             f = ROOT.TFile.Open(os.path.join(self.resolved_output_dir, "Replicas", "allReplicas", f"allReplica_{int(replica_index)}.{seed}.root"), "READ")
-        if convert_boolean_string(self.bootstrap_flag) == True:
+        elif convert_boolean_string(self.bootstrap_flag) == True:
             seed = int(self.seed) + int(replica_index)
             # f = uproot.open(os.path.join(self.resolved_output_dir, "Replicas", "Bootstrap", f"bootstrapData_{int(replica_index)}.{seed}.root"))
             f = ROOT.TFile.Open(os.path.join(self.resolved_output_dir,"Replicas","Bootstrap",f"bootstrapData_{int(replica_index)}.{seed}.root"),"READ")
@@ -283,7 +283,7 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                     if(getattr(ev,"CMS_hgg_mass") < float(massCutRange.split(",")[0])) | (getattr(ev,"CMS_hgg_mass") > float(massCutRange.split(",")[1])): continue
                 for var in data_vars: 
                     if (var == "weight") and (convert_boolean_string(self.bootstrap_flag) == False): continue
-                    if (var == "weight") and (convert_boolean_string(self.bootstrap_flag) == True):
+                    elif (var == "weight") and (convert_boolean_string(self.bootstrap_flag) == True):
                         branch = t.GetBranch(var)
                         leaf = branch.GetLeaf(var)
                         branch.GetEntry(ev.GetReadEntry())
