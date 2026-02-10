@@ -4,7 +4,10 @@
 # Tests
 # Test Trees2WS: law run Trees2WS --variable Njets2p5 --workers 4 --output-dir /afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/test_t2w_diff/t2w --doDiffSplitting True --doSystematic True
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/NJ_onlyPreEE_RandomizeAux_separateDatasets/'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/NJ_RandomizeAux_separateDatasets/'
+# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/NJ_onlyPreEE_RandomizeAux_separateDatasets_toys/'
+
+
 # outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/finalfits/NJ'
 # outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_11_14_bootstrapping/2022/finalfits/NJ'
 
@@ -13,18 +16,18 @@ outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samp
 inputFiles:
   # Trees2WS
   # Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_11_14_bootstrapping/2022/variables/NJ/root/Data/allData_2022.root'
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables_preEE/NJ/allData_2022.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables_preEE/NJ/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables/NJ/allData_2022.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables/NJ/root'
   # Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/variables_preEE/NJ/root'
 
   # mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/ggH_preEE_MG5_125'
   # powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/signal'
   # bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background_2022preEE'
   # data_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/data_onlypreEE'
-  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/signal'
+  mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3/signal'
   powheg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3_powheg/signal' 
-  bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background_2022preEE'
-  data_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/data_onlypreEE'
+  bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2022/2025_10_29'
+  data_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/data'
   catDict_timestamp: '2025_10_31'
 
 backgroundScriptCfg:
@@ -35,7 +38,7 @@ backgroundScriptCfg:
   # year: '2022' # Use combined when merging all years in category (for plots)
   execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 14000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 trees2wsCfg:
@@ -92,9 +95,9 @@ trees2wsCfg:
   cats: 'auto'
 
   execution: 'slurm'
-  batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 10000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+  batchPartition: "standard" # Slurm partition to use for job submission
+  batchMemory: 14000 # Slurm memory to use for job submission
+  batchMaxRuntime: "05:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2022_preEE:
   # Setup
@@ -104,7 +107,7 @@ signalScriptCfg_2022_preEE:
   analysisRM: 'Run3FidXSAnalysisNJ' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2022preEE' # Use 'combined' if merging all years: not recommended
-  massPoints: '125' # '120,125,130' # You can now run with a single mass point if necessary
+  massPoints: '120,125,130' # '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
@@ -133,7 +136,7 @@ signalScriptCfg_2022_postEE:
   analysisRM: 'Run3FidXSAnalysisNJ' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2022postEE' # Use 'combined' if merging all years: not recommended
-  massPoints: '125' # '120,125,130' # You can now run with a single mass point if necessary
+  massPoints: '120,125,130' # '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
@@ -156,7 +159,7 @@ signalScriptCfg_2022_postEE:
 
 packaged_2022:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  massPoints: '125' # '120,125,130' # You can now run with a single mass point if necessary
+  massPoints: '120,125,130' # '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
   execution: 'local'
@@ -181,9 +184,9 @@ datacard_yields:
   bkgScaler: 1. # Add overall scale factor for background
   skipCOWCorr: False # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
   execution: 'slurm'
-  batchPartition: "short" # Slurm partition to use for job submission
+  batchPartition: "standard" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+  batchMaxRuntime: "03:00:00" # Slurm max runtime to use
 
 datacard:
   # For pruning processes
@@ -227,9 +230,9 @@ combine_fit:
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,3"
   execution: 'slurm'
-  batchPartition: "short" # Slurm partition to use for job submission
+  batchPartition: "standard" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+  batchMaxRuntime: "04:00:00" # Slurm max runtime to use
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
