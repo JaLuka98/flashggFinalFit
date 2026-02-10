@@ -2156,9 +2156,9 @@ class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         if convert_boolean_string(self.toy_flag) == True:        
 
             SplusB_config = self.config["combine_SplusB_toys"]
-            
-            tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag)
-            
+
+            tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
+
         if convert_boolean_string(self.bootstrap_flag) == True:
             fitConfig = self.config["combine_fit"]
 
@@ -2338,9 +2338,7 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
         
         SplusB_config = self.config["combine_SplusB_toys"]
         
-        # tasks["GenerateSplusBToys"] = GenerateSplusBToys(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, save_sonly=self.save_sonly)
-        
-        tasks["RunText2Workspace"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], number_of_toys=self.number_of_replicas, seed=self.seed, toy_flag=self.toy_flag)
+        tasks["RunText2Workspace"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], number_of_replicas=self.number_of_replicas, seed=self.seed, toy_flag=self.toy_flag)
         
         return tasks
 
@@ -2359,7 +2357,7 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
         output_paths = []
 
         # output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.38.root'))
-        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'nominal', f'higgsCombineAsimovFirstStep_Toy_{int(replica_index)}.MultiDimFit.mH125.root'))
+        output_paths.append(os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'nominal', f'higgsCombineAsimovFirstStep_{int(replica_index)}.MultiDimFit.mH125.root'))
 
         outputFileTargets = []
                 
@@ -2405,7 +2403,7 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
             "--freezeParameters", "MH",
             # "-m", "125.38",
             "-m", "125",
-            "-n", f"AsimovFirstStep_Toy_{int(replica_index)}",
+            "-n", f"AsimovFirstStep_{int(replica_index)}",
             "--cminDefaultMinimizerStrategy=0",
             "--saveWorkspace",
             "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -2519,17 +2517,6 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
-
-        # if convert_boolean_string(self.toy_flag) == True:        
-
-        #     SplusB_config = self.config["combine_SplusB_toys"]
-            
-        #     tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
-            
-        # if convert_boolean_string(self.bootstrap_flag) == True:
-        #     fitConfig = self.config["combine_fit"]
-            
-        #     tasks["RunT2WS"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_bootstraps=self.number_of_replicas, seed=self.seed)
             
         if (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
             fitConfig = self.config["combine_fit"]
