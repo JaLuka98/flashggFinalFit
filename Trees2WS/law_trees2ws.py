@@ -102,7 +102,7 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         productionMode = current_mode_proc_mass[0]
         input_mass = current_mode_proc_mass[1]
         input_path = current_mode_proc_mass[2]
-               
+
         apply_mass_cut = convert_boolean_string(self.apply_mass_cut)
         doNNLOPS = convert_boolean_string(self.doNNLOPS)
         doSystematics = convert_boolean_string(self.doSystematics)
@@ -173,7 +173,9 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         productionMode = current_mode_proc_mass[0]
         input_mass = current_mode_proc_mass[1]
         input_path = current_mode_proc_mass[2]
-        
+
+        isFourFlavorScheme = (productionMode in fourFlavorSamples)
+
         apply_mass_cut = convert_boolean_string(self.apply_mass_cut)
         doNNLOPS = convert_boolean_string(self.doNNLOPS)
         doSystematics = convert_boolean_string(self.doSystematics)
@@ -213,10 +215,12 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 stxsVar          = config['stxsVar']
                 diffVar          = config['diffVar']
                 systematicsVars  = config['systematicsVars']
-                theoryWeightContainers = config['theoryWeightContainers']
+                if isFourFlavorScheme: 
+                    theoryWeightContainers = config['theoryWeightContainers']['4FS']
+                else:
+                    theoryWeightContainers = config['theoryWeightContainers']['5FS']
                 systematics      = config['systematics']
                 cats             = config['cats']
-
 
             else:
                 print( "[ERROR] %s config file does not exist. Leaving..."%input_config)

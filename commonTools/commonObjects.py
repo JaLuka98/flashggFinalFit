@@ -131,6 +131,7 @@ production_XS = {
 }
 
 short_production_modes = ["ggh", "vbf", "vh", "tth", "bbh"]
+fourFlavorSamples = ["bbh"] # Use short notation
 
 eft_variables = ["chg", "chb", "chw", "chwb", "chbox", "chd", "chl3", "cll1", "ctbre", "cthre", "ctwre"]
 
