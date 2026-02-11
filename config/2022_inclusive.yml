@@ -52,8 +52,12 @@ trees2wsCfg:
     - "fiducialGeometricFlag"
   
   theoryWeightContainers:
-    weight_LHEPdf: 101
-    weight_LHEScale: 9
+    4FS:
+      weight_LHEPdf: 99
+      weight_LHEScale: 9
+    5FS:
+      weight_LHEPdf: 101
+      weight_LHEScale: 9
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
