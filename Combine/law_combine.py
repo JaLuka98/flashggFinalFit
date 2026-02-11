@@ -21,6 +21,10 @@ from Background.law_background import *
 from framework import Task
 from framework import HTCondorWorkflow, SlurmWorkflow
 
+# Ensure SLURM_JOB_ID is set for local workflows that still use /scratch.
+if "SLURM_JOB_ID" not in os.environ:
+    os.environ["SLURM_JOB_ID"] = f"local_{os.getpid()}"
+
 # Function to safely create a directory
 def safe_mkdir(path):
     try:
@@ -506,11 +510,11 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-        
+
         fitConfig = config['combine_fit']
-            
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
-        
+  
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])        
+
         return tasks
 
     def create_branch_map(self):
@@ -2733,9 +2737,11 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-               
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'])
-        
+
+        fitConfig = config["combine_fit"] 
+ 
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])        
+
         return tasks
     
     def create_branch_map(self):
@@ -2794,7 +2800,12 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_fit", {}).get("cminApproxPreFitTolerance", 0.01)
+        rMin = config.get("combine_fit", {}).get("rMin", 0.7)
+        rMax = config.get("combine_fit", {}).get("rMax", 1.6)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -2813,6 +2824,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             execute_command([f'mkdir -p $TARGET_PATH/Combine/{fitFolderName}/dataFit'], shell=True)
             os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'dataFit'))
         else:
+            execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit'))
 
         if self.variable == '':
@@ -2833,9 +2845,9 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--floatOtherPOIs", "1",
                 "--saveWorkspace",
                 "--saveFitResult",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
-                "--rMin", f"{config['combine_fit']['rMin']}",
-                "--rMax", f"{config['combine_fit']['rMax']}"
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
+                "--rMin", f"{rMin}",
+                "--rMax", f"{rMax}",
             ]
             command = arguments
             # print(command)
@@ -2861,7 +2873,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", f"{current_cat}",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
                 # "--stepSize", "0.05", 
                 # "--setCrossingTolerance", "0.00005",
                 "--saveFitResult",
@@ -2894,7 +2906,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
 
         os.chdir(cwd)
 
-class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
@@ -2923,14 +2935,12 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-        
+
         fitConfig = config["combine_fit"]        
-        
-        if self.variable == '':
-            tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version="inclusive", workflow=fitConfig['execution'], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
-        else:
-            tasks["UnblindedFitSystSingle"] = UnblindedFitSystSingle(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version=f'{self.variable}', workflow=fitConfig['execution'], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
-        
+
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])        
+        tasks["UnblindedFitSystSingle"] = UnblindedFitSystSingle(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+
         return tasks
     
     def create_branch_map(self):
@@ -2988,7 +2998,12 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_fit", {}).get("cminApproxPreFitTolerance", 0.01)
+        rMin = config.get("combine_fit", {}).get("rMin", 0.7)
+        rMax = config.get("combine_fit", {}).get("rMax", 1.6)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -3010,29 +3025,36 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit'))
     
         firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f"higgsCombineDataPostFitBestFit_{cat}.MultiDimFit.mH125.38.root")
+        local_first_step = os.path.join(os.getcwd(), os.path.basename(firstStepPath))
+        if not os.path.exists(firstStepPath):
+            raise RuntimeError(f"Required best fit snapshot not found: {firstStepPath}")
+        if os.path.abspath(local_first_step) != os.path.abspath(firstStepPath):
+            shutil.copy2(firstStepPath, local_first_step)
+        input_path = local_first_step if os.path.exists(local_first_step) else firstStepPath
                 
         if self.variable == '':
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
-                firstStepPath,
-                "--freezeParameters", "allConstrainedNuisances,MH",
+                input_path,
+                "--freezeParameters", "MH",
                 "-m", "125.38",
                 "-n", f"DataPostFitBestFitStat_{cat}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "singles",
-                "--rMin", f"{config['combine_fit']['rMin']}",
-                "--rMax", f"{config['combine_fit']['rMax']}",
+                "--rMin", f"{rMin}",
+                "--rMax", f"{rMax}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", f"{cat}",
                 "--floatOtherPOIs", "1",
+                "--saveWorkspace",
                 "--saveFitResult",
                 "--snapshotName", "MultiDimFit",
                 "-w", "w",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}"
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
             ]
             command = arguments
             # print(command)
@@ -3047,8 +3069,8 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
             arguments = [
                 "combineTool.py",
                 "-M", "MultiDimFit",
-                firstStepPath,
-                "--freezeParameters", "allConstrainedNuisances,MH",
+                input_path,
+                "--freezeParameters", "MH",
                 "-m", "125.38",
                 "-n", f"DataPostFitBestFitStat_{cat}",
                 "--cminDefaultMinimizerStrategy=0",
@@ -3060,6 +3082,7 @@ class UnblindedFitStatSingle(Task,SlurmWorkflow, HTCondorWorkflow, law.LocalWork
                 "-P", f"{cat}",
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
+                "--saveWorkspace",
                 "--snapshotName", "MultiDimFit",
                 "-w", "w",
             ]
@@ -3127,20 +3150,23 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         else:
             output_dir = self.output_dir
                
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, workflow=config["combine_fit"]["execution"], version=self.variable if self.variable != "" else "inclusive", slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'])
+        fitConfig = config["combine_fit"]
+
+        tasks["UnblindedFitSystSingle"] = UnblindedFitSystSingle(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
         
         return tasks
     
     def create_branch_map(self):
         if self.variable == '':
-            param_list = ["r"]
+            cats = ["r"]
         else:
-            param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
-        branch_map = {i: current_cat for i, current_cat in enumerate(param_list)}
+            cats = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+        branch_data = [(cat, point) for cat in cats for point in range(int(self.nPoints))]
+        branch_map = {i: current_branch for i, current_branch in enumerate(branch_data)}
         return branch_map
 
     def output(self):
-        current_cat = self.branch_data
+        current_cat, current_point = self.branch_data
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -3162,7 +3188,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             fitFolderName = f'runFits_{self.variable}'
         
         output = [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit')]
-        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{current_cat}.MultiDimFit.mH125.38.root')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
         
         outputFileTargets = []
                 
@@ -3174,7 +3200,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         return outputFileTargets
 
     def run(self):
-        current_cat = self.branch_data
+        current_cat, current_point = self.branch_data
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -3187,7 +3213,12 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_fit", {}).get("cminApproxPreFitTolerance", 0.01)
+        rMin = config.get("combine_fit", {}).get("rMin", 0.7)
+        rMax = config.get("combine_fit", {}).get("rMax", 1.6)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -3208,22 +3239,22 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit'))
         
-        if self.variable == '':
-            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
-        else:
-            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
+        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f"higgsCombineDataPostFitBestFit_{current_cat}.MultiDimFit.mH125.38.root")
+        n_points = int(self.nPoints)
             
         if self.variable == '':
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
-                "-d", datacard_path,
+                "-d", firstStepPath,
                 "--freezeParameters", "MH",
                 "-m", "125.38",
-                "-n", f"DataPostFitScanFit_{current_cat}",
+                "-n", f"DataPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
-                "--points", f"{int(self.nPoints)}",
+                "--points", f"{n_points}",
+                "--rMin", f"{rMin}",
+                "--rMax", f"{rMax}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -3232,48 +3263,50 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--floatOtherPOIs", "1",
                 "--saveWorkspace",
                 "--saveFitResult",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}",
-                "--rMin", f"{config['combine_fit']['rMin']}",
-                "--rMax", f"{config['combine_fit']['rMax']}"
+                "--snapshotName", "MultiDimFit",
+                "--alignEdges", "1",
+                "--firstPoint", f"{current_point}",
+                "--lastPoint", f"{current_point}",
+                "--setParameterRanges", f"{config['combine_fit']['setParameterRange']}",
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
+                "-w", "w",
             ]
-            command = arguments
-            # print(command)
-            try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
-                print("Script output:", result.stdout)
-                print("Script executed successfully.")
-            except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
-            
-        else:         
+        else:
+            saveSpecifiedIndex = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])
+            paramStr = ",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])
             arguments = [
-                "combine",
+                "combineTool.py",
                 "-M", "MultiDimFit",
-                datacard_path,
+                "-d", firstStepPath,
                 "--freezeParameters", "MH",
                 "-m", "125.38",
-                "-n", f"DataPostFitScanFit_{current_cat}",
+                "-n", f"DataPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
-                "--points", f"{int(self.nPoints)}",
+                "--points", f"{n_points}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", f"{current_cat}",
+                "--saveWorkspace",
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
-                "--saveWorkspace",
-                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+                "--snapshotName", "MultiDimFit",
+                "--alignEdges", "1",
+                "--firstPoint", f"{current_point}",
+                "--lastPoint", f"{current_point}",
+                "--saveSpecifiedIndex", saveSpecifiedIndex,
+                "--setParameters", paramStr,
+                "-w", "w",
             ]
-            command = arguments
-            # print(command)
-            try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
-                print("Script output:", result.stdout)
-                print("Script executed successfully.")
-            except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+        command = arguments
+        try:
+            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            print("Script output:", result.stdout)
+            print("Script executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Error executing script:", e.stderr)
         
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -3330,24 +3363,22 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             output_dir = self.output_dir
         
         fitConfig = config["combine_fit"]
-                
-        if self.variable == '':
-            tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version='inclusive', workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
-        else:
-            tasks["UnblindedFitCategorySyst"] = UnblindedFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, nPoints=self.nPoints, batch_flavor=self.batch_flavor, version=f'{self.variable}', workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+  
+        tasks["UnblindedFitStatSingle"] = UnblindedFitStatSingle(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
         
         return tasks
     
     def create_branch_map(self):
         if self.variable == '':
-            param_list = ["r"]
+            cats = ["r"]
         else:
-            param_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
-        branch_map = {i: current_cat for i, current_cat in enumerate(param_list)}
+            cats = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+        branch_data = [(cat, point) for cat in cats for point in range(int(self.nPoints))]
+        branch_map = {i: current_branch for i, current_branch in enumerate(branch_data)}
         return branch_map
 
     def output(self):
-        cat = self.branch_data
+        cat, current_point = self.branch_data
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -3367,7 +3398,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             fitFolderName = f'runFits_mu_fiducial'
         else:
             fitFolderName = f'runFits_{self.variable}'
-        output = [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')]
+        output = [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
         
         outputFileTargets = []
                 
@@ -3377,7 +3408,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         return outputFileTargets
 
     def run(self):
-        cat = self.branch_data
+        cat, current_point = self.branch_data
 
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -3390,7 +3421,12 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_fit", {}).get("cminApproxPreFitTolerance", 0.01)
+        rMin = config.get("combine_fit", {}).get("rMin", 0.7)
+        rMax = config.get("combine_fit", {}).get("rMax", 1.6)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -3411,70 +3447,75 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/dataFit'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit'))
     
-        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f"higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root")
+        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f"higgsCombineDataPostFitBestFitStat_{cat}.MultiDimFit.mH125.38.root")
+        local_first_step = os.path.join(os.getcwd(), os.path.basename(firstStepPath))
+        if not os.path.exists(firstStepPath):
+            raise RuntimeError(f"Required stat-only best fit snapshot not found: {firstStepPath}")
+        if os.path.abspath(local_first_step) != os.path.abspath(firstStepPath):
+            shutil.copy2(firstStepPath, local_first_step)
+        input_path = local_first_step if os.path.exists(local_first_step) else firstStepPath
+        n_points = int(self.nPoints)
                 
         if self.variable == '':
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
-                firstStepPath,
+                "-d", input_path,
                 "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
-                "-n", f"DataPostFitScanStat_{cat}",
+                "-n", f"DataPostFitScanStat_{cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
-                "--rMin", f"{config['combine_fit']['rMin']}",
-                "--rMax", f"{config['combine_fit']['rMax']}",
-                "--points", f"{int(self.nPoints)}",
+                "--rMin", f"{rMin}",
+                "--rMax", f"{rMax}",
+                "--points", f"{n_points}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", f"{cat}",
                 "--floatOtherPOIs", "1",
+                "--saveWorkspace",
                 "--saveFitResult",
                 "--snapshotName", "MultiDimFit",
+                "--alignEdges", "1",
+                "--firstPoint", f"{current_point}",
+                "--lastPoint", f"{current_point}",
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
                 "-w", "w",
-                "--cminApproxPreFitTolerance", f"{config['combine_fit']['cminApproxPreFitTolerance']}"
             ]
-            command = arguments
-            # print(command)
-            try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
-                print("Script output:", result.stdout)
-                print("Script executed successfully.")
-            except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
-            
         else:
             arguments = [
                 "combineTool.py",
                 "-M", "MultiDimFit",
-                firstStepPath,
+                "-d", input_path,
                 "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
-                "-n", f"DataPostFitScanStat_{cat}",
+                "-n", f"DataPostFitScanStat_{cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
                 "--algo", "grid",
-                "--points", f"{int(self.nPoints)}",
+                "--points", f"{n_points}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", f"{cat}",
+                "--saveWorkspace",
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
                 "--snapshotName", "MultiDimFit",
+                "--alignEdges", "1",
+                "--firstPoint", f"{current_point}",
+                "--lastPoint", f"{current_point}",
                 "-w", "w",
             ]
-            command = arguments
-            # print(command)
-            try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
-                print("Script output:", result.stdout)
-                print("Script executed successfully.")
-            except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+        command = arguments
+        try:
+            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            print("Script output:", result.stdout)
+            print("Script executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Error executing script:", e.stderr)
             
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -3625,6 +3666,8 @@ class CreateUnblindedFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         else:
             cats = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
         
+        job_datafit_dir = os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'dataFit') if self.batch_flavor == "slurm/psi" else os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit')
+
         if self.batch_flavor == "slurm/psi":
             # Have to copy over the input to the JOB directory
             # Don't forget to VOMS!
@@ -3642,14 +3685,44 @@ class CreateUnblindedFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 ]
             print(slurm_copy_command)
             execute_command(slurm_copy_command)
-        
+
+        n_points = int(config["combine_fit"]["unblindedFit_numPoints"])
+
+        def hadd_scan_outputs(kind, current_cat):
+            target = os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScan{kind}_{current_cat}.MultiDimFit.mH125.38.root')
+            sources = [
+                os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScan{kind}_{current_cat}.POINTS.{idx}.{idx}.MultiDimFit.mH125.38.root')
+                for idx in range(n_points)
+            ]
+            command = ["hadd", "-f", target] + sources
+            try:
+                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                print("Script output:", result.stdout)
+                print("Script executed successfully.")
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(f"Error executing hadd for {kind} scan {current_cat}: {e.stderr}") from e
+
+        for cat in cats:
+            hadd_scan_outputs("Fit", cat)
+            hadd_scan_outputs("Stat", cat)
+
+        def ensure_scan_file(path):
+            if (not os.path.exists(path)) or os.path.getsize(path) == 0:
+                raise RuntimeError(f"Required scan output is missing: {path}")
+
+        for cat in cats:
+            fit_scan = os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
+            stat_scan = os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')
+            ensure_scan_file(fit_scan)
+            ensure_scan_file(stat_scan)
+
         for cat in cats:
             arguments = [
                 "plot1DScan.py",
-                os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root'),
+                os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root'),
                 "-o", f"scans/scan_{cat}_observed",
                 "--POI", f"{cat}",
-                "--others", os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')+":stat-only:2",
+                "--others", os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')+":stat-only:2",
                 "--main-label", "Observed",
                 "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
             ]
@@ -4081,11 +4154,11 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
-        
+
         impactConfig = config["combine_impacts"]
-            
-        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, workflow=impactConfig["execution"], version=self.variable if self.variable != "" else "inclusive", slurm_partition=impactConfig['batchPartition'], slurm_memory=impactConfig['batchMemory'], slurm_max_runtime=impactConfig['batchMaxRuntime'], htcondor_partition=impactConfig['batchPartition'], htcondor_memory=impactConfig['batchMemory'], htcondor_max_runtime=impactConfig['batchMaxRuntime'])
-    
+
+        tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=impactConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=impactConfig['batchPartition'], slurm_memory=impactConfig['batchMemory'], slurm_max_runtime=impactConfig['batchMaxRuntime'], htcondor_partition=impactConfig['batchPartition'], htcondor_memory=impactConfig['batchMemory'], htcondor_max_runtime=impactConfig['batchMaxRuntime'])
+
         return tasks
 
     def create_branch_map(self):
@@ -4136,7 +4209,11 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_impacts", {}).get("cminApproxPreFitTolerance", 0.01)
+        setParameters = config.get("combine_impacts", {}).get("setParameters", 1.000)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -4177,8 +4254,8 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                "--cminApproxPreFitTolerance", f"{config['combine_impacts']['cminApproxPreFitTolerance']}",
-                "--setParameters", f"{config['combine_impacts']['setParameters']}"
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
+                "--setParameter", f"{setParameters}",
             ]
             command = arguments
             # print(command)
@@ -4370,7 +4447,12 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
+
+        # default values, if not set in config
+        cminApproxPreFitTolerance = config.get("combine_impacts", {}).get("cminApproxPreFitTolerance", 0.01)
+        stepSize = config.get("combine_impacts", {}).get("stepSize", 0.05)
+        setCrossingTolerance = config.get("combine_impacts", {}).get("setCrossingTolerance", 0.00005)
+
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
@@ -4436,9 +4518,9 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                "--cminApproxPreFitTolerance", f"{config['combine_impacts']['cminApproxPreFitTolerance']}",
-                "--stepSize", f"{config['combine_impacts']['stepSize']}",
-                "--setCrossingTolerance", f"{config['combine_impacts']['setCrossingTolerance']}",
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
+                "--stepSize", f"{stepSize}",
+                "--setCrossingTolerance", f"{setCrossingTolerance}",
                 "--robustHesse", "1"
             ]
             command = arguments
@@ -5614,32 +5696,46 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         if self.variable == '':
             fitFolderName = f'runFits_mu_fiducial'
             reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
+            if "_" in self.year:
+                cats = []
+                for y in self.year.split("_"):
+                    y2 = y[-2:]
+                    for c in reco_cats_with_bmw:
+                        cats.append(f"Y{y2}_{c}")
+                reco_cats_with_bmw = cats
+
         else:
             fitFolderName = f'runFits_{self.variable}'
             reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-            
+            if "_" in self.year:
+                cats = []
+                for y in self.year.split("_"):
+                    y2 = y[-2:]
+                    for c in reco_cats_with_bmw:
+                        cats.append(f"Y{y2}_{c}")
+                reco_cats_with_bmw = cats
         
         output = []
         if convert_boolean_string(self.is_postfit):
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
             
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.pdf')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.png')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.pdf')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.png')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.png')]
         else:
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
             
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.pdf')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.png')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.pdf')]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.png')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.png')]
                 
         
         outputFileTargets = []
@@ -5708,10 +5804,25 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             if self.variable == '':
                 # firstStep_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
                 reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
+
+                if "_" in self.year:
+                    cats = []
+                    for y in self.year.split("_"):
+                        y2 = y[-2:]
+                        for c in reco_cats_with_bmw:
+                            cats.append(f"Y{y2}_{c}")
+                    reco_cats_with_bmw = cats
+
             else:
                 # firstStep_path = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
                 reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-
+                if "_" in self.year:
+                    cats = []
+                    for y in self.year.split("_"):
+                        y2 = y[-2:]
+                        for c in reco_cats_with_bmw:
+                            cats.append(f"Y{y2}_{c}")
+                    reco_cats_with_bmw = cats
             arguments = [
                 "python3",
                 f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeSplusBModelPlot.py')}",
@@ -5802,9 +5913,26 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 
             if self.variable == '':
                 reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
+
+                if "_" in self.year:
+                    cats = []
+                    for y in self.year.split("_"):
+                        y2 = y[-2:]
+                        for c in reco_cats_with_bmw:
+                            cats.append(f"Y{y2}_{c}")
+                    reco_cats_with_bmw = cats
+
             else:
                 reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-                
+
+                if "_" in self.year:
+                    cats = []
+                    for y in self.year.split("_"):
+                        y2 = y[-2:]
+                        for c in reco_cats_with_bmw:
+                            cats.append(f"Y{y2}_{c}")
+                    reco_cats_with_bmw = cats
+
             arguments = [
                 "python3",
                 f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeSplusBModelPlot.py')}",

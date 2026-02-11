@@ -200,14 +200,6 @@ differentialProcTable_ = {
         (44, "PTJ0_200p0_10000p0_in"),
         (45, "PTJ0_0p0_10000p0_out")
     ],
-    "YJ0": [
-        (50, "YJ0_0p0_0p5_in"),
-        (51, "YJ0_0p5_1p2_in"),
-        (52, "YJ0_1p2_2p0_in"),
-        (53, "YJ0_2p0_2p5_in"),
-        (54, "YJ0_NJ0_in"),
-        (55, "YJ0_0p0_2p5_out")
-    ],
     "AbsPhiHJ0": [
         (60, "AbsPhiHJ0_0p0_2p6_in"),
         (61, "AbsPhiHJ0_2p6_2p9_in"),
@@ -223,7 +215,206 @@ differentialProcTable_ = {
         (73, "AbsYHJ0_1p9_100p0_in"),
         (74, "AbsYHJ0_NJ0_in"),
         (75, "AbsYHJ0_0p0_100p0_out")
-    ]
+    ],
+    "CosThetaStarCS": [
+        (1000, "CosThetaStarCS_0p0_0p07_in"),
+        (1001, "CosThetaStarCS_0p07_0p15_in"),
+        (1002, "CosThetaStarCS_0p15_0p22_in"),
+        (1003, "CosThetaStarCS_0p22_0p35_in"),
+        (1004, "CosThetaStarCS_0p35_0p45_in"),
+        (1005, "CosThetaStarCS_0p45_0p55_in"),
+        (1006, "CosThetaStarCS_0p55_0p75_in"),
+        (1007, "CosThetaStarCS_0p0_0p75_out")
+    ],
+    "ThetaEtaStar": [
+        (1010, "ThetaEtaStar_0p0_0p05_in"),
+        (1011, "ThetaEtaStar_0p05_0p1_in"),
+        (1012, "ThetaEtaStar_0p1_0p2_in"),
+        (1013, "ThetaEtaStar_0p2_0p3_in"),
+        (1014, "ThetaEtaStar_0p3_0p4_in"),
+        (1015, "ThetaEtaStar_0p4_0p5_in"),
+        (1016, "ThetaEtaStar_0p5_0p7_in"),
+        (1017, "ThetaEtaStar_0p0_0p7_out")
+    ],
+    "NBJet": [
+        (1020, "NBJet_0p0_1p0_in"),
+        (1021, "NBJet_1p0_2p0_in"),
+        (1022, "NBJet_2p0_100p0_in"),
+        (1023, "NBJet_0p0_100p0_out")
+    ],
+    "YJ0": [
+        (1100, "YJ0_0p0_0p3_in"),
+        (1101, "YJ0_0p3_0p6_in"),
+        (1102, "YJ0_0p6_0p9_in"),
+        (1103, "YJ0_0p9_1p2_in"),
+        (1104, "YJ0_1p2_1p6_in"),
+        (1105, "YJ0_1p6_2p0_in"),
+        (1106, "YJ0_2p0_2p5_in"),
+        (1107, "YJ0_0p0_2p5_out")
+    ],
+    "DPhiHJ0": [
+        (1110, "DPhiHJ0_0p0_2p0_in"),
+        (1111, "DPhiHJ0_2p0_2p6_in"),
+        (1112, "DPhiHJ0_2p6_2p85_in"),
+        (1113, "DPhiHJ0_2p85_3p0_in"),
+        (1114, "DPhiHJ0_3p0_3p07_in"),
+        (1115, "DPhiHJ0_3p07_3p1416_in"),
+        (1116, "DPhiHJ0_0p0_3p1416_out")
+    ],
+    "DYHJ0": [
+        (1120, "DYHJ0_0p0_0p3_in"),
+        (1121, "DYHJ0_0p3_0p6_in"),
+        (1122, "DYHJ0_0p6_1p0_in"),
+        (1123, "DYHJ0_1p0_1p4_in"),
+        (1124, "DYHJ0_1p4_1p9_in"),
+        (1125, "DYHJ0_1p9_2p5_in"),
+        (1126, "DYHJ0_2p5_100p0_in"),
+        (1127, "DYHJ0_0p0_100p0_out")
+    ],
+    "TauJC": [
+        (1130, "TauJC_0p0_15p0_in"),
+        (1131, "TauJC_15p0_20p0_in"),
+        (1132, "TauJC_20p0_30p0_in"),
+        (1133, "TauJC_30p0_50p0_in"),
+        (1134, "TauJC_50p0_80p0_in"),
+        (1135, "TauJC_80p0_10000p0_in"),
+        (1136, "TauJC_0p0_10000p0_out")
+    ],
+    "PTJ1": [
+        (1200, "PTJ1_30p0_40p0_in"),
+        (1201, "PTJ1_40p0_65p0_in"),
+        (1202, "PTJ1_65p0_90p0_in"),
+        (1203, "PTJ1_90p0_150p0_in"),
+        (1204, "PTJ1_150p0_10000p0_in"),
+        (1208, "PTJ1_30p0_10000p0_out")
+    ],
+    "YJ1": [
+        (1210, "YJ1_0p0_0p6_in"),
+        (1211, "YJ1_0p6_1p2_in"),
+        (1212, "YJ1_1p2_1p8_in"),
+        (1213, "YJ1_1p8_3p5_in"),
+        (1214, "YJ1_3p5_5p0_in"),
+        (1215, "YJ1_0p0_5p0_out")
+    ],
+    "DPhiJ0J1": [
+        (50, "DPhiJ0J1_m3p1416_m2p0944_in"),
+        (51, "DPhiJ0J1_m2p0944_m1p0472_in"),
+        (52, "DPhiJ0J1_m1p0472_0p0_in"),
+        (53, "DPhiJ0J1_0p0_1p0472_in"),
+        (54, "DPhiJ0J1_1p0472_2p0944_in"),
+        (55, "DPhiJ0J1_2p0944_3p1416_in"),
+        (56, "DPhiJ0J1_m3p1416_3p1416_out")
+    ],
+    "DPhiHJ0J1": [
+        (1230, "DPhiHJ0J1_0p0_2p0_in"),
+        (1231, "DPhiHJ0J1_2p0_2p7_in"),
+        (1232, "DPhiHJ0J1_2p7_2p95_in"),
+        (1233, "DPhiHJ0J1_2p95_3p07_in"),
+        (1234, "DPhiHJ0J1_3p07_3p1416_in"),
+        (1235, "DPhiHJ0J1_0p0_3p1416_out")
+    ],
+    "DEtaJ0J1H": [
+        (1240, "DEtaJ0J1H_0p0_0p2_in"),
+        (1241, "DEtaJ0J1H_0p2_0p5_in"),
+        (1242, "DEtaJ0J1H_0p5_0p85_in"),
+        (1243, "DEtaJ0J1H_0p85_1p2_in"),
+        (1244, "DEtaJ0J1H_1p2_1p7_in"),
+        (1245, "DEtaJ0J1H_1p7_100p0_in"),
+        (1246, "DEtaJ0J1H_0p0_100p0_out")
+    ],
+    "MassJ0J1": [
+        (1250, "MassJ0J1_0p0_75p0_in"),
+        (1251, "MassJ0J1_75p0_120p0_in"),
+        (1252, "MassJ0J1_120p0_180p0_in"),
+        (1253, "MassJ0J1_180p0_300p0_in"),
+        (1254, "MassJ0J1_300p0_500p0_in"),
+        (1255, "MassJ0J1_500p0_1000p0_in"),
+        (1256, "MassJ0J1_1000p0_10000p0_in"),
+        (1257, "MassJ0J1_0p0_10000p0_out")
+    ],
+    "EtaJ0J1": [
+        (1260, "EtaJ0J1_0p0_0p7_in"),
+        (1261, "EtaJ0J1_0p7_1p6_in"),
+        (1262, "EtaJ0J1_1p6_3p0_in"),
+        (1263, "EtaJ0J1_3p0_5p0_in"),
+        (1264, "EtaJ0J1_5p0_100p0_in"),
+        (1265, "EtaJ0J1_0p0_100p0_out")
+    ],
+    "PTHvDPhiJ0J1": [
+        (4501, "PTHvDPhiJ0J1_0p0_15p0_mPi_m23Pi_in"),
+        (4502, "PTHvDPhiJ0J1_0p0_15p0_m23Pi_m13Pi_in"),
+        (4503, "PTHvDPhiJ0J1_0p0_15p0_m13Pi_0p0_in"),
+        (4504, "PTHvDPhiJ0J1_0p0_15p0_0p0_13Pi_in"),
+        (4505, "PTHvDPhiJ0J1_0p0_15p0_13Pi_23Pi_in"),
+        (4506, "PTHvDPhiJ0J1_0p0_15p0_23Pi_Pi_in"),
+
+        (4507, "PTHvDPhiJ0J1_15p0_30p0_mPi_m23Pi_in"),
+        (4508, "PTHvDPhiJ0J1_15p0_30p0_m23Pi_m13Pi_in"),
+        (4509, "PTHvDPhiJ0J1_15p0_30p0_m13Pi_0p0_in"),
+        (4510, "PTHvDPhiJ0J1_15p0_30p0_0p0_13Pi_in"),
+        (4511, "PTHvDPhiJ0J1_15p0_30p0_13Pi_23Pi_in"),
+        (4512, "PTHvDPhiJ0J1_15p0_30p0_23Pi_Pi_in"),
+
+        (4513, "PTHvDPhiJ0J1_30p0_45p0_mPi_m23Pi_in"),
+        (4514, "PTHvDPhiJ0J1_30p0_45p0_m23Pi_m13Pi_in"),
+        (4515, "PTHvDPhiJ0J1_30p0_45p0_m13Pi_0p0_in"),
+        (4516, "PTHvDPhiJ0J1_30p0_45p0_0p0_13Pi_in"),
+        (4517, "PTHvDPhiJ0J1_30p0_45p0_13Pi_23Pi_in"),
+        (4518, "PTHvDPhiJ0J1_30p0_45p0_23Pi_Pi_in"),
+
+        (4519, "PTHvDPhiJ0J1_45p0_80p0_mPi_m23Pi_in"),
+        (4520, "PTHvDPhiJ0J1_45p0_80p0_m23Pi_m13Pi_in"),
+        (4521, "PTHvDPhiJ0J1_45p0_80p0_m13Pi_0p0_in"),
+        (4522, "PTHvDPhiJ0J1_45p0_80p0_0p0_13Pi_in"),
+        (4523, "PTHvDPhiJ0J1_45p0_80p0_13Pi_23Pi_in"),
+        (4524, "PTHvDPhiJ0J1_45p0_80p0_23Pi_Pi_in"),
+
+        (4525, "PTHvDPhiJ0J1_80p0_120p0_mPi_m23Pi_in"),
+        (4526, "PTHvDPhiJ0J1_80p0_120p0_m23Pi_m13Pi_in"),
+        (4527, "PTHvDPhiJ0J1_80p0_120p0_m13Pi_0p7_in"),
+        (4528, "PTHvDPhiJ0J1_80p0_120p0_0p7_13Pi_in"),
+        (4529, "PTHvDPhiJ0J1_80p0_120p0_13Pi_23Pi_in"),
+        (4530, "PTHvDPhiJ0J1_80p0_120p0_23Pi_Pi_in"),
+
+        (4531, "PTHvDPhiJ0J1_120p0_200p0_mPi_m23Pi_in"),
+        (4532, "PTHvDPhiJ0J1_120p0_200p0_m23Pi_m13Pi_in"),
+        (4533, "PTHvDPhiJ0J1_120p0_200p0_m13Pi_0p7_in"),
+        (4534, "PTHvDPhiJ0J1_120p0_200p0_0p7_13Pi_in"),
+        (4535, "PTHvDPhiJ0J1_120p0_200p0_13Pi_23Pi_in"),
+        (4536, "PTHvDPhiJ0J1_120p0_200p0_23Pi_Pi_in"),
+
+        (4537, "PTHvDPhiJ0J1_200p0_350p0_mPi_m23Pi_in"),
+        (4538, "PTHvDPhiJ0J1_200p0_350p0_m23Pi_m13Pi_in"),
+        (4539, "PTHvDPhiJ0J1_200p0_350p0_m13Pi_0p7_in"),
+        (4540, "PTHvDPhiJ0J1_200p0_350p0_0p7_13Pi_in"),
+        (4541, "PTHvDPhiJ0J1_200p0_350p0_13Pi_23Pi_in"),
+        (4542, "PTHvDPhiJ0J1_200p0_350p0_23Pi_Pi_in"),
+
+        (4543, "PTHvDPhiJ0J1_350p0_10000p0_mPi_m23Pi_in"),
+        (4544, "PTHvDPhiJ0J1_350p0_10000p0_m23Pi_m13Pi_in"),
+        (4545, "PTHvDPhiJ0J1_350p0_10000p0_m13Pi_0p7_in"),
+        (4546, "PTHvDPhiJ0J1_350p0_10000p0_0p7_13Pi_in"),
+        (4547, "PTHvDPhiJ0J1_350p0_10000p0_13Pi_23Pi_in"),
+        (4548, "PTHvDPhiJ0J1_350p0_10000p0_23Pi_Pi_in"),
+
+        (4549, "PTHvDPhiJ0J1_0p0_10000p0_m4p0_4p0_out"),
+    ],
+    "PTHvRapidity":[
+        (4601, "PTHvRapidity_0p0_40p0_0p0_0p5_in"),
+        (4602, "PTHvRapidity_40p0_80p0_0p0_0p5_in"),
+        (4603, "PTHvRapidity_80p0_150p0_0p0_0p5_in"),
+        (4604, "PTHvRapidity_150p0_10000p0_0p0_0p5_in"),
+
+        (4611, "PTHvRapidity_0p0_45p0_0p5_1p0_in"),
+        (4612, "PTHvRapidity_45p0_120p0_0p5_1p0_in"),
+        (4613, "PTHvRapidity_120p0_10000p0_0p5_1p0_in"),
+
+        (4621, "PTHvRapidity_0p0_45p0_1p0_2p5_in"),
+        (4622, "PTHvRapidity_45p0_120p0_1p0_2p5_in"),
+        (4623, "PTHvRapidity_120p0_10000p0_1p0_2p5_in"),
+
+        (4631, "PTHvRapidity_0p0_10000p0_0p0_2p5_out")
+    ],
 }
 
 #BMW == Best Medium Worst

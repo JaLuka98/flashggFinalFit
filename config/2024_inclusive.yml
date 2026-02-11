@@ -165,7 +165,7 @@ datacard_clean:
   verbose: False # Spit out all the cleaning being done
 
 combine_fit:
-  asimov_numPoints: 100 # Number of points the Asimov generator should generate for the NLL scan
+  asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,2"
   cminApproxPreFitTolerance: 0.01
