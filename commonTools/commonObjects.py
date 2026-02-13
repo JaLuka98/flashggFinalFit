@@ -435,6 +435,6 @@ def combineVariableDict(variable, year, eft_variable=""):
         if "individual" in eft_variable:
             individual_flag = True
         eft_variable = eft_variable.replace("_individual","")
-        return CreateVariableParameters(gen_variable=variable, reco_variable=variable, bins=variableBins[variable], year=year, BMW=BMW, procs=short_production_modes, eft_variable=eft_variable, individual=individual_flag)
+        return CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], year=year, BMW=BMW, procs=short_production_modes, eft_variable=eft_variable, individual=individual_flag)
     else:
-        return CreateVariableParameters(gen_variable=variable, reco_variable=variable, bins=variableBins[variable], year=year, BMW=BMW)
+        return CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], year=year, BMW=BMW)
