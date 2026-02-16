@@ -1,6 +1,7 @@
 #include "TCanvas.h"
 
 #include "RooPlot.h"
+#include <algorithm>
 #include "RooBernstein.h"
 #include "RooChebychev.h"
 #include "RooPolynomial.h"
@@ -183,18 +184,32 @@ RooAbsPdf* PdfModelBuilder::getPowerLawGeneric(string prefix, int order){
 
 RooAbsPdf* PdfModelBuilder::getPowerLaw(string prefix, int order){
   
+  // Constrain the coefficients to a stable, negative range so that
+  // RooPowerLawSum cannot drive them to NaN values in low-statistics
+  // categories.  The first coefficient is additionally bounded away
+  // from -1 to keep (1 + p0) in the denominator finite.
+  const double firstCoeffMinAbs = 0.05;
+  const double firstCoeffMaxAbs = 0.95;
+  const double coeffMinAbs = 0.1;
+  const double coeffMaxAbs = 10.0;
+
   RooArgList coefList;
   for (int i=0; i<order; i++){
-    double start=-2.;
-    double low=-10.;
-    double high=0.;
-    if (order>0){
-      start=-0.001/double(i);
-      low=-0.01;
-      high=0.01;
-    }
-    RooRealVar *var = new RooRealVar(Form("%s_p%d",prefix.c_str(),i),Form("%s_p%d",prefix.c_str(),i),start,low,high);
-    coefList.add(*var);
+    const bool isFirstCoeff = (i == 0);
+    const double minAbs = isFirstCoeff ? firstCoeffMinAbs : coeffMinAbs;
+    const double maxAbs = isFirstCoeff ? firstCoeffMaxAbs : coeffMaxAbs;
+    const double startAbs = 0.5*(minAbs + maxAbs);
+
+    string rawName = Form("%s_p%d_raw",prefix.c_str(),i);
+    RooRealVar *rawVar = new RooRealVar(rawName.c_str(),rawName.c_str(),startAbs,minAbs,maxAbs);
+    params.insert(pair<string,RooRealVar*>(rawName,rawVar));
+
+    string constrainedName = Form("%s_p%d",prefix.c_str(),i);
+    RooFormulaVar *constrained = new RooFormulaVar(constrainedName.c_str(),constrainedName.c_str(),
+                                                   "-@0",RooArgList(*rawVar));
+    prods.insert(pair<string,RooFormulaVar*>(constrainedName,constrained));
+
+    coefList.add(*constrained);
   }
   RooPowerLawSum *pow = new RooPowerLawSum(prefix.c_str(),prefix.c_str(),*obs_var,coefList);
   return pow;
@@ -241,11 +256,19 @@ RooAbsPdf* PdfModelBuilder::getPowerLawSingle(string prefix, int order){
       //params[name]->removeRange();
       fracs->add(*params[name]);
     }
+    // keeping the single power-law terms bounded away from zero is crucial,
+    // otherwise PowerLaw datasets with very hard spectra (e.g. PTJ0 2024 run)
+    // drive the unconstrained coefficients to NaN during the F-test step
+    const double coeffMinAbs = 0.05;
+    const double coeffMaxAbs = 10.0;
     for (int i=1; i<=npows; i++){
       string name =  Form("%s_p%d",prefix.c_str(),i);
       string ename =  Form("%s_e%d",prefix.c_str(),i);
-      params.insert(pair<string,RooRealVar*>(name, new RooRealVar(name.c_str(),name.c_str(),TMath::Max(-9.,-1.*(i+1)),-9.,1.)));
-      //params[name]->removeRange();
+      const double initAbs = std::min(coeffMaxAbs,std::max(coeffMinAbs,double(i+1)));
+      const double start   = -initAbs;
+      const double low     = -coeffMaxAbs;
+      const double high    = -coeffMinAbs;
+      params.insert(pair<string,RooRealVar*>(name, new RooRealVar(name.c_str(),name.c_str(),start,low,high)));
       utilities.insert(pair<string,RooAbsPdf*>(ename, new RooPower(ename.c_str(),ename.c_str(),*obs_var,*params[name])));
       pows->add(*utilities[ename]);
     }
