@@ -1,3 +1,39 @@
+_PTH_BINS = [
+  "0p0_5p0",
+  "5p0_10p0",
+  "10p0_15p0",
+  "15p0_20p0",
+  "20p0_25p0",
+  "25p0_30p0",
+  "30p0_35p0",
+  "35p0_45p0",
+  "45p0_60p0",
+  "60p0_80p0",
+  "80p0_100p0",
+  "100p0_120p0",
+  "120p0_140p0",
+  "140p0_170p0",
+  "170p0_200p0",
+  "200p0_250p0",
+  "250p0_350p0",
+  "350p0_450p0",
+  "450p0_10000p0",
+]
+_PTH_PROCS = ["ggh", "tth", "vh", "vbf"]
+
+
+def _build_pth_model():
+  segments = [
+    "-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel",
+  ]
+  for _bin in _PTH_BINS:
+    for _proc in _PTH_PROCS:
+      segments.append(
+        f'--PO "map=.*/{_proc}_PTH_{_bin}.*:r_PTH_{_bin}[1,-1,3]"'
+      )
+  return " ".join(segments)
+
+
 models = {
   "mu_inclusive":"",
 
@@ -254,39 +290,7 @@ models = {
 --PO \"map=.*/tHW.*hgg:r_tH[1,0,15]\"",
 
 
-  "PTH":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
---PO \"map=.*/ggh_PTH_0p0_15p0.*:r_PTH_0p0_15p0[1,-1,3]\" \
---PO \"map=.*/tth_PTH_0p0_15p0.*:r_PTH_0p0_15p0[1,-1,3]\" \
---PO \"map=.*/vh_PTH_0p0_15p0.*:r_PTH_0p0_15p0[1,-1,3]\" \
---PO \"map=.*/vbf_PTH_0p0_15p0.*:r_PTH_0p0_15p0[1,-1,3]\" \
---PO \"map=.*/ggh_PTH_15p0_30p0.*:r_PTH_15p0_30p0[1,-1,3]\" \
---PO \"map=.*/tth_PTH_15p0_30p0.*:r_PTH_15p0_30p0[1,-1,3]\" \
---PO \"map=.*/vh_PTH_15p0_30p0.*:r_PTH_15p0_30p0[1,-1,3]\" \
---PO \"map=.*/vbf_PTH_15p0_30p0.*:r_PTH_15p0_30p0[1,-1,3]\" \
---PO \"map=.*/ggh_PTH_30p0_45p0.*:r_PTH_30p0_45p0[1,-1,3]\" \
---PO \"map=.*/tth_PTH_30p0_45p0.*:r_PTH_30p0_45p0[1,-1,3]\" \
---PO \"map=.*/vh_PTH_30p0_45p0.*:r_PTH_30p0_45p0[1,-1,3]\" \
---PO \"map=.*/vbf_PTH_30p0_45p0.*:r_PTH_30p0_45p0[1,-1,3]\" \
---PO \"map=.*/ggh_PTH_45p0_80p0.*:r_PTH_45p0_80p0[1,-1,3]\" \
---PO \"map=.*/tth_PTH_45p0_80p0.*:r_PTH_45p0_80p0[1,-1,3]\" \
---PO \"map=.*/vh_PTH_45p0_80p0.*:r_PTH_45p0_80p0[1,-1,3]\" \
---PO \"map=.*/vbf_PTH_45p0_80p0.*:r_PTH_45p0_80p0[1,-1,3]\" \
---PO \"map=.*/ggh_PTH_80p0_120p0.*:r_PTH_80p0_120p0[1,-1,3]\" \
---PO \"map=.*/tth_PTH_80p0_120p0.*:r_PTH_80p0_120p0[1,-1,3]\" \
---PO \"map=.*/vh_PTH_80p0_120p0.*:r_PTH_80p0_120p0[1,-1,3]\" \
---PO \"map=.*/vbf_PTH_80p0_120p0.*:r_PTH_80p0_120p0[1,-1,3]\" \
---PO \"map=.*/ggh_PTH_120p0_200p0.*:r_PTH_120p0_200p0[1,-1,3]\" \
---PO \"map=.*/tth_PTH_120p0_200p0.*:r_PTH_120p0_200p0[1,-1,3]\" \
---PO \"map=.*/vh_PTH_120p0_200p0.*:r_PTH_120p0_200p0[1,-1,3]\" \
---PO \"map=.*/vbf_PTH_120p0_200p0.*:r_PTH_120p0_200p0[1,-1,3]\" \
---PO \"map=.*/ggh_PTH_200p0_350p0.*:r_PTH_200p0_350p0[1,-1,3]\" \
---PO \"map=.*/tth_PTH_200p0_350p0.*:r_PTH_200p0_350p0[1,-1,3]\" \
---PO \"map=.*/vh_PTH_200p0_350p0.*:r_PTH_200p0_350p0[1,-1,3]\" \
---PO \"map=.*/vbf_PTH_200p0_350p0.*:r_PTH_200p0_350p0[1,-1,3]\" \
---PO \"map=.*/ggh_PTH_350p0_10000p0.*:r_PTH_350p0_10000p0[1,-1,3]\" \
---PO \"map=.*/tth_PTH_350p0_10000p0.*:r_PTH_350p0_10000p0[1,-1,3]\" \
---PO \"map=.*/vh_PTH_350p0_10000p0.*:r_PTH_350p0_10000p0[1,-1,3]\" \
---PO \"map=.*/vbf_PTH_350p0_10000p0.*:r_PTH_350p0_10000p0[1,-1,3]\"",
+  "PTH": _build_pth_model(),
 
   "rapidity":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggh_YH_0p0_0p15.*:r_YH_0p0_0p15[1,-3,3]\" \
@@ -297,18 +301,38 @@ models = {
 --PO \"map=.*/tth_YH_0p15_0p3.*:r_YH_0p15_0p3[1,-3,3]\" \
 --PO \"map=.*/vh_YH_0p15_0p3.*:r_YH_0p15_0p3[1,-3,3]\" \
 --PO \"map=.*/vbf_YH_0p15_0p3.*:r_YH_0p15_0p3[1,-3,3]\" \
---PO \"map=.*/ggh_YH_0p3_0p6.*:r_YH_0p3_0p6[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p3_0p6.*:r_YH_0p3_0p6[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p3_0p6.*:r_YH_0p3_0p6[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p3_0p6.*:r_YH_0p3_0p6[1,-3,3]\" \
---PO \"map=.*/ggh_YH_0p6_0p9.*:r_YH_0p6_0p9[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p6_0p9.*:r_YH_0p6_0p9[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p6_0p9.*:r_YH_0p6_0p9[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p6_0p9.*:r_YH_0p6_0p9[1,-3,3]\" \
---PO \"map=.*/ggh_YH_0p9_2p5.*:r_YH_0p9_2p5[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p9_2p5.*:r_YH_0p9_2p5[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p9_2p5.*:r_YH_0p9_2p5[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p9_2p5.*:r_YH_0p9_2p5[1,-3,3]\"",
+--PO \"map=.*/ggh_YH_0p3_0p45.*:r_YH_0p3_0p45[1,-3,3]\" \
+--PO \"map=.*/tth_YH_0p3_0p45.*:r_YH_0p3_0p45[1,-3,3]\" \
+--PO \"map=.*/vh_YH_0p3_0p45.*:r_YH_0p3_0p45[1,-3,3]\" \
+--PO \"map=.*/vbf_YH_0p3_0p45.*:r_YH_0p3_0p45[1,-3,3]\" \
+--PO \"map=.*/ggh_YH_0p45_0p6.*:r_YH_0p45_0p6[1,-3,3]\" \
+--PO \"map=.*/tth_YH_0p45_0p6.*:r_YH_0p45_0p6[1,-3,3]\" \
+--PO \"map=.*/vh_YH_0p45_0p6.*:r_YH_0p45_0p6[1,-3,3]\" \
+--PO \"map=.*/vbf_YH_0p45_0p6.*:r_YH_0p45_0p6[1,-3,3]\" \
+--PO \"map=.*/ggh_YH_0p6_0p75.*:r_YH_0p6_0p75[1,-3,3]\" \
+--PO \"map=.*/tth_YH_0p6_0p75.*:r_YH_0p6_0p75[1,-3,3]\" \
+--PO \"map=.*/vh_YH_0p6_0p75.*:r_YH_0p6_0p75[1,-3,3]\" \
+--PO \"map=.*/vbf_YH_0p6_0p75.*:r_YH_0p6_0p75[1,-3,3]\" \
+--PO \"map=.*/ggh_YH_0p75_0p9.*:r_YH_0p75_0p9[1,-3,3]\" \
+--PO \"map=.*/tth_YH_0p75_0p9.*:r_YH_0p75_0p9[1,-3,3]\" \
+--PO \"map=.*/vh_YH_0p75_0p9.*:r_YH_0p75_0p9[1,-3,3]\" \
+--PO \"map=.*/vbf_YH_0p75_0p9.*:r_YH_0p75_0p9[1,-3,3]\" \
+--PO \"map=.*/ggh_YH_0p9_1p2.*:r_YH_0p9_1p2[1,-3,3]\" \
+--PO \"map=.*/tth_YH_0p9_1p2.*:r_YH_0p9_1p2[1,-3,3]\" \
+--PO \"map=.*/vh_YH_0p9_1p2.*:r_YH_0p9_1p2[1,-3,3]\" \
+--PO \"map=.*/vbf_YH_0p9_1p2.*:r_YH_0p9_1p2[1,-3,3]\" \
+--PO \"map=.*/ggh_YH_1p2_1p6.*:r_YH_1p2_1p6[1,-3,3]\" \
+--PO \"map=.*/tth_YH_1p2_1p6.*:r_YH_1p2_1p6[1,-3,3]\" \
+--PO \"map=.*/vh_YH_1p2_1p6.*:r_YH_1p2_1p6[1,-3,3]\" \
+--PO \"map=.*/vbf_YH_1p2_1p6.*:r_YH_1p2_1p6[1,-3,3]\" \
+--PO \"map=.*/ggh_YH_1p6_2p0.*:r_YH_1p6_2p0[1,-3,3]\" \
+--PO \"map=.*/tth_YH_1p6_2p0.*:r_YH_1p6_2p0[1,-3,3]\" \
+--PO \"map=.*/vh_YH_1p6_2p0.*:r_YH_1p6_2p0[1,-3,3]\" \
+--PO \"map=.*/vbf_YH_1p6_2p0.*:r_YH_1p6_2p0[1,-3,3]\" \
+--PO \"map=.*/ggh_YH_2p0_2p5.*:r_YH_2p0_2p5[1,-3,3]\" \
+--PO \"map=.*/tth_YH_2p0_2p5.*:r_YH_2p0_2p5[1,-3,3]\" \
+--PO \"map=.*/vh_YH_2p0_2p5.*:r_YH_2p0_2p5[1,-3,3]\" \
+--PO \"map=.*/vbf_YH_2p0_2p5.*:r_YH_2p0_2p5[1,-3,3]\"",
 
   "Njets2p5_5bin":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggh_NJ_0p0_1p0.*:r_NJ_0p0_1p0[1,0,3]\" \
@@ -373,18 +397,34 @@ models = {
 --PO \"map=.*/tth_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,-3,3]\" \
 --PO \"map=.*/vh_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,-3,3]\" \
 --PO \"map=.*/vbf_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,-3,3]\" \
---PO \"map=.*/ggh_PTJ0_30p0_75p0.*:r_PTJ0_30p0_75p0[1,-3,3]\" \
---PO \"map=.*/tth_PTJ0_30p0_75p0.*:r_PTJ0_30p0_75p0[1,-3,3]\" \
---PO \"map=.*/vh_PTJ0_30p0_75p0.*:r_PTJ0_30p0_75p0[1,-3,3]\" \
---PO \"map=.*/vbf_PTJ0_30p0_75p0.*:r_PTJ0_30p0_75p0[1,-3,3]\" \
---PO \"map=.*/ggh_PTJ0_75p0_120p0.*:r_PTJ0_75p0_120p0[1,-3,3]\" \
---PO \"map=.*/tth_PTJ0_75p0_120p0.*:r_PTJ0_75p0_120p0[1,-3,3]\" \
---PO \"map=.*/vh_PTJ0_75p0_120p0.*:r_PTJ0_75p0_120p0[1,-3,3]\" \
---PO \"map=.*/vbf_PTJ0_75p0_120p0.*:r_PTJ0_75p0_120p0[1,-3,3]\" \
---PO \"map=.*/ggh_PTJ0_120p0_200p0.*:r_PTJ0_120p0_200p0[1,-3,3]\" \
---PO \"map=.*/tth_PTJ0_120p0_200p0.*:r_PTJ0_120p0_200p0[1,-3,3]\" \
---PO \"map=.*/vh_PTJ0_120p0_200p0.*:r_PTJ0_120p0_200p0[1,-3,3]\" \
---PO \"map=.*/vbf_PTJ0_120p0_200p0.*:r_PTJ0_120p0_200p0[1,-3,3]\" \
+--PO \"map=.*/ggh_PTJ0_30p0_40p0.*:r_PTJ0_30p0_40p0[1,-3,3]\" \
+--PO \"map=.*/tth_PTJ0_30p0_40p0.*:r_PTJ0_30p0_40p0[1,-3,3]\" \
+--PO \"map=.*/vh_PTJ0_30p0_40p0.*:r_PTJ0_30p0_40p0[1,-3,3]\" \
+--PO \"map=.*/vbf_PTJ0_30p0_40p0.*:r_PTJ0_30p0_40p0[1,-3,3]\" \
+--PO \"map=.*/ggh_PTJ0_40p0_55p0.*:r_PTJ0_40p0_55p0[1,-3,3]\" \
+--PO \"map=.*/tth_PTJ0_40p0_55p0.*:r_PTJ0_40p0_55p0[1,-3,3]\" \
+--PO \"map=.*/vh_PTJ0_40p0_55p0.*:r_PTJ0_40p0_55p0[1,-3,3]\" \
+--PO \"map=.*/vbf_PTJ0_40p0_55p0.*:r_PTJ0_40p0_55p0[1,-3,3]\" \
+--PO \"map=.*/ggh_PTJ0_55p0_75p0.*:r_PTJ0_55p0_75p0[1,-3,3]\" \
+--PO \"map=.*/tth_PTJ0_55p0_75p0.*:r_PTJ0_55p0_75p0[1,-3,3]\" \
+--PO \"map=.*/vh_PTJ0_55p0_75p0.*:r_PTJ0_55p0_75p0[1,-3,3]\" \
+--PO \"map=.*/vbf_PTJ0_55p0_75p0.*:r_PTJ0_55p0_75p0[1,-3,3]\" \
+--PO \"map=.*/ggh_PTJ0_75p0_95p0.*:r_PTJ0_75p0_95p0[1,-3,3]\" \
+--PO \"map=.*/tth_PTJ0_75p0_95p0.*:r_PTJ0_75p0_95p0[1,-3,3]\" \
+--PO \"map=.*/vh_PTJ0_75p0_95p0.*:r_PTJ0_75p0_95p0[1,-3,3]\" \
+--PO \"map=.*/vbf_PTJ0_75p0_95p0.*:r_PTJ0_75p0_95p0[1,-3,3]\" \
+--PO \"map=.*/ggh_PTJ0_95p0_120p0.*:r_PTJ0_95p0_120p0[1,-3,3]\" \
+--PO \"map=.*/tth_PTJ0_95p0_120p0.*:r_PTJ0_95p0_120p0[1,-3,3]\" \
+--PO \"map=.*/vh_PTJ0_95p0_120p0.*:r_PTJ0_95p0_120p0[1,-3,3]\" \
+--PO \"map=.*/vbf_PTJ0_95p0_120p0.*:r_PTJ0_95p0_120p0[1,-3,3]\" \
+--PO \"map=.*/ggh_PTJ0_120p0_150p0.*:r_PTJ0_120p0_150p0[1,-3,3]\" \
+--PO \"map=.*/tth_PTJ0_120p0_150p0.*:r_PTJ0_120p0_150p0[1,-3,3]\" \
+--PO \"map=.*/vh_PTJ0_120p0_150p0.*:r_PTJ0_120p0_150p0[1,-3,3]\" \
+--PO \"map=.*/vbf_PTJ0_120p0_150p0.*:r_PTJ0_120p0_150p0[1,-3,3]\" \
+--PO \"map=.*/ggh_PTJ0_150p0_200p0.*:r_PTJ0_150p0_200p0[1,-3,3]\" \
+--PO \"map=.*/tth_PTJ0_150p0_200p0.*:r_PTJ0_150p0_200p0[1,-3,3]\" \
+--PO \"map=.*/vh_PTJ0_150p0_200p0.*:r_PTJ0_150p0_200p0[1,-3,3]\" \
+--PO \"map=.*/vbf_PTJ0_150p0_200p0.*:r_PTJ0_150p0_200p0[1,-3,3]\" \
 --PO \"map=.*/ggh_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,-3,3]\" \
 --PO \"map=.*/tth_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,-3,3]\" \
 --PO \"map=.*/vh_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,-3,3]\" \
@@ -395,18 +435,34 @@ models = {
 --PO \"map=.*/tth_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,0,3]\" \
 --PO \"map=.*/vh_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,0,3]\" \
 --PO \"map=.*/vbf_PTJ0_0p0_30p0.*:r_PTJ0_0p0_30p0[1,0,3]\" \
---PO \"map=.*/ggh_PTJ0_30p0_75p0.*:r_PTJ0_30p0_75p0[1,0,3]\" \
---PO \"map=.*/tth_PTJ0_30p0_75p0.*:r_PTJ0_30p0_75p0[1,0,3]\" \
---PO \"map=.*/vh_PTJ0_30p0_75p0.*:r_PTJ0_30p0_75p0[1,0,3]\" \
---PO \"map=.*/vbf_PTJ0_30p0_75p0.*:r_PTJ0_30p0_75p0[1,0,3]\" \
---PO \"map=.*/ggh_PTJ0_75p0_120p0.*:r_PTJ0_75p0_120p0[1,0,3]\" \
---PO \"map=.*/tth_PTJ0_75p0_120p0.*:r_PTJ0_75p0_120p0[1,0,3]\" \
---PO \"map=.*/vh_PTJ0_75p0_120p0.*:r_PTJ0_75p0_120p0[1,0,3]\" \
---PO \"map=.*/vbf_PTJ0_75p0_120p0.*:r_PTJ0_75p0_120p0[1,0,3]\" \
---PO \"map=.*/ggh_PTJ0_120p0_200p0.*:r_PTJ0_120p0_200p0[1,0,3]\" \
---PO \"map=.*/tth_PTJ0_120p0_200p0.*:r_PTJ0_120p0_200p0[1,0,3]\" \
---PO \"map=.*/vh_PTJ0_120p0_200p0.*:r_PTJ0_120p0_200p0[1,0,3]\" \
---PO \"map=.*/vbf_PTJ0_120p0_200p0.*:r_PTJ0_120p0_200p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_30p0_40p0.*:r_PTJ0_30p0_40p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_30p0_40p0.*:r_PTJ0_30p0_40p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_30p0_40p0.*:r_PTJ0_30p0_40p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_30p0_40p0.*:r_PTJ0_30p0_40p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_40p0_55p0.*:r_PTJ0_40p0_55p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_40p0_55p0.*:r_PTJ0_40p0_55p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_40p0_55p0.*:r_PTJ0_40p0_55p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_40p0_55p0.*:r_PTJ0_40p0_55p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_55p0_75p0.*:r_PTJ0_55p0_75p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_55p0_75p0.*:r_PTJ0_55p0_75p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_55p0_75p0.*:r_PTJ0_55p0_75p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_55p0_75p0.*:r_PTJ0_55p0_75p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_75p0_95p0.*:r_PTJ0_75p0_95p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_75p0_95p0.*:r_PTJ0_75p0_95p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_75p0_95p0.*:r_PTJ0_75p0_95p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_75p0_95p0.*:r_PTJ0_75p0_95p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_95p0_120p0.*:r_PTJ0_95p0_120p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_95p0_120p0.*:r_PTJ0_95p0_120p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_95p0_120p0.*:r_PTJ0_95p0_120p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_95p0_120p0.*:r_PTJ0_95p0_120p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_120p0_150p0.*:r_PTJ0_120p0_150p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_120p0_150p0.*:r_PTJ0_120p0_150p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_120p0_150p0.*:r_PTJ0_120p0_150p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_120p0_150p0.*:r_PTJ0_120p0_150p0[1,0,3]\" \
+--PO \"map=.*/ggh_PTJ0_150p0_200p0.*:r_PTJ0_150p0_200p0[1,0,3]\" \
+--PO \"map=.*/tth_PTJ0_150p0_200p0.*:r_PTJ0_150p0_200p0[1,0,3]\" \
+--PO \"map=.*/vh_PTJ0_150p0_200p0.*:r_PTJ0_150p0_200p0[1,0,3]\" \
+--PO \"map=.*/vbf_PTJ0_150p0_200p0.*:r_PTJ0_150p0_200p0[1,0,3]\" \
 --PO \"map=.*/ggh_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,0,3]\" \
 --PO \"map=.*/tth_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,0,3]\" \
 --PO \"map=.*/vh_PTJ0_200p0_10000p0.*:r_PTJ0_200p0_10000p0[1,0,3]\" \
