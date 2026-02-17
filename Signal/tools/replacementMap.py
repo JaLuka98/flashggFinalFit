@@ -463,6 +463,82 @@ globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_200p0_10000
 globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_200p0_10000p0_cat1"] = "RECO_PTJ0_200p0_10000p0_cat1"
 globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_200p0_10000p0_cat2"] = "RECO_PTJ0_200p0_10000p0_cat2"
 
+# Differential NJ_pt30_absEta2p5 (Number of jets with pt > 30 GeV and abs(eta) < 2.5)
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]['procWV'] = "ggh_NJ_pt30_absEta2p5_1p0_2p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]['catWV'] = "RECO_NJ_pt30_absEta2p5_2p0_3p0_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]['procRVMap'] = od()
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat0"] = "ggh_NJ_pt30_absEta2p5_0p0_1p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat1"] = "ggh_NJ_pt30_absEta2p5_0p0_1p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat2"] = "ggh_NJ_pt30_absEta2p5_0p0_1p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat0"] = "ggh_NJ_pt30_absEta2p5_1p0_2p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat1"] = "ggh_NJ_pt30_absEta2p5_1p0_2p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat2"] = "ggh_NJ_pt30_absEta2p5_1p0_2p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat0"] = "ggh_NJ_pt30_absEta2p5_2p0_3p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat1"] = "ggh_NJ_pt30_absEta2p5_2p0_3p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat2"] = "ggh_NJ_pt30_absEta2p5_2p0_3p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat0"] = "ggh_NJ_pt30_absEta2p5_3p0_100p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat1"] = "ggh_NJ_pt30_absEta2p5_3p0_100p0_in"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat2"] = "ggh_NJ_pt30_absEta2p5_3p0_100p0_in"
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"] = od()
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat0"] = "RECO_NJ_pt30_absEta2p5_0p0_1p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat1"] = "RECO_NJ_pt30_absEta2p5_0p0_1p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat2"] = "RECO_NJ_pt30_absEta2p5_0p0_1p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat0"] = "RECO_NJ_pt30_absEta2p5_1p0_2p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat1"] = "RECO_NJ_pt30_absEta2p5_1p0_2p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat2"] = "RECO_NJ_pt30_absEta2p5_1p0_2p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat0"] = "RECO_NJ_pt30_absEta2p5_2p0_3p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat1"] = "RECO_NJ_pt30_absEta2p5_2p0_3p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat2"] = "RECO_NJ_pt30_absEta2p5_2p0_3p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat0"] = "RECO_NJ_pt30_absEta2p5_3p0_100p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat1"] = "RECO_NJ_pt30_absEta2p5_3p0_100p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat2"] = "RECO_NJ_pt30_absEta2p5_3p0_100p0_cat2"
+
+# Differential PTJ0_pt30_absEta2p5 (PT of the leading jet with pt > 30 GeV and abs(eta) < 2.5)
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]['procWV'] = "ggh_PTJ0_pt30_absEta2p5_30p0_75p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]['catWV'] = "RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]['procRVMap'] = od()
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_0p0_30p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_0p0_30p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_0p0_30p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_30p0_75p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_30p0_75p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_30p0_75p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_75p0_120p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_75p0_120p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_75p0_120p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_120p0_200p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_120p0_200p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_120p0_200p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_200p0_10000p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_200p0_10000p0_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_200p0_10000p0_in"
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"] = od()
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat0"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat1"
+globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat2"
+
 # Differential YJ0 (Rapidity of the leading jet)
 globalReplacementMap["Run3FidXSAnalysisYJ0"] = od()
 # Wrong vertex stuff, which process should be considered?
