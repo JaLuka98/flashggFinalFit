@@ -37,6 +37,7 @@
   "r_NJ_3p0_4p0": "#sigma_{[3,4)}^{fid}",
   "r_NJ_4p0_100p0": "#sigma_{[4,+inf)}^{fid}",
   "ptJ0": "#font[52]{p}_{T}^{j_{1}}",
+  "PTJ0": "#font[52]{p}_{T}^{j_{1}}",
   "r_PTJ0_0p0_30p0": "#sigma_{(#font[52]{N}_{Jets} = 0)}^{fid}",
   "r_PTJ0_30p0_40p0": "#sigma_{[30,40) GeV}^{fid}",
   "r_PTJ0_40p0_55p0": "#sigma_{[40,55) GeV}^{fid}",
