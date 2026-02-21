@@ -52,6 +52,47 @@ class FinalFits(law.WrapperTask):
         years = [y.strip() for y in self.years.split(",") if y.strip()]
         multi_year = len(years) > 1  # when combining years, only force per-year datacards
 
+        if not multi_year and len(years) == 1:
+            single_year = years[0]
+            any_final_fit = any(
+                convert_boolean_string(flag)
+                for flag in [
+                    self.unblinded_fits,
+                    self.unblinded_stage_one,
+                    self.unblinded_stage_two,
+                    self.unblinded_stage_three,
+                    self.unblinded_covcorr,
+                    self.pvalue,
+                    self.asimov_fits,
+                    self.asimov_impacts,
+                    self.asimov_covcorr,
+                    self.unblinded_diff_spectra,
+                    self.asimov_diff_spectra,
+                ]
+            )
+            if any_final_fit:
+                return [
+                    FinalFitsYear(
+                        variable=self.variable,
+                        output_dir=self.output_dir,
+                        year=single_year,
+                        datacard_only=True,
+                        unblinded_fits=False,
+                        unblinded_stage_one=False,
+                        unblinded_stage_two=False,
+                        unblinded_stage_three=False,
+                        unblinded_covcorr=False,
+                        pvalue=False,
+                        asimov_fits=False,
+                        asimov_impacts=False,
+                        asimov_covcorr=False,
+                        unblinded_diff_spectra=False,
+                        asimov_diff_spectra=False,
+                        batch_system=self.batch_system,
+                        batch_flavor=self.batch_flavor,
+                    )
+                ]
+
         return [
             FinalFitsYear(
                 variable=self.variable,
@@ -85,8 +126,47 @@ class FinalFits(law.WrapperTask):
 
         years = [y.strip() for y in self.years.split(",") if y.strip()]
         if len(years) < 2:
-            print(f"Single-year mode: {years[0]}. Nothing to combine.")
-            return True
+            single_year = years[0]
+            print(f"Single-year mode: {single_year}.")
+            any_final_fit = any(
+                convert_boolean_string(flag)
+                for flag in [
+                    self.unblinded_fits,
+                    self.unblinded_stage_one,
+                    self.unblinded_stage_two,
+                    self.unblinded_stage_three,
+                    self.unblinded_covcorr,
+                    self.pvalue,
+                    self.asimov_fits,
+                    self.asimov_impacts,
+                    self.asimov_covcorr,
+                    self.unblinded_diff_spectra,
+                    self.asimov_diff_spectra,
+                ]
+            )
+            if not any_final_fit:
+                print("No final fit tasks selected. Nothing to do.")
+                return True
+            yield FinalFitsYear(
+                variable=self.variable,
+                output_dir=self.output_dir,
+                year=single_year,
+                datacard_only=False,
+                unblinded_fits=self.unblinded_fits,
+                unblinded_stage_one=self.unblinded_stage_one,
+                unblinded_stage_two=self.unblinded_stage_two,
+                unblinded_stage_three=self.unblinded_stage_three,
+                unblinded_covcorr=self.unblinded_covcorr,
+                pvalue=self.pvalue,
+                asimov_fits=self.asimov_fits,
+                asimov_impacts=self.asimov_impacts,
+                asimov_covcorr=self.asimov_covcorr,
+                unblinded_diff_spectra=self.unblinded_diff_spectra,
+                asimov_diff_spectra=self.asimov_diff_spectra,
+                batch_system=self.batch_system,
+                batch_flavor=self.batch_flavor,
+            )
+            return
 
         combined_label = "_".join(years)
         if self.variable == '':
@@ -727,3 +807,4 @@ class FinalFitsYear(law.Task):
     def run(self):
         
         return True
+
