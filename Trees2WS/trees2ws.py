@@ -390,7 +390,14 @@ if opt.doDiffSplitting:
     if int(diffId) == 0: continue
 
     # Extract diffBin
-    diffBin = diffDict[int(diffId)]
+    diff_map = diffDict
+    if "diffDictByVar" in globals():
+      diff_var_name = diffVar
+      if diff_var_name.startswith("diffVariable_Gen"):
+        diff_var_name = diff_var_name.replace("diffVariable_Gen", "", 1)
+      if diff_var_name in diffDictByVar:
+        diff_map = diffDictByVar[diff_var_name]
+    diffBin = diff_map[int(diffId)]
     diffBin = opt.productionMode + "_" + diffBin
     print(diffBin)
 

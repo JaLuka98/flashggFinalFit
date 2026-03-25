@@ -588,7 +588,13 @@ class FinalFitsYear(law.Task):
                 reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
                 cat_list = ["r"]
             else:
-                reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+                poi_bin = "_".join(cat.split("_")[2:])
+                reco_bin = combineVariableDict[f"{self.year}"][self.variable].get("poiToRecoBin", {}).get(poi_bin, poi_bin)
+                reco_cats_with_bmw = [
+                    element
+                    for element in combineVariableDict[f"{self.year}"][self.variable]["catsStrWithBMW"]
+                    if reco_bin in element
+                ]
                 cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
             
             output = []

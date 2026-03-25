@@ -636,6 +636,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
             
         elif self.variable != '':
             saveSpecifiedIndex = ",".join(
@@ -671,6 +672,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
         
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -5616,7 +5618,13 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
         else:
             fitFolderName = f'runFits_{self.variable}'
-            reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+            poi_bin = "_".join(cat.split("_")[2:])
+            reco_bin = combineVariableDict[f"{self.year}"][self.variable].get("poiToRecoBin", {}).get(poi_bin, poi_bin)
+            reco_cats_with_bmw = [
+                element
+                for element in combineVariableDict[f"{self.year}"][self.variable]["catsStrWithBMW"]
+                if reco_bin in element
+            ]
             
         
         output = []
@@ -5710,7 +5718,13 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
             else:
                 # firstStep_path = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')
-                reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+                poi_bin = "_".join(cat.split("_")[2:])
+                reco_bin = combineVariableDict[f"{self.year}"][self.variable].get("poiToRecoBin", {}).get(poi_bin, poi_bin)
+                reco_cats_with_bmw = [
+                    element
+                    for element in combineVariableDict[f"{self.year}"][self.variable]["catsStrWithBMW"]
+                    if reco_bin in element
+                ]
 
             arguments = [
                 "python3",
@@ -5803,7 +5817,13 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             if self.variable == '':
                 reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
             else:
-                reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+                poi_bin = "_".join(cat.split("_")[2:])
+                reco_bin = combineVariableDict[f"{self.year}"][self.variable].get("poiToRecoBin", {}).get(poi_bin, poi_bin)
+                reco_cats_with_bmw = [
+                    element
+                    for element in combineVariableDict[f"{self.year}"][self.variable]["catsStrWithBMW"]
+                    if reco_bin in element
+                ]
                 
             arguments = [
                 "python3",

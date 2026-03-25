@@ -140,9 +140,16 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)
+            if result.stderr:
+                print("Script stderr:", result.stderr)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
-            print("Error executing script:", e.stderr)
+            print(f"Error executing script (exit code {e.returncode}): {' '.join(command)}")
+            if e.stdout:
+                print("Script stdout:", e.stdout)
+            if e.stderr:
+                print("Script stderr:", e.stderr)
+            raise
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -679,6 +686,7 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Signal/scripts/signalFit.py")
         arguments = [
             "python3",
+            "-u",
             script_path,
             "--cat", cat,
             "--proc", proc,
@@ -710,10 +718,29 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         print(command)
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
-            print("Script output:", result.stdout)
+            if result.stdout:
+                print("Script stdout:", result.stdout)
+            if result.stderr:
+                print("Script stderr:", result.stderr)
+
+            expected_output = os.path.join(
+                self.output_dir,
+                f"outdir_{self.ext}/signalFit/output/CMS-HGG_sigfit_{self.ext}_{proc}_{self.year}_{cat}.root",
+            )
+            if not os.path.exists(expected_output):
+                raise RuntimeError(
+                    "signalFit.py exited 0 but expected output is missing: "
+                    f"{expected_output} (proc={proc}, cat={cat})"
+                )
+
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
-            print("Error executing script:", e.stderr)
+            print(f"Error executing script (exit code {e.returncode}): {' '.join(command)}")
+            if e.stdout:
+                print("Script stdout:", e.stdout)
+            if e.stderr:
+                print("Script stderr:", e.stderr)
+            raise
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
