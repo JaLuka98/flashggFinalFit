@@ -5830,7 +5830,7 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 "--loadSnapshot", f"{config['combine_mggToys']['loadSnapshot']}",
                 "--cats", f"{','.join(reco_cats_with_bmw)}",
                 "--doZeroes",
-                #"--unblind",
+                "--unblind",
                 "--translateCats", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'cats.json')}",
                 "--doSumCategories",
                 "--doCatWeights",
