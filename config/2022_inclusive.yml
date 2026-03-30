@@ -4,8 +4,8 @@ outputFolder: '/.automount/net_rw/net__data_cms3a-1/spaeh/private/PhD/analyses/p
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_11_13/data/allData_2022.root'
-  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_11_13/signal/2022'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2026_02_09/data/allData_2022.root'
+  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2026_02_09/signal/2022'
 
 backgroundScriptCfg:
   # Setup
@@ -218,3 +218,6 @@ combine_mggToys:
   loadSnapshot: 'MultiDimFit'
   doBands: True
   execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
