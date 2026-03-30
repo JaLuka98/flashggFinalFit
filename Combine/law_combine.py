@@ -6112,6 +6112,7 @@ class PValueCalculation(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
                 "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--freezeParameters", "MH",
