@@ -86,4 +86,5 @@ pois_*trimmed*
 
 # Replica tests
 Replicas/*
+!Replicas/hgg_kinflow
 !Replicas/corr_matrix
