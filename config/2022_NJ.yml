@@ -230,6 +230,7 @@ combine_fit:
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,3"
   execution: 'slurm'
+  cminApproxPreFitTolerance: 0.01
   batchPartition: "standard" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "04:00:00" # Slurm max runtime to use

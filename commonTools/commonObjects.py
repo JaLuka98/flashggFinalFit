@@ -29,7 +29,7 @@ lumiMap = {
     '2023preBPix': 9.5, # 17.8
     '2023postBPix': 9.5,
     '2023': 27.3,
-    '2024': 9.5
+    '2024': 109.0
 }
 
 # Flow era map
@@ -152,9 +152,9 @@ photonMVA_cut = {
     "2022": 0.25,
     "2023preBPix": 0.19,
     "2023postBPix": 0.19,
-    "2023": 0.19,
-    "2024all": 0.19,
-    "2024": 0.19
+    "2023": 0.24,
+    "2024all": 0.24,
+    "2024": 0.24
 }
 
 bkg_normalizing_factor = { # Factors to account for the mismodelling of the background samples 

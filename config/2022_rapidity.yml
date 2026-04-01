@@ -4,13 +4,16 @@
 # Tests
 # Test Trees2WS: law run Trees2WS --variable rapidity --workers 4 --output-dir /afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/test_t2w_diff/t2w --doDiffSplitting True --doSystematic True
 
-# outputFolder: '/eos/home-n/niharrin/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/output/forPaper_24_10_14_rapidity/'
+# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/finalfits/rapidity/'
 outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/rapidity_RandomizeAux_separateDatasets/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables/rapidity/allData_2022.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables/rapidity/root'
+  # Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables/rapidity/allData_2022.root'
+  # Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/variables/rapidity/allData_2022.root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables_13_02_26/rapidity/root/Data/allData_2022.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/variables/rapidity/root_noBBH'
+  # Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/2024/forPaper_24_10_14/variables/rapidity/root'
   catDict_timestamp: '2025_10_31'
 
   mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/earlyRun3/signal'
@@ -211,6 +214,7 @@ combine_fit:
   asimov_numPoints: 100 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,3"
+  cminApproxPreFitTolerance: 0.01
   execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission

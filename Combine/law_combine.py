@@ -954,6 +954,9 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
         output = []
             
         output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')]
+        
+        for param in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombinefirstStep_{param}.MultiDimFit.mH125.38.root')]
                 
         outputFileTargets = []
         
@@ -4090,13 +4093,14 @@ class UnblindedCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             os.chdir(os.path.join(os.environ["TARGET_PATH"], 'Combine', fitFolderName, 'hesse'))
         else:
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
-            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse'))
+            os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse'))     
 
         arguments = [
             "combine",
             "-M", "MultiDimFit",
             datacard_path,
-            "--freezeParameters", "MH",
+            # "--freezeParameters", """CMS_hgg_nuisance_ScaleEB_2022postEE,CMS_hgg_nuisance_ScaleEB_2022preEE,MH""",
+            "--freezeParameters", """MH""",
             "-m", "125.38",
             "-n", "firstStep_data",
             "--saveWorkspace",
