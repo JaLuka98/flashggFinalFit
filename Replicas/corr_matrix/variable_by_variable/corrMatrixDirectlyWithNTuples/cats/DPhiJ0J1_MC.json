@@ -1,0 +1,146 @@
+{
+    "RECO_DPhiJ0J1_m3p1416_m2p0944": {
+        "cat_filter": [
+            [
+                "DPhiJ0J1",
+                ">=",
+                -3.1416
+            ],
+            [
+                "DPhiJ0J1",
+                "<",
+                -2.0944
+            ],
+            [
+                "lead_mvaID",
+                ">",
+                0.19
+            ],
+            [
+                "sublead_mvaID",
+                ">",
+                0.19
+            ]
+        ]
+    },
+    "RECO_DPhiJ0J1_m2p0944_m1p0472": {
+        "cat_filter": [
+            [
+                "DPhiJ0J1",
+                ">=",
+                -2.0944
+            ],
+            [
+                "DPhiJ0J1",
+                "<",
+                -1.0472
+            ],
+            [
+                "lead_mvaID",
+                ">",
+                0.19
+            ],
+            [
+                "sublead_mvaID",
+                ">",
+                0.19
+            ]
+        ]
+    },
+    "RECO_DPhiJ0J1_m1p0472_0p0": {
+        "cat_filter": [
+            [
+                "DPhiJ0J1",
+                ">=",
+                -1.0472
+            ],
+            [
+                "DPhiJ0J1",
+                "<",
+                0.0
+            ],
+            [
+                "lead_mvaID",
+                ">",
+                0.19
+            ],
+            [
+                "sublead_mvaID",
+                ">",
+                0.19
+            ]
+        ]
+    },
+    "RECO_DPhiJ0J1_0p0_1p0472": {
+        "cat_filter": [
+            [
+                "DPhiJ0J1",
+                ">=",
+                0.0
+            ],
+            [
+                "DPhiJ0J1",
+                "<",
+                1.0472
+            ],
+            [
+                "lead_mvaID",
+                ">",
+                0.19
+            ],
+            [
+                "sublead_mvaID",
+                ">",
+                0.19
+            ]
+        ]
+    },
+    "RECO_DPhiJ0J1_1p0472_2p0944": {
+        "cat_filter": [
+            [
+                "DPhiJ0J1",
+                ">=",
+                1.0472
+            ],
+            [
+                "DPhiJ0J1",
+                "<",
+                2.0944
+            ],
+            [
+                "lead_mvaID",
+                ">",
+                0.19
+            ],
+            [
+                "sublead_mvaID",
+                ">",
+                0.19
+            ]
+        ]
+    },
+    "RECO_DPhiJ0J1_2p0944_3p1416": {
+        "cat_filter": [
+            [
+                "DPhiJ0J1",
+                ">=",
+                2.0944
+            ],
+            [
+                "DPhiJ0J1",
+                "<",
+                3.1416
+            ],
+            [
+                "lead_mvaID",
+                ">",
+                0.19
+            ],
+            [
+                "sublead_mvaID",
+                ">",
+                0.19
+            ]
+        ]
+    }
+}
