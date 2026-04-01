@@ -1,0 +1,3 @@
+[submodule "Replicas/hgg_kinflow"]
+	path = Replicas/hgg_kinflow
+	url = ssh://git@gitlab.cern.ch:7999/niharrin/hgg-kinflow.git
