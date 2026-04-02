@@ -2,6 +2,16 @@
 from collections import OrderedDict as od
 
 diffDict = od()
+
+DIFFVAR_TO_VARIABLE = {
+    'diffVariable_GenPTH': 'PTH',
+    'diffVariable_GenYH': 'rapidity',
+    'diffVariable_GenNJ': 'NJ',
+    'diffVariable_GenPTJ0': 'PTJ0',
+    'diffVariable_GenYJ0': 'YJ0',
+    'diffVariable_GenAbsPhiHJ0': 'AbsPhiHJ0',
+    'diffVariable_GenAbsYHJ0': 'AbsYHJ0',
+}
 diffDict[10] = "PTH_0p0_15p0_in"
 diffDict[11] = "PTH_15p0_30p0_in"
 diffDict[12] = "PTH_30p0_45p0_in"

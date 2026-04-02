@@ -1,5 +1,6 @@
 import law
 import os
+import re
 import subprocess
 import ROOT
 import uproot
@@ -14,6 +15,8 @@ from scipy.stats import chi2
 
 from commonTools import *
 from commonObjects import *
+# Helpers to extract/save pdfindex information for merged category flows
+from pdfindex_utils import extract_pdf_indices, update_override_file
 
 from Datacard.law_datacard import *
 from Background.law_background import *
@@ -39,6 +42,9 @@ def convert_boolean_string(string):
     else:
         return False
 
+
+_PDFINDEX_CACHE = {}
+
 def execute_command(command, return_output=False, shell=False):
     try:
         result = subprocess.run(command, check=True, text=True, capture_output=True, shell=shell, env=os.environ)
@@ -48,6 +54,83 @@ def execute_command(command, return_output=False, shell=False):
             return (result.stdout).split("\n")[0]
     except subprocess.CalledProcessError as e:
         print("Error executing script:", e.stderr)
+
+def _parse_exclude_tokens(exclude_expr):
+    """
+    Parse exclude expressions into literal names + compiled regex patterns.
+
+    Supported token forms (comma-separated):
+    - literal parameter names
+    - regex tokens in combineTool.py style: rgx{...}
+    - regex tokens in /.../ style (convenience)
+    """
+    exclude_tokens = [t.strip() for t in (exclude_expr or "").split(",") if t.strip()]
+    exclude_regex = []
+    exclude_names = set()
+    for tok in exclude_tokens:
+        if tok.startswith("rgx{") and tok.endswith("}"):
+            pattern = tok[4:-1]
+            try:
+                exclude_regex.append(re.compile(pattern))
+            except Exception:
+                exclude_names.add(tok)
+            continue
+
+        if len(tok) >= 2 and tok.startswith("/") and tok.endswith("/"):
+            try:
+                exclude_regex.append(re.compile(tok[1:-1]))
+            except Exception:
+                exclude_names.add(tok)
+            continue
+
+        exclude_names.add(tok)
+    return exclude_names, exclude_regex
+
+def _filter_names_by_exclude(names, exclude_expr):
+    exclude_names, exclude_regex = _parse_exclude_tokens(exclude_expr)
+    if not exclude_names and not exclude_regex:
+        return list(names)
+
+    kept = []
+    for name in names:
+        if name in exclude_names:
+            continue
+        if any(r.search(name) for r in exclude_regex):
+            continue
+        kept.append(name)
+    return kept
+
+def _list_modelconfig_nuisances(datacard_path, poi_list, exclude_expr=""):
+    """
+    Return nuisance parameter names from the workspace ModelConfig, excluding POIs and optional
+    exclude patterns/names.
+    """
+    ws_file = ROOT.TFile.Open(datacard_path)
+    if not ws_file or ws_file.IsZombie():
+        raise RuntimeError(f"Could not open workspace file: {datacard_path}")
+    w = ws_file.Get("w")
+    if not w:
+        raise RuntimeError(f"Workspace 'w' not found in: {datacard_path}")
+    config = w.genobj("ModelConfig")
+    if not config:
+        raise RuntimeError(f"ModelConfig not found in workspace 'w' in: {datacard_path}")
+
+    nuis = config.GetNuisanceParameters()
+    if not nuis:
+        return []
+
+    names = []
+    it = nuis.createIterator()
+    var = it.Next()
+    while var:
+        name = var.GetName()
+        if name not in poi_list and (not var.isConstant()) and var.InheritsFrom("RooRealVar"):
+            names.append(name)
+        var = it.Next()
+
+    names = _filter_names_by_exclude(names, exclude_expr)
+    names.sort()
+    return names
         
 def manually_copy_t3(src, dst):
     # List files in the directory
@@ -479,6 +562,15 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             execute_command([f'xrdcp -rf {datacards_dir}/{datacard_name}.root root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/'], shell=True)
             execute_command([f"xrdcp -rf {os.path.join(temp_output_dir, 'Combine', 't2w_jobs/')} root://t3dcachedb03.psi.ch:1094//{output_dir}/Combine/t2w_jobs/"], shell=True)
             shutil.rmtree(temp_output_dir)
+
+        # Persist the pdfindex values from the produced workspace so downstream
+        # cat-merged fits can reuse the same indices without recomputing them.
+        final_root_path = os.path.join(output_dir, 'Combine', f'{datacard_name}.root')
+        pdf_indices = extract_pdf_indices(final_root_path)
+        if pdf_indices:
+            override_path = os.path.join(os.environ["ANALYSIS_PATH"], "config", "pdfindex_overrides.json")
+            variable_key = self.variable if self.variable != '' else 'inclusive'
+            update_override_file(override_path, self.year, variable_key, pdf_indices)
         
 class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
@@ -622,6 +714,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 "-m", "125.38",
                 "-n", f"firstStep_{current_branch}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--expectSignal", "1",
                 "--saveWorkspace",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -642,9 +735,15 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 print("Error executing script:", e.stderr)
             
         elif self.variable != '':
-            saveSpecifiedIndex = ",".join(
-                combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces']
-            )
+            pdf_indices = combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces']
+            cache_key = (datacard_path,)
+            if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
+                datacard_pdf_indices = extract_pdf_indices(datacard_path)
+                if datacard_pdf_indices:
+                    _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
+            if cache_key in _PDFINDEX_CACHE:
+                pdf_indices = _PDFINDEX_CACHE[cache_key]
+            saveSpecifiedIndex = ",".join(pdf_indices)
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
@@ -653,6 +752,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 "-m", "125.38",
                 "-n", f"firstStep_{current_branch}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--expectSignal", "1",
                 "--saveWorkspace",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -675,6 +775,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
         
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -779,11 +880,16 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
         
         return True
 
+# Handles both standard per-category scans and the merged-category flow by
+# optionally branching over a comma-separated list of categories. When
+# `cats` is set all bins are executed inside one HTCondor job to avoid
+# spawning one submission per differential bin.
 class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
-    cat = law.Parameter(description="Current category")
+    cat = law.Parameter(default="", description="Current category")
+    cats = law.Parameter(default="", description="Comma separated list of categories to process")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
     set_pdfidx_inclusives = law.Parameter(default=False, description="Year") # convert_boolean_string
     
@@ -817,11 +923,35 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return tasks
     
     def create_branch_map(self):
-        branch_map = {i: current_point for i, current_point in enumerate(range(int(self.nPoints)))}
+        points = list(range(int(self.nPoints)))
+        if not self.cats:
+            return {i: point for i, point in enumerate(points)}
+
+        # Differential fits with cat-merging provide a csv list of categories,
+        # here we build the cartesian product (cat, scan point) so every branch
+        # can be processed inside the same Condor submission.
+        cat_list = [cat.strip() for cat in self.cats.split(",") if cat.strip()]
+        branch_map = {}
+        idx = 0
+        for cat in cat_list:
+            for point in points:
+                branch_map[idx] = (cat, point)
+                idx += 1
         return branch_map
 
+    def _current_branch_info(self):
+        # Branch data can be just the point index (legacy behaviour) or a
+        # (category, point) tuple when running in cat-merged mode, which lets
+        # all bins share one scheduler job.
+        data = self.branch_data
+        if isinstance(data, tuple):
+            return data
+        if not self.cat:
+            raise ValueError("Category not set for branch without tuple data")
+        return (self.cat, data)
+
     def output(self):
-        current_point = self.branch_data
+        current_cat, current_point = self._current_branch_info()
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -844,7 +974,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             
         output = [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')]
         
-        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
         
         outputFileTargets = []
                 
@@ -854,7 +984,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return outputFileTargets
 
     def run(self):
-        current_point = self.branch_data
+        current_cat, current_point = self._current_branch_info()
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -919,9 +1049,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             print(pdfIdx)
             return pdfIdx
 
-        pdfIdx = check_pdf_idx(self.cat)
+        pdfIdx = check_pdf_idx(current_cat)
 
-        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{self.cat}.MultiDimFit.mH125.38.root")
+        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{current_cat}.MultiDimFit.mH125.38.root")
 
         if self.variable == '':
             arguments = [
@@ -931,8 +1061,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--snapshotName", "MultiDimFit",
                 "--freezeParameters", "MH",
                 "-m", "125.38",
-                "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
+                "-n", f"AsimovPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
                 "--expectSignal", "1",
@@ -966,8 +1097,19 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Error executing script:", e.stderr)
             
         else:
-            saveSpecifiedIndex = ",".join(combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces'])
+            pdf_indices = combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces']
+            cache_key = (datacard_path,)
+            if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
+                datacard_pdf_indices = extract_pdf_indices(datacard_path)
+                if datacard_pdf_indices:
+                    _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
+            if cache_key in _PDFINDEX_CACHE:
+                pdf_indices = _PDFINDEX_CACHE[cache_key]
+            saveSpecifiedIndex = ",".join(pdf_indices)
             paramStr = ",".join(combineVariableDict[f'{self.year}'][self.variable]['paramStr'])
+            set_param_string = paramStr
+            if pdfIdx:
+                set_param_string = f"{set_param_string},{pdfIdx}"
 
             arguments = [
                 "combineTool.py",
@@ -975,8 +1117,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-d", firstStepPath,
                 "--freezeParameters", "MH",
                 "-m", "125.38",
-                "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
+                "-n", f"AsimovPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
                 "--expectSignal", "1",
@@ -985,7 +1128,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "-P", f"{self.cat}",
+                "-P", f"{current_cat}",
                 "--firstPoint", f"{current_point}",
                 "--lastPoint", f"{current_point}",
                 "--saveFitResult",
@@ -993,7 +1136,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
                 "--saveSpecifiedIndex", saveSpecifiedIndex,
-                "--setParameters", paramStr,
+                "--setParameters", set_param_string,
             ]
             command = arguments
             # print(command)
@@ -1003,6 +1146,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
             
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -1027,11 +1171,15 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             
         os.chdir(cwd)
         
+# Statistical scan task mirrors the syst version and therefore also supports
+# cat-merged execution through the optional csv list to keep the HTCondor
+# submission count low for differential measurements.
 class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
-    cat = law.Parameter(description="Current category")
+    cat = law.Parameter(default="", description="Current category")
+    cats = law.Parameter(default="", description="Comma separated list of categories to process")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
     set_pdfidx_inclusives = law.Parameter(default=False, description="Year")
     
@@ -1065,11 +1213,34 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return tasks
     
     def create_branch_map(self):
-        branch_map = {i: current_point for i, current_point in enumerate(range(int(self.nPoints)))}
+        points = list(range(int(self.nPoints)))
+        if not self.cats:
+            return {i: point for i, point in enumerate(points)}
+
+        # When cats is provided we again iterate the (cat, point) combinations
+        # so every branch runs within the single merged Condor job.
+        cat_list = [cat.strip() for cat in self.cats.split(",") if cat.strip()]
+        branch_map = {}
+        idx = 0
+        for cat in cat_list:
+            for point in points:
+                branch_map[idx] = (cat, point)
+                idx += 1
         return branch_map
 
+    def _current_branch_info(self):
+        # Keep supporting the legacy single-cat behaviour while allowing the
+        # merged workload to pack multiple categories per task, which is how
+        # we submit all differential bins together.
+        data = self.branch_data
+        if isinstance(data, tuple):
+            return data
+        if not self.cat:
+            raise ValueError("Category not set for branch without tuple data")
+        return (self.cat, data)
+
     def output(self):
-        current_point = self.branch_data
+        current_cat, current_point = self._current_branch_info()
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -1093,7 +1264,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         # output = [os.path.join(output_dir, 'Combine', fitFolderName)]
         output = [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')]
         
-        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{current_cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.38.root')]
         
         outputFileTargets = []
                 
@@ -1105,7 +1276,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return outputFileTargets
 
     def run(self):
-        current_point = self.branch_data
+        current_cat, current_point = self._current_branch_info()
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -1123,6 +1294,13 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir  
+
+        # Needed for pdfindex discovery in the differential (variable != "") flow.
+        # This points to the original text2workspace output, not the first-step snapshot file.
+        if self.variable == '':
+            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.year}.root')
+        else:
+            datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
         
         cwd = os.getcwd()
         if self.batch_flavor == "slurm/psi":
@@ -1165,9 +1343,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             print(pdfIdx)
             return pdfIdx
         
-        pdfIdx = check_pdf_idx(self.cat)        
-    
-        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{self.cat}.MultiDimFit.mH125.38.root")
+        pdfIdx = check_pdf_idx(current_cat)        
+
+        firstStepPath = os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f"higgsCombinefirstStep_{current_cat}.MultiDimFit.mH125.38.root")
         
         if self.variable == '':
             arguments = [
@@ -1177,8 +1355,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--snapshotName", "MultiDimFit",
                 "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
-                "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
+                "-n", f"AsimovPostFitScanStat_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
                 "--expectSignal", "1",
@@ -1213,8 +1392,19 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Error executing script:", e.stderr)
             
         else:
-            saveSpecifiedIndex = ",".join(combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces'])
+            pdf_indices = combineVariableDict[f'{self.year}'][self.variable]['pdfIndeces']
+            cache_key = (datacard_path,)
+            if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
+                datacard_pdf_indices = extract_pdf_indices(datacard_path)
+                if datacard_pdf_indices:
+                    _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
+            if cache_key in _PDFINDEX_CACHE:
+                pdf_indices = _PDFINDEX_CACHE[cache_key]
+            saveSpecifiedIndex = ",".join(pdf_indices)
             paramStr = ",".join(combineVariableDict[f'{self.year}'][self.variable]['paramStr'])
+            set_param_string = paramStr
+            if pdfIdx:
+                set_param_string = f"{set_param_string},{pdfIdx}"
 
             arguments = [
                 "combineTool.py",
@@ -1222,8 +1412,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-d", firstStepPath,
                 "--freezeParameters", "allConstrainedNuisances,MH",
                 "-m", "125.38",
-                "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
+                "-n", f"AsimovPostFitScanStat_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
                 "--expectSignal", "1",
@@ -1232,7 +1423,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
-                "-P", f"{self.cat}",
+                "-P", f"{current_cat}",
                 "--firstPoint", f"{current_point}",
                 "--lastPoint", f"{current_point}",
                 "--saveFitResult",
@@ -1240,7 +1431,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
                 "--saveSpecifiedIndex", saveSpecifiedIndex,
-                "--setParameters", paramStr,
+                "--setParameters", set_param_string,
             ]
             command = arguments
             # print(command)
@@ -1250,6 +1441,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
         
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -1310,11 +1502,13 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             tasks["AsimovFitCategorySyst"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
             tasks["AsimovFitCategoryStat"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
         else:
-            version_index = 1
-            for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
-                tasks[f"AsimovFitCategorySyst_{cat}"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
-                tasks[f"AsimovFitCategoryStat_{cat}"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v{version_index}", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
-                version_index += 1
+            # Cat-merged differential fits run all categories within a single task
+            # (single HTCondor submission) by passing the comma-separated list
+            # down to the Syst/Stat tasks.
+            cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+            cats_csv = ",".join(cat_list)
+            tasks["AsimovFitCategorySyst_all"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats_csv, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
+            tasks["AsimovFitCategoryStat_all"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats_csv, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
         
         return tasks
     
@@ -1455,6 +1649,7 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
                 
             
             arguments = [
@@ -1691,6 +1886,7 @@ class AsimovImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--freezeParameters", "MH",
                 "-m", "125.38",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -1720,6 +1916,7 @@ class AsimovImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-m", "125.38",
                 "-n", "_initialFit_Test",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -1817,20 +2014,33 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         else:
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
     
-        # As seen in CMSSW_14_1_0_pre4/src/CombineHarvester/CombineTools/python/combine/Impacts.py
-        def all_free_parameters(file, wsp, mc, pois):
-            res = []
+        # IMPORTANT:
+        # For differential impacts we only want *constrained nuisance parameters* (i.e. those listed in
+        # ModelConfig's nuisance set). Using "all free pdf parameters" (equivalent to combineTool.py's
+        # --allPars) also includes background-model / envelope parameters (e.g. env_pdf_*) that often
+        # have no meaningful +/-1sigma crossing in multi-POI fits, leading to
+        #   "[ERROR] Closed range without finding crossing!"
+        # and missing per-parameter output root files.
+        def list_nuisance_parameters(file, wsp, mc, pois, exclude_expr=""):
             wsFile = ROOT.TFile.Open(file)
             w = wsFile.Get(wsp)
             config = w.genobj(mc)
-            pdfvars = config.GetPdf().getParameters(config.GetObservables())
-            it = pdfvars.createIterator()
+            nuis = config.GetNuisanceParameters()
+            if not nuis:
+                return []
+
+            names = []
+            it = nuis.createIterator()
             var = it.Next()
             while var:
-                if var.GetName() not in pois and (not var.isConstant()) and var.InheritsFrom("RooRealVar"):
-                    res.append(var.GetName())
+                name = var.GetName()
+                if name not in pois and (not var.isConstant()) and var.InheritsFrom("RooRealVar"):
+                    names.append(name)
                 var = it.Next()
-            return res
+
+            names = _filter_names_by_exclude(names, exclude_expr)
+            names.sort()
+            return names
         
         # def list_from_workspace(file, workspace, set):
         #     """Create a list of strings from a RooWorkspace set"""
@@ -1850,7 +2060,10 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         else:
             poiList = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
         
-        paramList = all_free_parameters(datacard_path, 'w', 'ModelConfig', poiList)
+        exclude_expr = ""
+        if "combine_impacts" in config:
+            exclude_expr = config["combine_impacts"].get("exclude", "")
+        paramList = list_nuisance_parameters(datacard_path, "w", "ModelConfig", poiList, exclude_expr=exclude_expr)
 
         
         branch_map = {i: current_param for i, current_param in enumerate(paramList)}
@@ -1976,6 +2189,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--robustFit", "1",
                 "-n", f"_paramFit_Test_{current_param}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -2009,6 +2223,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--robustFit", "1",
                 "-n", f"_paramFit_Test_{current_param}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -2274,6 +2489,19 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-m", "125.38",
                 "-o", "impacts/impacts.json",
             ]
+            # combineTool.py currently uses "all free parameters" by default (equivalent to --allPars),
+            # which pulls in background-model parameters (env_pdf_*) and can crash when old/corrupt
+            # param-fit root files are present. Restrict to ModelConfig nuisances by explicitly
+            # providing the parameter list via --named.
+            exclude_expr = config.get("combine_impacts", {}).get("exclude", "")
+            poi_list = combineVariableDict[f"{self.year}"][f"{self.variable}"]["paramStrNoOne"]
+            named_params = _list_modelconfig_nuisances(datacard_path, poi_list, exclude_expr=exclude_expr)
+            if not named_params:
+                raise RuntimeError(
+                    f"No nuisance parameters found for impacts (variable={self.variable}, year={self.year}). "
+                    f"Check workspace ModelConfig nuisances and combine_impacts.exclude='{exclude_expr}'."
+                )
+            arguments.extend(["--named", ",".join(named_params)])
             if (config["combine_impacts"]["exclude"] != ""):
                 arguments.append("--exclude")
                 arguments.append(config["combine_impacts"]["exclude"])
@@ -2303,6 +2531,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                     print("Script executed successfully.")
                 except subprocess.CalledProcessError as e:
                     print("Error executing script:", e.stderr)
+                    raise
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -2449,6 +2678,19 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         else:
             execute_command([f'mkdir -p {output_dir}/Combine/{fitFolderName}/hesse'], shell=True)
             os.chdir(os.path.join(output_dir, 'Combine', fitFolderName, 'hesse'))
+
+        # Determine which discrete pdfindex categories actually exist in the workspace.
+        # This is important when some bins use merged categories (e.g. *_catMerged_*)
+        # and therefore do not define the usual *_cat0/cat1/cat2_* RooCategories.
+        pdf_indices = combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces']
+        cache_key = (datacard_path,)
+        if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
+            datacard_pdf_indices = extract_pdf_indices(datacard_path)
+            if datacard_pdf_indices:
+                _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
+        if cache_key in _PDFINDEX_CACHE:
+            pdf_indices = _PDFINDEX_CACHE[cache_key]
+        saveSpecifiedIndex = ",".join(pdf_indices)
                     
         arguments = [
             "combine",
@@ -2459,11 +2701,12 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             "-n", "firstStep",
             "--saveWorkspace",
             "--saveFitResult",
-            "--saveSpecifiedIndex", f"""{",".join(combineVariableDict[f'{self.year}'][f'{self.variable}']['pdfIndeces'])}""",
+            "--saveSpecifiedIndex", saveSpecifiedIndex,
             "--floatOtherPOIs", "1",
             "--robustHesse", "1",
             "--robustHesseSave", "1",
             "--cminDefaultMinimizerStrategy=0",
+            "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
             "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
             "--X-rtd", "MINIMIZER_multiMin_hideConstants",
             "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -2836,6 +3079,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "-m", "125.38",
                 "-n", f"DataPostFitBestFit_{current_cat}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "singles",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
@@ -2867,6 +3111,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "-m", "125.38",
                 "-n", f"DataPostFitBestFit_{current_cat}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "singles",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
@@ -3041,6 +3286,7 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "-m", "125.38",
                 "-n", f"DataPostFitBestFitStat_{cat}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "singles",
                 "--rMin", f"{rMin}",
                 "--rMax", f"{rMax}",
@@ -3074,6 +3320,7 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "-m", "125.38",
                 "-n", f"DataPostFitBestFitStat_{cat}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "singles",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
@@ -3251,6 +3498,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-m", "125.38",
                 "-n", f"DataPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
                 "--points", f"{n_points}",
                 "--rMin", f"{rMin}",
@@ -3282,6 +3530,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-m", "125.38",
                 "-n", f"DataPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
                 "--points", f"{n_points}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -3465,6 +3714,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-m", "125.38",
                 "-n", f"DataPostFitScanStat_{cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
                 "--rMin", f"{rMin}",
                 "--rMax", f"{rMax}",
@@ -3493,6 +3743,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-m", "125.38",
                 "-n", f"DataPostFitScanStat_{cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
                 "--points", f"{n_points}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -3886,6 +4137,7 @@ class UnblindedCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             "--robustHesse", "1",
             "--robustHesseSave", "1",
             "--cminDefaultMinimizerStrategy=0",
+            "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
             "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
             "--X-rtd", "MINIMIZER_multiMin_hideConstants",
             "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -4250,6 +4502,7 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--freezeParameters", "MH",
                 "-m", "125.38",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -4277,6 +4530,7 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--robustFit", "1",
                 "-n", "_initialFit_Test",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -4489,7 +4743,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
             if not tree:
                 print("Error: Tree 'limit' not found in the file.")
                 exit(1)
-            # Access the branch 'r_YH_0p9_2p5' and get its first value
+            # Access the branch 'r_YH_2p0_2p5' and get its first value
             if hasattr(tree, 'r'):
                 tree.GetEntry(0)  # Load the first entry
                 poi_bf_value = getattr(tree, 'r')  # Access the branch value
@@ -4514,6 +4768,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 "--robustFit", "1",
                 "-n", f"_paramFit_Test_{current_param}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
@@ -4545,7 +4800,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 exit(1)
 
             for poi in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
-                # Access the branch 'r_YH_0p9_2p5' and get its first value
+                # Access the branch 'r_YH_2p0_2p5' and get its first value
                 if hasattr(tree, poi):
                     tree.GetEntry(0)  # Load the first entry
                     first_value = getattr(tree, poi)  # Access the branch value
@@ -4572,6 +4827,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 "--robustFit", "1",
                 "-n", f"_paramFit_Test_{current_param}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
