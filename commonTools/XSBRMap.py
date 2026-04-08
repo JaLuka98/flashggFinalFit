@@ -305,6 +305,36 @@ globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_2p0_3p0_in'] = {'mode':'constant','fa
 globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_3p0_100p0_in'] = {'mode':'constant','factor':0.49}
 globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_0p0_100p0_out'] = {'mode':'constant','factor':0.49}
 
+globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_pt30_absEta2p5_0p0_1p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_pt30_absEta2p5_1p0_2p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_pt30_absEta2p5_2p0_3p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_pt30_absEta2p5_3p0_100p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_NJ_pt30_absEta2p5_0p0_100p0_out'] = {'mode':'constant','factor':51.96}
+
+globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_pt30_absEta2p5_0p0_1p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_pt30_absEta2p5_1p0_2p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_pt30_absEta2p5_2p0_3p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_pt30_absEta2p5_3p0_100p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_NJ_pt30_absEta2p5_0p0_100p0_out'] = {'mode':'constant','factor':4.067}
+
+globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_pt30_absEta2p5_0p0_1p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_pt30_absEta2p5_1p0_2p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_pt30_absEta2p5_2p0_3p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_pt30_absEta2p5_3p0_100p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_NJ_pt30_absEta2p5_0p0_100p0_out'] = {'mode':'constant','factor':2.3781}
+
+globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_pt30_absEta2p5_0p0_1p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_pt30_absEta2p5_1p0_2p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_pt30_absEta2p5_2p0_3p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_pt30_absEta2p5_3p0_100p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_NJ_pt30_absEta2p5_0p0_100p0_out'] = {'mode':'constant','factor':0.5638}
+
+globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_pt30_absEta2p5_0p0_1p0_in'] = {'mode':'constant','factor':0.49}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_pt30_absEta2p5_1p0_2p0_in'] = {'mode':'constant','factor':0.49}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_pt30_absEta2p5_2p0_3p0_in'] = {'mode':'constant','factor':0.49}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_pt30_absEta2p5_3p0_100p0_in'] = {'mode':'constant','factor':0.49}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_NJ_pt30_absEta2p5_0p0_100p0_out'] = {'mode':'constant','factor':0.49}
+
 
 
 
@@ -342,6 +372,41 @@ globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_75p0_120p0_in'] = {'mode':'constant
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_120p0_200p0_in'] = {'mode':'constant','factor':0.49}
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_200p0_10000p0_in'] = {'mode':'constant','factor':0.49}
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_0p0_10000p0_out'] = {'mode':'constant','factor':0.49}
+
+globalXSBRMap['Run3FidXSAnalysis']['ggh_PTJ0_pt30_absEta2p5_0p0_30p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_PTJ0_pt30_absEta2p5_30p0_75p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_PTJ0_pt30_absEta2p5_75p0_120p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_PTJ0_pt30_absEta2p5_120p0_200p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_PTJ0_pt30_absEta2p5_200p0_10000p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_PTJ0_pt30_absEta2p5_0p0_10000p0_out'] = {'mode':'constant','factor':51.96}
+
+globalXSBRMap['Run3FidXSAnalysis']['vbf_PTJ0_pt30_absEta2p5_0p0_30p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_PTJ0_pt30_absEta2p5_30p0_75p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_PTJ0_pt30_absEta2p5_75p0_120p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_PTJ0_pt30_absEta2p5_120p0_200p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_PTJ0_pt30_absEta2p5_200p0_10000p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_PTJ0_pt30_absEta2p5_0p0_10000p0_out'] = {'mode':'constant','factor':4.067}
+
+globalXSBRMap['Run3FidXSAnalysis']['vh_PTJ0_pt30_absEta2p5_0p0_30p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_PTJ0_pt30_absEta2p5_30p0_75p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_PTJ0_pt30_absEta2p5_75p0_120p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_PTJ0_pt30_absEta2p5_120p0_200p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_PTJ0_pt30_absEta2p5_200p0_10000p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_PTJ0_pt30_absEta2p5_0p0_10000p0_out'] = {'mode':'constant','factor':2.3781}
+
+globalXSBRMap['Run3FidXSAnalysis']['tth_PTJ0_pt30_absEta2p5_0p0_30p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_PTJ0_pt30_absEta2p5_30p0_75p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_PTJ0_pt30_absEta2p5_75p0_120p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_PTJ0_pt30_absEta2p5_120p0_200p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_PTJ0_pt30_absEta2p5_200p0_10000p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_PTJ0_pt30_absEta2p5_0p0_10000p0_out'] = {'mode':'constant','factor':0.5638}
+
+globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_pt30_absEta2p5_0p0_30p0_in'] = {'mode':'constant','factor':0.49}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_pt30_absEta2p5_30p0_75p0_in'] = {'mode':'constant','factor':0.49}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_pt30_absEta2p5_75p0_120p0_in'] = {'mode':'constant','factor':0.49}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_pt30_absEta2p5_120p0_200p0_in'] = {'mode':'constant','factor':0.49}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_pt30_absEta2p5_200p0_10000p0_in'] = {'mode':'constant','factor':0.49}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_PTJ0_pt30_absEta2p5_0p0_10000p0_out'] = {'mode':'constant','factor':0.49}
 
 
 
