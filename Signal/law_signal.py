@@ -40,9 +40,7 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
     procs = law.Parameter(description="Processes")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(description="Year")    
-    
-    era = law.Parameter(description="Current Era")    
-    
+        
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
     htcondor_job_kwargs_submit = {"spool": True}
@@ -199,19 +197,22 @@ class FTest(law.Task):
         
         tasks = []
         
+        eras = allErasMap.get(f"{self.year}", [""])
+        
         i = 1
         # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
+        for currentEra in eras:
             
+            era_suffix = "" if currentEra in ["", "None"] else currentEra
             
             if self.variable == '':
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{currentEra}/ws_signal")
+                input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{era_suffix}/ws_signal")
             else:
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
+                input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{era_suffix}/ws_signal")
 
 
-            if currentEra != "None":
-                currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+            if currentEra not in ["", "None"]:
+                currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
             else:
                 currentConfig = config[f"signalScriptCfg_{self.year}"]
 
@@ -230,7 +231,7 @@ class FTest(law.Task):
                 currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
             currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
 
-            tasks.append(FTestCategory(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], variable=self.variable, year=self.year, version=f"{self.variable}_{i}" if self.variable != "" else f"inclusive_{i}", workflow=currentConfig['execution'], era=currentEra, batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
+            tasks.append(FTestCategory(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], variable=self.variable, year=self.year, version=f"{self.variable}_{self.year}_{i}" if self.variable != "" else f"inclusive_{self.year}_{i}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
             i += 1
 
         return tasks
@@ -253,14 +254,18 @@ class FTest(law.Task):
             output_dir = self.output_dir
             
         data_input_path = config['inputFiles']['Trees2WSData']  
+        
+        eras = allErasMap.get(f"{self.year}", [""])
 
         output_paths = []
 
         # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
+        for currentEra in eras:
+            
+            era_suffix = "" if currentEra in ["", "None"] else currentEra
 
-            if currentEra != "None":
-                currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+            if currentEra not in ["", "None"]:
+                currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
             else:
                 currentConfig = config[f"signalScriptCfg_{self.year}"]
             # returns output folder
@@ -461,18 +466,22 @@ class CalcPhotonSyst(law.Task):
         
         tasks = []
         
+        eras = allErasMap.get(f"{self.year}", [""])
+        
         i = 1
         # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
+        for currentEra in eras:
+            
+            era_suffix = "" if currentEra in ["", "None"] else currentEra
             
             if self.variable == '':
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{currentEra}/ws_signal")
+                input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{era_suffix}/ws_signal")
             else:
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
+                input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{era_suffix}/ws_signal")
 
 
-            if currentEra != "None":
-                currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+            if currentEra not in ["", "None"]:
+                currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
             else:
                 currentConfig = config[f"signalScriptCfg_{self.year}"]
                 
@@ -491,7 +500,7 @@ class CalcPhotonSyst(law.Task):
             for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
             currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
                     
-            tasks.append(CalcPhotonSystCategory(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], variable=self.variable, year=self.year, version=f"{self.variable}_{i}" if self.variable != "" else f"inclusive_{i}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
+            tasks.append(CalcPhotonSystCategory(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], variable=self.variable, year=self.year, version=f"{self.variable}_{self.year}_{i}" if self.variable != "" else f"inclusive_{self.year}_{i}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
             i += 1
 
         return tasks
@@ -517,11 +526,15 @@ class CalcPhotonSyst(law.Task):
         
         output_paths = []
         
+        eras = allErasMap.get(f"{self.year}", [""])
+        
         # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
+        for currentEra in eras:
             
-            if currentEra != "None":
-                currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+            era_suffix = "" if currentEra in ["", "None"] else currentEra
+            
+            if currentEra not in ["", "None"]:
+                currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
             else:
                 currentConfig = config[f"signalScriptCfg_{self.year}"]
             # returns output folder
@@ -745,17 +758,24 @@ class SignalFit(law.Task):
         inOutSplittingFlag = config['trees2wsCfg']['doInOutSplitting']  or config['trees2wsCfg']['doDiffSplitting']
             
         tasks = []
-            
+        
+        eras = allErasMap.get(f"{self.year}", [""])
+        
         i = 1
         # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
+        for currentEra in eras:
+            
+            era_suffix = "" if currentEra in ["", "None"] else currentEra
             
             if self.variable == "":
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{currentEra}/ws_signal")
+                input_path = os.path.join(config["outputFolder"], f"input_output_{self.year}{era_suffix}/ws_signal")
             else:
-                input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{currentEra}/ws_signal")
+                input_path = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{self.year}{era_suffix}/ws_signal")
 
-            currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+            if currentEra not in ["", "None"]:
+                currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
+            else:
+                currentConfig = config[f"signalScriptCfg_{self.year}"]
 
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # If proc/cat == auto. Extract processes and categories
@@ -774,7 +794,7 @@ class SignalFit(law.Task):
             for mp in currentConfig['massPoints'].split(","): mps.append(int(mp))
             currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)         
             
-            tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysisXSBR=currentConfig['analysisXSBR'], analysisRM=currentConfig['analysisRM'], replacementThreshold=currentConfig['replacementThreshold'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable, version=f"{self.variable}" if self.variable != "" else "inclusive", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
+            tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysisXSBR=currentConfig['analysisXSBR'], analysisRM=currentConfig['analysisRM'], replacementThreshold=currentConfig['replacementThreshold'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable, version=f"{self.variable}_{self.year}" if self.variable != "" else "inclusive"+"_"+self.year, workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
             i += 1
                 
         return tasks
@@ -802,11 +822,18 @@ class SignalFit(law.Task):
         signal_input_path = glob.glob(config['inputFiles']['Trees2WS']+'/*')
         
         data_input_path = config['inputFiles']['Trees2WSData']  
+        
+        eras = allErasMap.get(f"{self.year}", [""])
 
         # Loop over a years era
-        for currentEra in allErasMap[f"{self.year}"]:
-
-            currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+        for currentEra in eras:
+            
+            era_suffix = "" if currentEra in ["", "None"] else currentEra
+    
+            if currentEra not in ["", "None"]:
+                currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
+            else:
+                currentConfig = config[f"signalScriptCfg_{self.year}"]
             
             # returns output folder
             output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit")))
@@ -931,12 +958,21 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
                 configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
             else:
                 configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
+                
+            eras = allErasMap.get(f"{self.year}", [""])
             
             #Load central config file
             with open(configYamlPath, 'r') as file:
                 config = yaml.safe_load(file)
-            for currentEra in allErasMap[f"{self.year}"]:
-                signalScriptCfg = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+            for currentEra in eras:
+                
+                era_suffix = "" if currentEra in ["", "None"] else currentEra
+        
+                if currentEra not in ["", "None"]:
+                    signalScriptCfg = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
+                else:
+                    signalScriptCfg = config[f"signalScriptCfg_{self.year}"]
+                
                 # Have to copy over the input to the JOB directory
                 # Don't forget to VOMS!
                 if "/work" in self.output_dir:
@@ -1040,11 +1076,18 @@ class SignalPackaging(law.Task):
         packagedConfig['massLow'], packagedConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)
 
         exts = []
+        
+        eras = allErasMap.get(f"{self.year}", [""])
             
         # Loop over a years era and extract the ext string in a list
-        for currentEra in allErasMap[f"{self.year}"]:
-
-            currentConfig = config[f"signalScriptCfg_{self.year}_{currentEra}"]
+        for currentEra in eras:
+            
+            era_suffix = "" if currentEra in ["", "None"] else currentEra
+    
+            if currentEra not in ["", "None"]:
+                currentConfig = config[f"signalScriptCfg_{self.year}_{era_suffix}"]
+            else:
+                currentConfig = config[f"signalScriptCfg_{self.year}"]
             
             exts.append(currentConfig['ext'])
         
@@ -1054,7 +1097,7 @@ class SignalPackaging(law.Task):
             if i < (len(exts) - 1):
                 exts_string += ','
             
-        tasks.append(SignalPackagingCategory(output_dir=output_dir, exts=exts_string, outputExt=outputExt, cats=packagedConfig['cats'], year=self.year, massPoints=packagedConfig['massPoints'], mergeYears=mergeYears, variable=self.variable, version=f"{self.variable}" if self.variable != "" else "inclusive", workflow=packagedConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=packagedConfig['batchPartition'], slurm_memory=packagedConfig['batchMemory'], slurm_max_runtime=packagedConfig['batchMaxRuntime'], htcondor_partition=packagedConfig['batchPartition'], htcondor_memory=packagedConfig['batchMemory'], htcondor_max_runtime=packagedConfig['batchMaxRuntime']))
+        tasks.append(SignalPackagingCategory(output_dir=output_dir, exts=exts_string, outputExt=outputExt, cats=packagedConfig['cats'], year=self.year, massPoints=packagedConfig['massPoints'], mergeYears=mergeYears, variable=self.variable, version=f"{self.variable}"+"_"+self.year if self.variable != "" else "inclusive"+"_"+self.year, workflow=packagedConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=packagedConfig['batchPartition'], slurm_memory=packagedConfig['batchMemory'], slurm_max_runtime=packagedConfig['batchMaxRuntime'], htcondor_partition=packagedConfig['batchPartition'], htcondor_memory=packagedConfig['batchMemory'], htcondor_max_runtime=packagedConfig['batchMaxRuntime']))
                 
         return tasks
 

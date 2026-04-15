@@ -2096,7 +2096,7 @@ class GenerateSplusBToys(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
-    year = law.Parameter(default='2022', description="Year")
+    years = law.Parameter(default='2022,2023,2024', description="Years")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     toy_flag = law.Parameter(default=False, description="Toy flag")
@@ -2109,39 +2109,60 @@ class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
     _class_cache = {}
 
     def _init_once(self):
-        key = (self.year, self.variable, self.output_dir)
+        key = (self.years, self.variable, self.output_dir)
         if key in self._class_cache:
             (
-                self.configYamlPath,
-                self.config,
+                self.configYamlPaths,
+                self.configs,
                 self.resolved_output_dir,
-                self.fitFolderName
+                self.fitFolderName,
+                self.years_list,
+                self.multi_year,
             ) = self._class_cache[key]
             return
 
-        # compute config path
-        if self.variable == "":
-            configYamlPath = os.path.join(
-                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml"
-            )
+        years = [y.strip() for y in self.years.split(",") if y.strip()]
+        multi_year = len(years) > 1
+
+        # ── Load one config per year ─────────────────────────────────────────
+        configYamlPaths = []
+        configs = []
+        for year in years:
+            if self.variable == "":
+                config_filename = f"{year}_inclusive.yml"
+            else:
+                config_filename = f"{year}_{self.variable}.yml"
+            path = os.path.join(os.environ["ANALYSIS_PATH"], "config", config_filename)
+            configYamlPaths.append(path)
+            with open(path, "r") as f:
+                configs.append(yaml.safe_load(f))
+
+        # resolved_output_dir and fitFolderName are taken from the first year's
+        # config (they are expected to be consistent across years)
+        if multi_year:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.years.replace(',', '_')}_{self.variable}.yml")
+            with open(configYamlPath, "r") as f:
+                combined_config = yaml.safe_load(f)
+            
+            # Add the combined config to the config list
+            configs.append(combined_config)
+
+            resolved_output_dir = combined_config["outputFolder"]
         else:
-            configYamlPath = os.path.join(
-                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml"
-            )
-
-        with open(configYamlPath, "r") as f:
-            config = yaml.safe_load(f)
-
-        resolved_output_dir = self.output_dir or config["outputFolder"]
+            resolved_output_dir = self.output_dir or configs[0]["outputFolder"]
         fitFolderName = "runFits_mu_fiducial" if self.variable == "" else f"runFits_{self.variable}"
 
-        self.configYamlPath = configYamlPath
-        self.config = config
+        self.configYamlPaths    = configYamlPaths
+        self.configs            = configs
         self.resolved_output_dir = resolved_output_dir
-        self.fitFolderName = fitFolderName
+        self.fitFolderName      = fitFolderName
+        self.years_list         = years
+        self.multi_year         = multi_year
 
-        # store in class-level cache
-        self._class_cache[key] = (configYamlPath, config, resolved_output_dir, fitFolderName)
+        self._class_cache[key] = (
+            configYamlPaths, configs, resolved_output_dir, fitFolderName,
+            years, multi_year,
+        )
 
     def workflow_requires(self):
         workflow_reqs = super().workflow_requires()
@@ -2157,12 +2178,12 @@ class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
 
             SplusB_config = self.config["combine_SplusB_toys"]
 
-            tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
+            tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.years_list[0], version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
 
         if convert_boolean_string(self.bootstrap_flag) == True:
-            fitConfig = self.config["combine_fit"]
+            fitConfig = self.configs[-1]["combine_fit"]
 
-            tasks["RunText2Workspace"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag)
+            tasks["RunText2Workspace"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, years=self.years, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag)
 
         return tasks
     
@@ -2204,7 +2225,7 @@ class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
         if (convert_boolean_string(self.toy_flag) == True):
             ws_path = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'nominal', f'higgsCombineAsimovFirstStep_{replica_index}.MultiDimFit.mH125.root')
         elif (convert_boolean_string(self.bootstrap_flag) == True):
-            ws_path = os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.year}_{replica_index}.root') if self.variable == '' else os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.year}_{replica_index}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.years.replace(",","_")}_{replica_index}.root') if self.variable == '' else os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.variable}_{self.years.replace(",","_")}_{replica_index}.root')
                     
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
@@ -2459,7 +2480,7 @@ class AsimovFirstStep(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow):
 class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
-    year = law.Parameter(default='2022', description="Year")
+    years = law.Parameter(default='2022,2023,2024', description="Years")
     
     # save_sonly = law.Parameter(default=False, description="If True, will save the s-only replica as well.")
 
@@ -2474,54 +2495,75 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
     _class_cache = {}
 
     def _init_once(self):
-        key = (self.year, self.variable, self.output_dir)
+        key = (self.years, self.variable, self.output_dir)
         if key in self._class_cache:
             (
-                self.configYamlPath,
-                self.config,
+                self.configYamlPaths,
+                self.configs,
                 self.resolved_output_dir,
-                self.fitFolderName
+                self.fitFolderName,
+                self.years_list,
+                self.multi_year,
             ) = self._class_cache[key]
             return
 
-        # compute config path
-        if self.variable == "":
-            configYamlPath = os.path.join(
-                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_inclusive.yml"
-            )
+        years = [y.strip() for y in self.years.split(",") if y.strip()]
+        multi_year = len(years) > 1
+
+        # ── Load one config per year ─────────────────────────────────────────
+        configYamlPaths = []
+        configs = []
+        for year in years:
+            if self.variable == "":
+                config_filename = f"{year}_inclusive.yml"
+            else:
+                config_filename = f"{year}_{self.variable}.yml"
+            path = os.path.join(os.environ["ANALYSIS_PATH"], "config", config_filename)
+            configYamlPaths.append(path)
+            with open(path, "r") as f:
+                configs.append(yaml.safe_load(f))
+
+        # resolved_output_dir and fitFolderName are taken from the first year's
+        # config (they are expected to be consistent across years)
+        if multi_year:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.years.replace(',', '_')}_{self.variable}.yml")
+            with open(configYamlPath, "r") as f:
+                combined_config = yaml.safe_load(f)
+            
+            # Add the combined config to the config list
+            configs.append(combined_config)
+
+            resolved_output_dir = combined_config["outputFolder"]
         else:
-            configYamlPath = os.path.join(
-                os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml"
-            )
-
-        with open(configYamlPath, "r") as f:
-            config = yaml.safe_load(f)
-
-        resolved_output_dir = self.output_dir or config["outputFolder"]
+            resolved_output_dir = self.output_dir or configs[0]["outputFolder"]
         fitFolderName = "runFits_mu_fiducial" if self.variable == "" else f"runFits_{self.variable}"
 
-        self.configYamlPath = configYamlPath
-        self.config = config
+        self.configYamlPaths    = configYamlPaths
+        self.configs            = configs
         self.resolved_output_dir = resolved_output_dir
-        self.fitFolderName = fitFolderName
+        self.fitFolderName      = fitFolderName
+        self.years_list         = years
+        self.multi_year         = multi_year
 
-        # store in class-level cache
-        self._class_cache[key] = (configYamlPath, config, resolved_output_dir, fitFolderName)
+        self._class_cache[key] = (
+            configYamlPaths, configs, resolved_output_dir, fitFolderName,
+            years, multi_year,
+        )
     
     def workflow_requires(self):
         workflow_reqs = super().workflow_requires()
-        
+
         self._init_once()
-        
+
         tasks = {}
 
         if workflow_reqs:
             tasks.update(workflow_reqs)
-            
-        if (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
-            fitConfig = self.config["combine_fit"]
 
-            tasks["RandomizeGlobalObs"] = RandomizeGlobalObs(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag, number_of_replicas=self.number_of_replicas, seed=self.seed)
+        if (convert_boolean_string(self.toy_flag) == True) or (convert_boolean_string(self.bootstrap_flag) == True):
+            fitConfig = self.configs[-1]["combine_fit"]
+
+            tasks["RandomizeGlobalObs"] = RandomizeGlobalObs(output_dir=self.resolved_output_dir, variable=self.variable, years=self.years, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag, number_of_replicas=self.number_of_replicas, seed=self.seed)
         
         return tasks
     
@@ -2568,7 +2610,7 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
 
         if self.variable == '':
             # ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.year}.root')
-            ws_path = os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.year}_{replica_index}.root')
+            ws_path = os.path.join(self.resolved_output_dir, 'Combine', 'Workspaces', f'Datacard_{self.years.replace(",","_")}_{replica_index}.root')
         else:
             # ws_path = os.path.join(self.resolved_output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
             ws_path = os.path.join(self.resolved_output_dir, 'Replicas', 'pdfIndices', 'randomized', f'DatacardRandomizedAux_{replica_index}.MultiDimFit.mH125.root')
@@ -2587,7 +2629,7 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
             execute_command([f'mkdir -p {self.resolved_output_dir}/Combine/{self.fitFolderName}/{dataset_type_folder_name}/{dataset_type_prefix}_{replica_index}'], shell=True)
             os.chdir(os.path.join(self.resolved_output_dir, 'Combine', self.fitFolderName, dataset_type_folder_name, f'{dataset_type_prefix}_{replica_index}'))
 
-        seed = int(self.seed) + int(replica_index)
+        # seed = int(self.seed) + int(replica_index)
                 
         # pdfIndicesStr = ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])
 
@@ -2619,7 +2661,7 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
                 print(pdfIdx)
                 return pdfIdx
             
-            pdfIdx = check_pdf_idx()
+            # pdfIdx = check_pdf_idx()
         
             # splusb_toy = os.path.join(self.resolved_output_dir, 'Replicas', 'SplusB', f'SplusB_Toy_{int(replica_index)}.{seed}.root')
 
@@ -2643,14 +2685,14 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                "--algo", "singles",
+                # "--algo", "singles", # Deactivated (discussion with AT)
                 # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
                 "--saveFitResult",
                 # "--setParameters", f"""{pdfIdx}""",
                 "--setParameters", "MH=125",
                 "--freezeParameters", "MH",
                 # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
-                # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
+                # "--X-rtd", "MINIMIZER_skipDiscreteIterations", # Deactivated (discussion with AT)
                 # "-D", f"{splusb_toy}:toys/toy_1",
                 # --toysFrequentist --bypassFrequentistFit
             ]
@@ -2671,14 +2713,16 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
-                "--algo", "singles",
+                # "--algo", "singles", # Deactivated (discussion with AT)
                 # "--algo", "none", # Bekomme shit korrelierte Parameter zurueck ヽ(｀Д´)ﾉ
                 "--saveFitResult",
                 # "--setParameters", f"""{pdfIdx}""",
                 "--setParameters", "MH=125.38",
                 "--freezeParameters", "MH",
                 # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
-                # "--X-rtd", "MINIMIZER_skipDiscreteIterations",
+                "--X-rtd", "MINIMIZER_skipDiscreteIterations", # Deactivated (discussion with AT)
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 # "-D", f"{splusb_toy}:toys/toy_1",
                 # --toysFrequentist --bypassFrequentistFit
             ]
