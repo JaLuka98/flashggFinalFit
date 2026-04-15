@@ -54,7 +54,7 @@ def convert_boolean_string(string):
 
 class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_paths = law.Parameter(description="Paths to the data input ROOT files")
-    era = law.Parameter(description="Current era.")
+    era = law.Parameter(default="", description="Current era.")
     output_dir = law.Parameter(description="Path to the output directory")
     variable = law.Parameter(default='', description="Variable to be used for output folder naming")
     year = law.Parameter(default='2022', description="Year")
@@ -680,19 +680,24 @@ class Trees2WS(law.Task):
 
         tasks = []
         
+        eras = allErasMap.get(f"{self.year}", [""])
+        
         era_list = [
         (era, self.variable, input_paths)
-        for era in allErasMap[f"{self.year}"]
+        for era in eras
         ]
             
         i = 1
         for era, var, path_to_root_files in era_list:
+            
+            era_suffix = "" if era in ["", "None"] else era
+            
             if var == '':
-                current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+                current_output_path = output_dir + "/input_output_{}{}".format(self.year, era_suffix)
             else:
-                current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
+                current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era_suffix)
                             
-            tasks.append(Trees2WSSingleProcess(input_paths=path_to_root_files, era=era, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version=f"{self.variable}_{i}" if self.variable != "" else f"inclusive_{i}", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime']))
+            tasks.append(Trees2WSSingleProcess(input_paths=path_to_root_files, era=era, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version=f"{self.variable}_{self.year}_{i}" if self.variable != "" else f"inclusive_{self.year}_{i}", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime']))
             i += 1
         return tasks
 
@@ -713,16 +718,20 @@ class Trees2WS(law.Task):
         
         input_paths = config["inputFiles"]["Trees2WS"]
         
+        eras = allErasMap.get(f"{self.year}", [""])
+        
         era_list_with_variable = [
             (era, self.variable)
-            for era in allErasMap[f"{self.year}"]
+            for era in eras
         ]
         outputFolders = []
         for era, var in era_list_with_variable:
+            era_suffix = "" if era in ["", "None"] else era
+            
             if var == '':
-                current_output_path = output_dir + "/input_output_{}{}".format(self.year, era)
+                current_output_path = output_dir + "/input_output_{}{}".format(self.year, era_suffix)
             else:
-                current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era)
+                current_output_path = output_dir + "/input_output_{}_{}{}".format(var, self.year, era_suffix)
                 
             outputFolders.append(law.LocalFileTarget(current_output_path + '/ws_signal'))
 
@@ -745,17 +754,21 @@ class Trees2WS(law.Task):
         else:
             output_dir = self.output_dir
         
+        eras = allErasMap.get(f"{self.year}", [""])
+        
         era_list_with_variable = [
             (era, self.variable)
-            for era in allErasMap[f"{self.year}"]
+            for era in eras
         ]
         
         outputFolders = []
         for era, var in era_list_with_variable:
+            era_suffix = "" if era in ["", "None"] else era
+            
             if var == '':
-                current_output_path = os.path.join(output_dir, "input_output_{}{}".format(self.year, era))
+                current_output_path = os.path.join(output_dir, "input_output_{}{}".format(self.year, era_suffix))
             else:
-                current_output_path = os.path.join(output_dir, "input_output_{}_{}{}".format(var, self.year, era))
+                current_output_path = os.path.join(output_dir, "input_output_{}_{}{}".format(var, self.year, era_suffix))
             outputFolders.append(current_output_path)
 
             

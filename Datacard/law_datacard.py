@@ -317,18 +317,22 @@ class MakeYields(law.Task): #law.Task
                     else:
                         inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
         else:
-            for j, currentEra in enumerate(allErasMap[self.year]):
-                currentYearEra = self.year + currentEra
+            
+            eras = allErasMap.get(f"{self.year}", [""])
+            
+            for j, currentEra in enumerate(eras):
+                era_suffix = "" if currentEra in ["", "None"] else currentEra
+                currentYearEra = f"{self.year}{era_suffix}"
                 if self.variable == '':
-                    currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}{}/ws_signal".format(self.year, currentEra))
+                    currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}{}/ws_signal".format(self.year, era_suffix))
                 else:
-                    currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}_{}{}/ws_signal".format(self.variable, self.year, currentEra))
-                if (j != len(allErasMap[self.year]) - 1):  # Check if it's the last element of the last year
+                    currentYearEraInputOutput = os.path.join(output_dir, "input_output_{}_{}{}/ws_signal".format(self.variable, self.year, era_suffix))
+                if (j != len(eras) - 1):  # Check if it's the last element of the last year
                     inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput + ","
                 else:
                     inputWSDirMap += currentYearEra + "=" + currentYearEraInputOutput
         
-        tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version=self.variable if self.variable != "" else "inclusive", workflow=datacard_config['execution'], batch_flavor=self.batch_flavor, slurm_partition=datacard_config['batchPartition'], slurm_memory=datacard_config['batchMemory'], slurm_max_runtime=datacard_config['batchMaxRuntime'], htcondor_partition=datacard_config['batchPartition'], htcondor_memory=datacard_config['batchMemory'], htcondor_max_runtime=datacard_config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas, toy_flag=self.toy_flag)]
+        tasks = [MakeYieldsCategory(inputWSDirMap=inputWSDirMap, output_dir=output_dir, year=self.year, cats=datacard_config['cats'], procs=datacard_config['procs'], nCats=datacard_config['nCats'], ext=datacard_config['ext'], mergeYears=datacard_config['mergeYears'], skipBkg=datacard_config['skipBkg'], bkgScaler=datacard_config['bkgScaler'], sigModelWSDir=datacard_config['sigModelWSDir'], sigModelExt=f"packaged{packaged_config['ext']}", bkgModelWSDir=datacard_config['bkgModelWSDir'], bkgModelExt=datacard_config['bkgModelExt'], skipZeroes=datacard_config['skipZeroes'], skipCOWCorr=datacard_config['skipCOWCorr'], doSystematics=datacard_config['doSystematics'], ignore_warnings=datacard_config['ignore_warnings'], mass=datacard_config['mass'], variable=self.variable, version=self.variable+"_"+self.year if self.variable != "" else "inclusive", workflow=datacard_config['execution'], batch_flavor=self.batch_flavor, slurm_partition=datacard_config['batchPartition'], slurm_memory=datacard_config['batchMemory'], slurm_max_runtime=datacard_config['batchMaxRuntime'], htcondor_partition=datacard_config['batchPartition'], htcondor_memory=datacard_config['batchMemory'], htcondor_max_runtime=datacard_config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas, toy_flag=self.toy_flag)]
         
         return tasks
         
@@ -571,9 +575,12 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                     else:
                         years += currentYearEra
         else:
-            for j, currentEra in enumerate(allErasMap[self.year]):
-                currentYearEra = self.year + currentEra
-                if (j != len(allErasMap[self.year]) - 1):  # Check if it's the last element of the last year
+            eras = allErasMap.get(self.year, [""])
+            
+            for j, currentEra in enumerate(eras):
+                era_suffix = "" if currentEra in ["", "None"] else currentEra
+                currentYearEra = f"{self.year}{era_suffix}"
+                if (j != len(eras) - 1):  # Check if it's the last element of the last year
                     years += currentYearEra + ","
                 else:
                     years += currentYearEra
@@ -687,6 +694,4 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 execute_command(slurm_copy_command, shell=True)
                 # Clean up the temporary directory
                 shutil.rmtree(temp_output_dir)
-            
 
-        

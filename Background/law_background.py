@@ -105,7 +105,7 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
 
         config = self.config["backgroundScriptCfg"]
 
-        tasks["Trees2WSData"] = Trees2WSData(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas, toy_flag=self.toy_flag, seed=self.seed)
+        tasks["Trees2WSData"] = Trees2WSData(output_dir=self.resolved_output_dir, variable=self.variable, year=self.year, version=self.variable+"_"+self.year if self.variable != "" else "inclusive", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime'], bootstrap_flag=self.bootstrap_flag, number_of_replicas=self.number_of_replicas, toy_flag=self.toy_flag, seed=self.seed)
 
         return tasks
 
