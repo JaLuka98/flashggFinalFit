@@ -889,7 +889,7 @@ int main(int argc, char* argv[]){
 		if (verbose) std::cout << "[INFO] opened data for  "  << Form("data_mass_%s",catname.c_str()) <<" - " << dataFull <<std::endl;
     }
 
-    if (dataFull && dataFull->sumEntries() == 0) {
+    if (dataFull && ((dataFull->sumEntries() == 0) || (dataFull->sumEntries("CMS_hgg_mass >= 100 && CMS_hgg_mass <= 115 || CMS_hgg_mass >= 135 && CMS_hgg_mass <= 180") == 0))) {
     std::cout << "[INFO] Injecting one dummy event into empty dataset" << std::endl;
 
     mass->setVal(100.);
