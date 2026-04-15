@@ -49,10 +49,10 @@ class FinalFits(law.Task):
     # Differentials
     unblinded_diff_spectra = law.Parameter(default=False, description="Produce unblinded differential spectra for the given variable")
     asimov_diff_spectra = law.Parameter(default=False, description="Produce Asimov differential spectra for the given variable")
-    
+
     batch_system = law.Parameter(default="slurm", description="Batch system to use")
     batch_flavor = law.Parameter(default="slurm", description="Special treatment for PSI Slurm batch system")
-    
+
     def requires(self):
         # req() is defined on all tasks and handles the passing of all parameter values that are
         # common between the required task and the instance (self)

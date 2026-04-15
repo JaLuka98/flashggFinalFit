@@ -2,12 +2,12 @@
 
 # outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_14_intermediate/finalfits_postBPix/PTH_allReplica_powheg_powheg_BinByBin'
 # outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_14_intermediate/finalfits_postBPix/PTH_allReplica_full2023'
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_14_intermediate/finalfits_postBPix/PTH'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_02_replica_combinationTest/finalfits_years/PTH_2023'
 
 inputFiles:
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_14_intermediate/variables_postBPix/PTH/allData_2023.root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/variables/PTH/allData_2023.root'
   # Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_10_14_intermediate/variables_postBPix/PTH/root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_06_powheg/variables/PTH/root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/variables/PTH/root'
 
   mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/ggH_postBPix_MG5'
   # mc_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_22/intermediateRun3NTuples_powheg/onlyGGH_postBPix'
@@ -15,7 +15,7 @@ inputFiles:
   # bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background_222324' # Want to increase the statistics
   bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background' # Want to increase the statistics
   data_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/data_postBPix'
-  catDict_timestamp: '2025_08_04'
+  catDict_timestamp: '2025_10_31'
 
 backgroundScriptCfg:
   # Setup
@@ -25,7 +25,7 @@ backgroundScriptCfg:
   # year: '2023' # Use combined when merging all years in category (for plots)
   execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 14000 #12000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 trees2wsCfg:
@@ -94,7 +94,7 @@ signalScriptCfg_2023_preBPix:
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2023preBPix' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '25' # 50
-  massPoints: '125' #120,125,130 You can now run with a single mass point if necessary
+  massPoints: '120,125,130' #120,125,130 You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
@@ -123,7 +123,7 @@ signalScriptCfg_2023_postBPix:
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2023postBPix' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '25' # 50
-  massPoints: '125' # 120,125,130 You can now run with a single mass point if necessary
+  massPoints: '120,125,130' # 120,125,130 You can now run with a single mass point if necessary
 
   # Photon shape systematics  
   scales: 'ScaleEE,ScaleEB' # separate nuisance per year
@@ -144,7 +144,7 @@ signalScriptCfg_2023_postBPix:
 
 packaged_2023:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  massPoints: '125' # 120,125,130 You can now run with a single mass point if necessary
+  massPoints: '120,125,130' # 120,125,130 You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
   execution: 'local'
@@ -157,8 +157,8 @@ datacard_yields:
   procs: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'Run3FidXSAnalysis' # Extension for saving
   # inputWSDirMap: '2023preBPix,2023postBPix'
-  sigModelWSDir: './Models_PTH/signal' # Input signal model WS directory
-  bkgModelWSDir: './Models_PTH/background' # Input background model WS directory
+  sigModelWSDir: './Models_PTH_2023/signal' # Input signal model WS directory
+  bkgModelWSDir: './Models_PTH_2023/background' # Input background model WS directory
   bkgModelExt: 'multipdf' # Extension used when saving background model
   doSystematics: True # Include systematics calculations and add to datacard
   mergeYears: True # Merge category across years

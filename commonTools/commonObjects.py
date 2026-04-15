@@ -193,8 +193,8 @@ eft_variables = ["chg", "chb", "chw", "chwb", "chbox", "chd", "chl3", "cll1", "c
 # JLS 22th of Jan 2025: This syntax looks pretty criminal and should be improved at some point
 TwentyTwentyTwoEras = ["preEE", "postEE"]
 # TwentyTwentyTwoEras = ["preEE"]
-# TwentyTwentyThreeEras = ["preBPix", "postBPix"]
-TwentyTwentyThreeEras = ["postBPix"]
+TwentyTwentyThreeEras = ["preBPix", "postBPix"]
+# TwentyTwentyThreeEras = ["postBPix"]
 
 
 allErasMap = {
