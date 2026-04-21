@@ -386,6 +386,8 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
     variable = law.Parameter(default="", description="Variable to be used")
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
+    
+    collapse_theor_nuisance = law.Parameter(default=True, description="Prune theoretical nuisances?")
 
     bootstrap_flag = law.Parameter(default=False, description="Bootstrap flag")
     number_of_replicas = law.Parameter(default=1000, description="Number of replicas")
@@ -462,11 +464,15 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{index}/Dataframe/Datacard_{self.year}.pkl")))
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{index}/Dataframe/Datacard_{self.year}_unsymmetrized.pkl")))
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{index}/Datacard_{self.year}.txt")))
+                if (convert_boolean_string(self.collapse_theor_nuisance) == True):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{index}/Datacard_{self.year}_pruned.txt")))
             else:
                 if datacard_config['saveDataFrame']:
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}.pkl")))
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}_unsymmetrized.pkl")))
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.year}.txt")))
+                if (convert_boolean_string(self.collapse_theor_nuisance) == True):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.year}_pruned.txt")))
         else:
             if (convert_boolean_string(self.bootstrap_flag) == True) or (convert_boolean_string(self.toy_flag) == True):
                 if datacard_config['saveDataFrame']:
@@ -474,12 +480,16 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{index}/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl")))
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{index}/Datacard_{self.variable}_{self.year}.txt")))
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{index}/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
+                if (convert_boolean_string(self.collapse_theor_nuisance) == True):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{index}/Datacard_{self.variable}_{self.year}_pruned.txt")))
             else:
                 if datacard_config['saveDataFrame']:
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl")))
                     output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}_unsymmetrized.pkl")))
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}.txt")))
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
+                if (convert_boolean_string(self.collapse_theor_nuisance) == True):
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}_pruned.txt")))
         return output_paths
                 
     
@@ -645,7 +655,29 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
-                            
+                
+            # Collapse theoretical nuisances to speed up the fit.
+            if (convert_boolean_string(self.collapse_theor_nuisance) == True):
+
+                cleaned_datacard_path = os.path.join(temp_output_dir, datacard_config["output"] + "_cleaned.txt")
+                output_datacard_path = os.path.join(temp_output_dir, datacard_config["output"] + "_cleaned_collapsed.txt")
+                script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Datacard/collapse_nuisances.py")
+                arguments = [
+                    "python3",
+                    script_path,
+                    f"{cleaned_datacard_path}",
+                    f"{output_datacard_path}",
+                    ]
+
+                command = arguments
+                # print("Output:", command)
+                try:
+                    result = subprocess.run(command, check=True, text=True, capture_output=True)
+                    print("Script output:", result.stdout)
+                    print("Script executed successfully.")
+                except subprocess.CalledProcessError as e:
+                    print("Error executing script:", e.stderr)
+
             # Move the datacard to the final directory
             if self.batch_flavor == "slurm/psi":
                 if "/work" in output_dir:
@@ -668,13 +700,25 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
             
                 if "/work" in output_dir:
                     execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
-                    execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                    if (convert_boolean_string(self.collapse_theor_nuisance) == True):
+                        execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + "_pruned.txt")}'], shell=True)
+                        execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned_collapsed.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                    else:
+                        execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
                 else:
                     execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
-                    execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                    if (convert_boolean_string(self.collapse_theor_nuisance) == True):
+                        execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + "_pruned.txt")}'], shell=True)
+                        execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned_collapsed.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                    else:
+                        execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
             else:
                 execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
-                execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                if (convert_boolean_string(self.collapse_theor_nuisance) == True):
+                    execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + "_pruned.txt")}'], shell=True)
+                    execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned_collapsed.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
+                else:
+                    execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
         
         else:
             # Move the datacard to the final directory
