@@ -2,7 +2,7 @@
 
 # This config file is only for my replica approach.
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_02_replica_combinationTest/finalfits/PTH/'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_02_replica_combinationTest_run2binning/finalfits/PTH/'
 
 backgroundScriptCfg:
   # Setup

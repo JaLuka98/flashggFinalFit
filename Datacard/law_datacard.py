@@ -36,7 +36,6 @@ def convert_boolean_string(string):
         return True
     else:
         return False
-                
 
 class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     inputWSDirMap = law.Parameter(description="Map. Format: year=inputWSDir (separate years by comma)")
