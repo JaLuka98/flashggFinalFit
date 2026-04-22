@@ -302,7 +302,7 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
 
-    collapse_theor_nuisance = law.Parameter(default=False, description="Prune theoretical nuisances?")
+    collapse_theor_nuisance = law.Parameter(default=False, description="Collapse theoretical nuisances?")
 
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
@@ -366,7 +366,7 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.year}.pkl")))
             output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.year}.txt")))
             if (convert_boolean_string(self.collapse_theor_nuisance) == True):
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.year}_pruned.txt")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.year}_symmetrized.txt")))
         else:
             if datacard_config['saveDataFrame']:
                 output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Dataframe/Datacard_{self.variable}_{self.year}.pkl")))
@@ -374,7 +374,7 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
             output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}.txt")))
             output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}_unsymmetrized.txt")))
             if (convert_boolean_string(self.collapse_theor_nuisance) == True):
-                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}_pruned.txt")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir,f"Datacards/Datacard_{self.variable}_{self.year}_symmetrized.txt")))
         return output_paths
                 
     
@@ -556,14 +556,14 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
                 if "/work" in output_dir:
                     execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
                     if (convert_boolean_string(self.collapse_theor_nuisance) == True):
-                        execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + "_pruned.txt")}'], shell=True)
+                        execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + "_symmetrized.txt")}'], shell=True)
                         execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned_collapsed.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
                     else:
                         execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
                 else:
                     execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
                     if (convert_boolean_string(self.collapse_theor_nuisance) == True):
-                        execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + "_pruned.txt")}'], shell=True)
+                        execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + "_symmetrized.txt")}'], shell=True)
                         execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned_collapsed.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
                     else:
                         execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
@@ -571,7 +571,7 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
             if self.variable != '':
                 execute_command([f'mv {datacard_path} {os.path.join(output_dir, datacard_config["output"] + "_unsymmetrized.txt")}'], shell=True)
                 if (convert_boolean_string(self.collapse_theor_nuisance) == True):
-                    execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + "_pruned.txt")}'], shell=True)
+                    execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + "_symmetrized.txt")}'], shell=True)
                     execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned_collapsed.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
                 else:
                     execute_command([f'mv {os.path.join(output_dir, datacard_config["output"] + "_cleaned.txt")} {os.path.join(output_dir, datacard_config["output"] + ".txt")}'], shell=True)
