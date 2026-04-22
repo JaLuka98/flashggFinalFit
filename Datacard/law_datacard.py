@@ -302,7 +302,7 @@ class MakeDatacard(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #l
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     year = law.Parameter(default='2022', description="Year")
 
-    collapse_theor_nuisance = law.Parameter(default=True, description="Prune theoretical nuisances?")
+    collapse_theor_nuisance = law.Parameter(default=False, description="Prune theoretical nuisances?")
 
     batch_flavor = law.Parameter(default="slurm", description="Batch system to use")
     
