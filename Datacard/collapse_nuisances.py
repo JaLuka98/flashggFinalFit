@@ -84,8 +84,9 @@ def parse_entry(token: str):
         down = min(a, b)
         return (up, down)
     # symmetric
-    val = float(token)
-    return (val, val)
+    val_1 = float(token)
+    val_2 = 1 - (1 - val_1)
+    return (max(val_1, val_2), min(val_1, val_2))
 
 
 def format_variation(up: float, down: float, decimals: int = 3) -> str:
@@ -99,6 +100,8 @@ def format_variation(up: float, down: float, decimals: int = 3) -> str:
     up_s   = fmt.format(up)
     down_s = fmt.format(down)
     if up_s == down_s:
+        return up_s
+    elif float(down_s) > 1:
         return up_s
     return f"{up_s}/{down_s}"
 
@@ -123,7 +126,7 @@ def reduce_scale_column(values):
     return format_variation(max(all_ups), min(all_downs))
 
 
-def reduce_pdf_column(tokens: int) -> str:
+def reduce_pdf_column(tokens, n_rows: int) -> str:
     """
     Given a list of raw token strings (one per pdf-weight row, including "-"),
     return the combined token for CMS_hgg_pdfWeight_shape.
@@ -136,23 +139,21 @@ def reduce_pdf_column(tokens: int) -> str:
     If the result == 1.000 after formatting (negligible) → "-".
     """
     squared_sum = 0.0
-    non_zero_n_rows = 0
     for tok in tokens:
         tok = tok.strip()
         if tok == "-":
-            x = 0.0
+            x = 1.000
         else:
             # Should be a plain number like "1.003"
             x = float(tok)
-            non_zero_n_rows += 1
         squared_sum += x * x
 
-    if non_zero_n_rows == 0:
+    if n_rows == 0:
         return "-"
 
-    result = math.sqrt(squared_sum / non_zero_n_rows)
+    result = math.sqrt(squared_sum / n_rows)
     formatted = f"{result:.3f}"
-    if formatted == "1.000" or formatted == "0.000":
+    if formatted == "1.000":
         return "-"
     return formatted
 
@@ -259,6 +260,7 @@ def process_datacard(input_path: str, output_path: str):
     combined_pdf_tokens = []
 
     if pdf_rows:
+        n_pdf_rows = len(pdf_rows)
         for col in range(n_cols):
             col_raw = []
             for _, _, _, tokens in pdf_rows:
@@ -267,7 +269,7 @@ def process_datacard(input_path: str, output_path: str):
                 else:
                     col_raw.append("-")
 
-            combined_pdf_tokens.append(reduce_pdf_column(col_raw))
+            combined_pdf_tokens.append(reduce_pdf_column(col_raw, n_pdf_rows))
 
     # ── Pass 3: build the replacement lines ───────────────────────────────────
 
