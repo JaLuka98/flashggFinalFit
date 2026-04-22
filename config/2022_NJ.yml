@@ -4,8 +4,8 @@
 # Tests
 # Test Trees2WS: law run Trees2WS --variable Njets2p5 --workers 4 --output-dir /afs/cern.ch/user/n/niharrin/cernbox/PhD/Higgs/CMSSW_14_1_0_pre4/src/flashggFinalFit/law/output/test_t2w_diff/t2w --doDiffSplitting True --doSystematic True
 
-# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/NJ_RandomizeAux_separateDatasets/'
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/NJ_RandomizeAux_separateDatasets_Datacard_collapsing_test'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/NJ_RandomizeAux_separateDatasets/'
+# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/NJ_RandomizeAux_separateDatasets_Datacard_collapsing_test'
 # outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/earlyRun3/finalfits/NJ_onlyPreEE_RandomizeAux_separateDatasets_toys/'
 
 

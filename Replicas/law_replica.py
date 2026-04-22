@@ -2721,8 +2721,8 @@ class FitDataset(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflow): #(la
                 "--freezeParameters", "MH",
                 # "--freezeParameters", f"""MH,{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces']) if self.variable != "" else ",".join([f"pdfindex_{bmw}_{self.year}_13TeV" for bmw in BMW])}""",
                 "--X-rtd", "MINIMIZER_skipDiscreteIterations", # Deactivated (discussion with AT)
-                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
-                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
+                # "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                # "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 # "-D", f"{splusb_toy}:toys/toy_1",
                 # --toysFrequentist --bypassFrequentistFit
             ]
