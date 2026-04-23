@@ -17,7 +17,7 @@ inputFiles:
   # bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background_222324' # Want to increase the statistics
   bkg_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/Background/2025_10_17/background' # Want to increase the statistics
   data_src_files: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2025_09_16/intermediateRun3/data_postBPix'
-  catDict_timestamp: '2026_04_15'
+  catDict_timestamp: '2026_04_15_PTHLastBinMerged'
 
 backgroundScriptCfg:
   # Setup
