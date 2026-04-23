@@ -452,7 +452,11 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         # are expected to be consistent; cats are resolved from all years)
         bkgConfig = configs[0]["backgroundScriptCfg"]
         if bkgConfig["cats"] == "auto":
-            bkgConfig["cats"] = extractListOfCatsFromHiggsDNAAllData(all_input_paths[0])
+            if multi_year:
+                for k, year in enumerate(years):
+                    bkgConfig[f"cats_{year}"] = extractListOfCatsFromHiggsDNAAllData(all_input_paths[k])
+            else:
+                bkgConfig["cats"] = extractListOfCatsFromHiggsDNAAllData(all_input_paths[0])
 
         self.configYamlPaths    = configYamlPaths
         self.configs            = configs
@@ -528,32 +532,6 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
                 seed=self.seed,
             )
 
-        
-        # if self.multi_year:
-        #     yieldsConfig = self.configs[0]["datacard_yields"]
-        #     year_string = ",".join(self.years_list)
-        #     common_kwargs = dict(
-        #         output_dir=self.resolved_output_dir,
-        #         variable=self.variable,
-        #         years=year_string,
-        #         version=self.variable if self.variable != "" else "inclusive",
-        #         batch_flavor=self.batch_flavor,
-        #         bootstrap_flag=self.bootstrap_flag,
-        #         number_of_replicas=self.number_of_replicas,
-        #     )
-
-        #     merge_datacards = MergeDatacards(
-        #         **common_kwargs,
-        #         workflow=yieldsConfig["execution"],
-        #         slurm_partition=yieldsConfig["batchPartition"],
-        #         slurm_memory=yieldsConfig["batchMemory"],
-        #         slurm_max_runtime=yieldsConfig["batchMaxRuntime"],
-        #         htcondor_partition=yieldsConfig["batchPartition"],
-        #         htcondor_memory=yieldsConfig["batchMemory"],
-        #         htcondor_max_runtime=yieldsConfig["batchMaxRuntime"],
-        #     )
-        #     tasks["MergeDatacards"] = merge_datacards
-        # else:
         tasks["MakeDatacard"] = make_datacard_tasks
 
         tasks["Background"]   = background_tasks
@@ -574,8 +552,6 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
             background_suffix = f"_{index}"
         else:
             background_suffix = ""
-
-        cat_list = self.bkgConfig["cats"].split(",")
         
         output_data = []
 
@@ -585,6 +561,10 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
         
         # These are expected to be consistent across years — read from first config
         for i, year in enumerate(self.years_list):
+            if self.multi_year:
+                cat_list = self.bkgConfig[f"cats_{year}"].split(",")
+            else:
+                cat_list = self.bkgConfig["cats"].split(",")
             signal_model_folder_name     = self.configs[i]["datacard_yields"]["sigModelWSDir"].split("/")[-2]
             background_model_folder_name = self.configs[i]["datacard_yields"]["bkgModelWSDir"].split("/")[-2]
 
@@ -640,6 +620,7 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
                     output_data.append(os.path.join(
                         self.resolved_output_dir, "Combine", f"Datacard_{self.variable}_{year}.txt"
                     ))
+
 
         return [law.LocalFileTarget(p) for p in output_data]
 
@@ -731,29 +712,6 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
 
             _copy(background_src_path, background_dst_path)
 
-        # if self.multi_year:
-        #     if (convert_boolean_string(self.bootstrap_flag) is True) or \
-        #         (convert_boolean_string(self.toy_flag) is True):
-        #         _mkdir(os.path.join(self.resolved_output_dir, "Combine", "Datacards"))
-        #         if self.variable == "":
-        #             datacard_file         = os.path.join(self.resolved_output_dir, "Datacards", "Datacard" + background_suffix, f"Datacard_{self.years.replace(',', '_')}.txt")
-        #             destination_file      = os.path.join(self.resolved_output_dir, "Combine", "Datacards", f"Datacard_{self.years.replace(',', '_')}_{index}.txt")
-        #         else:
-        #             datacard_file         = os.path.join(self.resolved_output_dir, "Datacards", "Datacard" + background_suffix, f"Datacard_{self.variable}_{self.years.replace(',', '_')}.txt")
-        #             destination_file      = os.path.join(self.resolved_output_dir, "Combine", "Datacards", f"Datacard_{self.variable}_{self.years.replace(',', '_')}_{index}.txt")
-        #         src = datacard_file
-        #         _copy_file(src, destination_file)
-        #     else:
-        #         if self.variable == "":
-        #             datacard_file         = os.path.join(self.resolved_output_dir, "Datacards", f"Datacard_{self.years.replace(',', '_')}.txt")
-        #             destination_file      = os.path.join(self.resolved_output_dir, "Combine", f"Datacard_{self.years.replace(',', '_')}.txt")
-        #         else:
-        #             datacard_file         = os.path.join(self.resolved_output_dir, "Datacards", f"Datacard_{self.variable}_{self.years.replace(',', '_')}.txt")
-        #             destination_file      = os.path.join(self.resolved_output_dir, "Combine", f"Datacard_{self.variable}_{self.years.replace(',', '_')}.txt")
-        #         src = datacard_file
-        #         _copy_file(src, destination_file)           
-            
-        # else:
         # ── Copy per-year datacards ──────────────────────────────────────────
         if (convert_boolean_string(self.bootstrap_flag) is True) or \
         (convert_boolean_string(self.toy_flag) is True):
