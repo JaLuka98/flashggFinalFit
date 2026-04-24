@@ -63,6 +63,7 @@ int mgg_high =180;
 const int blind_low = 115;
 const int blind_high = 135;
 int nBinsForMass = 4*(mgg_high-mgg_low);
+int nBinsSidebands = 4*(mgg_high-mgg_low - (blind_high - blind_low)); // 240 instead of 320
 const char* MASS_FIT_RANGE = "low,high";
 
 RooRealVar *intLumi_ = new RooRealVar("IntLumi","hacked int lumi", 1000.);
@@ -275,7 +276,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
   // get The Chi2 value from the data
   RooPlot *plot_chi2 = mass->frame();
-  data->plotOn(plot_chi2,Binning(nBinsForMass),Name("data"),RooFit::Range(MASS_FIT_RANGE));
+  data->plotOn(plot_chi2,Binning(nBinsSidebands),Name("data"),RooFit::Range(MASS_FIT_RANGE));
 
   pdf->plotOn(plot_chi2,Name("pdf"),RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
     RooFit::Normalization(sidebandEntries,RooAbsReal::NumEvent));
@@ -287,7 +288,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
   // The first thing is to check if the number of entries in any bin is < 5 
   // if so, we don't rely on asymptotic approximations
  
-  if ((double)data->sumEntries()/nBinsForMass < 5 ){
+  if ((double)data->sumEntries()/nBinsSidebands < 5 ){
 
     std::cout << "[INFO] Running toys for GOF test " << std::endl;
     // store pre-fit params 
@@ -311,13 +312,13 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
       RooPlot *plot_t = mass->frame();
       const double toyEntries = binnedtoy->sumEntries();
-      binnedtoy->plotOn(plot_t,Binning(nBinsForMass),RooFit::Range(MASS_FIT_RANGE));
+      binnedtoy->plotOn(plot_t,Binning(nBinsSidebands),RooFit::Range(MASS_FIT_RANGE));
       pdf->plotOn(plot_t,RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
         RooFit::Normalization(toyEntries,RooAbsReal::NumEvent));
 
       double chi2_t = plot_t->chiSquare(np);
       if( chi2_t>=chi2) npass++;
-      toy_chi2.push_back(chi2_t*(nBinsForMass-np));
+      toy_chi2.push_back(chi2_t*(nBinsSidebands-np));
       delete plot_t;
     }
     std::cout << "[INFO] complete" << std::endl;
@@ -333,7 +334,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
     }
     toyhist.Draw();
 
-    TArrow lData(chi2*(nBinsForMass-np),toyhist.GetMaximum(),chi2*(nBinsForMass-np),0);
+    TArrow lData(chi2*(nBinsSidebands-np),toyhist.GetMaximum(),chi2*(nBinsSidebands-np),0);
     lData.SetLineWidth(2);
     lData.Draw();
     can->SaveAs(name.c_str());
@@ -341,9 +342,9 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
     // back to best fit 	
     params->assignValueOnly(preParams);
   } else {
-    prob = TMath::Prob(chi2*(nBinsForMass-np),nBinsForMass-np);
+    prob = TMath::Prob(chi2*(nBinsSidebands-np),nBinsSidebands-np);
   }
-  std::cout << "[INFO] Chi2 in Observed =  " << chi2*(nBinsForMass-np) << std::endl;
+  std::cout << "[INFO] Chi2 in Observed =  " << chi2*(nBinsSidebands-np) << std::endl;
   std::cout << "[INFO] p-value  =  " << prob << std::endl;
   delete pdf;
   return prob;
@@ -355,7 +356,7 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   // Chi2 taken only from the sidebands 
   const double sidebandEntries = data->sumEntries();
   RooPlot *plot_chi2 = mass->frame();
-  data->plotOn(plot_chi2,Binning(nBinsForMass),RooFit::Range(MASS_FIT_RANGE));
+  data->plotOn(plot_chi2,Binning(nBinsSidebands),RooFit::Range(MASS_FIT_RANGE));
   pdf->plotOn(plot_chi2,RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
     RooFit::Normalization(sidebandEntries,RooAbsReal::NumEvent));
 
@@ -384,7 +385,7 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   TLatex *lat = new TLatex();
   lat->SetNDC();
   lat->SetTextFont(42);
-  lat->DrawLatex(0.1,0.92,Form("#chi^{2} = %.3f, Prob = %.2f, Fit Status = %d ",chi2*(nBinsForMass-np),*prob,status));
+  lat->DrawLatex(0.1,0.92,Form("#chi^{2} = %.3f, Prob = %.2f, Fit Status = %d ",chi2*(nBinsSidebands-np),*prob,status));
   canv->SaveAs(name.c_str());
   if (name.size() > 4 && name.substr(name.size() - 4) == ".pdf") {
     std::string pngName = name.substr(0, name.size() - 4) + ".png";
