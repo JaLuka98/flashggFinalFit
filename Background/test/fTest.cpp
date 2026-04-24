@@ -79,16 +79,30 @@ struct GoFResult {
   int ndof;
 };
 
+bool isSidebandPoint(double x) {
+  return ((x >= mgg_low) && (x < blind_low)) || ((x >= blind_high) && (x <= mgg_high));
+}
+
 GoFResult computePlotGoF(RooPlot *plot, const char *pdfName, const char *dataName, int nFitParams) {
   GoFResult result;
   // RooPlot::chiSquare(...) returns the reduced chi2 = chi2 / ndof.
   result.chi2Red = plot->chiSquare(pdfName, dataName, nFitParams);
-  // RooHist::GetN() gives the number of data points actually plotted in the
-  // selected sideband ranges, so we do not hard-code the expected sideband bins.
-  // This keeps the absolute chi2 and p-value consistent even if RooFit drops or
-  // merges plotted points internally.
+  // Count only points whose x-values lie in the sideband windows. In practice
+  // the RooHist attached to the plot can still carry graph points across the
+  // full mass range even when the visible fit is restricted to "low,high".
+  // Using the sideband x positions avoids hard-coding 240 while keeping the
+  // ndof tied to the actual sideband points entering the plotted GOF.
   RooHist *hData = dynamic_cast<RooHist*>(plot->findObject(dataName));
-  result.nPoints = hData ? hData->GetN() : nBinsSidebands;
+  result.nPoints = 0;
+  if (hData) {
+    for (int iPoint = 0; iPoint < hData->GetN(); ++iPoint) {
+      double x = 0.;
+      double y = 0.;
+      hData->GetPoint(iPoint, x, y);
+      if (isSidebandPoint(x)) result.nPoints++;
+    }
+  }
+  if (result.nPoints <= 0) result.nPoints = nBinsSidebands;
   result.nFitParams = nFitParams;
   result.ndof = result.nPoints - result.nFitParams;
   if (result.ndof > 0) {
@@ -417,8 +431,9 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   TLatex *lat = new TLatex();
   lat->SetNDC();
   lat->SetTextFont(42);
-  lat->DrawLatex(0.1,0.92,Form("#chi^{2}/dof = %.3f / %d, Prob = %.2f, Fit Status = %d ",
-    gof.chi2Abs, gof.ndof, *prob, status));
+  lat->SetTextSize(0.03);
+  lat->DrawLatex(0.1,0.92,Form("#chi^{2}/dof = %.3f (%.3f / %d), Prob = %.2f, Fit Status = %d ",
+    gof.chi2Red, gof.chi2Abs, gof.ndof, *prob, status));
   canv->SaveAs(name.c_str());
   if (name.size() > 4 && name.substr(name.size() - 4) == ".pdf") {
     std::string pngName = name.substr(0, name.size() - 4) + ".png";
