@@ -70,6 +70,40 @@ RooRealVar *intLumi_ = new RooRealVar("IntLumi","hacked int lumi", 1000.);
 
 TRandom3 *RandomGen = new TRandom3();
 
+struct GoFResult {
+  double chi2Red;
+  double chi2Abs;
+  double prob;
+  int nPoints;
+  int nFitParams;
+  int ndof;
+};
+
+GoFResult computePlotGoF(RooPlot *plot, const char *pdfName, const char *dataName, int nFitParams) {
+  GoFResult result;
+  // RooPlot::chiSquare(...) returns the reduced chi2 = chi2 / ndof.
+  result.chi2Red = plot->chiSquare(pdfName, dataName, nFitParams);
+  // RooHist::GetN() gives the number of data points actually plotted in the
+  // selected sideband ranges, so we do not hard-code the expected sideband bins.
+  // This keeps the absolute chi2 and p-value consistent even if RooFit drops or
+  // merges plotted points internally.
+  RooHist *hData = dynamic_cast<RooHist*>(plot->findObject(dataName));
+  result.nPoints = hData ? hData->GetN() : nBinsSidebands;
+  result.nFitParams = nFitParams;
+  result.ndof = result.nPoints - result.nFitParams;
+  if (result.ndof > 0) {
+    result.chi2Abs = result.chi2Red * result.ndof;
+    result.prob = TMath::Prob(result.chi2Abs, result.ndof);
+  } else {
+    result.chi2Abs = 0.;
+    result.prob = 0.;
+    std::cerr << "[WARNING] computePlotGoF: non-positive ndof = "
+              << result.ndof << " (nPoints = " << result.nPoints
+              << ", nFitParams = " << result.nFitParams << ")" << std::endl;
+  }
+  return result;
+}
+
 RooAbsPdf* getPdf(PdfModelBuilder &pdfsModel, string type, int order, const char* ext=""){
   
   if (type=="Bernstein") return pdfsModel.getBernstein(Form("%s_bern%d",ext,order),order); 
@@ -262,7 +296,7 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
 
 }
 
-double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std::string name){
+double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std::string name, GoFResult *gofOut = nullptr){
 
   double prob;
   int ntoys = 500;
@@ -276,13 +310,13 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
   // get The Chi2 value from the data
   RooPlot *plot_chi2 = mass->frame();
-  data->plotOn(plot_chi2,Binning(nBinsSidebands),Name("data"),RooFit::Range(MASS_FIT_RANGE));
+  data->plotOn(plot_chi2, Binning(nBinsForMass), Name("data"), RooFit::Range(MASS_FIT_RANGE));
 
   pdf->plotOn(plot_chi2,Name("pdf"),RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
     RooFit::Normalization(sidebandEntries,RooAbsReal::NumEvent));
   int np = pdf->getParameters(*data)->getSize();
 
-  double chi2 = plot_chi2->chiSquare("pdf","data",np);
+  GoFResult gof = computePlotGoF(plot_chi2, "pdf", "data", np);
   std::cout << "[INFO] Calculating GOF for pdf " << pdf->GetName() << ", using " <<np << " fitted parameters" <<std::endl;
 
   // The first thing is to check if the number of entries in any bin is < 5 
@@ -312,14 +346,14 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
       RooPlot *plot_t = mass->frame();
       const double toyEntries = binnedtoy->sumEntries();
-      binnedtoy->plotOn(plot_t,Binning(nBinsSidebands),RooFit::Range(MASS_FIT_RANGE));
-      pdf->plotOn(plot_t,RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
+      binnedtoy->plotOn(plot_t,Binning(nBinsForMass),Name("toy_data"),RooFit::Range(MASS_FIT_RANGE));
+      pdf->plotOn(plot_t,Name("toy_pdf"),RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
         RooFit::Normalization(toyEntries,RooAbsReal::NumEvent));
-
-      double chi2_t = plot_t->chiSquare(np);
-      if( chi2_t>=chi2) npass++;
-      toy_chi2.push_back(chi2_t*(nBinsSidebands-np));
+      GoFResult toyGof = computePlotGoF(plot_t, "toy_pdf", "toy_data", np);
+      if (toyGof.chi2Abs >= gof.chi2Abs) npass++;
+      toy_chi2.push_back(toyGof.chi2Abs);
       delete plot_t;
+      delete binnedtoy;
     }
     std::cout << "[INFO] complete" << std::endl;
     prob = (double)npass / ntoys;
@@ -334,7 +368,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
     }
     toyhist.Draw();
 
-    TArrow lData(chi2*(nBinsSidebands-np),toyhist.GetMaximum(),chi2*(nBinsSidebands-np),0);
+    TArrow lData(gof.chi2Abs,toyhist.GetMaximum(),gof.chi2Abs,0);
     lData.SetLineWidth(2);
     lData.Draw();
     can->SaveAs(name.c_str());
@@ -342,10 +376,16 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
     // back to best fit 	
     params->assignValueOnly(preParams);
   } else {
-    prob = TMath::Prob(chi2*(nBinsSidebands-np),nBinsSidebands-np);
+    prob = gof.prob;
   }
-  std::cout << "[INFO] Chi2 in Observed =  " << chi2*(nBinsSidebands-np) << std::endl;
-  std::cout << "[INFO] p-value  =  " << prob << std::endl;
+  std::cout << "[INFO] nPoints = " << gof.nPoints << std::endl;
+  std::cout << "[INFO] nFitParams = " << gof.nFitParams << std::endl;
+  std::cout << "[INFO] ndof = " << gof.ndof << std::endl;
+  std::cout << "[INFO] chi2/ndof = " << gof.chi2Red << std::endl;
+  std::cout << "[INFO] Chi2 in Observed = " << gof.chi2Abs << std::endl;
+  std::cout << "[INFO] p-value = " << prob << std::endl;
+  if (gofOut) *gofOut = gof;
+  delete plot_chi2;
   delete pdf;
   return prob;
 
@@ -353,17 +393,9 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
 void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector<string> flashggCats_, int status, double *prob){
   
-  // Chi2 taken only from the sidebands 
+  GoFResult gof;
+  *prob = getGoodnessOfFit(mass,pdf,data,name,&gof);
   const double sidebandEntries = data->sumEntries();
-  RooPlot *plot_chi2 = mass->frame();
-  data->plotOn(plot_chi2,Binning(nBinsSidebands),RooFit::Range(MASS_FIT_RANGE));
-  pdf->plotOn(plot_chi2,RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
-    RooFit::Normalization(sidebandEntries,RooAbsReal::NumEvent));
-
-  int np = pdf->getParameters(*data)->getSize()+1; //Because this pdf has no extend
-  double chi2 = plot_chi2->chiSquare(np);
- 
-  *prob = getGoodnessOfFit(mass,pdf,data,name);
   RooPlot *plot = mass->frame();
   mass->setRange("unblindReg_1",mgg_low,115);
   mass->setRange("unblindReg_2",135,mgg_high);
@@ -385,7 +417,8 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   TLatex *lat = new TLatex();
   lat->SetNDC();
   lat->SetTextFont(42);
-  lat->DrawLatex(0.1,0.92,Form("#chi^{2} = %.3f, Prob = %.2f, Fit Status = %d ",chi2*(nBinsSidebands-np),*prob,status));
+  lat->DrawLatex(0.1,0.92,Form("#chi^{2}/dof = %.3f / %d, Prob = %.2f, Fit Status = %d ",
+    gof.chi2Abs, gof.ndof, *prob, status));
   canv->SaveAs(name.c_str());
   if (name.size() > 4 && name.substr(name.size() - 4) == ".pdf") {
     std::string pngName = name.substr(0, name.size() - 4) + ".png";
@@ -397,6 +430,7 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
 
   delete canv;
   delete lat;
+  delete plot;
 }
 void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet *data, string name, vector<string> flashggCats_, int cat, int bestFitPdf=-1){
   
