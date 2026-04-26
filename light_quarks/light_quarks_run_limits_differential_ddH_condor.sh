@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# Submit the 2024 PTH differential kappa_d expected NLL scan to Condor.
+#
+# Build the workspace first with:
+#   bash light_quarks/light_quarks_t2w_differential_ddH.sh
+#
+# Usage:
+#   bash light_quarks/light_quarks_run_limits_differential_ddH_condor.sh
+
+set -e
+
+FLASHGG_DIR=/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/final_fits_test_folder/flashggFinalFit
+CMSSW_SRC=/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src
+
+PTH_OUTPUT=${FLASHGG_DIR}/outputs_run2_bins_20_04_2026/output_2024_PTH_htcondor_out_fiducial
+WORKSPACE=${PTH_OUTPUT}/Combine/LightQuarks_kappad_Datacard_PTH_2024.root
+OUTPUT_DIR=${PTH_OUTPUT}/LightQuarks_limits_kappad_PTH_condor
+SCAN_RANGE="kappa_d=-3,3"
+SCAN_POINTS=21
+SPLIT_POINTS=1
+MASS=125.38
+JOB_FLAVOUR=workday
+TASK_NAME=LightQuarks_2024_PTH_kappad_scan
+COMBINE_NAME=LightQuarks_2024_PTH_kappad_expected
+MERGED_OUTPUT=merged_LightQuarks_2024_PTH_kappad_expected.root
+
+if [ ! -f "${WORKSPACE}" ]; then
+    echo "ERROR: workspace not found:"
+    echo "  ${WORKSPACE}"
+    echo "Build it first with:"
+    echo "  bash light_quarks/light_quarks_t2w_differential_ddH.sh"
+    exit 1
+fi
+
+cd ${CMSSW_SRC}
+export VO_CMS_SW_DIR="/cvmfs/cms.cern.ch"
+source ${VO_CMS_SW_DIR}/cmsset_default.sh
+cmsenv
+
+cd ${FLASHGG_DIR}
+
+mkdir -p ${OUTPUT_DIR}
+cd ${OUTPUT_DIR}
+
+echo "Using workspace: ${WORKSPACE}"
+echo "Output dir:      ${OUTPUT_DIR}"
+echo "Scan range:      ${SCAN_RANGE}"
+echo "Scan points:     ${SCAN_POINTS}"
+echo "Split points:    ${SPLIT_POINTS}"
+echo "Condor flavour:  ${JOB_FLAVOUR}"
+echo ""
+echo "Submitting split ddH grid scan to Condor..."
+
+combineTool.py -M MultiDimFit \
+    ${WORKSPACE} \
+    --algo grid \
+    --points ${SCAN_POINTS} \
+    --alignEdges 1 \
+    --split-points ${SPLIT_POINTS} \
+    --setParameterRanges ${SCAN_RANGE} \
+    --setParameters kappa_d=0 \
+    --redefineSignalPOIs kappa_d \
+    -t -1 \
+    -m ${MASS} \
+    --saveNLL \
+    --cminDefaultMinimizerStrategy 0 \
+    --cminApproxPreFitTolerance 0.01 \
+    --name ${COMBINE_NAME} \
+    --job-mode condor \
+    --task-name ${TASK_NAME} \
+    --sub-opts='+JobFlavour = "'${JOB_FLAVOUR}'"'
+
+echo ""
+echo "Submitted. Monitor jobs with:"
+echo "  condor_q"
+echo ""
+echo "After all jobs finish, merge outputs with:"
+echo "  cd ${OUTPUT_DIR}"
+echo "  hadd -f ${MERGED_OUTPUT} higgsCombine${COMBINE_NAME}.POINTS.*.MultiDimFit.mH${MASS}.root"
+echo ""
+echo "Then plot with:"
+echo "  python3 ${FLASHGG_DIR}/light_quarks/plot_kappaq_scan.py --input ${OUTPUT_DIR}/${MERGED_OUTPUT} --output-dir ${OUTPUT_DIR} --poi kappa_d"
+set +e
