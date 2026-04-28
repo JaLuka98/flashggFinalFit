@@ -2181,9 +2181,10 @@ class RandomizeGlobalObs(Task, SlurmWorkflow, HTCondorWorkflow, law.LocalWorkflo
             tasks["AsimovFirstStep"] = AsimovFirstStep(output_dir=self.resolved_output_dir, variable=self.variable, year=self.years_list[0], version=self.variable if self.variable != "" else "inclusive", workflow=SplusB_config["execution"], batch_flavor=self.batch_flavor, slurm_partition=SplusB_config['batchPartition'], slurm_memory=SplusB_config['batchMemory'], slurm_max_runtime=SplusB_config['batchMaxRuntime'], htcondor_partition=SplusB_config['batchPartition'], htcondor_memory=SplusB_config['batchMemory'], htcondor_max_runtime=SplusB_config['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, starting_value=self.starting_value, toy_flag=self.toy_flag)
 
         if convert_boolean_string(self.bootstrap_flag) == True:
-            fitConfig = self.configs[-1]["combine_fit"]
+            # fitConfig = self.configs[-1]["combine_fit"]
+            t2wsConfig = self.configs[-1]["text2workspace"]
 
-            tasks["RunText2Workspace"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, years=self.years, version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag)
+            tasks["RunText2Workspace"] = RunText2Workspace(output_dir=self.resolved_output_dir, variable=self.variable, years=self.years, version=self.variable if self.variable != "" else "inclusive", workflow=t2wsConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=t2wsConfig['batchPartition'], slurm_memory=t2wsConfig['batchMemory'], slurm_max_runtime=t2wsConfig['batchMaxRuntime'], htcondor_partition=t2wsConfig['batchPartition'], htcondor_memory=t2wsConfig['batchMemory'], htcondor_max_runtime=t2wsConfig['batchMaxRuntime'], seed=self.seed, number_of_replicas=self.number_of_replicas, bootstrap_flag=self.bootstrap_flag, toy_flag=self.toy_flag)
 
         return tasks
     
