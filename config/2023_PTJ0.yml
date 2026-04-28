@@ -202,6 +202,12 @@ datacard_clean:
   symmetrizeNuisance: 'CMS_hgg_SigmaEOverEShift,CMS_hgg_scale_0_shape,CMS_hgg_scale_1_shape,CMS_hgg_scale_3_shape' # Symmetrizes asymmetric nuisance. Enter in the format nuisance1,nuisance2,nuisance3,etc.
   verbose: False # Spit out all the cleaning being done
 
+text2workspace:
+  execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
 combine_fit:
   asimov_numPoints: 200 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 

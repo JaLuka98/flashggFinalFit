@@ -189,6 +189,12 @@ combine_SplusB_toys:
   batchMemory: 11000 # Slurm memory to use for job submission
   batchMaxRuntime: "00:50:00" # Slurm max runtime to use
 
+text2workspace:
+  execution: 'slurm'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
 combine_fit:
   asimov_numPoints: 100 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
