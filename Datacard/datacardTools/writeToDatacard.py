@@ -78,17 +78,6 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
     if s['mode'] != 'other':
       if outputNuisanceExtMap[s['mode']] != '':
         stitle += "_%s"%outputNuisanceExtMap[s['mode']]
-    # Hard-coded split for Zmmg scale nuisances:
-    # correlate 2022 and 2023 with each other, but keep 2024 separate.
-    if s['title'] in ['ScaleEBZmmg', 'ScaleEEZmmg']:
-      years = options.years.split(",")
-      if any(year.startswith("2022") or year.startswith("2023") for year in years):
-        lsyst = "%-70s  param    %-6s %-6s"%(f"{stitle}_2022_2023",s['mean'],s['sigma'])
-        f.write("%s\n"%lsyst)
-      if any(year.startswith("2024") for year in years):
-        lsyst = "%-70s  param    %-6s %-6s"%(f"{stitle}_2024",s['mean'],s['sigma'])
-        f.write("%s\n"%lsyst)
-      return True
     # If not correlated: separate nuisance per year
     if s['mode'] in ['scales','smears']:
       for year in options.years.split(","):

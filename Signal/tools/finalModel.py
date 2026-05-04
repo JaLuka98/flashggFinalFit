@@ -216,21 +216,12 @@ class FinalModel:
             sName = "%s_%s"%(systOpts[0],outputNuisanceExtMap[sType])
           else:
             sName = systOpts[0]
-          nuisanceName = sName
-
-          # Hard-coded split for Zmmg scale nuisances:
-          # correlate 2022 and 2023 with each other, but keep 2024 separate.
-          if (sType == 'scalesCorr') and (sName in ['ScaleEBZmmg', 'ScaleEEZmmg']):
-            if self.year.startswith("2022") or self.year.startswith("2023"):
-              nuisanceName = f"{sName}_2022_2023"
-            elif self.year.startswith("2024"):
-              nuisanceName = f"{sName}_2024"
 
           # Extract constant values and make nuisance
           if sType == 'scalesGlobal': cMean, cSigma, cRate = 0.,0.,0.
           else: cMean, cSigma, cRate = r["%s_mean"%sName].values[0], r["%s_sigma"%sName].values[0], r["%s_rate"%sName].values[0]
           sOpts = systOpts[1:] if len(systOpts) > 1 else []
-          self.makeNuisance("%s%s"%(nuisanceName,sExt),cMean,cSigma,cRate,sType,sOpts)
+          self.makeNuisance("%s%s"%(sName,sExt),cMean,cSigma,cRate,sType,sOpts)
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Function to get RV fraction func
