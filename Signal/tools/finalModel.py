@@ -38,6 +38,14 @@ def getBR(_SM,_MHVar,_mh,_dm):
   _MHVar.setVal(_mh)
   return _SM.modelBuilder.out.function("SM_BR_%s"%_dm).getVal()
 
+def isZmmgScale2022Or2023Label(year):
+  year = str(year).strip()
+  return year.startswith("2022") or year.startswith("2023") or year.startswith("2223")
+
+def isZmmgScale2024Label(year):
+  year = str(year).strip()
+  return year.startswith("2024")
+
 # Function to initialise XS values from combine
 def initialiseXSBR():
   options=dummy_options()
@@ -221,9 +229,9 @@ class FinalModel:
           # Hard-coded split for Zmmg scale nuisances:
           # correlate 2022 and 2023 with each other, but keep 2024 separate.
           if (sType == 'scalesCorr') and (sName in ['ScaleEBZmmg', 'ScaleEEZmmg']):
-            if self.year.startswith("2022") or self.year.startswith("2023"):
+            if isZmmgScale2022Or2023Label(self.year):
               nuisanceName = f"{sName}_2022_2023"
-            elif self.year.startswith("2024"):
+            elif isZmmgScale2024Label(self.year):
               nuisanceName = f"{sName}_2024"
 
           # Extract constant values and make nuisance
