@@ -281,7 +281,10 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 aset = make_argset(ws,varNames)
 
                 # Convert tree to RooDataset and add to workspace
+                oldStorageType = ROOT.RooAbsData.getDefaultStorageType()
+                ROOT.RooAbsData.setDefaultStorageType(ROOT.RooAbsData.Tree)
                 d = ROOT.RooDataSet(dName,dName,aset,'weight')
+                ROOT.RooAbsData.setDefaultStorageType(oldStorageType)
                 
                 # Loop over events in dataframe and add entry
                 for row in df[mask][varNames].to_numpy():
