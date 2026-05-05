@@ -178,7 +178,7 @@ for mode,pois in modes.items():
         label_size = 0.06
       elif mode.count("NJ"):
         label_size = 0.06
-      elif mode.count("ptJ0"):
+      elif mode.count("PTJ0"):
         label_size = 0.06
       else:
         label_size = 0.03

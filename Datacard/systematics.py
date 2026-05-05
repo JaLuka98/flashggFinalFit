@@ -153,12 +153,23 @@ for i in range(1,101): theory_systematics.append( {'name':'weight_LHEPd_%g'%i, '
 # correlateAcrossYears = -1 : partially correlated
 
 experimental_systematics = [
-                # Updated luminosity partial-correlation scheme: 13/5/21 (recommended simplified nuisances)
+                ### RUN 2 Updated luminosity partial-correlation scheme: 13/5/21 (recommended simplified nuisances)
                 #{'name':'lumi_13TeV_Uncorrelated','title':'lumi_13TeV_Uncorrelated','type':'constant','prior':'lnN','correlateAcrossYears':0,'value':{'2016':'1.010','2017':'1.020','2018':'1.015'}},
                 #{'name':'lumi_13TeV_Correlated','title':'lumi_13TeV_Correlated','type':'constant','prior':'lnN','correlateAcrossYears':-1,'value':{'2016':'1.006','2017':'1.009','2018':'1.020'}},
                 #{'name':'lumi_13TeV_Correlated_1718','title':'lumi_13TeV_Correlated_1718','type':'constant','prior':'lnN','correlateAcrossYears':-1,'value':{'2016':'-','2017':'1.006','2018':'1.002'}},
                 # {'name':'lumi_13p6TeV_2022','title':'lumi_13p6TeV_2022','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':"1.014"},
-                {'name':'lumi_13p6TeV','title':'lumi_13p6TeV','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':{"2022preEE": "1.014", "2022postEE": "1.014", "2022": "1.014", "2023preBPix": "1.013", "2023postBPix": "1.013", "2023": "1.013", "2024": "1.016", "2024all": "1.016"}},
+                ### RUN 3
+                ## Single year scheme (no correlations between the years)
+                # {'name':'lumi_13p6TeV','title':'lumi_13p6TeV','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':{"2022preEE": "1.014", "2022postEE": "1.014", "2022": "1.014", "2023preBPix": "1.013", "2023postBPix": "1.013", "2023": "1.013", "2024": "1.016", "2024all": "1.016"}},
+                # Run-3 correlated luminosity scheme (reduction method), c.f. https://twiki.cern.ch/twiki/bin/viewauth/CMS/LumiRecommendationsRun3#Correlations_between_years_and_c
+                # If you only include a single year, use the lumi_13p6TeV nuisance
+                # The scheme should be only used if you are doing 22+23 or 22+23+24. For other combinations, see the link above
+                # If you use 22+23, you can comment out lumi_3 (otherwise you will have empty dashes in the datacard, which is also not a big problem)
+                # Note: If you want to have a result for multiple years with combinedCards, you should prepare the individual datacards with the following lines
+                {'name':'lumi_1','title':'lumi_1','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':{"2022preEE": "1.0138", "2022postEE": "1.0138", "2022": "1.0138", "2023preBPix": "1.0017", "2023postBPix": "1.0017", "2023": "1.0017", "2024": "1.0020"}},
+                {'name':'lumi_2','title':'lumi_2','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':{"2023preBPix": "1.0127", "2023postBPix": "1.0127", "2023": "1.0127", "2024": "1.0068"}},
+                #{'name':'lumi_3','title':'lumi_3','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':{"2024": "1.0144"}},
+                ### Other experimental nuisances
                 {'name':'weight_Pileup','title':'CMS_hgg_PileupWeight','type':'factory','prior':'lnN','correlateAcrossYears':1},
                 {'name':'weight_TriggerSF','title':'CMS_hgg_TriggerWeight','type':'factory','prior':'lnN','correlateAcrossYears':1},
                 {'name':'weight_ElectronVetoSF','title':'CMS_hgg_ElectronVetoSF','type':'factory','prior':'lnN','correlateAcrossYears':0},
