@@ -326,6 +326,8 @@ def makeSplusBPlot(workspace,hD,hSB,hB,hS,hDr,hBr,hSr,cat,options,dB=None,reduce
 
   # Save canvas
   canv.Update()
-  canv.SaveAs("./SplusBModels%s/%s_%s_%s.png"%(options.ext,options.ext,cat,options.xvar.split(",")[0]))
-  canv.SaveAs("./SplusBModels%s/%s_%s_%s.pdf"%(options.ext,options.ext,cat,options.xvar.split(",")[0]))
+  ext_label = options.ext.lstrip("_")
+  prefix = "%s_" % ext_label if ext_label else ""
+  canv.SaveAs("./SplusBModels%s/%s%s_%s.png"%(options.ext,prefix,cat,options.xvar.split(",")[0]))
+  canv.SaveAs("./SplusBModels%s/%s%s_%s.pdf"%(options.ext,prefix,cat,options.xvar.split(",")[0]))
   #raw_input("Press any key to continue...")
