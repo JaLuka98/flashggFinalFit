@@ -30,6 +30,11 @@ for param in data['params']:
       poivals = param[poi]
       poisCorrected[poi] = 0.5*( poivals[0]+poivals[2] ) # Midpoint of up and down variation
 
+if len(poisCorrected) == 0:
+  print(" --> [WARNING] Frozen parameter %s not found in impacts json. Using POI central values."%opt.frozenParam)
+  for poi in data['POIs']:
+    poisCorrected[poi['name']] = poi['fit'][1]
+
 # Correct values in json
 POICorrected = []
 for poi in data['POIs']:
