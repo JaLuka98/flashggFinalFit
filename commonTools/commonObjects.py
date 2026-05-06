@@ -126,8 +126,8 @@ production_XS = {
     "VHto2G": 2.3781,
     "ttHtoGG": 0.5638,
     "ttHto2G": 0.5638,
-    "bbHtoGG": 0.49,
-    "bbHto2G": 0.49,
+    "bbHtoGG": 0.52218,
+    "bbHto2G": 0.52218,
 }
 
 short_production_modes = ["ggh", "vbf", "vh", "tth", "bbh"]
