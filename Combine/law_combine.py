@@ -2432,12 +2432,18 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             set_param_string = f"{base_param_string},{pdfIdx}"
 
         if self.variable == '':
+            exclude_expr = config.get("combine_impacts", {}).get("exclude", "")
+            named_params = _list_modelconfig_nuisances(datacard_path, ["r"], exclude_expr=exclude_expr)
+            if not named_params:
+                raise RuntimeError(f"No nuisance parameters found for impacts in {datacard_path}")
             arguments = [
                 "combineTool.py",
                 "-M", "Impacts",
                 "-d", datacard_path,
+                "--freezeParameters", "MH",
                 "-m", "125.38",
-                "-o", "impacts/impacts.json"
+                "-o", "impacts/impacts.json",
+                "--named", ",".join(named_params),
             ]
             if set_param_string is not None:
                 arguments.extend(["--setParameters", set_param_string])
@@ -2449,6 +2455,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
 
             arguments = [
                 "python3",
@@ -2465,6 +2472,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
                 
             arguments = [
                 "plotImpacts.py",
@@ -2480,6 +2488,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
         else:
             arguments = [
                 "combineTool.py",
