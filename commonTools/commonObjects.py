@@ -128,8 +128,8 @@ production_XS = {
     "VHto2G": 2.3781,
     "ttHtoGG": 0.5638,
     "ttHto2G": 0.5638,
-    "bbHtoGG": 0.49,
-    "bbHto2G": 0.49,
+    "bbHtoGG": 0.52218,
+    "bbHto2G": 0.52218,
 }
 
 short_production_modes = ["ggh", "vbf", "vh", "tth", "bbh"]
@@ -160,12 +160,20 @@ conversionTable_ = {
 # List of all jet-related variables. Variables listed here will get the CMS_scale_j and CMS_res_j uncertainty in the datacard step.
 jetVariables = [
     "NJ",
-    "NJ_pt30_absEta2p5",
     "PTJ0",
-    "PTJ0_pt30_absEta2p5",
     "YJ0",
-    "AbsPhiHJ0",
-    "AbsYHJ0"
+    "NBJet",
+    "DYHJ0",
+    "TauJC",
+    "PTJ1",
+    "YJ1",
+    "YJ0",
+    "DPhiHJ0",
+    "DPhiJ0J1",
+    "DPhiHJ0J1",
+    "DEtaJ0J1H",
+    "MassJ0J1",
+    "EtaJ0J1"
 ]
 
 differentialProcTable_ = {
@@ -192,15 +200,17 @@ differentialProcTable_ = {
         (119, "PTH_0p0_10000p0_out")
     ],
     "rapidity": [
-        (20, "YH_0p0_0p1_in"),
-        (21, "YH_0p1_0p2_in"),
-        (22, "YH_0p2_0p3_in"),
-        (23, "YH_0p3_0p45_in"),
-        (24, "YH_0p45_0p6_in"),
-        (25, "YH_0p6_0p75_in"),
-        (26, "YH_0p75_0p9_in"),
-        (27, "YH_0p9_2p5_in"),
-        (28, "YH_0p0_2p5_out")
+        (20, "YH_0p0_0p15_in"),
+        (21, "YH_0p15_0p3_in"),
+        (22, "YH_0p3_0p45_in"),
+        (23, "YH_0p45_0p6_in"),
+        (24, "YH_0p6_0p75_in"),
+        (25, "YH_0p75_0p9_in"),
+        (26, "YH_0p9_1p2_in"),
+        (27, "YH_1p2_1p6_in"),
+        (28, "YH_1p6_2p0_in"),
+        (29, "YH_2p0_2p5_in"),
+        (120, "YH_0p0_2p5_out")
     ],
     "NJ": [
         (30, "NJ_0p0_1p0_in"),
@@ -410,7 +420,7 @@ BMW = ['cat0', 'cat1', 'cat2']
 variableBins = {
     "PTH": ["0p0_5p0","5p0_10p0","10p0_15p0","15p0_20p0","20p0_25p0","25p0_30p0","30p0_35p0","35p0_45p0","45p0_60p0","60p0_80p0","80p0_100p0","100p0_120p0","120p0_140p0","140p0_170p0","170p0_200p0","200p0_250p0","250p0_350p0","350p0_450p0","450p0_10000p0"],
     "NJ": ["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"],
-    "rapidity": ["0p0_0p1", "0p1_0p2", "0p2_0p3", "0p3_0p45", "0p45_0p6", "0p6_0p75", "0p75_0p9", "0p9_2p5"],
+    "rapidity": ["0p0_0p15", "0p15_0p3", "0p3_0p45", "0p45_0p6", "0p6_0p75", "0p75_0p9", "0p9_1p2", "1p2_1p6", "1p6_2p0", "2p0_2p5"],
     "PTJ0": ["m10000p0_30p0", "30p0_40p0", "40p0_55p0", "55p0_75p0", "75p0_95p0", "95p0_120p0", "120p0_150p0", "150p0_200p0", "200p0_10000p0"],
     "DPhiJ0J1": ["m10000p0_m3p1416", "m3p1416_m2p0944", "m2p0944_m1p0472", "m1p0472_0p0", "0p0_1p0472", "1p0472_2p0944", "2p0944_3p1416"],
     "PTHvsDPhiJ0J1": ["0p0_35p0_m3p1416_m1p5708", "0p0_35p0_m1p5708_0p0", "0p0_35p0_0p0_1p5708", "0p0_35p0_1p5708_3p1416", "35p0_80p0_m3p1416_m1p5708", "35p0_80p0_m1p5708_0p0", "35p0_80p0_0p0_1p5708", "35p0_80p0_1p5708_3p1416", "80p0_150p0_m3p1416_m1p5708", "80p0_150p0_m1p5708_0p0", "80p0_150p0_0p0_1p5708", "80p0_150p0_1p5708_3p1416", "150p0_300p0_m3p1416_m1p5708", "150p0_300p0_m1p5708_0p0", "150p0_300p0_0p0_1p5708", "150p0_300p0_1p5708_3p1416", "300p0_10000p0_m3p1416_m1p5708", "300p0_10000p0_m1p5708_0p0", "300p0_10000p0_0p0_1p5708", "300p0_10000p0_1p5708_3p1416"],
