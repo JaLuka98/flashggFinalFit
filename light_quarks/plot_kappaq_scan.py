@@ -79,9 +79,9 @@ def parse_args():
     )
     parser.add_argument(
         '--poi',
-        choices=['auto', 'kappa_q', 'kappa_u', 'kappa_d', 'kappa_q_sq'],
+        choices=['auto', 'kappa_q', 'kappa_s', 'kappa_u', 'kappa_d', 'kappa_q_sq'],
         default='auto',
-        help='POI branch to plot. auto tries kappa_q, kappa_u, kappa_d, then kappa_q_sq.',
+        help='POI branch to plot. auto tries kappa_q, kappa_s, kappa_u, kappa_d, then kappa_q_sq.',
     )
     parser.add_argument(
         '--cms-label',
@@ -145,16 +145,6 @@ def input_files_for_scan(path):
     if not os.path.exists(path):
         sys.exit('ERROR: ROOT file not found:\n  %s' % path)
 
-    base = os.path.basename(path)
-    if base.startswith('merged_'):
-        split_files = sorted(glob.glob(os.path.join(os.path.dirname(path), 'higgsCombine*.POINTS.*.root')))
-        if split_files:
-            return split_files
-        files = sorted(glob.glob(os.path.join(os.path.dirname(path), 'higgsCombine*.root')))
-        files = [f for f in files if not os.path.basename(f).startswith('merged_')]
-        if files:
-            return files
-
     return [path]
 
 
@@ -172,12 +162,14 @@ if missing:
 
 POI_LABELS = {
     'kappa_q': r'$\bar{\kappa}_{q}$',
+    'kappa_s': r'$\bar{\kappa}_{s}$',
     'kappa_u': r'$\bar{\kappa}_{u}$',
     'kappa_d': r'$\bar{\kappa}_{d}$',
     'kappa_q_sq': r'$|\bar{\kappa}_{q}|$',
 }
 POI_ANNOTATION_LABELS = {
     'kappa_q': r'\bar{\kappa}_{q}',
+    'kappa_s': r'\bar{\kappa}_{s}',
     'kappa_u': r'\bar{\kappa}_{u}',
     'kappa_d': r'\bar{\kappa}_{d}',
     'kappa_q_sq': r'|\bar{\kappa}_{q}|',
@@ -185,7 +177,7 @@ POI_ANNOTATION_LABELS = {
 
 if args.poi == 'auto':
     x_branch = None
-    for candidate in ['kappa_q', 'kappa_u', 'kappa_d', 'kappa_q_sq']:
+    for candidate in ['kappa_q', 'kappa_s', 'kappa_u', 'kappa_d', 'kappa_q_sq']:
         if candidate in keys:
             x_branch = candidate
             break
@@ -237,8 +229,9 @@ print()
 
 # --------------------------------------------------------------------------
 # Build scan points. Combine writes a separate continuous best-fit row with
-# quantileExpected = -1; include it once so the annotation and spline use the
-# real fit minimum rather than only the nearest grid point.
+# quantileExpected = -1 in each split output. Keep that row for the annotation,
+# but do not blindly add it to the interpolation if it is essentially on top of
+# a grid point. Near-duplicate x values make cubic splines overshoot badly.
 # --------------------------------------------------------------------------
 grid_points = scan[scan[:, 2] > -0.5]
 best_fit_rows = scan[scan[:, 2] <= -0.5]
@@ -248,7 +241,16 @@ best_fit = None
 if len(best_fit_rows):
     best_fit_row = best_fit_rows[np.argmin(best_fit_rows[:, 1])]
     best_fit = best_fit_row[0]
-    scan_points = np.vstack((scan_points, best_fit_row))
+    if len(grid_points):
+        grid_x = np.sort(np.unique(grid_points[:, 0]))
+        positive_spacings = np.diff(grid_x)
+        positive_spacings = positive_spacings[positive_spacings > 0]
+        grid_step = positive_spacings.min() if len(positive_spacings) else 1.0
+        close_to_grid = np.min(np.abs(grid_x - best_fit)) < max(1e-5, 1e-4 * grid_step)
+        if not close_to_grid:
+            scan_points = np.vstack((scan_points, best_fit_row))
+    else:
+        scan_points = best_fit_rows
 
 scan_points = scan_points[np.argsort(scan_points[:, 0])]
 
@@ -257,7 +259,6 @@ if len(scan_points) < 2:
 
 kappa_arr = scan_points[:, 0]
 two_dnll  = 2.0 * scan_points[:, 1]
-two_dnll -= two_dnll.min()
 
 # Keep a single point per x value, taking the lowest NLL when duplicates exist.
 unique_points = {}
@@ -266,6 +267,7 @@ for x_val, y_val in zip(kappa_arr, two_dnll):
         unique_points[x_val] = y_val
 kappa_arr = np.array(sorted(unique_points.keys()))
 two_dnll = np.array([unique_points[x_val] for x_val in kappa_arr])
+two_dnll -= two_dnll.min()
 
 keep = two_dnll <= args.y_cut
 if keep.sum() >= 2:
@@ -273,13 +275,14 @@ if keep.sum() >= 2:
     two_dnll = two_dnll[keep]
 
 # --------------------------------------------------------------------------
-# Cubic interpolation for the curve and crossings, matching the convention used
-# by the cross-section scan plotting code based on ROOT.TSpline3.
+# Shape-preserving interpolation for the curve and crossings. A plain cubic
+# spline can invent bumps between sparse scan points, especially when the
+# likelihood is flat or symmetric around zero.
 # --------------------------------------------------------------------------
-kappa_fine = np.linspace(kappa_arr.min(), kappa_arr.max(), 500)
+kappa_fine = np.linspace(kappa_arr.min(), kappa_arr.max(), 2000)
 try:
-    from scipy.interpolate import CubicSpline
-    scan_spline = CubicSpline(kappa_arr, two_dnll)
+    from scipy.interpolate import PchipInterpolator
+    scan_spline = PchipInterpolator(kappa_arr, two_dnll)
     dnll_fine = np.maximum(scan_spline(kappa_fine), 0)
 except ImportError:
     print('WARNING: scipy not available, falling back to linear interpolation.')
