@@ -74,10 +74,10 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
 
   # For signal shape systematics add simple line
   if s['type'] == 'signal_shape':
-    stitle = "%s_%s"%(outputWSNuisanceTitle__,s['title'])
-    if s['mode'] != 'other':
-      if outputNuisanceExtMap[s['mode']] != '':
-        stitle += "_%s"%outputNuisanceExtMap[s['mode']]
+    stitle = "%s"%(s['title']) #"%s_%s"%(outputWSNuisanceTitle__,s['title'])
+    #if s['mode'] != 'other':
+    #  if outputNuisanceExtMap[s['mode']] != '':
+    #    stitle += "_%s"%outputNuisanceExtMap[s['mode']]
     # If not correlated: separate nuisance per year
     if s['mode'] in ['scales','smears']:
       for year in options.years.split(","):
@@ -101,8 +101,12 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
   if(not options.doSTXSMerging)&('mnorm' in tiers): tiers.remove("mnorm")
   if len(tiers)==0: tiers = ['']
   for tier in tiers:
-    if tier != '': tierStr = "_%s"%tier
+    # Keep `_shape` in the dataframe column name (tierStr) so we can read the
+    # values, but drop it from the nuisance title that goes into the datacard.
+    # This avoids names like `..._shape` in the final card.
+    if tier != '': tierStr = "_%s"%tier      # used to access dataframe columns
     else: tierStr = ''
+    titleTierStr = '' if tier == 'shape' else tierStr  # used for the printed name
     
     # If calculating merged bin: loop over mergings else run over once
     mns = []
@@ -116,18 +120,18 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
     
       # Construct syst line/lines if separate by year
       if(s['correlateAcrossYears'] == 1)|(s['correlateAcrossYears'] == -1):
-        stitle = "%s%s%s"%(s['title'],mergeStr,tierStr)
-        if s['title'].startswith("lumi_"):
-          year_tokens = set()
-          for y in d['year'].unique():
-            if not isinstance(y, str):
-              continue
-            match = re.search(r'\d{4}', y)
-            if match:
-              year_tokens.add(match.group(0))
-          use_run3_shared_name = re.fullmatch(r"lumi_\d+", s['title']) is not None
-          if (len(year_tokens) == 1) and (not use_run3_shared_name):
-            stitle = "%s_%s"%(stitle, next(iter(year_tokens)))
+        stitle = "%s%s%s"%(s['title'],mergeStr,titleTierStr)
+        #if s['title'].startswith("lumi_"):
+        #  year_tokens = set()
+        #  for y in d['year'].unique():
+        #    if not isinstance(y, str):
+        #      continue
+        #    match = re.search(r'\d{4}', y)
+        #    if match:
+        #      year_tokens.add(match.group(0))
+        #  use_run3_shared_name = re.fullmatch(r"lumi_\d+", s['title']) is not None
+        #  if (len(year_tokens) == 1) and (not use_run3_shared_name):
+        #    stitle = "%s_%s"%(stitle, next(iter(year_tokens)))
         lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
         # Loop over categories and then iterate over rows in category
         for cat in d.cat.unique():
@@ -144,7 +148,7 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
           if(tier!='mnorm')&("scaleWeight" in s['name']):
             for ps,psProcs in scaleCorrScheme.iteritems():
               psStr = "_%s"%ps
-              stitle = "%s%s%s"%(s['title'],psStr,tierStr)
+              stitle = "%s%s%s"%(s['title'],psStr,titleTierStr)
               lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
               # Loop over categories and then iterate over rows in category
               for cat in d.cat.unique():
@@ -162,7 +166,11 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
               f.write("%s\n"%lsyst[:-1])
       else:
         for year in options.years.split(","):
-          stitle = "%s%s%s_%s"%(s['title'],mergeStr,tierStr,year)
+          # Special case: keep a single nuisance name across years for CMS_eff_g_CSEV_13p6TeV
+          if s['title'] == "CMS_eff_g_CSEV_13p6TeV":
+            stitle = "%s%s%s"%(s['title'],mergeStr,titleTierStr)
+          else:
+            stitle = "%s%s%s_%s"%(s['title'],mergeStr,titleTierStr,year)
           sname = "%s%s%s_%s"%(s['name'],mergeStr,tierStr,year)
           lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
           # Loop over categories and then iterate over rows in category
@@ -242,7 +250,8 @@ def writeMCStatUncertainty(f,d,options):
       sumw2 = d[mask]['sumw2'].sum()
       scval = [1+(math.sqrt(sumw2)/sumw)]
       d[d['type']=='sig']
-      stitle = "MCStat_%s_%s"%(year,scat)
+      stitle = "CMS_HIG26007_MCStat_%s_%s"%(year,scat)
+      #stitle = "MCStat_%s_%s"%(year,scat)
       sprior = "lnN"
       lsyst = '%-50s  %-10s    '%(stitle,sprior)
       # Loop over categories and then iterate over rows in category

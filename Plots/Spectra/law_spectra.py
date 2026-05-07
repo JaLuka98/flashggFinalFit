@@ -285,9 +285,10 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         current_config = config['spectra']
 
         xs = {}
+        totxs = {}
 
         # List of variables to import
-        vars = ['fidXS', 'fidXS_scale_up', 'fidXS_scale_dn', 'fidXS_pdf_up', 'fidXS_pdf_dn', 'fidXS_alpha_up', 'fidXS_alpha_dn', 'Boundaries']
+        vars = ['fidXS', 'fidXS_scale_up', 'fidXS_scale_dn', 'fidXS_pdf_up', 'fidXS_pdf_dn', 'fidXS_alpha_up', 'fidXS_alpha_dn', 'Boundaries', 'totXS', 'totXS_scale_up', 'totXS_scale_dn', 'totXS_pdf_up', 'totXS_pdf_dn', 'totXS_alpha_up', 'totXS_alpha_dn',]
         
         # Dynamically import the required module for ggH cross-section
         ggh_xs = __import__(current_config['ggh_xs'], globals(), locals(), vars)
@@ -300,6 +301,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         bin_w = np.array([bins_plot[k+1]-bins_plot[k] for k in range(len(bins)-1)])
         xs['ggh'] = np.array(ggh_xs.fidXS)
         ggh_xs_norm = xs['ggh'] / bin_w
+        totxs['ggh'] = np.array(ggh_xs.totXS)
+        ggh_totxs_norm = totxs['ggh'] / bin_w
 
         # Dynamically import the required module for xH cross-section
         # xh_xs = __import__(current_config['xh_xs'], globals(), locals(), vars)
@@ -309,14 +312,20 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         vbf_xs = __import__(current_config['vbf_xs'], globals(), locals(), vars)
         xs['vbf'] = np.array(vbf_xs.fidXS)
         vbf_xs_norm = xs['vbf'] / bin_w
+        totxs['vbf'] = np.array(vbf_xs.totXS)
+        vbf_totxs_norm = totxs['vbf'] / bin_w
 
         vh_xs = __import__(current_config['vh_xs'], globals(), locals(), vars)
         xs['vh'] = np.array(vh_xs.fidXS)
         vh_xs_norm = xs['vh'] / bin_w
+        totxs['vh'] = np.array(vh_xs.totXS)
+        vh_totxs_norm = totxs['vh'] / bin_w
 
         tth_xs = __import__(current_config['tth_xs'], globals(), locals(), vars)
         xs['tth'] = np.array(tth_xs.fidXS)
         tth_xs_norm = xs['tth'] / bin_w
+        totxs['tth'] = np.array(tth_xs.totXS)
+        tth_totxs_norm = totxs['tth'] / bin_w
 
         # Dynamically import the required module for ggH POWHEG cross-section
         ggh_powheg_xs = __import__(current_config['ggh_powheg_xs'], globals(), locals(), vars)
@@ -333,11 +342,17 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             tth_xs_norm[0] = tth_xs_norm[0] * bin_w[0]
             ggh_powheg_xs_norm[0] = ggh_powheg_xs_norm[0] * bin_w[0]
             ggh_no_nnlops_xs_norm[0] = ggh_no_nnlops_xs_norm[0] * bin_w[0]
+            ggh_totxs_norm[0] = ggh_totxs_norm[0] * bin_w[0]
+            vbf_totxs_norm[0] = vbf_totxs_norm[0] * bin_w[0]
+            vh_totxs_norm[0] = vh_totxs_norm[0] * bin_w[0]
+            tth_totxs_norm[0] = tth_totxs_norm[0] * bin_w[0]
         
         xh_xs_norm = vbf_xs_norm + vh_xs_norm + tth_xs_norm
+        xh_totxs_norm = vbf_totxs_norm + vh_totxs_norm + tth_totxs_norm
 
         # Theoretical uncertainty
         sources_up = ["fidXS_scale_up", "fidXS_pdf_up", "fidXS_alpha_up"]
+        sources_tot_up = ["totXS_scale_up", "totXS_pdf_up", "totXS_alpha_up"]
 
         ## [[fidXS_scale_up unc per bin], [fidXS_pdf_up unc per bin], [fidXS_alpha_up unc per bin]]
         ggh_up = [abs(np.array(getattr(ggh_xs, source)) - np.array(ggh_xs.fidXS)) for source in sources_up]
@@ -347,7 +362,13 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         vh_up = [abs(np.array(getattr(vh_xs, source)) - np.array(vh_xs.fidXS)) for source in sources_up]
         tth_up = [abs(np.array(getattr(tth_xs, source)) - np.array(tth_xs.fidXS)) for source in sources_up]
 
+        ggh_tot_up = [abs(np.array(getattr(ggh_xs, source)) - np.array(ggh_xs.totXS)) for source in sources_tot_up]
+        vbf_tot_up = [abs(np.array(getattr(vbf_xs, source)) - np.array(vbf_xs.totXS)) for source in sources_tot_up]
+        vh_tot_up = [abs(np.array(getattr(vh_xs, source)) - np.array(vh_xs.totXS)) for source in sources_tot_up]
+        tth_tot_up = [abs(np.array(getattr(tth_xs, source)) - np.array(tth_xs.totXS)) for source in sources_tot_up]
+
         sources_dn = ["fidXS_scale_dn", "fidXS_pdf_dn", "fidXS_alpha_dn"]
+        sources_tot_dn = ["totXS_scale_dn", "totXS_pdf_dn", "totXS_alpha_dn"]
         
         ggh_dn = [abs(np.array(getattr(ggh_xs, source)) - np.array(ggh_xs.fidXS)) for source in sources_dn]
         ggh_powheg_dn = [abs(np.array(getattr(ggh_powheg_xs, source)) - np.array(ggh_powheg_xs.fidXS)) for source in sources_dn]
@@ -355,6 +376,11 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         vbf_dn = [abs(np.array(getattr(vbf_xs, source)) - np.array(vbf_xs.fidXS)) for source in sources_dn]
         vh_dn = [abs(np.array(getattr(vh_xs, source)) - np.array(vh_xs.fidXS)) for source in sources_dn]
         tth_dn = [abs(np.array(getattr(tth_xs, source)) - np.array(tth_xs.fidXS)) for source in sources_dn]
+
+        ggh_tot_dn = [abs(np.array(getattr(ggh_xs, source)) - np.array(ggh_xs.totXS)) for source in sources_tot_dn]
+        vbf_tot_dn = [abs(np.array(getattr(vbf_xs, source)) - np.array(vbf_xs.totXS)) for source in sources_tot_dn]
+        vh_tot_dn = [abs(np.array(getattr(vh_xs, source)) - np.array(vh_xs.totXS)) for source in sources_tot_dn]
+        tth_tot_dn = [abs(np.array(getattr(tth_xs, source)) - np.array(tth_xs.totXS)) for source in sources_tot_dn]
         
         ## sum of the contributions for each production mode
         ## Linear sum as each source of uncertainty is fully correlated across the production modes
@@ -366,6 +392,10 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         powheg_dn = np.sum([ggh_powheg_dn,vbf_dn,vh_dn,tth_dn], axis=0)
         no_nnlops_dn = np.sum([ggh_no_nnlops_dn,vbf_dn,vh_dn,tth_dn], axis=0)
 
+        # for total xsec
+        madgraph_tot_up = np.sum([ggh_tot_up,vbf_tot_up,vh_tot_up,tth_tot_up], axis=0)
+        madgraph_tot_dn = np.sum([ggh_tot_dn,vbf_tot_dn,vh_tot_dn,tth_tot_dn], axis=0)
+
         ## Sum in quadrature of the different sources of uncertainties + uncertainty on the BR
         unc_th_up = (np.sqrt((np.sqrt(np.sum(np.square(madgraph_up), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth'])) / bin_w
         unc_th_dn = (np.sqrt((np.sqrt(np.sum(np.square(madgraph_dn), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth'])) / bin_w
@@ -375,6 +405,12 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
 
         unc_th_no_nnlops_up = np.sqrt((np.sqrt(np.sum(np.square(no_nnlops_up), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
         unc_th_no_nnlops_dn = np.sqrt((np.sqrt(np.sum(np.square(no_nnlops_dn), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
+
+        # for total xsec, no BR uncertainty needed
+        unc_th_tot_up = (np.sqrt((np.sqrt(np.sum(np.square(madgraph_tot_up), axis=0)) / (totxs['ggh']+totxs['vbf']+totxs['vh']+totxs['tth']))**2) * (totxs['ggh']+totxs['vbf']+totxs['vh']+totxs['tth'])) / bin_w
+        unc_th_tot_dn = (np.sqrt((np.sqrt(np.sum(np.square(madgraph_tot_dn), axis=0)) / (totxs['ggh']+totxs['vbf']+totxs['vh']+totxs['tth']))**2) * (totxs['ggh']+totxs['vbf']+totxs['vh']+totxs['tth'])) / bin_w
+        print("Unc up:\n", unc_th_tot_up)
+        print("Unc dn:\n", unc_th_tot_dn)
         
         if current_config['underflow_bin_normalized'] == True:
             unc_th_up[0] = unc_th_up[0] * bin_w[0]
@@ -383,6 +419,10 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             unc_th_powheg_dn[0] = unc_th_powheg_dn[0] * bin_w[0]
             unc_th_no_nnlops_up[0] = unc_th_no_nnlops_up[0] * bin_w[0]
             unc_th_no_nnlops_dn[0] = unc_th_no_nnlops_dn[0] * bin_w[0]
+
+            unc_th_tot_up[0] = unc_th_tot_up[0] * bin_w[0]
+            unc_th_tot_dn[0] = unc_th_tot_dn[0] * bin_w[0]
+
             bin_w[0] = 15
             bin_w[-1] = 100
             
@@ -620,3 +660,184 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         else:
             plt.savefig(os.path.join(output_dir, 'Combine', fitFolderName, 'spectra_blinded.pdf'), bbox_inches='tight', dpi=120)
             plt.savefig(os.path.join(output_dir, 'Combine', fitFolderName, 'spectra_blinded.png'), bbox_inches='tight', dpi=120)
+
+
+
+        ###############################################
+        # Total xsec
+        fig = plt.figure(figsize=(10,8), dpi=120) # (10,8)
+        frame1 = fig.add_axes((.1, .35, .8, .6)) #(.1, .35, .8, .6)
+        # frame1 = fig.add_axes((.1, .35, .8, .8))
+        if current_config['no_preliminary']:
+            cms_label = ""
+        elif current_config['private_work']:
+            cms_label = "Private Work"
+        else:
+            cms_label = "Preliminary"
+        # print(args.no_preliminary, cms_label)
+        # Use lumi from config if available, else build it from the individual years if something like 2022_2023 is queried
+        # If that is also not the case, it is a single year, so take lumi from the map
+        if "lumi" in plotting_config:
+            intLumi = plotting_config["lumi"]
+        else:
+            year_str = str(self.year)
+            if "_" in year_str:
+                years = year_str.split("_")
+                intLumi = sum(lumiMap[y] for y in years)
+            else:
+                intLumi = lumiMap[year_str]
+        hep.cms.label(cms_label, data=convert_boolean_string(self.is_unblinded), lumi=intLumi, fontsize=20, com=13.6)
+
+        # Plot theoretical predictions and experimental data
+        plt.stairs((ggh_totxs_norm+xh_totxs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + NNLOPS + Pythia) + xH', color='tab:blue')
+        plt.stairs(xh_totxs_norm, bins_plot, linewidth=2, color='green')
+        plt.stairs(xh_totxs_norm, bins_plot, linewidth=2, label='xH = ttH + VH + VBF (MadGraph5_aMC@NLO + Pythia)', alpha=0.2, color='green', fill=True)
+
+        if current_config['last_bin_center'] > 0:
+            bins_c[-1] = current_config['last_bin_center']
+            
+        if current_config['first_bin_center'] > 0:
+            bins_c[0] = current_config['first_bin_center']
+        else:
+            bins_c[0] = 0
+        
+        plt.rcParams['hatch.linewidth'] = 2
+        for center, value, err_low, err_high, width in zip(bins_c, ggh_totxs_norm+xh_totxs_norm, unc_th_tot_dn, unc_th_tot_up, bin_w):
+            plt.gca().add_patch(plt.Rectangle((center - width/4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:blue', hatch='///'))
+            
+        # Default font sizes
+        fontsize = 14
+        title_fontsize = 14
+            
+        if 'frame1' in plotting_config:
+            frameOneSettings = plotting_config['frame1']
+            
+            if 'custom_xtick_labels' in frameOneSettings:
+                custom_xtick_labels = frameOneSettings["custom_xtick_labels"]
+                custom_xticks = frameOneSettings["custom_xticks"]
+                
+                frame1.set_xticks(custom_xticks)
+            
+            if "axvline" in frameOneSettings:
+                axvline_params = frameOneSettings["axvline"]
+                plt.axvline(**axvline_params)
+                
+            if "figtext" in frameOneSettings:
+                figtext_params = frameOneSettings["figtext"]
+                plt.figtext(
+                    figtext_params["x"],
+                    figtext_params["y"],
+                    figtext_params['text'],
+                    horizontalalignment=figtext_params["horizontalalignment"],
+                    rotation=figtext_params["rotation"],
+                    fontsize=figtext_params["fontsize"]
+                )
+            # Apply ylabel if defined
+            if "ylabel" in frameOneSettings:
+                ylabel_params = frameOneSettings["ylabel"]
+                plt.ylabel(ylabel_params["text"], fontsize=ylabel_params["fontsize"])
+            
+            # Apply ylim if defined
+            if "ylim" in frameOneSettings:
+                ylim_params = frameOneSettings["ylim"]
+                plt.ylim(**ylim_params)
+            
+            # Override font sizes if specified in the config
+            fontsize = frameOneSettings.get("fontsize", fontsize)
+            title_fontsize = frameOneSettings.get("title_fontsize", title_fontsize)
+        
+        plt.errorbar(bins_c, ggh_totxs_norm+xh_totxs_norm , yerr=[unc_th_tot_dn,unc_th_tot_up], marker = 'o', linestyle = 'None', color = 'k', linewidth = 2, ms=5, capsize=4, label=r'Data (stat $\oplus$ sys unc.)')
+    #    plt.errorbar(bins_c, ggh_totxs_norm+xh_totxs_norm , yerr=[unc_th_tot_dn, unc_th_tot_up], marker = 'None', linestyle = 'None', color = 'red', linewidth = 6, ms=5, capsize=4, label='Systematic uncertainty')
+        
+        if current_config['plot_log']:
+            plt.yscale('log')
+            
+        plt.ylabel(r'$\Delta\sigma_{\text{tot}} / \Delta ' + current_config["variable"] + r'$ ' + current_config["y_unit"], fontsize=20)
+        
+        if "y_lim_top_tot_xsec" in current_config.keys(): plt.ylim(top=current_config["y_lim_top_tot_xsec"])
+        plt.xlim(current_config['x_lim'])
+
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
+    
+        legend_location = current_config.get('legend_location', 'upper right')
+        
+        plt.legend(fontsize=fontsize, title='p-value (MadGraph NNLOPS) = '+ str(pvalue), alignment='left', loc= legend_location, title_fontsize=title_fontsize)
+        frame1.set_xticklabels([])
+
+        frame2 = fig.add_axes((.1,.05,.8,.25))
+
+        # Plot ratio (Data/Prediction) in a separate frame
+        ratio_totxs = (ggh_totxs_norm+xh_totxs_norm)/(ggh_totxs_norm+xh_totxs_norm) #exp_xs / (ggh_totxs_norm+xh_totxs_norm)
+        ratio_tot_err_up =  (ggh_totxs_norm+xh_totxs_norm+unc_th_tot_up) / (ggh_totxs_norm+xh_totxs_norm)
+        ratio_madgraph_tot = (ggh_totxs_norm+xh_totxs_norm) / (ggh_totxs_norm+xh_totxs_norm) # Dummy, it is always 1
+        ratio_tot_err_down = (ggh_totxs_norm+xh_totxs_norm-unc_th_tot_dn) / (ggh_totxs_norm+xh_totxs_norm)
+        ratio_tot_unc_up = unc_th_tot_up / (ggh_totxs_norm+xh_totxs_norm)
+        ratio_tot_unc_dn = unc_th_tot_dn / (ggh_totxs_norm+xh_totxs_norm)
+
+        plt.errorbar(bins_c, ratio_totxs , yerr=[ratio_tot_err_down,ratio_tot_err_up], marker = 'o', linestyle = 'None', color = 'k', linewidth = 2, ms=5, capsize=4, label='Data (Stat + Syst)')
+
+        plt.hlines(1, 0,500, color='tab:blue')
+
+        for center, value, err_low, err_high, width in zip(bins_c, ratio_madgraph_tot, ratio_tot_unc_up, ratio_tot_unc_dn, bin_w):
+            plt.gca().add_patch(plt.Rectangle((center - width/4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:blue', hatch='/////')) #/2
+                
+        if 'frame2' in plotting_config:
+            frameTwoSettings = plotting_config['frame2']
+            
+            # Apply xticks and xtick_labels
+            if "xticks" in frameTwoSettings:
+                custom_xticks = frameTwoSettings["xticks"]
+                frame2.set_xticks(custom_xticks)
+            if "xtick_labels" in frameTwoSettings:
+                custom_xtick_labels = frameTwoSettings["xtick_labels"]
+                frame2.set_xticklabels(custom_xtick_labels)
+
+            # Apply yticks and ytick_labels depending on `is_data`
+            if "yticks" in frameTwoSettings and "ytick_labels" in frameTwoSettings:
+                if convert_boolean_string(self.is_unblinded):
+                    custom_yticks = frameTwoSettings["yticks"].get("is_data", [])
+                    custom_ytick_labels = frameTwoSettings["ytick_labels"].get("is_data", [])
+                else:
+                    custom_yticks = frameTwoSettings["yticks"].get("not_data", [])
+                    custom_ytick_labels = frameTwoSettings["ytick_labels"].get("not_data", [])
+                frame2.set_yticks(custom_yticks)
+                frame2.set_yticklabels(custom_ytick_labels)
+
+            # Apply additional labels for specific variables
+            if "additional_labels" in frameTwoSettings:
+                additional_labels = frameTwoSettings["additional_labels"]["is_data"] if convert_boolean_string(self.is_unblinded) else frameTwoSettings["additional_labels"]["not_data"]
+                for label in additional_labels:
+                    frame2.text(
+                        label["position"][0],
+                        label["position"][1],
+                        label["text"],
+                        rotation=label["rotation"],
+                        fontsize=label["fontsize"]
+                    )
+
+            # Apply axvline if defined
+            if "axvline" in frameTwoSettings:
+                axvline_params = frameTwoSettings["axvline"]
+                plt.axvline(**axvline_params)
+        
+        for b in bins_plot:
+            plt.axvline(x=b, color='gray', ls='dashed', lw=1, alpha=0.5)
+        
+        plt.ylabel(r'Data / Prediction', fontsize=20) #Not MC, since NNLOPS is based on a calculation
+
+        plt.xlabel(r'$' + current_config["variable"] + r'$ ' + current_config["x_unit"], fontsize=20)
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
+
+        plt.xlim(current_config['x_lim'])
+        plt.ylim(current_config['y_lim'])
+
+        
+        if convert_boolean_string(self.is_unblinded):
+            plt.savefig(os.path.join(output_dir, 'Combine', fitFolderName, 'spectra_total_xsec.pdf'), bbox_inches='tight', dpi=120)
+            plt.savefig(os.path.join(output_dir, 'Combine', fitFolderName, 'spectra_total_xsec.png'), bbox_inches='tight', dpi=120)
+        else:
+            plt.savefig(os.path.join(output_dir, 'Combine', fitFolderName, 'spectra_blinded_total_xsec.pdf'), bbox_inches='tight', dpi=120)
+            plt.savefig(os.path.join(output_dir, 'Combine', fitFolderName, 'spectra_blinded_total_xsec.png'), bbox_inches='tight', dpi=120)
+            

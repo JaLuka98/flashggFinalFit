@@ -117,6 +117,12 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         
         if temp_output_dir[-1] != "/":
             temp_output_dir += "/"
+        #########################################
+        if self.year == "2022_2023_2024":
+            lumi_value = lumiMap["Run3"]
+        else:
+            lumi_value = lumiMap[self.year]
+        ##################################"--
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Background/runBackgroundScripts.sh")
         arguments = [
@@ -126,7 +132,7 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             "--outputFolder", f"{temp_output_dir}",
             "--ext", f'{self.ext}',
             "--catOffset", cat_offset,
-            "--intLumi", f"{lumiMap[self.year]}",
+            "--intLumi", f"{lumi_value}", ##################################"--intLumi", f"{lumiMap[self.year]}",
             "--year", f"{self.year}",
             "--batch", "local",
             "--queue", "microcentury",
@@ -298,8 +304,13 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
         config['batch'] = 'local'
         config['queue'] = 'none'
         if self.year == 'combined': config['year'] = 'all'
-        else: config['year'] = self.year     
-        config['intLumi'] = lumiMap[self.year]
+        else: config['year'] = self.year    
+        ################################## 
+        if self.year == '2022_2023_2024': 
+            config['intLumi'] = lumiMap["Run3"]
+        else:
+            config['intLumi'] = lumiMap[self.year]
+        ##################################      #config['intLumi'] = lumiMap[self.year]
                 
         if self.variable == '':
             all_data_input_path = os.path.join(output_dir, "input_output_data", f"input_output_data_{self.year}/ws/allData.root")
@@ -324,6 +335,13 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
         
         if temp_output_dir[-1] != "/":
             temp_output_dir += "/"
+        #########################################
+        if self.year == "2022_2023_2024":
+            lumi_value = lumiMap["Run3"]
+        else:
+            lumi_value = lumiMap[self.year]
+        #########################################
+
 
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Background/runBackgroundScripts.sh")
         arguments = [
@@ -333,7 +351,7 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             "--outputFolder", f"{temp_output_dir}",
             "--ext", f'{config["ext"]}',
             "--catOffset", cat_offset,
-            "--intLumi", f"{lumiMap[self.year]}",
+            "--intLumi", f"{lumi_value}",  #######################################"--intLumi", f"{lumiMap[self.year]}",
             "--year", f"{self.year}",
             "--batch", "local",
             "--queue", "microcentury",
