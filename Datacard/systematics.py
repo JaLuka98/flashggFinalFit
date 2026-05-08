@@ -168,7 +168,7 @@ experimental_systematics = [
                 # Note: If you want to have a result for multiple years with combinedCards, you should prepare the individual datacards with the following lines
                 {'name':'lumi_1','title':'lumi_1','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':{"2022preEE": "1.0138", "2022postEE": "1.0138", "2022": "1.0138", "2023preBPix": "1.0017", "2023postBPix": "1.0017", "2023": "1.0017", "2024": "1.0020"}},
                 {'name':'lumi_2','title':'lumi_2','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':{"2023preBPix": "1.0127", "2023postBPix": "1.0127", "2023": "1.0127", "2024": "1.0068"}},
-                #{'name':'lumi_3','title':'lumi_3','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':{"2024": "1.0144"}},
+                {'name':'lumi_3','title':'lumi_3','type':'constant','prior':'lnN','correlateAcrossYears':1,'value':{"2024": "1.0144"}},
                 ### Other experimental nuisances
                 {'name':'weight_Pileup','title':'CMS_hgg_PileupWeight','type':'factory','prior':'lnN','correlateAcrossYears':1},
                 {'name':'weight_TriggerSF','title':'CMS_hgg_TriggerWeight','type':'factory','prior':'lnN','correlateAcrossYears':1},
