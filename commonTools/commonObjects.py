@@ -24,20 +24,22 @@ lumiMap = {
     '2018':59.83, 
     'combined':137.65, 
     'merged':137.65,
-    '2022preEE':7.9804,
-    '2223preEE':7.9804,
-    '2022postEE':26.6717,
-    '2223postEE':26.6717,
-    '2022': 34.6521,
-    '2023preBPix': 18.063,
-    '2223preBPix': 18.063,
-    '2023postBPix': 9.693,
-    '2223postBPix': 9.693,
-    '2023': 27.756,
-    '2223': 62.4081,
-    '2024': 109.0,
-    '2024all': 109.0,
-    'Run3': 171.4081
+     '2022preEE': 7.99,
+    '2223preEE': 7.99,
+    '2022postEE': 26.68,
+    '2223postEE': 26.68,
+    '2022': 34.67,
+    '2023preBPix': 17.96,
+    '2223preBPix': 17.96,
+    '2023postBPix': 9.68,
+    '2223postBPix': 9.68,
+    '2023': 27.64,
+    '2223': 62.31,
+    '2024': 109.82,
+    '2024all': 109.82,
+    'Run3': 172.13,
+    '2022_2023_2024': 172.13,
+    '222324': 172.13,
 }
 
 def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW):
@@ -448,8 +450,8 @@ def combineVariableDict(variable, year):
         combined_payload = CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], year=template_year, BMW=BMW)
         for y in year_list:
             year_payload = combineVariableDict(variable, y)
-            combined_pdf_indices.extend(year_payload.pdfIndeces)
-        combined_payload.pdfIndeces = combined_pdf_indices
+            combined_pdf_indices.extend(year_payload["pdfIndeces"])
+        combined_payload["pdfIndeces"] = combined_pdf_indices
         return combined_payload
     else:
         return CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], year=template_year, BMW=BMW)

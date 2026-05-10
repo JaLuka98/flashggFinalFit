@@ -337,6 +337,9 @@ for _bin in _RAPIDITY_BINS:
         reco_key = f"RECO_rapidity_{_bin}_{_cat}"
         globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"][reco_key] = reco_key
 
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"] = "RECO_rapidity_1p2_1p6_cat2"
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"] = "RECO_rapidity_1p6_2p0_cat2"
+
 
 # Differential NJ (Number of Jets)
 _NJ_BINS = variableBins["NJ"]
