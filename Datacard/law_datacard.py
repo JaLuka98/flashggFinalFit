@@ -31,6 +31,7 @@ def execute_command(command, return_output=False, shell=False):
             return (result.stdout).split("\n")[0]
     except subprocess.CalledProcessError as e:
         print("Error executing script:", e.stderr)
+        raise
         
 def convert_boolean_string(string):
     if (string == "True") or (string == "true") or (string == True):
