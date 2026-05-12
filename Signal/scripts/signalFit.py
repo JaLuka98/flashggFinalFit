@@ -177,7 +177,7 @@ for mp in opt.massPoints.split(","):
   f.Close()
 
 # Check if nominal yield > threshold (or if +ve sum of weights). If not then use replacement proc x cat
-if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( datasetRVForFit[MHNominal].sumEntries() < 0. ):
+if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( datasetRVForFit[MHNominal].sumEntries() <= 0. ):
   nominal_numEntries = datasetRVForFit[MHNominal].numEntries()
   procReplacementFit, catReplacementFit = rMap['procRVMap'][opt.cat], rMap['catRVMap'][opt.cat]
   for mp in opt.massPoints.split(","):
@@ -194,7 +194,7 @@ if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( data
     f.Close() 
 
   # Check if replacement dataset has too few entries: if so throw error
-  if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold )|( datasetRVForFit[MHNominal].sumEntries() < 0. ):
+  if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold )|( datasetRVForFit[MHNominal].sumEntries() <= 0. ):
     print(" --> [ERROR] replacement dataset (%s,%s) has too few entries (%g < %g)"%(procReplacementFit,catReplacementFit,datasetRVForFit[MHNominal].numEntries(),opt.replacementThreshold))
     sys.exit(1)
 
@@ -235,7 +235,7 @@ if not opt.skipVertexScenarioSplit:
     f.Close()
 
   # Check nominal mass dataset
-  if( datasetWVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( datasetWVForFit[MHNominal].sumEntries() < 0. ):
+  if( datasetWVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( datasetWVForFit[MHNominal].sumEntries() <= 0. ):
     nominal_numEntries = datasetWVForFit[MHNominal].numEntries()
     procReplacementFit, catReplacementFit = rMap['procWV'], rMap['catWV']
     for mp in opt.massPoints.split(","):
@@ -251,7 +251,7 @@ if not opt.skipVertexScenarioSplit:
       inputWS.Delete()
       f.Close()
     # Check if replacement dataset has too few entries: if so throw error
-    if( datasetWVForFit[MHNominal].numEntries() < opt.replacementThreshold )|( datasetWVForFit[MHNominal].sumEntries() < 0. ):
+    if( datasetWVForFit[MHNominal].numEntries() < opt.replacementThreshold )|( datasetWVForFit[MHNominal].sumEntries() <= 0. ):
       print(" --> [ERROR] replacement dataset (%s,%s) has too few entries (%g < %g)"%(procReplacementFit,catReplacementFit,datasetWVForFit[MHNominal].numEntries(),opt.replacementThreshold))
       sys.exit(1)
     else:
