@@ -368,7 +368,7 @@ for _bin in _NJ_BINS:
 
 _PTJ0_BINS = variableBins["PTJ0"]
 _PTJ0_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
-_PTJ0_WV_BIN = "75p0_95p0"
+_PTJ0_WV_BIN = "55p0_75p0"
 
 globalReplacementMap["Run3FidXSAnalysisPTJ0"] = od()
 # Wrong vertex stuff, which process should be considered?
