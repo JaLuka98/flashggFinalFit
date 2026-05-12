@@ -323,13 +323,13 @@ spectra:
   ggh_powheg_xs: "fidXS_PTH_ggH_powheg"
   ggh_no_nnlops_xs: "fidXS_PTH_ggH_genWeight"
   underflow_bin_normalized: False # Underflow bin normalized with binwidth
-  last_bin_center: 425
-  first_bin_center: 7.5
+  last_bin_center: 500
+  first_bin_center: 2.5
   plot_log: 1
   variable: "p_T^H"
   y_unit: "(fb/GeV)"
   x_unit: "(GeV)"
-  x_lim: [0, 500]
+  x_lim: [0, 550]
   y_lim: [-1,3]
   y_lim_top: 500
-  overflow: 500
+  overflow: 550
