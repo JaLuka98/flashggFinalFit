@@ -34,8 +34,8 @@
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1 --freezeParameters BR_hgg,rgx{THU_ggH.*},rgx{THU_qqH.*},rgx{QCDscale_.*},rgx{pdf_Higgs_.*},rgx{alphaS_.*},rgx{MergeUnc_maximal.*},UnderlyingEvent_norm,PartonShower_norm,rgx{CMS_hgg_tth_.*},rgx{MergeUnc_minimal_VBFlike.*}"
     },
     "PTH":{
-        "pois":"r_PTH_0p0_15p0,r_PTH_15p0_30p0,r_PTH_30p0_45p0,r_PTH_45p0_80p0,r_PTH_80p0_120p0,r_PTH_120p0_200p0,r_PTH_200p0_350p0,r_PTH_350p0_10000p0",
-        "fits":"robustHesse:syst:r_PTH_30p0_45p0",
+        "pois":"r_PTH_0p0_5p0,r_PTH_5p0_10p0,r_PTH_10p0_15p0,r_PTH_15p0_20p0,r_PTH_20p0_25p0,r_PTH_25p0_30p0,r_PTH_30p0_35p0,r_PTH_35p0_45p0,r_PTH_45p0_60p0,r_PTH_60p0_80p0,r_PTH_80p0_100p0,r_PTH_100p0_120p0,r_PTH_120p0_140p0,r_PTH_140p0_170p0,r_PTH_170p0_200p0,r_PTH_200p0_250p0,r_PTH_250p0_350p0,r_PTH_350p0_450p0,r_PTH_450p0_10000p0",
+        "fits":"robustHesse:syst:r_PTH_30p0_35p0",
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     },
@@ -46,7 +46,7 @@
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     },
     "NJ":{
-        "pois":"r_NJ_0p0_1p0,r_NJ_1p0_2p0,r_NJ_2p0_3p0,r_NJ_3p0_100p0",
+        "pois":"r_NJ_0p0_1p0,r_NJ_1p0_2p0,r_NJ_2p0_3p0,r_NJ_3p0_4p0,r_NJ_4p0_100p0",
         "fits":"robustHesse:syst:r_NJ_1p0_2p0",
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
@@ -58,8 +58,14 @@
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     },
     "PTJ0":{
-        "pois":"r_PTJ0_0p0_30p0,r_PTJ0_30p0_75p0,r_PTJ0_75p0_120p0,r_PTJ0_120p0_200p0,r_PTJ0_200p0_10000p0",
-        "fits":"robustHesse:syst:r_PTJ0_30p0_75p0",
+        "pois":"r_PTJ0_m10000p0_30p0,r_PTJ0_30p0_40p0,r_PTJ0_40p0_55p0,r_PTJ0_55p0_75p0,r_PTJ0_75p0_95p0,r_PTJ0_95p0_120p0,r_PTJ0_120p0_150p0,r_PTJ0_150p0_200p0,r_PTJ0_200p0_10000p0",
+        "fits":"robustHesse:syst:r_PTJ0_40p0_55p0",
+        "points":"",
+        "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
+    },
+    "PTJ1":{
+        "pois":"r_PTJ1_m10000p0_30p0,r_PTJ1_30p0_45p0,r_PTJ1_45p0_65p0,r_PTJ1_65p0_90p0,r_PTJ1_90p0_150p0,r_PTJ1_150p0_10000p0",
+        "fits":"robustHesse:syst:r_PTJ1_45p0_65p0",
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     },

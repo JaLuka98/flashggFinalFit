@@ -294,6 +294,10 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         bins = ggh_xs.Boundaries
         bins_plot = np.array(bins)
         if "overflow" in current_config.keys(): bins_plot[-1] = current_config['overflow']
+        # If first_bin_center <= 0, clip the left edge of bins_plot to x_lim start
+        # so the underflow bin histogram bar and its transition line are completely hidden.
+        if current_config.get('first_bin_center', 1) <= 0:
+            bins_plot[0] = current_config.get('x_lim', [0, 1])[0]
         
         # Calculate bin centers and widths
         bins_c = (bins_plot[1:]+bins_plot[:-1])*0.5
@@ -456,7 +460,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         if current_config['first_bin_center'] > 0:
             bins_c[0] = current_config['first_bin_center']
         else:
-            bins_c[0] = 0
+            # Push the underflow data point far off-screen (not plotted)
+            bins_c[0] = current_config.get('x_lim', [0, 1])[0] - 1e6
         
         plt.rcParams['hatch.linewidth'] = 2
         for center, value, err_low, err_high, width in zip(bins_c, ggh_xs_norm+xh_xs_norm, unc_th_dn, unc_th_up, bin_w):
