@@ -47,6 +47,42 @@ DIRECTION_ALIASES = {
     "dn": ("dn", "Dn", "DN", "down", "Down", "DOWN"),
 }
 
+# Binning map wil be chosen according to the specified binning
+BINNING_MAP: None
+
+BINNING_MAP_HIG_23_014 = {
+    "PTH":
+        ["0p0_15p0", "15p0_30p0", "30p0_45p0", "45p0_80p0", "80p0_120p0", "120p0_200p0", "200p0_350p0", "350p0_10000p0"],
+    "YH":
+        ["0p0_0p15", "0p15_0p3", "0p3_0p6", "0p6_0p9", "0p9_2p5"],
+    "NJ":
+        ["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_100p0"],
+    "PTJ0":
+        ["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"],
+}
+
+BINNING_MAP_HIG_19_016 = {
+    "PTH":
+        ["0p0_5p0", "5p0_10p0", "10p0_15p0", "15p0_20p0", "20p0_25p0", "25p0_30p0", "30p0_35p0", "35p0_45p0", "45p0_60p0", "60p0_80p0", "80p0_100p0", "100p0_120p0", "120p0_140p0", "140p0_170p0", "170p0_200p0", "200p0_250p0", "250p0_350p0", "350p0_450p0", "450p0_10000p0"],
+    "YH":
+        ["0p0_0p1", "0p1_0p2", "0p2_0p3", "0p3_0p45", "0p45_0p6", "0p6_0p75", "0p75_0p9", "0p9_2p5"],
+    "NJ":
+        ["0p0_1p0", "1p0_2p0", "2p0_3p0",  "3p0_4p0", "4p0_100p0"],
+    "PTJ0":
+        ["0p0_30p0", "30p0_40p0", "40p0_55p0", "55p0_75p0", "75p0_95p0", "95p0_120p0", "120p0_150p0", "150p0_200p0", "200p0_10000p0"],
+    "EtaJ0J1": [],
+    "MassJ0J1": [],
+    "TauJC": [],
+}
+
+# Out of acceptance events mapped to the entire spectrum
+MAP_OUT = {
+    "PTH": "0p0_10000p0",
+    "YH": "0p0_2p5",
+    "NJ": "0p0_100p0",
+    "PTJ0": "0p0_10000p0",
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -66,6 +102,17 @@ def parse_args() -> argparse.Namespace:
         "--output-datacard",
         required=True,
         help="New datacard path where the updated content will be written.",
+    )
+    parser.add_argument(
+        "--measurement",
+        required=True,
+        help="Measurement type that should be considered, i.e. inclusive or differential, e.g. PTH.",
+    )
+    parser.add_argument(
+        "--binning",
+        required=True,
+        choices=["HIG_23_014", "HIG_19_016"],
+        help="Binning that should be considered, i.e. HIG_23_014 or HIG_19_016.",
     )
     return parser.parse_args()
 
@@ -108,7 +155,7 @@ def _find_key_case_insensitive(
 
 
 def get_acceptance_value(
-    namespace: Mapping[str, object], suffix: str, source: str | None = None, direction: str | None = None
+    namespace: Mapping[str, object], suffix: str, mode: str, measurement: str, source: str | None = None, direction: str | None = None
 ) -> float:
     """
     Fetches an acceptance value from the namespace, accounting for different
@@ -118,7 +165,16 @@ def get_acceptance_value(
         key = _find_key_case_insensitive(namespace, f"Acc_{suffix}")
         if key is None:
             raise KeyError(f"Could not find nominal acceptance Acc_{suffix}")
-        return _to_float(namespace[key])
+        if measurement != "inclusive":
+            binning_key = BINNING_MAP[measurement] if measurement in BINNING_MAP else None
+            bin_string = "_".join(mode.split('_')[-2:])
+            bin_index = binning_key.index(bin_string) if binning_key and bin_string in binning_key else None
+            if (measurement=="PTH") and (bin_string==MAP_OUT[measurement]):
+                return _to_float(np.sum(namespace[key]))
+
+            return _to_float(namespace[key][bin_index])
+        else: 
+            return _to_float(namespace[key])
 
     aliases = VARIATION_ALIASES[source]
     direction_aliases = DIRECTION_ALIASES[direction] if direction else (None,)
@@ -128,7 +184,15 @@ def get_acceptance_value(
             key_name = f"Acc_{alias}{dir_snippet}_{suffix}"
             key = _find_key_case_insensitive(namespace, key_name)
             if key:
-                return _to_float(namespace[key])
+                if measurement != "inclusive":
+                    binning_key = BINNING_MAP[measurement] if measurement in BINNING_MAP else None
+                    bin_string = "_".join(mode.split('_')[-2:])
+                    bin_index = binning_key.index(bin_string) if binning_key and bin_string in binning_key else None
+                    if (measurement=="PTH") and (bin_string==MAP_OUT[measurement]):
+                        return _to_float(np.sum(namespace[key]))
+                    return _to_float(namespace[key][bin_index])
+                else:
+                    return _to_float(namespace[key])
     raise KeyError(
         f"Could not find acceptance variation for {source} {direction} in mode {suffix}"
     )
@@ -150,7 +214,7 @@ def get_process_names(lines: Sequence[str]) -> List[str]:
     raise RuntimeError("Failed to find the process definition line in the datacard.")
 
 
-def analyse_processes(processes: Sequence[str]) -> Tuple[
+def analyse_processes(processes: Sequence[str], measurement: str) -> Tuple[
     Dict[int, Dict[str, str | bool]], Dict[str, set]
 ]:
     """
@@ -161,7 +225,10 @@ def analyse_processes(processes: Sequence[str]) -> Tuple[
     for index, proc in enumerate(processes):
         is_signal = proc.endswith("_hgg")
         parts = proc.split("_")
-        mode = parts[0].lower() if is_signal else None
+        if measurement == "inclusive":
+            mode = parts[0].lower() if is_signal else None
+        else:
+            mode = "_".join(parts[:4]).lower() if is_signal else None
         component = None
         if "_in_" in proc:
             component = "in"
@@ -185,19 +252,21 @@ def map_mode_to_suffix(mode: str) -> str:
     # Default to uppercase version if no explicit mapping exists.
     return mode.upper()
 
-
 def build_acceptance_ratios(
-    namespace: Mapping[str, object], requirements: Mapping[str, Iterable[str]]
+    namespace: Mapping[str, object], requirements: Mapping[str, Iterable[str]], measurement: str
 ) -> Dict[str, Dict[str, Dict[str, Tuple[float, float]]]]:
     ratios: Dict[str, Dict[str, Dict[str, Tuple[float, float]]]] = {
         source: {} for source in SOURCE_NAME_MAP
     }
     for mode, needed_components in requirements.items():
-        suffix = map_mode_to_suffix(mode)
-        nominal = get_acceptance_value(namespace, suffix)
+        if measurement == "inclusive":
+            suffix = map_mode_to_suffix(mode)
+        else:
+            suffix = map_mode_to_suffix(mode.split('_')[0])
+        nominal = get_acceptance_value(namespace, suffix, mode=mode, measurement=measurement)
         for source in SOURCE_NAME_MAP:
-            var_up = get_acceptance_value(namespace, suffix, source=source, direction="up")
-            var_dn = get_acceptance_value(namespace, suffix, source=source, direction="dn")
+            var_up = get_acceptance_value(namespace, suffix, mode=mode, measurement=measurement, source=source, direction="up")
+            var_dn = get_acceptance_value(namespace, suffix, mode=mode, measurement=measurement, source=source, direction="dn")
             mode_dict: Dict[str, Tuple[float, float]] = {}
             if "in" in needed_components:
                 mode_dict["in"] = (var_dn / nominal, var_up / nominal)
@@ -216,7 +285,10 @@ def build_acceptance_ratios(
     return ratios
 
 
-def format_ratio(value_down: float, value_up: float) -> str:
+def format_ratio(value_down: Sequence[float] | np.ndarray, value_up: Sequence[float] | np.ndarray) -> list[str]:
+    """
+    Format a (down, up) ratio pair. Accepts scalars or array-like inputs.
+    """
     def fmt(val: float) -> str:
         formatted = f"{val:.5f}"
         formatted = formatted.rstrip("0").rstrip(".")
@@ -289,13 +361,18 @@ def main() -> int:
     input_path = pathlib.Path(args.input_datacard)
     output_path = pathlib.Path(args.output_datacard)
     acceptance_path = pathlib.Path(args.acceptances_file)
+    measurement = args.measurement
+    global BINNING_MAP
+    if args.binning == "HIG_23_014":
+        BINNING_MAP = BINNING_MAP_HIG_23_014
+    else:
+        BINNING_MAP = BINNING_MAP_HIG_19_016
 
     lines = input_path.read_text().splitlines()
     processes = get_process_names(lines)
-    processes_info, requirements = analyse_processes(processes)
+    processes_info, requirements = analyse_processes(processes, measurement)
     acceptance_namespace = load_acceptance_namespace(acceptance_path)
-    ratios = build_acceptance_ratios(acceptance_namespace, requirements)
-
+    ratios = build_acceptance_ratios(acceptance_namespace, requirements, measurement)
     br_values = build_br_values(processes_info)
     new_lines = [
         " ".join(["CMS_BR_hgg", "lnN", *br_values]),
