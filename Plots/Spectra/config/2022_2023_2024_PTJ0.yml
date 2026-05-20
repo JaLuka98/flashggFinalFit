@@ -1,0 +1,107 @@
+frame1:
+  custom_xtick_labels:
+    - "0j"
+    - "50"
+    - "100"
+    - "150"
+    - "200"
+    - "250"
+    - "300"
+    - "350"
+    - "400"
+  custom_xticks:
+    - 15
+    - 50
+    - 100
+    - 150
+    - 200
+    - 250
+    - 300
+    - 350
+    - 400
+  axvline:
+    x: 30
+    color: "black"
+    ls: "dashed"
+    lw: 1
+    alpha: 1
+  ylabel:
+    text: '$\\Delta\\sigma_{\\mathrm{fid}} / \\Delta p_{T}^{j1}$ (fb/GeV)'
+    fontsize: 20
+  ylim:
+    bottom: 0.001
+    top: 1000
+  fontsize: 14
+  title_fontsize: 14
+  figtext:
+    x: 0.875
+    y: 0.58
+    text: '$\frac{\sigma_{fid}(p_{T}^{j1} > 200.0\ GeV)}{200.0\ GeV}$'
+    horizontalalignment: "right"
+    rotation: 90
+    fontsize: 18
+
+frame2:
+  xtick_labels:
+    - "0j"
+    - "50"
+    - "100"
+    - "150"
+    - "200"
+    - "250"
+    - "300"
+    - "350"
+    - "400"
+  xticks:
+    - 15
+    - 50
+    - 100
+    - 150
+    - 200
+    - 250
+    - 300
+    - 350
+    - 400
+  ytick_labels:
+    is_data:
+      - "0.0"
+      - "0.5"
+      - "1.0"
+      - "1.5"
+      - "2.0"
+    not_data:
+      - "0.0"
+      - "0.5"
+      - "1.0"
+      - "1.5"
+      - "2.0"
+  yticks:
+    is_data:
+      - 0
+      - 0.5
+      - 1.0
+      - 1.5
+      - 2.0
+    not_data:
+      - 0
+      - 0.5
+      - 1.0
+      - 1.5
+      - 2.0
+  additional_labels:
+    is_data:
+      - text: '$\sigma(N_{Jets}=0)$'
+        position: [5, 0.1]
+        rotation: 45
+        fontsize: 14
+    not_data:
+      - text: '$\sigma(N_{Jets}=0)$'
+        position: [5, 0.1]
+        rotation: 45
+        fontsize: 14
+  axvline:
+    x: 30
+    color: "black"
+    ls: "dashed"
+    lw: 1
+    alpha: 1

@@ -1,5 +1,6 @@
 # Python script to hold replacement model mapping for different analyses
 from collections import OrderedDict as od
+from commonObjects import *
 
 # Add analyses to globalReplacementMap. See "STXS" as an example
 globalReplacementMap = od()
@@ -283,384 +284,523 @@ globalReplacementMap["Run3FidXSAnalysisInclusive"]["catRVMap"]["cat2"]   = "cat2
 
 
 # Differential PT
+
+PTH_BINS = variableBins["PTH"]
+
 globalReplacementMap["Run3FidXSAnalysisPTH"] = od()
-# Wrong vertex stuff, which process should be considered?
-globalReplacementMap["Run3FidXSAnalysisPTH"]['procWV'] = "ggh_PTH_45p0_80p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]['catWV'] = "RECO_PTH_45p0_80p0_cat2"
-# Relacement processes for RV
+_PTH_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_PTH_FIRST_BIN = PTH_BINS[0]
+_PTH_SECOND_BIN = PTH_BINS[1] if len(PTH_BINS) > 1 else PTH_BINS[0]
+_PTH_WV_BIN = "35p0_45p0"
+# Wrong vertex reference
+globalReplacementMap["Run3FidXSAnalysisPTH"]['procWV'] = f"ggh_PTH_{_PTH_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisPTH"]['catWV'] = f"RECO_PTH_{_PTH_WV_BIN}_cat2"
+
+# Replacement processes for RV
 globalReplacementMap["Run3FidXSAnalysisPTH"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_0p0_15p0_cat0"] = "ggh_PTH_15p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_0p0_15p0_cat1"] = "ggh_PTH_0p0_15p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_0p0_15p0_cat2"] = "ggh_PTH_0p0_15p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_15p0_30p0_cat0"] = "ggh_PTH_15p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_15p0_30p0_cat1"] = "ggh_PTH_15p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_15p0_30p0_cat2"] = "ggh_PTH_15p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_30p0_45p0_cat0"] = "ggh_PTH_30p0_45p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_30p0_45p0_cat1"] = "ggh_PTH_30p0_45p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_30p0_45p0_cat2"] = "ggh_PTH_30p0_45p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_45p0_80p0_cat0"] = "ggh_PTH_45p0_80p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_45p0_80p0_cat1"] = "ggh_PTH_45p0_80p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_45p0_80p0_cat2"] = "ggh_PTH_45p0_80p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_80p0_120p0_cat0"] = "ggh_PTH_80p0_120p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_80p0_120p0_cat1"] = "ggh_PTH_80p0_120p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_80p0_120p0_cat2"] = "ggh_PTH_80p0_120p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_120p0_200p0_cat0"] = "ggh_PTH_120p0_200p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_120p0_200p0_cat1"] = "ggh_PTH_120p0_200p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_120p0_200p0_cat2"] = "ggh_PTH_120p0_200p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_200p0_350p0_cat0"] = "ggh_PTH_200p0_350p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_200p0_350p0_cat1"] = "ggh_PTH_200p0_350p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_200p0_350p0_cat2"] = "ggh_PTH_200p0_350p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_350p0_10000p0_cat0"] = "ggh_PTH_350p0_10000p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_350p0_10000p0_cat1"] = "ggh_PTH_350p0_10000p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"]["RECO_PTH_350p0_10000p0_cat2"] = "ggh_PTH_350p0_10000p0_in"
+for _bin in PTH_BINS:
+    for _cat in _PTH_RECO_CATS:
+        _target_bin = _PTH_SECOND_BIN if (_bin == _PTH_FIRST_BIN and _cat == 'cat0') else _bin
+        reco_key = f"RECO_PTH_{_bin}_{_cat}"
+        proc_value = f"ggh_PTH_{_target_bin}_in"
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key] = proc_value
 
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_0p0_15p0_cat0"] = "RECO_PTH_15p0_30p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_0p0_15p0_cat1"] = "RECO_PTH_0p0_15p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_0p0_15p0_cat2"] = "RECO_PTH_0p0_15p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_15p0_30p0_cat0"] = "RECO_PTH_15p0_30p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_15p0_30p0_cat1"] = "RECO_PTH_15p0_30p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_15p0_30p0_cat2"] = "RECO_PTH_15p0_30p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_30p0_45p0_cat0"] = "RECO_PTH_30p0_45p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_30p0_45p0_cat1"] = "RECO_PTH_30p0_45p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_30p0_45p0_cat2"] = "RECO_PTH_30p0_45p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_45p0_80p0_cat0"] = "RECO_PTH_45p0_80p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_45p0_80p0_cat1"] = "RECO_PTH_45p0_80p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_45p0_80p0_cat2"] = "RECO_PTH_45p0_80p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_80p0_120p0_cat0"] = "RECO_PTH_80p0_120p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_80p0_120p0_cat1"] = "RECO_PTH_80p0_120p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_80p0_120p0_cat2"] = "RECO_PTH_80p0_120p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_120p0_200p0_cat0"] = "RECO_PTH_120p0_200p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_120p0_200p0_cat1"] = "RECO_PTH_120p0_200p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_120p0_200p0_cat2"] = "RECO_PTH_120p0_200p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_200p0_350p0_cat0"] = "RECO_PTH_200p0_350p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_200p0_350p0_cat1"] = "RECO_PTH_200p0_350p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_200p0_350p0_cat2"] = "RECO_PTH_200p0_350p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_350p0_10000p0_cat0"] = "RECO_PTH_350p0_10000p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_350p0_10000p0_cat1"] = "RECO_PTH_350p0_10000p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"]["RECO_PTH_350p0_10000p0_cat2"] = "RECO_PTH_350p0_10000p0_cat2"
+for _bin in PTH_BINS:
+    for _cat in _PTH_RECO_CATS:
+        _target_bin = _PTH_SECOND_BIN if (_bin == _PTH_FIRST_BIN and _cat == 'cat0') else _bin
+        reco_key = f"RECO_PTH_{_bin}_{_cat}"
+        target_value = f"RECO_PTH_{_target_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key] = target_value
+
 
 
 # Differential Y (Rapidity)
+_RAPIDITY_BINS = variableBins["rapidity"]
+
 globalReplacementMap["Run3FidXSAnalysisYH"] = od()
-# Wrong vertex stuff, which process should be considered?
-globalReplacementMap["Run3FidXSAnalysisYH"]['procWV'] = "ggh_YH_0p3_0p6_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]['catWV'] = "RECO_rapidity_0p3_0p6_cat2"
-# Relacement processes for RV
+_RAPIDITY_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_RAPIDITY_WV_BIN = "0p45_0p6"
+globalReplacementMap["Run3FidXSAnalysisYH"]['procWV'] = f"ggh_YH_{_RAPIDITY_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisYH"]['catWV'] = f"RECO_rapidity_{_RAPIDITY_WV_BIN}_cat2"
 globalReplacementMap["Run3FidXSAnalysisYH"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p0_0p15_cat0"] = "ggh_YH_0p0_0p15_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p0_0p15_cat1"] = "ggh_YH_0p0_0p15_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p0_0p15_cat2"] = "ggh_YH_0p0_0p15_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p15_0p3_cat0"] = "ggh_YH_0p15_0p3_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p15_0p3_cat1"] = "ggh_YH_0p15_0p3_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p15_0p3_cat2"] = "ggh_YH_0p15_0p3_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p3_0p6_cat0"] = "ggh_YH_0p3_0p6_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p3_0p6_cat1"] = "ggh_YH_0p3_0p6_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p3_0p6_cat2"] = "ggh_YH_0p3_0p6_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p6_0p9_cat0"] = "ggh_YH_0p6_0p9_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p6_0p9_cat1"] = "ggh_YH_0p6_0p9_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p6_0p9_cat2"] = "ggh_YH_0p6_0p9_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p9_2p5_cat0"] = "ggh_YH_0p9_2p5_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p9_2p5_cat1"] = "ggh_YH_0p9_2p5_in"
-globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"]["RECO_rapidity_0p9_2p5_cat2"] = "ggh_YH_0p9_2p5_in"
+for _bin in _RAPIDITY_BINS:
+    for _cat in _RAPIDITY_RECO_CATS:
+        reco_key = f"RECO_rapidity_{_bin}_{_cat}"
+        proc_value = f"ggh_YH_{_bin}_in"
+        globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"][reco_key] = proc_value
 
-
-# Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p0_0p15_cat0"] = "RECO_rapidity_0p0_0p15_cat0"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p0_0p15_cat1"] = "RECO_rapidity_0p0_0p15_cat1"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p0_0p15_cat2"] = "RECO_rapidity_0p0_0p15_cat2"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p15_0p3_cat0"] = "RECO_rapidity_0p15_0p3_cat0"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p15_0p3_cat1"] = "RECO_rapidity_0p15_0p3_cat1"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p15_0p3_cat2"] = "RECO_rapidity_0p15_0p3_cat2"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p3_0p6_cat0"] = "RECO_rapidity_0p3_0p6_cat0"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p3_0p6_cat1"] = "RECO_rapidity_0p3_0p6_cat1"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p3_0p6_cat2"] = "RECO_rapidity_0p3_0p6_cat2"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p6_0p9_cat0"] = "RECO_rapidity_0p6_0p9_cat0"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p6_0p9_cat1"] = "RECO_rapidity_0p6_0p9_cat1"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p6_0p9_cat2"] = "RECO_rapidity_0p6_0p9_cat2"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p9_2p5_cat0"] = "RECO_rapidity_0p9_2p5_cat0"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p9_2p5_cat1"] = "RECO_rapidity_0p9_2p5_cat1"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_0p9_2p5_cat2"] = "RECO_rapidity_0p9_2p5_cat2"
+for _bin in _RAPIDITY_BINS:
+    for _cat in _RAPIDITY_RECO_CATS:
+        reco_key = f"RECO_rapidity_{_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"][reco_key] = reco_key
+
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"] = "RECO_rapidity_1p2_1p6_cat2"
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"] = "RECO_rapidity_1p6_2p0_cat2"
 
 
 # Differential NJ (Number of Jets)
+_NJ_BINS = variableBins["NJ"]
+
 globalReplacementMap["Run3FidXSAnalysisNJ"] = od()
+_NJ_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_NJ_WV_BIN = "1p0_2p0"
 # Wrong vertex stuff, which process should be considered?
-globalReplacementMap["Run3FidXSAnalysisNJ"]['procWV'] = "ggh_NJ_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]['catWV'] = "RECO_NJ_2p0_3p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisNJ"]['procWV'] = f"ggh_NJ_{_NJ_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisNJ"]['catWV'] = f"RECO_NJ_{_NJ_WV_BIN}_cat2"
 # Relacement processes for RV
 globalReplacementMap["Run3FidXSAnalysisNJ"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_0p0_1p0_cat0"] = "ggh_NJ_0p0_1p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_0p0_1p0_cat1"] = "ggh_NJ_0p0_1p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_0p0_1p0_cat2"] = "ggh_NJ_0p0_1p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_1p0_2p0_cat0"] = "ggh_NJ_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_1p0_2p0_cat1"] = "ggh_NJ_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_1p0_2p0_cat2"] = "ggh_NJ_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_2p0_3p0_cat0"] = "ggh_NJ_2p0_3p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_2p0_3p0_cat1"] = "ggh_NJ_2p0_3p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_2p0_3p0_cat2"] = "ggh_NJ_2p0_3p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_3p0_100p0_cat0"] = "ggh_NJ_3p0_100p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_3p0_100p0_cat1"] = "ggh_NJ_3p0_100p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"]["RECO_NJ_3p0_100p0_cat2"] = "ggh_NJ_3p0_100p0_in"
-
-
+for _bin in _NJ_BINS:
+    for _cat in _NJ_RECO_CATS:
+        reco_key = f"RECO_NJ_{_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"][reco_key] = f"ggh_NJ_{_bin}_in"
+        
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_0p0_1p0_cat0"] = "RECO_NJ_0p0_1p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_0p0_1p0_cat1"] = "RECO_NJ_0p0_1p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_0p0_1p0_cat2"] = "RECO_NJ_0p0_1p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_1p0_2p0_cat0"] = "RECO_NJ_1p0_2p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_1p0_2p0_cat1"] = "RECO_NJ_1p0_2p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_1p0_2p0_cat2"] = "RECO_NJ_1p0_2p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_2p0_3p0_cat0"] = "RECO_NJ_2p0_3p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_2p0_3p0_cat1"] = "RECO_NJ_2p0_3p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_2p0_3p0_cat2"] = "RECO_NJ_2p0_3p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_3p0_100p0_cat0"] = "RECO_NJ_3p0_100p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_3p0_100p0_cat1"] = "RECO_NJ_3p0_100p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"]["RECO_NJ_3p0_100p0_cat2"] = "RECO_NJ_3p0_100p0_cat2"
+for _bin in _NJ_BINS:
+    for _cat in _NJ_RECO_CATS:
+        reco_key = f"RECO_NJ_{_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"][reco_key] = reco_key
 
 # Differential PTJ0 (PT of the leading jet)
+
+_PTJ0_BINS = variableBins["PTJ0"]
+_PTJ0_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_PTJ0_WV_BIN = "55p0_75p0"
+
 globalReplacementMap["Run3FidXSAnalysisPTJ0"] = od()
 # Wrong vertex stuff, which process should be considered?
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]['procWV'] = "ggh_PTJ0_30p0_75p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]['catWV'] = "RECO_PTJ0_30p0_75p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisPTJ0"]['procWV'] = f"ggh_PTJ0_{_PTJ0_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ0"]['catWV'] = f"RECO_PTJ0_{_PTJ0_WV_BIN}_cat2"
 # Relacement processes for RV
 globalReplacementMap["Run3FidXSAnalysisPTJ0"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_0p0_30p0_cat0"] = "ggh_PTJ0_0p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_0p0_30p0_cat1"] = "ggh_PTJ0_0p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_0p0_30p0_cat2"] = "ggh_PTJ0_0p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_30p0_75p0_cat0"] = "ggh_PTJ0_30p0_75p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_30p0_75p0_cat1"] = "ggh_PTJ0_30p0_75p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_30p0_75p0_cat2"] = "ggh_PTJ0_30p0_75p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_75p0_120p0_cat0"] = "ggh_PTJ0_75p0_120p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_75p0_120p0_cat1"] = "ggh_PTJ0_75p0_120p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_75p0_120p0_cat2"] = "ggh_PTJ0_75p0_120p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_120p0_200p0_cat0"] = "ggh_PTJ0_120p0_200p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_120p0_200p0_cat1"] = "ggh_PTJ0_120p0_200p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_120p0_200p0_cat2"] = "ggh_PTJ0_120p0_200p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_200p0_10000p0_cat0"] = "ggh_PTJ0_200p0_10000p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_200p0_10000p0_cat1"] = "ggh_PTJ0_200p0_10000p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"]["RECO_PTJ0_200p0_10000p0_cat2"] = "ggh_PTJ0_200p0_10000p0_in"
+for bin_name in _PTJ0_BINS:
+    for cat in _PTJ0_RECO_CATS:
+        reco_key = f"RECO_PTJ0_{bin_name}_{cat}"
+        proc_val = f"ggh_PTJ0_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"][reco_key] = proc_val
 
 
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_0p0_30p0_cat0"] = "RECO_PTJ0_0p0_30p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_0p0_30p0_cat1"] = "RECO_PTJ0_0p0_30p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_0p0_30p0_cat2"] = "RECO_PTJ0_0p0_30p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_30p0_75p0_cat0"] = "RECO_PTJ0_30p0_75p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_30p0_75p0_cat1"] = "RECO_PTJ0_30p0_75p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_30p0_75p0_cat2"] = "RECO_PTJ0_30p0_75p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_75p0_120p0_cat0"] = "RECO_PTJ0_75p0_120p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_75p0_120p0_cat1"] = "RECO_PTJ0_75p0_120p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_75p0_120p0_cat2"] = "RECO_PTJ0_75p0_120p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_120p0_200p0_cat0"] = "RECO_PTJ0_120p0_200p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_120p0_200p0_cat1"] = "RECO_PTJ0_120p0_200p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_120p0_200p0_cat2"] = "RECO_PTJ0_120p0_200p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_200p0_10000p0_cat0"] = "RECO_PTJ0_200p0_10000p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_200p0_10000p0_cat1"] = "RECO_PTJ0_200p0_10000p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"]["RECO_PTJ0_200p0_10000p0_cat2"] = "RECO_PTJ0_200p0_10000p0_cat2"
+for bin_name in _PTJ0_BINS:
+    for cat in _PTJ0_RECO_CATS:
+        reco_key = f"RECO_PTJ0_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"][reco_key] = reco_key
 
-# Differential NJ_pt30_absEta2p5 (Number of jets with pt > 30 GeV and abs(eta) < 2.5)
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"] = od()
+
+# Differential DPhiJ0J1
+_DPhiJ0J1_BINS = variableBins["DPhiJ0J1"]
+
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"] = od()
+_DPhiJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_DPhiJ0J1_WV_BIN = "m2p0944_m1p0472"
 # Wrong vertex stuff, which process should be considered?
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]['procWV'] = "ggh_NJ_pt30_absEta2p5_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]['catWV'] = "RECO_NJ_pt30_absEta2p5_2p0_3p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['procWV'] = f"ggh_DPhiJ0J1_{_DPhiJ0J1_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['catWV'] = f"RECO_DPhiJ0J1_{_DPhiJ0J1_WV_BIN}_cat2"
 # Relacement processes for RV
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat0"] = "ggh_NJ_pt30_absEta2p5_0p0_1p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat1"] = "ggh_NJ_pt30_absEta2p5_0p0_1p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat2"] = "ggh_NJ_pt30_absEta2p5_0p0_1p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat0"] = "ggh_NJ_pt30_absEta2p5_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat1"] = "ggh_NJ_pt30_absEta2p5_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat2"] = "ggh_NJ_pt30_absEta2p5_1p0_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat0"] = "ggh_NJ_pt30_absEta2p5_2p0_3p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat1"] = "ggh_NJ_pt30_absEta2p5_2p0_3p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat2"] = "ggh_NJ_pt30_absEta2p5_2p0_3p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat0"] = "ggh_NJ_pt30_absEta2p5_3p0_100p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat1"] = "ggh_NJ_pt30_absEta2p5_3p0_100p0_in"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["procRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat2"] = "ggh_NJ_pt30_absEta2p5_3p0_100p0_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['procRVMap'] = od()
+for _bin in _DPhiJ0J1_BINS:
+    for _cat in _DPhiJ0J1_RECO_CATS:
+        reco_key = f"RECO_DPhiJ0J1_{_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key] = f"ggh_DPhiJ0J1_{_bin}_in"
+        
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"] = od()
+for _bin in _DPhiJ0J1_BINS:
+    for _cat in _DPhiJ0J1_RECO_CATS:
+        reco_key = f"RECO_DPhiJ0J1_{_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"][reco_key] = reco_key
+
+# Differential NBJet
+_NBJET_BINS = variableBins["NBJet"]
+_NBJET_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_NBJET_WV_BIN = "0p0_1p0"
+
+globalReplacementMap["Run3FidXSAnalysisNBJet"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisNBJet"]['procWV'] = f"ggh_NBJet_{_NBJET_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisNBJet"]['catWV'] = f"RECO_NBJet_{_NBJET_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisNBJet"]['procRVMap'] = od()
+for bin_name in _NBJET_BINS:
+    for cat in _NBJET_RECO_CATS:
+        reco_key = f"RECO_NBJet_{bin_name}_{cat}"
+        proc_val = f"ggh_NBJet_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisNBJet"]["procRVMap"][reco_key] = proc_val
+
 
 # Replacement categories for RV
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat0"] = "RECO_NJ_pt30_absEta2p5_0p0_1p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat1"] = "RECO_NJ_pt30_absEta2p5_0p0_1p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_0p0_1p0_cat2"] = "RECO_NJ_pt30_absEta2p5_0p0_1p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat0"] = "RECO_NJ_pt30_absEta2p5_1p0_2p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat1"] = "RECO_NJ_pt30_absEta2p5_1p0_2p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_1p0_2p0_cat2"] = "RECO_NJ_pt30_absEta2p5_1p0_2p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat0"] = "RECO_NJ_pt30_absEta2p5_2p0_3p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat1"] = "RECO_NJ_pt30_absEta2p5_2p0_3p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_2p0_3p0_cat2"] = "RECO_NJ_pt30_absEta2p5_2p0_3p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat0"] = "RECO_NJ_pt30_absEta2p5_3p0_100p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat1"] = "RECO_NJ_pt30_absEta2p5_3p0_100p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisNJ_pt30_absEta2p5"]["catRVMap"]["RECO_NJ_pt30_absEta2p5_3p0_100p0_cat2"] = "RECO_NJ_pt30_absEta2p5_3p0_100p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisNBJet"]["catRVMap"] = od()
+for bin_name in _NBJET_BINS:
+    for cat in _NBJET_RECO_CATS:
+        reco_key = f"RECO_NBJet_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisNBJet"]["catRVMap"][reco_key] = reco_key
 
-# Differential PTJ0_pt30_absEta2p5 (PT of the leading jet with pt > 30 GeV and abs(eta) < 2.5)
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"] = od()
+# Differential DYHJ0
+_DYHJ0_BINS = variableBins["DYHJ0"]
+_DYHJ0_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_DYHJ0_WV_BIN = "0p3_0p6"
+
+globalReplacementMap["Run3FidXSAnalysisDYHJ0"] = od()
 # Wrong vertex stuff, which process should be considered?
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]['procWV'] = "ggh_PTJ0_pt30_absEta2p5_30p0_75p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]['catWV'] = "RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisDYHJ0"]['procWV'] = f"ggh_DYHJ0_{_DYHJ0_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisDYHJ0"]['catWV'] = f"RECO_DYHJ0_{_DYHJ0_WV_BIN}_cat2"
 # Relacement processes for RV
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_0p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_0p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_0p0_30p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_30p0_75p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_30p0_75p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_30p0_75p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_75p0_120p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_75p0_120p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_75p0_120p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_120p0_200p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_120p0_200p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_120p0_200p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat0"] = "ggh_PTJ0_pt30_absEta2p5_200p0_10000p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat1"] = "ggh_PTJ0_pt30_absEta2p5_200p0_10000p0_in"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["procRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat2"] = "ggh_PTJ0_pt30_absEta2p5_200p0_10000p0_in"
+globalReplacementMap["Run3FidXSAnalysisDYHJ0"]['procRVMap'] = od()
+for bin_name in _DYHJ0_BINS:
+    for cat in _DYHJ0_RECO_CATS:
+        reco_key = f"RECO_DYHJ0_{bin_name}_{cat}"
+        proc_val = f"ggh_DYHJ0_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["procRVMap"][reco_key] = proc_val
+
 
 # Replacement categories for RV
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_0p0_30p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_30p0_75p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_75p0_120p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_120p0_200p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat0"] = "RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat1"] = "RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisPTJ0_pt30_absEta2p5"]["catRVMap"]["RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat2"] = "RECO_PTJ0_pt30_absEta2p5_200p0_10000p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["catRVMap"] = od()
+for bin_name in _DYHJ0_BINS:
+    for cat in _DYHJ0_RECO_CATS:
+        reco_key = f"RECO_DYHJ0_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["catRVMap"][reco_key] = reco_key
 
-# Differential YJ0 (Rapidity of the leading jet)
+
+# Differential TauJC
+_TauJC_BINS = variableBins["TauJC"]
+_TauJC_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_TauJC_WV_BIN = "0p0_15p0"
+
+globalReplacementMap["Run3FidXSAnalysisTauJC"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisTauJC"]['procWV'] = f"ggh_TauJC_{_TauJC_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisTauJC"]['catWV'] = f"RECO_TauJC_{_TauJC_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisTauJC"]['procRVMap'] = od()
+for bin_name in _TauJC_BINS:
+    for cat in _TauJC_RECO_CATS:
+        reco_key = f"RECO_TauJC_{bin_name}_{cat}"
+        proc_val = f"ggh_TauJC_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisTauJC"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisTauJC"]["catRVMap"] = od()
+for bin_name in _TauJC_BINS:
+    for cat in _TauJC_RECO_CATS:
+        reco_key = f"RECO_TauJC_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisTauJC"]["catRVMap"][reco_key] = reco_key
+
+
+# Differential PTJ1
+_PTJ1_BINS = variableBins["PTJ1"]
+_PTJ1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_PTJ1_WV_BIN = "45p0_65p0"
+
+globalReplacementMap["Run3FidXSAnalysisPTJ1"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisPTJ1"]['procWV'] = f"ggh_PTJ1_{_PTJ1_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisPTJ1"]['catWV'] = f"RECO_PTJ1_{_PTJ1_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisPTJ1"]['procRVMap'] = od()
+for bin_name in _PTJ1_BINS:
+    for cat in _PTJ1_RECO_CATS:
+        reco_key = f"RECO_PTJ1_{bin_name}_{cat}"
+        proc_val = f"ggh_PTJ1_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisPTJ1"]["catRVMap"] = od()
+for bin_name in _PTJ1_BINS:
+    for cat in _PTJ1_RECO_CATS:
+        reco_key = f"RECO_PTJ1_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["catRVMap"][reco_key] = reco_key
+
+
+
+# Differential YJ1
+_YJ1_BINS = variableBins["YJ1"]
+_YJ1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_YJ1_WV_BIN = "0p0_0p6"
+
+globalReplacementMap["Run3FidXSAnalysisYJ1"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisYJ1"]['procWV'] = f"ggh_YJ1_{_YJ1_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisYJ1"]['catWV'] = f"RECO_YJ1_{_YJ1_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisYJ1"]['procRVMap'] = od()
+for bin_name in _YJ1_BINS:
+    for cat in _YJ1_RECO_CATS:
+        reco_key = f"RECO_YJ1_{bin_name}_{cat}"
+        proc_val = f"ggh_YJ1_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisYJ1"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisYJ1"]["catRVMap"] = od()
+for bin_name in _YJ1_BINS:
+    for cat in _YJ1_RECO_CATS:
+        reco_key = f"RECO_YJ1_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisYJ1"]["catRVMap"][reco_key] = reco_key
+
+
+# Differential CosThetaStarCS
+_CosThetaStarCS_BINS = variableBins["CosThetaStarCS"]
+_CosThetaStarCS_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_CosThetaStarCS_WV_BIN = "0p15_0p22"
+
+globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]['procWV'] = f"ggh_CosThetaStarCS_{_CosThetaStarCS_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]['catWV'] = f"RECO_CosThetaStarCS_{_CosThetaStarCS_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]['procRVMap'] = od()
+for bin_name in _CosThetaStarCS_BINS:
+    for cat in _CosThetaStarCS_RECO_CATS:
+        reco_key = f"RECO_CosThetaStarCS_{bin_name}_{cat}"
+        proc_val = f"ggh_CosThetaStarCS_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["catRVMap"] = od()
+for bin_name in _CosThetaStarCS_BINS:
+    for cat in _CosThetaStarCS_RECO_CATS:
+        reco_key = f"RECO_CosThetaStarCS_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["catRVMap"][reco_key] = reco_key
+
+
+# Differential PhiEtaStar
+_PhiEtaStar_BINS = variableBins["PhiEtaStar"]
+_PhiEtaStar_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_PhiEtaStar_WV_BIN = "0p2_0p3"
+
+globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]['procWV'] = f"ggh_PhiEtaStar_{_PhiEtaStar_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]['catWV'] = f"RECO_PhiEtaStar_{_PhiEtaStar_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]['procRVMap'] = od()
+for bin_name in _PhiEtaStar_BINS:
+    for cat in _PhiEtaStar_RECO_CATS:
+        reco_key = f"RECO_PhiEtaStar_{bin_name}_{cat}"
+        proc_val = f"ggh_PhiEtaStar_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["catRVMap"] = od()
+for bin_name in _PhiEtaStar_BINS:
+    for cat in _PhiEtaStar_RECO_CATS:
+        reco_key = f"RECO_PhiEtaStar_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["catRVMap"][reco_key] = reco_key
+
+
+# Differential DPhiHJ0
+_DPhiHJ0_BINS = variableBins["DPhiHJ0"]
+_DPhiHJ0_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_DPhiHJ0_WV_BIN = "0p0_2p0"
+
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]['procWV'] = f"ggh_DPhiHJ0_{_DPhiHJ0_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]['catWV'] = f"RECO_DPhiHJ0_{_DPhiHJ0_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]['procRVMap'] = od()
+for bin_name in _DPhiHJ0_BINS:
+    for cat in _DPhiHJ0_RECO_CATS:
+        reco_key = f"RECO_DPhiHJ0_{bin_name}_{cat}"
+        proc_val = f"ggh_DPhiHJ0_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["catRVMap"] = od()
+for bin_name in _DPhiHJ0_BINS:
+    for cat in _DPhiHJ0_RECO_CATS:
+        reco_key = f"RECO_DPhiHJ0_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["catRVMap"][reco_key] = reco_key
+
+
+# Differential YJ0
+_YJ0_BINS = variableBins["YJ0"]
+_YJ0_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_YJ0_WV_BIN = "0p3_0p6"
+
 globalReplacementMap["Run3FidXSAnalysisYJ0"] = od()
 # Wrong vertex stuff, which process should be considered?
-globalReplacementMap["Run3FidXSAnalysisYJ0"]['procWV'] = "ggh_YJ0_0p0_0p5_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]['catWV'] = "RECO_first_jet_eta_0p5_1p2_cat2"
+globalReplacementMap["Run3FidXSAnalysisYJ0"]['procWV'] = f"ggh_YJ0_{_YJ0_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisYJ0"]['catWV'] = f"RECO_YJ0_{_YJ0_WV_BIN}_cat2"
 # Relacement processes for RV
 globalReplacementMap["Run3FidXSAnalysisYJ0"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_0p0_0p5_cat0"] = "ggh_YJ0_0p0_0p5_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_0p0_0p5_cat1"] = "ggh_YJ0_0p0_0p5_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_0p0_0p5_cat2"] = "ggh_YJ0_0p0_0p5_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_0p5_1p2_cat0"] = "ggh_YJ0_0p5_1p2_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_0p5_1p2_cat1"] = "ggh_YJ0_0p5_1p2_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_0p5_1p2_cat2"] = "ggh_YJ0_0p5_1p2_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_1p2_2p0_cat0"] = "ggh_YJ0_1p2_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_1p2_2p0_cat1"] = "ggh_YJ0_1p2_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_1p2_2p0_cat2"] = "ggh_YJ0_1p2_2p0_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_2p0_2p5_cat0"] = "ggh_YJ0_2p0_2p5_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_2p0_2p5_cat1"] = "ggh_YJ0_2p0_2p5_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_2p0_2p5_cat2"] = "ggh_YJ0_2p0_2p5_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_NJ0_cat0"] = "ggh_YJ0_NJ0_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_NJ0_cat1"] = "ggh_YJ0_NJ0_in"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"]["RECO_first_jet_eta_NJ0_cat2"] = "ggh_YJ0_NJ0_in"
+for bin_name in _YJ0_BINS:
+    for cat in _YJ0_RECO_CATS:
+        reco_key = f"RECO_YJ0_{bin_name}_{cat}"
+        proc_val = f"ggh_YJ0_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"][reco_key] = proc_val
 
 
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_0p0_0p5_cat0"] = "RECO_first_jet_eta_0p0_0p5_cat0"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_0p0_0p5_cat1"] = "RECO_first_jet_eta_0p0_0p5_cat1"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_0p0_0p5_cat2"] = "RECO_first_jet_eta_0p0_0p5_cat2"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_0p5_1p2_cat0"] = "RECO_first_jet_eta_0p5_1p2_cat0"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_0p5_1p2_cat1"] = "RECO_first_jet_eta_0p5_1p2_cat1"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_0p5_1p2_cat2"] = "RECO_first_jet_eta_0p5_1p2_cat2"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_1p2_2p0_cat0"] = "RECO_first_jet_eta_1p2_2p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_1p2_2p0_cat1"] = "RECO_first_jet_eta_1p2_2p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_1p2_2p0_cat2"] = "RECO_first_jet_eta_1p2_2p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_2p0_2p5_cat0"] = "RECO_first_jet_eta_2p0_2p5_cat0"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_2p0_2p5_cat1"] = "RECO_first_jet_eta_2p0_2p5_cat1"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_2p0_2p5_cat2"] = "RECO_first_jet_eta_2p0_2p5_cat2"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_NJ0_cat0"] = "RECO_first_jet_eta_NJ0_cat0"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_NJ0_cat1"] = "RECO_first_jet_eta_NJ0_cat1"
-globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"]["RECO_first_jet_eta_NJ0_cat2"] = "RECO_first_jet_eta_NJ0_cat2"
+for bin_name in _YJ0_BINS:
+    for cat in _YJ0_RECO_CATS:
+        reco_key = f"RECO_YJ0_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"][reco_key] = reco_key
 
 
-# Differential AbsPhiHJ0 
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"] = od()
+# Differential DPhiHJ0J1
+_DPhiHJ0J1_BINS = variableBins["DPhiHJ0J1"]
+_DPhiHJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_DPhiHJ0J1_WV_BIN = "0p0_2p0"
+
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"] = od()
 # Wrong vertex stuff, which process should be considered?
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]['procWV'] = "ggh_AbsPhiHJ0_0p0_2p6_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]['catWV'] = "RECO_AbsPhiHJ0_0p0_2p6_cat2"
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]['procWV'] = f"ggh_DPhiHJ0J1_{_DPhiHJ0J1_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]['catWV'] = f"RECO_DPhiHJ0J1_{_DPhiHJ0J1_WV_BIN}_cat2"
 # Relacement processes for RV
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_0p0_2p6_cat0"] = "ggh_AbsPhiHJ0_0p0_2p6_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_0p0_2p6_cat1"] = "ggh_AbsPhiHJ0_0p0_2p6_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_0p0_2p6_cat2"] = "ggh_AbsPhiHJ0_0p0_2p6_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_2p6_2p9_cat0"] = "ggh_AbsPhiHJ0_2p6_2p9_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_2p6_2p9_cat1"] = "ggh_AbsPhiHJ0_2p6_2p9_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_2p6_2p9_cat2"] = "ggh_AbsPhiHJ0_2p6_2p9_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_2p9_3p03_cat0"] = "ggh_AbsPhiHJ0_2p9_3p03_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_2p9_3p03_cat1"] = "ggh_AbsPhiHJ0_2p9_3p03_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_2p9_3p03_cat2"] = "ggh_AbsPhiHJ0_2p9_3p03_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_3p03_3p1415926_cat0"] = "ggh_AbsPhiHJ0_3p03_3p1415926_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_3p03_3p1415926_cat1"] = "ggh_AbsPhiHJ0_3p03_3p1415926_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_3p03_3p1415926_cat2"] = "ggh_AbsPhiHJ0_3p03_3p1415926_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_NJ_cat0"] = "ggh_AbsPhiHJ0_NJ_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_NJ_cat1"] = "ggh_AbsPhiHJ0_NJ_in"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["procRVMap"]["RECO_AbsPhiHJ0_NJ_cat2"] = "ggh_AbsPhiHJ0_NJ_in"
-
-# Replacement categories for RV
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_0p0_2p6_cat0"] = "RECO_AbsPhiHJ0_0p0_2p6_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_0p0_2p6_cat1"] = "RECO_AbsPhiHJ0_0p0_2p6_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_0p0_2p6_cat2"] = "RECO_AbsPhiHJ0_0p0_2p6_cat2"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_2p6_2p9_cat0"] = "RECO_AbsPhiHJ0_2p6_2p9_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_2p6_2p9_cat1"] = "RECO_AbsPhiHJ0_2p6_2p9_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_2p6_2p9_cat2"] = "RECO_AbsPhiHJ0_2p6_2p9_cat2"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_2p9_3p03_cat0"] = "RECO_AbsPhiHJ0_2p9_3p03_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_2p9_3p03_cat1"] = "RECO_AbsPhiHJ0_2p9_3p03_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_2p9_3p03_cat2"] = "RECO_AbsPhiHJ0_2p9_3p03_cat2"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_3p03_3p1415926_cat0"] = "RECO_AbsPhiHJ0_3p03_3p1415926_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_3p03_3p1415926_cat1"] = "RECO_AbsPhiHJ0_3p03_3p1415926_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_3p03_3p1415926_cat2"] = "RECO_AbsPhiHJ0_3p03_3p1415926_cat2"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_NJ_cat0"] = "RECO_AbsPhiHJ0_NJ_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_NJ_cat1"] = "RECO_AbsPhiHJ0_NJ_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsPhiJ0"]["catRVMap"]["RECO_AbsPhiHJ0_NJ_cat2"] = "RECO_AbsPhiHJ0_NJ_cat2"
-
-# Differential AbsYHJ0 
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"] = od()
-# Wrong vertex stuff, which process should be considered?
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]['procWV'] = "ggh_AbsYHJ0_0p0_0p6_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]['catWV'] = "RECO_AbsYHJ0_NJ0_cat2"
-# Relacement processes for RV
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]['procRVMap'] = od()
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_0p0_0p6_cat0"] = "ggh_AbsYHJ0_0p0_0p6_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_0p0_0p6_cat1"] = "ggh_AbsYHJ0_0p0_0p6_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_0p0_0p6_cat2"] = "ggh_AbsYHJ0_0p0_0p6_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_0p6_1p2_cat0"] = "ggh_AbsYHJ0_0p6_1p2_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_0p6_1p2_cat1"] = "ggh_AbsYHJ0_0p6_1p2_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_0p6_1p2_cat2"] = "ggh_AbsYHJ0_0p6_1p2_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_1p2_1p9_cat0"] = "ggh_AbsYHJ0_1p2_1p9_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_1p2_1p9_cat1"] = "ggh_AbsYHJ0_1p2_1p9_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_1p2_1p9_cat2"] = "ggh_AbsYHJ0_1p2_1p9_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_1p9_100p0_cat0"] = "ggh_AbsYHJ0_1p9_100p0_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_1p9_100p0_cat1"] = "ggh_AbsYHJ0_1p9_100p0_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_1p9_100p0_cat2"] = "ggh_AbsYHJ0_1p9_100p0_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_NJ0_cat0"] = "ggh_AbsYHJ0_NJ0_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_NJ0_cat1"] = "ggh_AbsYHJ0_NJ0_in"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["procRVMap"]["RECO_AbsYHJ0_NJ0_cat2"] = "ggh_AbsYHJ0_NJ0_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]['procRVMap'] = od()
+for bin_name in _DPhiHJ0J1_BINS:
+    for cat in _DPhiHJ0J1_RECO_CATS:
+        reco_key = f"RECO_DPhiHJ0J1_{bin_name}_{cat}"
+        proc_val = f"ggh_DPhiHJ0J1_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["procRVMap"][reco_key] = proc_val
 
 
 # Replacement categories for RV
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"] = od()
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_0p0_0p6_cat0"] = "RECO_AbsYHJ0_0p0_0p6_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_0p0_0p6_cat1"] = "RECO_AbsYHJ0_0p0_0p6_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_0p0_0p6_cat2"] = "RECO_AbsYHJ0_0p0_0p6_cat2"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_0p6_1p2_cat0"] = "RECO_AbsYHJ0_0p6_1p2_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_0p6_1p2_cat1"] = "RECO_AbsYHJ0_0p6_1p2_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_0p6_1p2_cat2"] = "RECO_AbsYHJ0_0p6_1p2_cat2"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_1p2_1p9_cat0"] = "RECO_AbsYHJ0_1p2_1p9_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_1p2_1p9_cat1"] = "RECO_AbsYHJ0_1p2_1p9_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_1p2_1p9_cat2"] = "RECO_AbsYHJ0_1p2_1p9_cat2"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_1p9_100p0_cat0"] = "RECO_AbsYHJ0_1p9_100p0_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_1p9_100p0_cat1"] = "RECO_AbsYHJ0_1p9_100p0_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_1p9_100p0_cat2"] = "RECO_AbsYHJ0_1p9_100p0_cat2"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_NJ0_cat0"] = "RECO_AbsYHJ0_NJ0_cat0"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_NJ0_cat1"] = "RECO_AbsYHJ0_NJ0_cat1"
-globalReplacementMap["Run3FidXSAnalysisAbsYHJ0"]["catRVMap"]["RECO_AbsYHJ0_NJ0_cat2"] = "RECO_AbsYHJ0_NJ0_cat2"
+globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["catRVMap"] = od()
+for bin_name in _DPhiHJ0J1_BINS:
+    for cat in _DPhiHJ0J1_RECO_CATS:
+        reco_key = f"RECO_DPhiHJ0J1_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["catRVMap"][reco_key] = reco_key
+
+
+# Differential DEtaJ0J1H
+_DEtaJ0J1H_BINS = variableBins["DEtaJ0J1H"]
+_DEtaJ0J1H_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_DEtaJ0J1H_WV_BIN = "0p2_0p5"
+
+globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]['procWV'] = f"ggh_DEtaJ0J1H_{_DEtaJ0J1H_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]['catWV'] = f"RECO_DEtaJ0J1H_{_DEtaJ0J1H_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]['procRVMap'] = od()
+for bin_name in _DEtaJ0J1H_BINS:
+    for cat in _DEtaJ0J1H_RECO_CATS:
+        reco_key = f"RECO_DEtaJ0J1H_{bin_name}_{cat}"
+        proc_val = f"ggh_DEtaJ0J1H_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["catRVMap"] = od()
+for bin_name in _DEtaJ0J1H_BINS:
+    for cat in _DEtaJ0J1H_RECO_CATS:
+        reco_key = f"RECO_DEtaJ0J1H_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["catRVMap"][reco_key] = reco_key
+
+
+# Differential MassJ0J1
+_MassJ0J1_BINS = variableBins["MassJ0J1"]
+_MassJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_MassJ0J1_WV_BIN = "160p0_300p0"
+
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]['procWV'] = f"ggh_MassJ0J1_{_MassJ0J1_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]['catWV'] = f"RECO_MassJ0J1_{_MassJ0J1_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]['procRVMap'] = od()
+for bin_name in _MassJ0J1_BINS:
+    for cat in _MassJ0J1_RECO_CATS:
+        reco_key = f"RECO_MassJ0J1_{bin_name}_{cat}"
+        proc_val = f"ggh_MassJ0J1_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["catRVMap"] = od()
+for bin_name in _MassJ0J1_BINS:
+    for cat in _MassJ0J1_RECO_CATS:
+        reco_key = f"RECO_MassJ0J1_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["catRVMap"][reco_key] = reco_key
+
+
+# Differential EtaJ0J1
+_EtaJ0J1_BINS = variableBins["EtaJ0J1"]
+_EtaJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_EtaJ0J1_WV_BIN = "0p0_0p7"
+
+globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]['procWV'] = f"ggh_EtaJ0J1_{_EtaJ0J1_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]['catWV'] = f"RECO_EtaJ0J1_{_EtaJ0J1_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]['procRVMap'] = od()
+for bin_name in _EtaJ0J1_BINS:
+    for cat in _EtaJ0J1_RECO_CATS:
+        reco_key = f"RECO_EtaJ0J1_{bin_name}_{cat}"
+        proc_val = f"ggh_EtaJ0J1_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["catRVMap"] = od()
+for bin_name in _EtaJ0J1_BINS:
+    for cat in _EtaJ0J1_RECO_CATS:
+        reco_key = f"RECO_EtaJ0J1_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["catRVMap"][reco_key] = reco_key
+
+
+
+# Differential PTHvsDPhiJ0J1
+_PTHvsDPhiJ0J1_BINS = variableBins["PTHvsDPhiJ0J1"]
+_PTHvsDPhiJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_PTHvsDPhiJ0J1_WV_BIN = "0p0_35p0_1p5708_3p1416"
+
+globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]['procWV'] = f"ggh_PTHvsDPhiJ0J1_{_PTHvsDPhiJ0J1_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]['catWV'] = f"RECO_PTHvsDPhiJ0J1_{_PTHvsDPhiJ0J1_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]['procRVMap'] = od()
+for bin_name in _PTHvsDPhiJ0J1_BINS:
+    for cat in _PTHvsDPhiJ0J1_RECO_CATS:
+        reco_key = f"RECO_PTHvsDPhiJ0J1_{bin_name}_{cat}"
+        proc_val = f"ggh_PTHvsDPhiJ0J1_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["catRVMap"] = od()
+for bin_name in _PTHvsDPhiJ0J1_BINS:
+    for cat in _PTHvsDPhiJ0J1_RECO_CATS:
+        reco_key = f"RECO_PTHvsDPhiJ0J1_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["catRVMap"][reco_key] = reco_key
+
+
+
+# Differential PTHvYH
+_PTHvYH_BINS = variableBins["PTHvYH"]
+_PTHvYH_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_PTHvYH_WV_BIN = "0p0_50p0_0p4_0p65"
+
+globalReplacementMap["Run3FidXSAnalysisPTHvYH"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisPTHvYH"]['procWV'] = f"ggh_PTHvYH_{_PTHvYH_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisPTHvYH"]['catWV'] = f"RECO_PTHvYH_{_PTHvYH_WV_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisPTHvYH"]['procRVMap'] = od()
+for bin_name in _PTHvYH_BINS:
+    for cat in _PTHvYH_RECO_CATS:
+        reco_key = f"RECO_PTHvYH_{bin_name}_{cat}"
+        proc_val = f"ggh_PTHvYH_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"] = od()
+for bin_name in _PTHvYH_BINS:
+    for cat in _PTHvYH_RECO_CATS:
+        reco_key = f"RECO_PTHvYH_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"][reco_key] = reco_key

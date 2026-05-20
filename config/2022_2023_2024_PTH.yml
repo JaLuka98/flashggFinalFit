@@ -59,11 +59,11 @@ trees2wsCfg:
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
-    - "ScaleEB"
-    - "ScaleEE"
+    - "ScaleEBZmmg"
+    - "ScaleEEZmmg"
+    - "ScaleEBZee"
+    - "ScaleEEZee"
     - "Smearing"
-    - "Material"
-    - "FNUF"
     - "energyErrShift"
     - "JerSyst"
     - "JecSystTotal"
@@ -87,9 +87,9 @@ signalScriptCfg_2223_preEE:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
@@ -116,9 +116,9 @@ signalScriptCfg_2223_postEE:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
@@ -144,9 +144,9 @@ signalScriptCfg_2223_preBPix:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
@@ -173,15 +173,43 @@ signalScriptCfg_2223_postBPix:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
 
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
 
   beamspotWidthData: '3.737'
   beamspotWidthMC: '3.597'
+
+  # Job submission options
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+signalScriptCfg_2024:
+  # Setup
+  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  ext: 'Run3FidXSAnalysis_PTH_2024' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisPTH' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
+  year: '2024' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '25'
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+
+  # Photon shape systematics
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
+  smears: 'Smearing' # separate nuisance per year
+
+  doPlots: True
+
+  beamspotWidthData: '3.583'
+  beamspotWidthMC: '3.601'
 
   # Job submission options
   execution: 'htcondor'
@@ -250,8 +278,8 @@ combine_fit:
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,3"
   cminApproxPreFitTolerance: 0.01
-  rMin: 0.7
-  rMax: 1.6
+  rMin: 0.0
+  rMax: 2.0
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
@@ -295,14 +323,13 @@ spectra:
   ggh_powheg_xs: "fidXS_PTH_ggH_powheg"
   ggh_no_nnlops_xs: "fidXS_PTH_ggH_genWeight"
   underflow_bin_normalized: False # Underflow bin normalized with binwidth
-  last_bin_center: 425
-  first_bin_center: 7.5
+  last_bin_center: 500
+  first_bin_center: 2.5
   plot_log: 1
   variable: "p_T^H"
   y_unit: "(fb/GeV)"
   x_unit: "(GeV)"
-  x_lim: [0, 500]
+  x_lim: [0, 550]
   y_lim: [-1,3]
   y_lim_top: 500
-  overflow: 500
-
+  overflow: 550

@@ -259,7 +259,11 @@ def writeMCStatUncertainty(f,d,options):
       mask = (d['year']==year)&(d['cat']==scat)&(d['type']=='sig')
       sumw = d[mask]['nominal_yield'].sum()
       sumw2 = d[mask]['sumw2'].sum()
-      scval = [1+(math.sqrt(sumw2)/sumw)]
+      # Guard against zero-yield categories (e.g. postEE in high-rapidity bins after pruning)
+      if sumw <= 0:
+        scval = [1.0]
+      else:
+        scval = [1+(math.sqrt(sumw2)/sumw)]
       d[d['type']=='sig']
       stitle = "MCStat_%s_%s"%(year,scat)
       sprior = "lnN"
