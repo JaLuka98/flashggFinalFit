@@ -8,6 +8,8 @@ import json
 import os
 import re
 
+HIGGS_MASS = "125.07"
+
 def get_options():
   parser = OptionParser()
   parser.add_option('--inputJson', dest='inputJson', default='inputs.json', help="Input json file to define fits")
@@ -110,6 +112,13 @@ for mode,pois in modes.items():
 
   if mode.count('stage1p2'): canv = setCanvasCorr(stage='1p2')
   elif mode.count('mu_reco'): canv = setCanvasCorr(stage='1p2')
+  elif mode.count("PTH"):
+    canv = ROOT.TCanvas("can", "can", 1200, 1100)
+    canv.GetPad(0).SetTopMargin(0.11)
+    canv.GetPad(0).SetRightMargin(0.16)
+    canv.GetPad(0).SetLeftMargin(0.24)
+    canv.GetPad(0).SetBottomMargin(0.27)
+    canv.GetPad(0).SetTicks(1, 1)
   else:
     if opt.doCov:
       canv = setCanvas()
@@ -162,10 +171,10 @@ for mode,pois in modes.items():
     theHist.GetXaxis().LabelsOption("v")
     if opt.doCov:
       if mode.count("PTH"):
-        label_size = 0.05
+        label_size = 0.035
         theHist.GetXaxis().SetLabelSize(label_size)
         theHist.GetYaxis().SetLabelSize(label_size)
-        theHist.SetMarkerSize(2)
+        theHist.SetMarkerSize(0.95)
       else:
         label_size = 0.06
         theHist.GetXaxis().SetLabelSize(label_size)
@@ -173,7 +182,7 @@ for mode,pois in modes.items():
         theHist.SetMarkerSize(2)
     else:
       if mode.count("PTH"):
-        label_size = 0.05
+        label_size = 0.035
       elif mode.count("rapidity"):
         label_size = 0.06
       elif mode.count("NJ"):
@@ -184,7 +193,10 @@ for mode,pois in modes.items():
         label_size = 0.03
       theHist.GetXaxis().SetLabelSize(label_size)
       theHist.GetYaxis().SetLabelSize(label_size)
-      theHist.SetMarkerSize(1.5)
+      if mode.count("PTH"):
+        theHist.SetMarkerSize(0.85)
+      else:
+        theHist.SetMarkerSize(1.5)
   else:
     theHist.GetYaxis().SetLabelOffset(0.007)  
     theHist.SetMarkerSize(1.5)
@@ -192,27 +204,33 @@ for mode,pois in modes.items():
   latex = ROOT.TLatex()
   latex.SetNDC()
   latex.SetTextFont(42)
-  latex.SetTextAlign(32)
-  latex.SetTextSize(0.045)
-  x_modifier_cms = 0.57 # 0.62
-  if opt.doCov:
-    x_modifier_cms = 0.53 # 0.53
+  latex.SetTextAlign(12)
+  if mode.count("PTH"):
+    top_text_size = 0.03
+    info_text_size = 0.032
+  else:
+    top_text_size = 0.045
+    info_text_size = 0.04
+  latex.SetTextSize(top_text_size)
+  cms_x = canv.GetLeftMargin() + 0.005
+  top_y = 1.00-canv.GetTopMargin()+0.025
   if opt.doObserved:
     if opt.noPreliminary:
-      latex.DrawLatex(1.00-canv.GetRightMargin()-x_modifier_cms,1.0-canv.GetTopMargin()+0.025,'#bf{CMS}')
+      latex.DrawLatex(cms_x, top_y, '#bf{CMS}')
     else:
-      latex.DrawLatex(1.00-canv.GetRightMargin()-x_modifier_cms,1.00-canv.GetTopMargin()+0.025,'#bf{CMS} #it{Preliminary}')
+      latex.DrawLatex(cms_x, top_y, '#bf{CMS} #it{Preliminary}')
   else:
     if opt.noPreliminary:
-      latex.DrawLatex(1.00-canv.GetRightMargin()-x_modifier_cms,1.00-canv.GetTopMargin()+0.025,'#bf{CMS} #it{Simulation}')
+      latex.DrawLatex(cms_x, top_y, '#bf{CMS} #it{Simulation}')
     else:
-      latex.DrawLatex(1.00-canv.GetRightMargin()-x_modifier_cms,1.00-canv.GetTopMargin()+0.025,'#bf{CMS} #it{Simulation Preliminary}')
-  latex.SetTextSize(0.04)
-  latex.DrawLatex(1.00-canv.GetRightMargin()-0.,1.00-canv.GetTopMargin()+0.025,'%0.1f fb^{-1} (13.6 TeV)'%lumiMap[f"{opt.year}"])
-  latex.SetTextSize(0.04)
+      latex.DrawLatex(cms_x, top_y, '#bf{CMS} #it{Simulation Preliminary}')
+  latex.SetTextSize(top_text_size)
+  latex.SetTextAlign(32)
+  latex.DrawLatex(1.00-canv.GetRightMargin(), top_y, '%0.1f fb^{-1} (13.6 TeV)'%lumiMap[f"{opt.year}"])
+  latex.SetTextSize(info_text_size)
   latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.04,f'{translate[opt.mode]}')
   latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.10,'H #rightarrow #gamma#gamma')
-  latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.15,'#font[52]{m}_{H} = 125.38 GeV')
+  latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.15,'#font[52]{m}_{H} = %s GeV' % HIGGS_MASS)
   
   for binx in range(1, theHist.GetNbinsX() + 1):
     for biny in range(1, theHist.GetNbinsY() + 1):

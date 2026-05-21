@@ -42,6 +42,13 @@ def convert_boolean_string(string):
     else:
         return False
 
+def get_lumi_label(year):
+    if year in lumiMap:
+        lumi = lumiMap[year]
+    else:
+        lumi = sum(lumiMap[y] for y in re.split(r"[,_]", str(year)) if y in lumiMap)
+    return f"{lumi:.1f} fb^{{-1}} (13.6 TeV)"
+
 
 _PDFINDEX_CACHE = {}
 
@@ -5489,7 +5496,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 "combine",
                 best_fit,
                 "-M", "GenerateOnly",
-                "-m", "125.070",
+                "-m", "125.07",
                 "--saveWorkspace",
                 "--toysFrequentist",
                 "--bypassFrequentistFit",
@@ -5541,7 +5548,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             arguments = [
                 "combine",
                 f"gen_{toy}.root",
-                "-m", "125.070",
+                "-m", "125.07",
                 "-M", f"{config['combine_mggToys']['loadSnapshot']}",
                 "-P", f"{cat}",
                 "--floatOtherPOIs=1",
@@ -5592,7 +5599,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             arguments = [
                 "combine",
                 f"fit_{toy}.root",
-                "-m", "125.070",
+                "-m", "125.07",
                 "--snapshotName", f"{config['combine_mggToys']['loadSnapshot']}",
                 "-M", "GenerateOnly",
                 "--saveToys",
@@ -5683,7 +5690,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 "combine",
                 "-M", "GenerateOnly",
                 "-d", datacard_path,
-                "-m", "125.070",
+                "-m", "125.07",
                 "--saveWorkspace",
                 "--toysFrequentist",
                 "--bypassFrequentistFit",
@@ -5738,7 +5745,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             arguments = [
                 "combine",
                 f"gen_{toy}.root",
-                "-m", "125.070",
+                "-m", "125.07",
                 "-M", f"{config['combine_mggToys']['loadSnapshot']}",
                 "-P", f"{cat}",
                 "--floatOtherPOIs=1",
@@ -6094,6 +6101,7 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 "--inputWSFile", best_fit,
                 "--loadSnapshot", f"{config['combine_mggToys']['loadSnapshot']}",
                 "--cats", f"{','.join(reco_cats_with_bmw)}",
+                "--lumiLabel", get_lumi_label(self.year),
                 "--doZeroes",
                 "--unblind",
                 "--translateCats", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'cats.json')}",
@@ -6203,6 +6211,7 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeSplusBModelPlot.py')}",
                 "--inputWSFile", datacard_path,
                 "--cats", f"{','.join(reco_cats_with_bmw)}",
+                "--lumiLabel", get_lumi_label(self.year),
                 "--doZeroes",
                 "--blindingRegion", "125,125",
                 "--translateCats", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'cats.json')}",
