@@ -51,9 +51,21 @@
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     },
-    "ptJ0":{
+    "NJ_pt30_absEta2p5":{
+        "pois":"r_NJ_pt30_absEta2p5_0p0_1p0,r_NJ_pt30_absEta2p5_1p0_2p0,r_NJ_pt30_absEta2p5_2p0_3p0,r_NJ_pt30_absEta2p5_3p0_100p0",
+        "fits":"robustHesse:syst:r_NJ_pt30_absEta2p5_1p0_2p0",
+        "points":"",
+        "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
+    },
+    "PTJ0":{
         "pois":"r_PTJ0_0p0_30p0,r_PTJ0_30p0_75p0,r_PTJ0_75p0_120p0,r_PTJ0_120p0_200p0,r_PTJ0_200p0_10000p0",
         "fits":"robustHesse:syst:r_PTJ0_30p0_75p0",
+        "points":"",
+        "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
+    },
+    "PTJ0_pt30_absEta2p5":{
+        "pois":"r_PTJ0_pt30_absEta2p5_0p0_30p0,r_PTJ0_pt30_absEta2p5_30p0_75p0,r_PTJ0_pt30_absEta2p5_75p0_120p0,r_PTJ0_pt30_absEta2p5_120p0_200p0,r_PTJ0_pt30_absEta2p5_200p0_10000p0",
+        "fits":"robustHesse:syst:r_PTJ0_pt30_absEta2p5_30p0_75p0",
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
     }

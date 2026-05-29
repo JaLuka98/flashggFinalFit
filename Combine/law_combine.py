@@ -933,6 +933,8 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
                 "--expectSignal", "1",
@@ -977,6 +979,8 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanFit_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
                 "--expectSignal", "1",
@@ -1179,6 +1183,8 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
                 "--expectSignal", "1",
@@ -1224,6 +1230,8 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "-m", "125.38",
                 "-n", f"AsimovPostFitScanStat_{self.cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--algo", "grid",
                 "--points", f"{int(self.nPoints)}",
                 "--expectSignal", "1",
@@ -3251,6 +3259,8 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-m", "125.38",
                 "-n", f"DataPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--algo", "grid",
                 "--points", f"{n_points}",
                 "--rMin", f"{rMin}",
@@ -3282,6 +3292,8 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-m", "125.38",
                 "-n", f"DataPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--algo", "grid",
                 "--points", f"{n_points}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -3465,6 +3477,8 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-m", "125.38",
                 "-n", f"DataPostFitScanStat_{cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--algo", "grid",
                 "--rMin", f"{rMin}",
                 "--rMax", f"{rMax}",
@@ -3493,6 +3507,8 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-m", "125.38",
                 "-n", f"DataPostFitScanStat_{cat}.POINTS.{current_point}.{current_point}",
                 "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--algo", "grid",
                 "--points", f"{n_points}",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -5830,7 +5846,7 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 "--loadSnapshot", f"{config['combine_mggToys']['loadSnapshot']}",
                 "--cats", f"{','.join(reco_cats_with_bmw)}",
                 "--doZeroes",
-                #"--unblind",
+                "--unblind",
                 "--translateCats", f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'cats.json')}",
                 "--doSumCategories",
                 "--doCatWeights",
@@ -6099,7 +6115,6 @@ class PValueCalculation(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                     
         # Define the file to check
         pvalue_file = os.path.join(temp_output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombine.pvalue.MultiDimFit.mH125.38.root')
-
         # Check if the file exists
         if not os.path.isfile(pvalue_file):
             print("The pvalue file does not exist in the current directory. Creating it...")
@@ -6113,13 +6128,15 @@ class PValueCalculation(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
+                "--cminDefaultMinimizerStrategy=0",
+                "--cminFallbackAlgo", "Minuit2,Simplex,0:0.1",
+                "--cminFallbackAlgo", "Minuit2,Combined,0:0.1",
                 "--freezeParameters", "MH",
                 "--fixedPointPOIs", f"{','.join(combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStr'])},MH=125.38",
                 "-n", ".pvalue",
                 "-m", "125.38",
                 "--saveWorkspace"
             ]
-            # print(command)
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
                 print("Script output:", result.stdout)
