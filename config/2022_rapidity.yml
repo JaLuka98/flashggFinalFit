@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_Zmmg_SaS_ICHEP_final_production/2022_rapidity/'
+outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_Zmmg_SaS_ICHEP_final_production/2022_rapidity_new_cats/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials_w_correct_inputs/2022/rapidity/root/data_merged_cats/allData_2022.root'
-  Trees2WS: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials_w_correct_inputs/2022/rapidity/root/mc_merged_cats/'
+  Trees2WSData: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials/2022/rapidity/root/data/allData_2022.root'
+  Trees2WS: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials/2022/rapidity/root/mc/'
 
 backgroundScriptCfg:
   # Setup
@@ -15,7 +15,7 @@ backgroundScriptCfg:
   # year: '2022' # Use combined when merging all years in category (for plots)
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 12000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 trees2wsCfg:
@@ -72,7 +72,7 @@ trees2wsCfg:
 
   execution: 'htcondor'
   batchPartition: "standard" # Slurm partition to use for job submission
-  batchMemory: 18000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "05:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2022_preEE:
@@ -100,7 +100,7 @@ signalScriptCfg_2022_preEE:
   # Job submission options
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 18000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2022_postEE:
@@ -128,7 +128,7 @@ signalScriptCfg_2022_postEE:
   # Job submission options
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 18000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 packaged_2022:
@@ -139,7 +139,7 @@ packaged_2022:
   # Job submission options
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 18000 # Slurm memory to use for job submission
+  batchMemory: 10000   # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard_yields:
@@ -160,7 +160,7 @@ datacard_yields:
   skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 18000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard:

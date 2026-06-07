@@ -15,7 +15,7 @@ backgroundScriptCfg:
   # year: '2223' # Use combined when merging all years in category (for plots)
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 12000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 trees2wsCfg:
@@ -59,11 +59,11 @@ trees2wsCfg:
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
-    - "ScaleEB"
-    - "ScaleEE"
+    - "ScaleEBZmmg"
+    - "ScaleEEZmmg"
+    - "ScaleEBZee"
+    - "ScaleEEZee"
     - "Smearing"
-    - "Material"
-    - "FNUF"
     - "energyErrShift"
     - "JerSyst"
     - "JecSystTotal"
@@ -72,7 +72,7 @@ trees2wsCfg:
 
   execution: 'htcondor'
   batchPartition: "standard" # Slurm partition to use for job submission
-  batchMemory: 12000 # Slurm memory to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "05:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2223_preEE:
@@ -86,9 +86,9 @@ signalScriptCfg_2223_preEE:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
@@ -114,9 +114,9 @@ signalScriptCfg_2223_postEE:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
@@ -142,9 +142,9 @@ signalScriptCfg_2223_preBPix:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
@@ -170,9 +170,9 @@ signalScriptCfg_2223_postBPix:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
@@ -265,7 +265,7 @@ combine_impacts:
   not_show_POI: True
   execution: 'htcondor'
   batchPartition: "standard" # Slurm partition to use for job submission
-  batchMemory: 8000 # Slurm memory to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "08:00:00" # Slurm max runtime to use
 
 combine_hesse:
@@ -301,4 +301,3 @@ spectra:
   x_unit: ""
   x_lim: [0, 2.5]
   y_lim: [0,2.75]
-

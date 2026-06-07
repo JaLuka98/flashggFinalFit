@@ -52,6 +52,19 @@ def get_lumi_label(year):
 
 _PDFINDEX_CACHE = {}
 
+def _save_specified_index_args(pdf_indices):
+    save_specified_index = ",".join(pdf_indices)
+    # Very large --saveSpecifiedIndex payloads can make combine v9.2.1
+    # return success while producing tiny/zombie outputs. In that case,
+    # skip saving the discrete pdfindex snapshot rather than poisoning law.
+    if len(save_specified_index) > 8000:
+        print(
+            "Skipping --saveSpecifiedIndex because the argument is too long "
+            f"({len(save_specified_index)} characters, {len(pdf_indices)} pdfindex categories)."
+        )
+        return []
+    return ["--saveSpecifiedIndex", save_specified_index]
+
 def execute_command(command, return_output=False, shell=False):
     try:
         result = subprocess.run(command, check=True, text=True, capture_output=True, shell=shell, env=os.environ)
@@ -711,7 +724,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
 
         if self.variable == '':
             # Make all combinations of BMW and years: This also works if self.year is 2022_2023 in a combineCards workflow!
-            saveSpecifiedIndex = ",".join([f"pdfindex_{bmw}_{year}_13TeV" for bmw in BMW for year in years])
+            pdf_indices = [f"pdfindex_{bmw}_{year}_13TeV" for bmw in BMW for year in years]
 
             arguments = [
                 "combine",
@@ -730,9 +743,9 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-t", "-1",
                 "--saveFitResult", #pdfindex_cat0_{self.year}_13TeV,pdfindex_cat1_2022_13TeV,pdfindex_cat2_2022_13TeV}
-                "--saveSpecifiedIndex", saveSpecifiedIndex,
                 "--floatOtherPOIs", "1"
             ]
+            arguments.extend(_save_specified_index_args(pdf_indices))
             command = arguments
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
@@ -750,7 +763,6 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                     _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
             if cache_key in _PDFINDEX_CACHE:
                 pdf_indices = _PDFINDEX_CACHE[cache_key]
-            saveSpecifiedIndex = ",".join(pdf_indices)
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
@@ -769,9 +781,9 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 "-t", "-1",
                 "-P", f"{current_branch}",
                 "--saveFitResult",
-                "--saveSpecifiedIndex", saveSpecifiedIndex,
                 "--floatOtherPOIs", "1"
             ]
+            arguments.extend(_save_specified_index_args(pdf_indices))
             arguments.append("--setParameters")
             arguments.append(f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""")
             command = arguments
@@ -1112,7 +1124,6 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                     _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
             if cache_key in _PDFINDEX_CACHE:
                 pdf_indices = _PDFINDEX_CACHE[cache_key]
-            saveSpecifiedIndex = ",".join(pdf_indices)
             paramStr = ",".join(combineVariableDict(self.variable, self.year)['paramStr'])
             set_param_string = paramStr
             if pdfIdx:
@@ -1142,9 +1153,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--floatOtherPOIs", "1",
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
-                "--saveSpecifiedIndex", saveSpecifiedIndex,
                 "--setParameters", set_param_string,
             ]
+            arguments.extend(_save_specified_index_args(pdf_indices))
             command = arguments
             # print(command)
             try:
@@ -1407,7 +1418,6 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                     _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
             if cache_key in _PDFINDEX_CACHE:
                 pdf_indices = _PDFINDEX_CACHE[cache_key]
-            saveSpecifiedIndex = ",".join(pdf_indices)
             paramStr = ",".join(combineVariableDict(self.variable, self.year)['paramStr'])
             set_param_string = paramStr
             if pdfIdx:
@@ -1437,9 +1447,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--floatOtherPOIs", "1",
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
-                "--saveSpecifiedIndex", saveSpecifiedIndex,
                 "--setParameters", set_param_string,
             ]
+            arguments.extend(_save_specified_index_args(pdf_indices))
             command = arguments
             # print(command)
             try:
@@ -2706,8 +2716,6 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
         if cache_key in _PDFINDEX_CACHE:
             pdf_indices = _PDFINDEX_CACHE[cache_key]
-        saveSpecifiedIndex = ",".join(pdf_indices)
-                    
         arguments = [
             "combine",
             "-M", "MultiDimFit",
@@ -2717,7 +2725,6 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             "-n", "firstStep",
             "--saveWorkspace",
             "--saveFitResult",
-            "--saveSpecifiedIndex", saveSpecifiedIndex,
             "--floatOtherPOIs", "1",
             "--robustHesse", "1",
             "--robustHesseSave", "1",
@@ -2731,6 +2738,7 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             "-t", "-1",
             "--setParameters", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}"""
         ]
+        arguments.extend(_save_specified_index_args(pdf_indices))
         command = arguments
         # print(command)
         try:

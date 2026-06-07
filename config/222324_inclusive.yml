@@ -1,11 +1,12 @@
 # Config file: options for signal fitting
 
-outputFolder: '/.automount/net_rw/net__data_cms3a-1/spaeh/private/PhD/analyses/partial_Run3_differential/Hgg-PartialRun3-3A-ETH-Analysis/fitting/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2223_inclusive/'
+outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/run3_combination/run3_inclusive_test/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_08_04_fixedFNUF/data/allData.root'
-  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/inclusive/2025_08_04_fixedFNUF/signal/2223/'
+  #Trees2WSData: '/net/data_cms3a-2/nobackup/daumann/22_23_24_hadd/data/allData_222324.root'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/daumann/22_23_24_hadd/data/allData_2223.root'
+  Trees2WS: '/net/data_cms3a-2/nobackup/daumann/22_23_24_hadd/mc/'
 
 backgroundScriptCfg:
   # Setup
@@ -13,7 +14,7 @@ backgroundScriptCfg:
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
   ext: 'Run3FidXSAnalysis' # extension to add to output directory
   year: 'Run3' # Use combined when merging all years in category (for plots)
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
@@ -68,129 +69,123 @@ trees2wsCfg:
 
   cats: 'auto'
 
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "workday" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
-signalScriptCfg_2223_preEE:
-  # Setup
-  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
-  cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_2223preEE' # output directory extension
-  analysisRM: 'Run3FidXSAnalysisInclusive' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
-  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
-  year: '2223preEE' # Use 'combined' if merging all years: not recommended
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
-  replacementThreshold: '50'
-  # Photon shape systematics  
+# Aliases for running with year=222324
+signalScriptCfg_222324_preEE:
+  procs: 'auto'
+  cats: 'auto'
+  ext: 'Run3FidXSAnalysis_222324preEE'
+  analysisRM: 'Run3FidXSAnalysisInclusive'
+  analysisXSBR: 'Run3FidXSAnalysis'
+  year: '222324preEE'
+  massPoints: '120,125,130'
+  replacementThreshold: '10'
   scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
   scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
   scalesGlobal: '' # affect all processes equally, correlated across years
-  smears: 'Smearing' # separate nuisance per year
-
+  smears: 'Smearing'
   doPlots: True
-
   beamspotWidthData: '3.2'
   beamspotWidthMC: '3.732'
+  execution: 'local'
+  batchPartition: "short"
+  batchMemory: 4000
+  batchMaxRuntime: "01:00:00"
 
-
-  # Job submission options
-  execution: 'htcondor'
-  batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
-
-signalScriptCfg_2223_postEE:
-  # Setup
-  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
-  cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_2223postEE' # output directory extension
-  analysisRM: 'Run3FidXSAnalysisInclusive' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
-  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
-  year: '2223postEE' # Use 'combined' if merging all years: not recommended
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
-  replacementThreshold: '50'
-  # Photon shape systematics  
+signalScriptCfg_222324_postEE:
+  procs: 'auto'
+  cats: 'auto'
+  ext: 'Run3FidXSAnalysis_222324postEE'
+  analysisRM: 'Run3FidXSAnalysisInclusive'
+  analysisXSBR: 'Run3FidXSAnalysis'
+  year: '222324postEE'
+  massPoints: '120,125,130'
+  replacementThreshold: '10'
   scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
   scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
   scalesGlobal: '' # affect all processes equally, correlated across years
-  smears: 'Smearing' # separate nuisance per year
-
+  smears: 'Smearing'
   doPlots: True
-
-  
   beamspotWidthData: '3.5'
   beamspotWidthMC: '3.732'
+  execution: 'local'
+  batchPartition: "short"
+  batchMemory: 4000
+  batchMaxRuntime: "01:00:00"
 
-  # Job submission options
-  execution: 'htcondor'
-  batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
-
-signalScriptCfg_2223_preBPix:
-  # Setup
-  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
-  cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_2223preBPix' # output directory extension
-  analysisRM: 'Run3FidXSAnalysisInclusive' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
-  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
-  year: '2223preBPix' # Use 'combined' if merging all years: not recommended
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+signalScriptCfg_222324_preBPix:
+  procs: 'auto'
+  cats: 'auto'
+  ext: 'Run3FidXSAnalysis_222324preBPix'
+  analysisRM: 'Run3FidXSAnalysisInclusive'
+  analysisXSBR: 'Run3FidXSAnalysis'
+  year: '222324preBPix'
+  massPoints: '120,125,130'
   replacementThreshold: '50'
-  # Photon shape systematics  
   scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
-  #scalesCorr: ''
   scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
   scalesGlobal: '' # affect all processes equally, correlated across years
-  smears: 'Smearing' # separate nuisance per year
-
+  smears: 'Smearing'
   doPlots: True
-
   beamspotWidthData: '3.703'
   beamspotWidthMC: '3.597'
+  execution: 'local'
+  batchPartition: "short"
+  batchMemory: 4000
+  batchMaxRuntime: "01:00:00"
 
-  # Job submission options
-  execution: 'htcondor'
-  batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
-
-signalScriptCfg_2223_postBPix:
-  # Setup
-  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
-  cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_2223postBPix' # output directory extension
-  analysisRM: 'Run3FidXSAnalysisInclusive' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
-  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
-  year: '2223postBPix' # Use 'combined' if merging all years: not recommended
-  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+signalScriptCfg_222324_postBPix:
+  procs: 'auto'
+  cats: 'auto'
+  ext: 'Run3FidXSAnalysis_222324postBPix'
+  analysisRM: 'Run3FidXSAnalysisInclusive'
+  analysisXSBR: 'Run3FidXSAnalysis'
+  year: '222324postBPix'
+  massPoints: '120,125,130'
   replacementThreshold: '50'
-  # Photon shape systematics
   scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
-  #scalesCorr: ''
   scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
   scalesGlobal: '' # affect all processes equally, correlated across years
-  smears: 'Smearing' # separate nuisance per year
-
+  smears: 'Smearing'
   doPlots: True
-
   beamspotWidthData: '3.737'
   beamspotWidthMC: '3.597'
+  execution: 'local'
+  batchPartition: "short"
+  batchMemory: 4000
+  batchMaxRuntime: "01:00:00"
 
-  # Job submission options
-  execution: 'htcondor'
-  batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+signalScriptCfg_222324_2024:
+  procs: 'auto'
+  cats: 'auto'
+  ext: 'Run3FidXSAnalysis_2024'
+  analysisRM: 'Run3FidXSAnalysisInclusive'
+  analysisXSBR: 'Run3FidXSAnalysis'
+  year: '2024'
+  massPoints: '120,125,130'
+  replacementThreshold: '50'
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: ''
+  scalesGlobal: '' # affect all processes equally, correlated across years
+  smears: 'Smearing'
+  doPlots: True
+  beamspotWidthData: '3.583'
+  beamspotWidthMC: '3.601'
+  execution: 'local'
+  batchPartition: "short"
+  batchMemory: 4000
+  batchMaxRuntime: "01:00:00"
 
-packaged_2223:
+packaged_222324:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
@@ -199,19 +194,19 @@ datacard_yields:
   cats: 'auto' # if auto: inferred automatically from (0) workspace
   procs: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'Run3FidXSAnalysis' # Extension for saving
-  inputWSDirMap: '2223preEE,2223postEE,2223preBPix,2223postBPix'
+  inputWSDirMap: '222324preEE,222324postEE,222324preBPix,222324postBPix,2024'
   sigModelWSDir: './Models/signal' # Input signal model WS directory
   bkgModelWSDir: './Models/background' # Input background model WS directory
   bkgModelExt: 'multipdf' # Extension used when saving background model
   doSystematics: True # Include systematics calculations and add to datacard
   mergeYears: True # Merge category across years
-  skipZeroes: True # Skip signal processes with 0 sum of weights
+  skipZeroes: False # Skip signal processes with 0 sum of weights
   ignore_warnings: True # Skip errors for missing systematics. Instead output warning message
   mass: '125' # Input workspace mass
   skipBkg: False # Only add signal processes to datacard
   bkgScaler: 1. # Add overall scale factor for background
   skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
@@ -232,7 +227,7 @@ datacard:
 
   # For output:
   saveDataFrame: False # Save final dataframe as pkl file
-  output: 'Datacard_2223' # Datacard name
+  output: 'Datacard_222324' # Datacard name
 
 datacard_clean:
   factor: 10000 # Factor beyond which uncertainty is considered incorrect and is removed
@@ -248,7 +243,7 @@ combine_fit:
   cminApproxPreFitTolerance: 0.01
   rMin: 0.7
   rMax: 1.6
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
@@ -260,13 +255,13 @@ combine_impacts:
   stepSize: 0.05
   setCrossingTolerance: 0.00005 
   not_show_POI: False
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_hesse:
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
@@ -275,7 +270,7 @@ combine_mggToys:
   nToys: 1000 # Number of toys = nToys * 10
   loadSnapshot: 'MultiDimFit'
   doBands: True
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use

@@ -10,7 +10,7 @@ backgroundScriptCfg:
   # year: '2223' # Use combined when merging all years in category (for plots)
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 12000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard:
@@ -96,4 +96,3 @@ spectra:
   x_unit: ""
   x_lim: [0, 2.5]
   y_lim: [0,2.75]
-
