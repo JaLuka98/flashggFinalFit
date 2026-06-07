@@ -1,0 +1,5 @@
+frame1:
+  ylim:
+    bottom: 0
+    top: 0.1
+frame2: {}

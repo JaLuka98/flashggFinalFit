@@ -1,0 +1,7 @@
+frame1:
+  ylim:
+    top: 74.2   # pick a value that leaves headroom
+  fontsize: 13
+  title_fontsize: 13
+
+lumi: 172.13

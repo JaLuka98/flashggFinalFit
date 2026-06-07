@@ -1,0 +1,54 @@
+frame1:
+  custom_xtick_labels:
+    - "30"
+    - "50"
+    - "100"
+    - "150"
+    - "200"
+  custom_xticks:
+    - 30
+    - 50
+    - 100
+    - 150
+    - 200
+  axvline:
+    x: 30
+    color: "black"
+    ls: "dashed"
+    lw: 1
+    alpha: 1
+  fontsize: 14
+  title_fontsize: 14
+  ylim:
+    bottom: 0
+    top: 1.0
+  figtext:
+    x: 0.875
+    y: 0.58
+    text: '$\frac{\sigma_{fid}(p_{T}^{j_{1}} > 200.0\ GeV)}{200.0\ GeV}$'
+    horizontalalignment: "right"
+    rotation: 90
+    fontsize: 14
+
+frame2:
+  xtick_labels:
+    - "30"
+    - "50"
+    - "100"
+    - "150"
+    - "200"
+  xticks:
+    - 30
+    - 50
+    - 100
+    - 150
+    - 200
+  additional_labels:
+    is_data: []
+    not_data: []
+  axvline:
+    x: 30
+    color: "black"
+    ls: "dashed"
+    lw: 1
+    alpha: 1
