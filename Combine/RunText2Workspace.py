@@ -11,7 +11,7 @@ def get_options():
   parser.add_option("--outputName", dest='outputName', default='Datacard', help="Name of the workspace. Can be custom.")
   parser.add_option('--mode', dest='mode', default='mu_inclusive', help="Physics Model (specified in models.py)")
   parser.add_option('--ext',dest='ext', default="", help='In case running over datacard with extension')
-  parser.add_option('--common_opts',dest='common_opts', default="-m 125 higgsMassRange=122,128", help='Common options')
+  parser.add_option('--common_opts',dest='common_opts', default="-m 125.07 higgsMassRange=122,128", help='Common options')
   parser.add_option('--batch', dest='batch', default='condor', help="Batch system [SGE,IC,condor]")
   parser.add_option('--queue', dest='queue', default='workday', help="Condor queue")
   parser.add_option('--ncpus', dest='ncpus', default=4, type='int', help="Number of cpus")

@@ -28,6 +28,8 @@ from Combine.law_combine import *
 from framework import Task
 from framework import HTCondorWorkflow, SlurmWorkflow
 
+HIGGS_MASS = "125.07"
+
 # Function to safely create a directory
 def safe_mkdir(path):
     try:
@@ -254,8 +256,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
                 # oneSigmaDict[f'{cat}'] = {}
                 
                 if convert_boolean_string(self.is_unblinded):
-                    main_scan_syst = BuildScan(cat, [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.38.root')], yvals, y_cut)
-                    main_scan_stat = BuildScan(cat, [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.38.root')], yvals, y_cut)
+                    main_scan_syst = BuildScan(cat, [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH{HIGGS_MASS}.root')], yvals, y_cut)
+                    main_scan_stat = BuildScan(cat, [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH{HIGGS_MASS}.root')], yvals, y_cut)
                     
                     pvalue_path = os.path.join(output_dir, 'Combine', fitFolderName, 'pvalue.txt')
                     

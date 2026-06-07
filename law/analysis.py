@@ -29,6 +29,8 @@ def convert_boolean_string(string):
     else:
         return False
 
+HIGGS_MASS = "125.07"
+
 class FinalFits(law.WrapperTask):
     years = law.Parameter(default="2022,2023,2024")
     variable = law.Parameter(default="")
@@ -217,7 +219,7 @@ class FinalFits(law.WrapperTask):
                     f"--outputDir {output_dir} "
                     f"--outputName Datacard_{combined_label} "
                     "--mode mu_fiducial "
-                    "--common_opts \"-m 125.38 higgsMassRange=122,128\" "
+                    f"--common_opts \"-m {HIGGS_MASS} higgsMassRange=122,128\" "
                     "--batch local"
                 )
             else:
@@ -230,7 +232,7 @@ class FinalFits(law.WrapperTask):
                     f"--outputDir {output_dir} "
                     f"--outputName Datacard_{self.variable}_{combined_label} "
                     f"--mode {self.variable} "
-                    "--common_opts \"-m 125.38 higgsMassRange=122,128\" "
+                    f"--common_opts \"-m {HIGGS_MASS} higgsMassRange=122,128\" "
                     "--batch local "
                     f"--ext {self.variable}"
                 )
@@ -643,7 +645,7 @@ class FinalFitsYear(law.Task):
                 print("P-value calculation is not supported for inclusive fits.")
                 exit(1)
             else:
-                output = [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombine.pvalue.MultiDimFit.mH125.38.root')]
+                output = [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombine.pvalue.MultiDimFit.mH{HIGGS_MASS}.root')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, f'pvalue.txt')]
 
             for _, current_output_path in enumerate(output):
