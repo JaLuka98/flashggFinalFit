@@ -9,7 +9,7 @@ inputFiles:
 
 backgroundScriptCfg:
   # Setup
-  cats: 'auto' # auto: automatically inferred from input ws
+  cats: 'RECO_YJ0_m10000p0_0p0_cat0,RECO_YJ0_m10000p0_0p0_cat1,RECO_YJ0_m10000p0_0p0_cat2,RECO_YJ0_0p0_0p3_cat0,RECO_YJ0_0p0_0p3_cat1,RECO_YJ0_0p0_0p3_cat2,RECO_YJ0_0p3_0p6_cat0,RECO_YJ0_0p3_0p6_cat1,RECO_YJ0_0p3_0p6_cat2,RECO_YJ0_0p6_0p9_cat0,RECO_YJ0_0p6_0p9_cat1,RECO_YJ0_0p6_0p9_cat2,RECO_YJ0_0p9_1p2_cat0,RECO_YJ0_0p9_1p2_cat1,RECO_YJ0_0p9_1p2_cat2,RECO_YJ0_1p2_1p6_cat0,RECO_YJ0_1p2_1p6_cat1,RECO_YJ0_1p2_1p6_cat2,RECO_YJ0_1p6_2p0_cat0,RECO_YJ0_1p6_2p0_cat1,RECO_YJ0_1p6_2p0_cat2,RECO_YJ0_2p0_2p5_cat0,RECO_YJ0_2p0_2p5_cat1,RECO_YJ0_2p0_2p5_cat2' # auto: automatically inferred from input ws
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
   ext: 'Run3FidXSAnalysis_YJ0' # extension to add to output directory
   execution: 'htcondor'
@@ -67,7 +67,7 @@ trees2wsCfg:
     - "JerSyst"
     - "JecSystTotal"
 
-  cats: 'auto'
+  cats: 'RECO_YJ0_m10000p0_0p0_cat0,RECO_YJ0_m10000p0_0p0_cat1,RECO_YJ0_m10000p0_0p0_cat2,RECO_YJ0_0p0_0p3_cat0,RECO_YJ0_0p0_0p3_cat1,RECO_YJ0_0p0_0p3_cat2,RECO_YJ0_0p3_0p6_cat0,RECO_YJ0_0p3_0p6_cat1,RECO_YJ0_0p3_0p6_cat2,RECO_YJ0_0p6_0p9_cat0,RECO_YJ0_0p6_0p9_cat1,RECO_YJ0_0p6_0p9_cat2,RECO_YJ0_0p9_1p2_cat0,RECO_YJ0_0p9_1p2_cat1,RECO_YJ0_0p9_1p2_cat2,RECO_YJ0_1p2_1p6_cat0,RECO_YJ0_1p2_1p6_cat1,RECO_YJ0_1p2_1p6_cat2,RECO_YJ0_1p6_2p0_cat0,RECO_YJ0_1p6_2p0_cat1,RECO_YJ0_1p6_2p0_cat2,RECO_YJ0_2p0_2p5_cat0,RECO_YJ0_2p0_2p5_cat1,RECO_YJ0_2p0_2p5_cat2'
 
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
@@ -77,7 +77,7 @@ trees2wsCfg:
 signalScriptCfg_2024:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
-  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  cats: 'RECO_YJ0_m10000p0_0p0_cat0,RECO_YJ0_m10000p0_0p0_cat1,RECO_YJ0_m10000p0_0p0_cat2,RECO_YJ0_0p0_0p3_cat0,RECO_YJ0_0p0_0p3_cat1,RECO_YJ0_0p0_0p3_cat2,RECO_YJ0_0p3_0p6_cat0,RECO_YJ0_0p3_0p6_cat1,RECO_YJ0_0p3_0p6_cat2,RECO_YJ0_0p6_0p9_cat0,RECO_YJ0_0p6_0p9_cat1,RECO_YJ0_0p6_0p9_cat2,RECO_YJ0_0p9_1p2_cat0,RECO_YJ0_0p9_1p2_cat1,RECO_YJ0_0p9_1p2_cat2,RECO_YJ0_1p2_1p6_cat0,RECO_YJ0_1p2_1p6_cat1,RECO_YJ0_1p2_1p6_cat2,RECO_YJ0_1p6_2p0_cat0,RECO_YJ0_1p6_2p0_cat1,RECO_YJ0_1p6_2p0_cat2,RECO_YJ0_2p0_2p5_cat0,RECO_YJ0_2p0_2p5_cat1,RECO_YJ0_2p0_2p5_cat2' # if auto: inferred automatically from (0) workspace
   ext: 'Run3FidXSAnalysis_YJ0_2024' # output directory extension
   analysisRM: 'Run3FidXSAnalysisYJ0' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
@@ -103,7 +103,7 @@ signalScriptCfg_2024:
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 packaged_2024:
-  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  cats: 'RECO_YJ0_m10000p0_0p0_cat0,RECO_YJ0_m10000p0_0p0_cat1,RECO_YJ0_m10000p0_0p0_cat2,RECO_YJ0_0p0_0p3_cat0,RECO_YJ0_0p0_0p3_cat1,RECO_YJ0_0p0_0p3_cat2,RECO_YJ0_0p3_0p6_cat0,RECO_YJ0_0p3_0p6_cat1,RECO_YJ0_0p3_0p6_cat2,RECO_YJ0_0p6_0p9_cat0,RECO_YJ0_0p6_0p9_cat1,RECO_YJ0_0p6_0p9_cat2,RECO_YJ0_0p9_1p2_cat0,RECO_YJ0_0p9_1p2_cat1,RECO_YJ0_0p9_1p2_cat2,RECO_YJ0_1p2_1p6_cat0,RECO_YJ0_1p2_1p6_cat1,RECO_YJ0_1p2_1p6_cat2,RECO_YJ0_1p6_2p0_cat0,RECO_YJ0_1p6_2p0_cat1,RECO_YJ0_1p6_2p0_cat2,RECO_YJ0_2p0_2p5_cat0,RECO_YJ0_2p0_2p5_cat1,RECO_YJ0_2p0_2p5_cat2' # if auto: inferred automatically from (0) workspace
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
@@ -113,7 +113,7 @@ packaged_2024:
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard_yields:
-  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  cats: 'RECO_YJ0_m10000p0_0p0_cat0,RECO_YJ0_m10000p0_0p0_cat1,RECO_YJ0_m10000p0_0p0_cat2,RECO_YJ0_0p0_0p3_cat0,RECO_YJ0_0p0_0p3_cat1,RECO_YJ0_0p0_0p3_cat2,RECO_YJ0_0p3_0p6_cat0,RECO_YJ0_0p3_0p6_cat1,RECO_YJ0_0p3_0p6_cat2,RECO_YJ0_0p6_0p9_cat0,RECO_YJ0_0p6_0p9_cat1,RECO_YJ0_0p6_0p9_cat2,RECO_YJ0_0p9_1p2_cat0,RECO_YJ0_0p9_1p2_cat1,RECO_YJ0_0p9_1p2_cat2,RECO_YJ0_1p2_1p6_cat0,RECO_YJ0_1p2_1p6_cat1,RECO_YJ0_1p2_1p6_cat2,RECO_YJ0_1p6_2p0_cat0,RECO_YJ0_1p6_2p0_cat1,RECO_YJ0_1p6_2p0_cat2,RECO_YJ0_2p0_2p5_cat0,RECO_YJ0_2p0_2p5_cat1,RECO_YJ0_2p0_2p5_cat2' # if auto: inferred automatically from (0) workspace
   procs: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'Run3FidXSAnalysis' # Extension for saving
   sigModelWSDir: './Models_YJ0/signal' # Input signal model WS directory
