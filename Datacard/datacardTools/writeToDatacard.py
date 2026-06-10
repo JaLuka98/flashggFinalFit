@@ -88,7 +88,9 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
         stitle += "_%s"%outputNuisanceExtMap[s['mode']]
     # Hard-coded split for Zmmg scale nuisances:
     # correlate 2022 and 2023 with each other, but keep 2024 separate.
-    if s['title'] in ['ScaleEBZmmg', 'ScaleEEZmmg']:
+    # Match both the old bare titles and the new CMS_HIG26007-prefixed titles.
+    zmmgScaleNames = ['ScaleEBZmmg', 'ScaleEEZmmg']
+    if s.get('name') in zmmgScaleNames or any(s['title'].endswith(name) for name in zmmgScaleNames):
       years = options.years.split(",")
       if any(isZmmgScale2022Or2023Label(year) for year in years):
         lsyst = "%-70s  param    %-6s %-6s"%(f"{stitle}_2022_2023",s['mean'],s['sigma'])
