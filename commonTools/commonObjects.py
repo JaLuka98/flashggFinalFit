@@ -501,7 +501,6 @@ recoVariableBins["YJ0"] = [
     "1p2_1p6",
     "1p6_2p0",
     "2p0_2p5",
-    "2p5_5p0",
 ]
 recoVariableBins["PTHvsNJ"] = [
     "NJ0p0_PTH0p0_5p0",
