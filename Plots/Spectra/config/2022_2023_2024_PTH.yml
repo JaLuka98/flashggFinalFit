@@ -1,0 +1,24 @@
+frame1:
+  figtext:
+    x: 0.875
+    y: 0.48
+    text: "$\\frac{\\sigma_{fid}(p_{T}^{H} > 450\\,\\mathrm{GeV})}{100\\,\\mathrm{GeV}}$"
+    horizontalalignment: "right"
+    rotation: 90
+    fontsize: 22
+    usetex: True
+    usetex: True
+  fontsize: 13
+  title_fontsize: 13
+frame2:
+  figtext:
+    x: 0.875
+    y: 0.16
+    text: "$\\frac{\\sigma_{fid}(p_{T}^{H} > 450\\,\\mathrm{GeV})}{100\\,\\mathrm{GeV}}$"
+    horizontalalignment: "right"
+    rotation: 90
+    fontsize: 22
+    usetex: True
+    usetex: True
+  fontsize: 13
+  title_fontsize: 13
