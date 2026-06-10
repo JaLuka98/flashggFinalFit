@@ -113,11 +113,11 @@ for mode,pois in modes.items():
   if mode.count('stage1p2'): canv = setCanvasCorr(stage='1p2')
   elif mode.count('mu_reco'): canv = setCanvasCorr(stage='1p2')
   elif mode.count("PTH"):
-    canv = ROOT.TCanvas("can", "can", 1200, 1100)
-    canv.GetPad(0).SetTopMargin(0.11)
-    canv.GetPad(0).SetRightMargin(0.16)
-    canv.GetPad(0).SetLeftMargin(0.24)
-    canv.GetPad(0).SetBottomMargin(0.27)
+    canv = ROOT.TCanvas("can", "can", 1900, 1800)
+    canv.GetPad(0).SetTopMargin(0.10)
+    canv.GetPad(0).SetRightMargin(0.14)
+    canv.GetPad(0).SetLeftMargin(0.22)
+    canv.GetPad(0).SetBottomMargin(0.25)
     canv.GetPad(0).SetTicks(1, 1)
   else:
     if opt.doCov:
@@ -171,10 +171,10 @@ for mode,pois in modes.items():
     theHist.GetXaxis().LabelsOption("v")
     if opt.doCov:
       if mode.count("PTH"):
-        label_size = 0.035
+        label_size = 0.030
         theHist.GetXaxis().SetLabelSize(label_size)
         theHist.GetYaxis().SetLabelSize(label_size)
-        theHist.SetMarkerSize(0.95)
+        theHist.SetMarkerSize(1.0)
       else:
         label_size = 0.06
         theHist.GetXaxis().SetLabelSize(label_size)
@@ -182,7 +182,7 @@ for mode,pois in modes.items():
         theHist.SetMarkerSize(2)
     else:
       if mode.count("PTH"):
-        label_size = 0.035
+        label_size = 0.030
       elif mode.count("rapidity"):
         label_size = 0.06
       elif mode.count("NJ"):
@@ -194,13 +194,15 @@ for mode,pois in modes.items():
       theHist.GetXaxis().SetLabelSize(label_size)
       theHist.GetYaxis().SetLabelSize(label_size)
       if mode.count("PTH"):
-        theHist.SetMarkerSize(0.85)
+        theHist.SetMarkerSize(1.0)
       else:
         theHist.SetMarkerSize(1.5)
   else:
     theHist.GetYaxis().SetLabelOffset(0.007)  
     theHist.SetMarkerSize(1.5)
-  theHist.Draw('colz,text')
+  draw_text_manually = mode.count("PTH")
+  draw_option = 'colz' if draw_text_manually else 'colz,text'
+  theHist.Draw(draw_option)
   latex = ROOT.TLatex()
   latex.SetNDC()
   latex.SetTextFont(42)
@@ -232,15 +234,24 @@ for mode,pois in modes.items():
   latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.10,'H #rightarrow #gamma#gamma')
   latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.15,'#font[52]{m}_{H} = %s GeV' % HIGGS_MASS)
   
+  text_latex = ROOT.TLatex()
+  text_latex.SetTextAlign(22)
+  text_latex.SetTextFont(42)
+  text_latex.SetTextSize(0.018 if mode.count("PTH") else 0.03)
+  text_threshold = None if mode.count("PTH") else (0.004 if opt.doCov else 0.005)
   for binx in range(1, theHist.GetNbinsX() + 1):
     for biny in range(1, theHist.GetNbinsY() + 1):
-        if (theHist.GetBinContent(binx, biny)) > 0.8:
-            label = "{:.2f}".format(theHist.GetBinContent(binx, biny))
-            latex = ROOT.TLatex()
-            latex.SetTextAlign(22)  # Center align text
-            latex.SetTextSize(0.03)  # Set text size as needed
-            latex.SetTextColor(ROOT.kWhite)  # Set text color to white
-            latex.DrawLatex(theHist.GetXaxis().GetBinCenter(binx), theHist.GetYaxis().GetBinCenter(biny), label)
+        value = theHist.GetBinContent(binx, biny)
+        is_lower_triangle = binx <= (theHist.GetNbinsX() + 1 - biny)
+        if draw_text_manually and not is_lower_triangle:
+            continue
+        if text_threshold is not None and draw_text_manually and abs(value) < text_threshold and binx != (theHist.GetNbinsX() + 1 - biny):
+            continue
+        if not draw_text_manually and value <= 0.8:
+            continue
+        label = "{:.2f}".format(value)
+        text_latex.SetTextColor(ROOT.kWhite if abs(value) > 0.8 else ROOT.kBlack)
+        text_latex.DrawLatex(theHist.GetXaxis().GetBinCenter(binx), theHist.GetYaxis().GetBinCenter(biny), label)
   output_dir = opt.output
   if opt.doCov:
     output_path_png = os.path.join(opt.output, "covMatrix_%s_%s%s%s.png"%(mode,name.split("_")[-1],obs_ext,opt.ext))

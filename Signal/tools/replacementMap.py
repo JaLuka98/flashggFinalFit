@@ -339,6 +339,7 @@ for _bin in _RAPIDITY_BINS:
 
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"] = "RECO_rapidity_1p2_1p6_cat2"
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"] = "RECO_rapidity_1p6_2p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_2p0_2p5_cat0"] = "RECO_rapidity_2p0_2p5_cat2"
 
 
 # Differential NJ (Number of Jets)
@@ -624,6 +625,7 @@ for bin_name in _DPhiHJ0_BINS:
 
 # Differential YJ0
 _YJ0_BINS = variableBins["YJ0"]
+_YJ0_RECO_BINS = recoVariableBins["YJ0"]
 _YJ0_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
 _YJ0_WV_BIN = "0p3_0p6"
 
@@ -633,16 +635,21 @@ globalReplacementMap["Run3FidXSAnalysisYJ0"]['procWV'] = f"ggh_YJ0_{_YJ0_WV_BIN}
 globalReplacementMap["Run3FidXSAnalysisYJ0"]['catWV'] = f"RECO_YJ0_{_YJ0_WV_BIN}_cat2"
 # Relacement processes for RV
 globalReplacementMap["Run3FidXSAnalysisYJ0"]['procRVMap'] = od()
-for bin_name in _YJ0_BINS:
+for bin_name in _YJ0_RECO_BINS:
     for cat in _YJ0_RECO_CATS:
         reco_key = f"RECO_YJ0_{bin_name}_{cat}"
-        proc_val = f"ggh_YJ0_{bin_name}_in"
+        if bin_name == "m10000p0_0p0":
+            proc_val = "ggh_YJ0_m10000p0_0p0_in"
+        elif bin_name in _YJ0_BINS:
+            proc_val = f"ggh_YJ0_{bin_name}_in"
+        else:
+            proc_val = "ggh_YJ0_0p0_2p5_out"
         globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"][reco_key] = proc_val
 
 
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"] = od()
-for bin_name in _YJ0_BINS:
+for bin_name in _YJ0_RECO_BINS:
     for cat in _YJ0_RECO_CATS:
         reco_key = f"RECO_YJ0_{bin_name}_{cat}"
         globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"][reco_key] = reco_key
@@ -804,3 +811,32 @@ for bin_name in _PTHvYH_BINS:
     for cat in _PTHvYH_RECO_CATS:
         reco_key = f"RECO_PTHvYH_{bin_name}_{cat}"
         globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"][reco_key] = reco_key
+
+
+
+# Differential PTHvsNJ
+_PTHvsNJ_BINS = variableBins["PTHvsNJ"]
+_PTHvsNJ_RECO_BINS = recoVariableBins["PTHvsNJ"]
+_PTHvsNJ_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_PTHvsNJ_WV_BIN = "NJ0_PTH_35p0_45p0"
+_PTHvsNJ_WV_RECO_BIN = _PTHvsNJ_RECO_BINS[_PTHvsNJ_BINS.index(_PTHvsNJ_WV_BIN)]
+
+globalReplacementMap["Run3FidXSAnalysisPTHvsNJ"] = od()
+# Wrong vertex stuff, which process should be considered?
+globalReplacementMap["Run3FidXSAnalysisPTHvsNJ"]['procWV'] = f"ggh_PTHvsNJ_{_PTHvsNJ_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisPTHvsNJ"]['catWV'] = f"RECO_PTHvsNJ_{_PTHvsNJ_WV_RECO_BIN}_cat2"
+# Relacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisPTHvsNJ"]['procRVMap'] = od()
+for bin_name, reco_bin_name in zip(_PTHvsNJ_BINS, _PTHvsNJ_RECO_BINS):
+    for cat in _PTHvsNJ_RECO_CATS:
+        reco_key = f"RECO_PTHvsNJ_{reco_bin_name}_{cat}"
+        proc_val = f"ggh_PTHvsNJ_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisPTHvsNJ"]["procRVMap"][reco_key] = proc_val
+
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisPTHvsNJ"]["catRVMap"] = od()
+for reco_bin_name in _PTHvsNJ_RECO_BINS:
+    for cat in _PTHvsNJ_RECO_CATS:
+        reco_key = f"RECO_PTHvsNJ_{reco_bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisPTHvsNJ"]["catRVMap"][reco_key] = reco_key

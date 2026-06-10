@@ -59,11 +59,11 @@ trees2wsCfg:
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
-    - "ScaleEB"
-    - "ScaleEE"
+    - "ScaleEBZee"
+    - "ScaleEEZee"
     - "Smearing"
-    - "Material"
-    - "FNUF"
+    - "ScaleEBZmmg"
+    - "ScaleEEZmmg"
     - "energyErrShift"
     - "JerSyst"
     - "JecSystTotal"
@@ -86,9 +86,9 @@ signalScriptCfg_2022_preEE:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True
@@ -114,9 +114,9 @@ signalScriptCfg_2022_postEE:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   replacementThreshold: '50'
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
   doPlots: True

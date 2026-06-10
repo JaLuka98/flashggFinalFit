@@ -1,17 +1,17 @@
 # Config file: options for signal fitting
 
-outputFolder: '/.automount/net_rw/net__data_cms3a-1/spaeh/private/PhD/analyses/partial_Run3_differential/Hgg-PartialRun3-3A-ETH-Analysis/fitting/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_2023_2024_PTH/'
+outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_2023_2024_MassJ0J1/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04_fixedFNUF/PTH/2223/data/allData.root'
-  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_08_04_fixedFNUF/PTH/2223/signal/'
+  Trees2WSData: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials/2024/MassJ0J1/root/data/allData_2024.root'
+  Trees2WS: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials/2024/MassJ0J1/root/mc/'
 
 backgroundScriptCfg:
   # Setup
   cats: 'auto' # auto: automatically inferred from input ws
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
-  ext: 'Run3FidXSAnalysis_PTH' # extension to add to output directory
+  ext: 'Run3FidXSAnalysis_MassJ0J1' # extension to add to output directory
   # year: '2223' # Use combined when merging all years in category (for plots)
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
@@ -37,21 +37,21 @@ trees2wsCfg:
     - "*Up"
     - "*Down"
     - "fiducialGeometricFlag"
-    - "diffVariable_GenPTH"
+    - "diffVariable_GenMassJ0J1"
   
   dataVars:
     - "CMS_hgg_mass"
     - "weight" # Vars to be added for data
     
   stxsVar: ''
-  diffVar: 'diffVariable_GenPTH'
+  diffVar: 'diffVariable_GenMassJ0J1'
   notagVars: [] # Vars to add to NOTAG RooDataset
   
   systematicsVars:
     - "CMS_hgg_mass"
     - "weight"
     - "fiducialGeometricFlag"
-    - "diffVariable_GenPTH"
+    - "diffVariable_GenMassJ0J1"
   
   theoryWeightContainers:
     weight_LHEPdf: 101
@@ -79,8 +79,8 @@ signalScriptCfg_2223_preEE:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_PTH_2223preEE' # output directory extension
-  analysisRM: 'Run3FidXSAnalysisPTH' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2223preEE' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2223preEE' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '50'
@@ -108,8 +108,8 @@ signalScriptCfg_2223_postEE:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_PTH_2223postEE' # output directory extension
-  analysisRM: 'Run3FidXSAnalysisPTH' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2223postEE' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2223postEE' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '50'
@@ -136,8 +136,8 @@ signalScriptCfg_2223_preBPix:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_PTH_2223preBPix' # output directory extension
-  analysisRM: 'Run3FidXSAnalysisPTH' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2223preBPix' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2223preBPix' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '50'
@@ -165,8 +165,8 @@ signalScriptCfg_2223_postBPix:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_PTH_2223postBPix' # output directory extension
-  analysisRM: 'Run3FidXSAnalysisPTH' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2223postBPix' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2223postBPix' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '50'
@@ -193,8 +193,8 @@ signalScriptCfg_2024:
   # Setup
   procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
   cats: 'auto' # if auto: inferred automatically from (0) workspace
-  ext: 'Run3FidXSAnalysis_PTH_2024' # output directory extension
-  analysisRM: 'Run3FidXSAnalysisPTH' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2024' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2024' # Use 'combined' if merging all years: not recommended
   replacementThreshold: '25'
@@ -232,8 +232,8 @@ datacard_yields:
   procs: 'auto' # if auto: inferred automatically from (0) workspace
   ext: 'Run3FidXSAnalysis' # Extension for saving
   # inputWSDirMap: '2223preBPix,2223postBPix'
-  sigModelWSDir: './Models_PTH/signal' # Input signal model WS directory
-  bkgModelWSDir: './Models_PTH/background' # Input background model WS directory
+  sigModelWSDir: './Models_MassJ0J1/signal' # Input signal model WS directory
+  bkgModelWSDir: './Models_MassJ0J1/background' # Input background model WS directory
   bkgModelExt: 'multipdf' # Extension used when saving background model
   doSystematics: True # Include systematics calculations and add to datacard
   mergeYears: True # Merge category across years
@@ -264,7 +264,7 @@ datacard:
 
   # For output:
   saveDataFrame: False # Save final dataframe as pkl file
-  output: 'Datacard_PTH_2022_2023_2024' # Datacard name
+  output: 'Datacard_MassJ0J1_2022_2023_2024' # Datacard name
 
 datacard_clean:
   factor: 10000 # Factor beyond which uncertainty is considered incorrect and is removed
@@ -275,10 +275,8 @@ datacard_clean:
 
 combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
-  unblindedFit_numPoints: 100
-  setParameterRange: "r=0,2"
-  rMin: 0
-  rMax: 2
+  unblindedFit_numPoints: 100 
+  setParameterRange: "r=0,3"
   cminApproxPreFitTolerance: 0.01
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
@@ -287,24 +285,21 @@ combine_fit:
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
-  approx: "robust" # Fast impact mode. Use "none" for exact per-nuisance scans, or "hesse"/"robust" for covariance-based impacts.
-  cminApproxPreFitTolerance: 0.1 # should be 0.01
+  cminApproxPreFitTolerance: 0.01
   setParameters: 1.000
   stepSize: 0.05
-  setCrossingTolerance: 0.0005 # should be: 0.00005
+  setCrossingTolerance: 0.00005
   not_show_POI: True
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "04:00:00" # Slurm max runtime to use
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_hesse:
-  cminApproxPreFitTolerance: 0.25
-  cminDefaultMinimizerTolerance: 1.0   # default is 0.1
-  execution: 'local'
-  batchPartition: "tomorrow" # Slurm partition to use for job submission
-  batchMemory: 12000 # Slurm memory to use for job submission
-  batchMaxRuntime: "24:00:00" # Slurm max runtime to use
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_mggToys:
   nToys: 1000 # Number of toys = nToys * 10
@@ -318,21 +313,21 @@ combine_mggToys:
 spectra:
   no_preliminary: True # Flag that determines, if Preliminary label should be printed.
   private_work : False
-  ggh_xs: "fidXS_PTH_ggH"
-  vbf_xs: "fidXS_PTH_VBFH"
-  vh_xs: "fidXS_PTH_VH"
-  tth_xs: "fidXS_PTH_ttH"
-  xh_xs: "fidXS_PTH_xH"
-  ggh_powheg_xs: "fidXS_PTH_ggH_powheg"
-  ggh_no_nnlops_xs: "fidXS_PTH_ggH_genWeight"
+  ggh_xs: "fidXS_MassJ0J1_ggH"
+  vbf_xs: "fidXS_MassJ0J1_VBFH"
+  vh_xs: "fidXS_MassJ0J1_VH"
+  tth_xs: "fidXS_MassJ0J1_ttH"
+  xh_xs: "fidXS_MassJ0J1_xH"
+  ggh_powheg_xs: "fidXS_MassJ0J1_ggH_powheg"
+  ggh_no_nnlops_xs: "fidXS_MassJ0J1_ggH_genWeight"
   underflow_bin_normalized: False # Underflow bin normalized with binwidth
-  last_bin_center: 500
-  first_bin_center: 2.5
-  plot_log: 1
-  variable: "p_T^H"
+  last_bin_center: 1250
+  first_bin_center: -500
+  plot_log: 0
+  variable: "m_{jj}"
   y_unit: "(fb/GeV)"
   x_unit: "(GeV)"
-  x_lim: [0, 550]
-  y_lim: [-1,3]
-  y_lim_top: 500
-  overflow: 550
+  x_lim: [0, 1500]
+  y_lim: [0, 2.5]
+  y_lim_top: 0.1
+  overflow: 1500
