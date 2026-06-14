@@ -124,6 +124,7 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
   for tier in tiers:
     if tier != '': tierStr = "_%s"%tier
     else: tierStr = ''
+    tierNameSuffix = '' if tier=='shape' else tierStr
     
     # If calculating merged bin: loop over mergings else run over once
     mns = []
@@ -137,25 +138,25 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
     
       # Construct syst line/lines if separate by year
       if(s['correlateAcrossYears'] == 1)|(s['correlateAcrossYears'] == -1):
-        stitle = "%s%s%s"%(s['title'],mergeStr,tierStr)
-        if s['title'].startswith("lumi_"):
-          year_tokens = set()
-          for y in d['year'].unique():
-            if not isinstance(y, str):
-              continue
-            match = re.search(r'\d{4}', y)
-            if match:
-              year_tokens.add(match.group(0))
-          use_run3_shared_name = re.fullmatch(r"lumi_\d+", s['title']) is not None
-          if (len(year_tokens) == 1) and (not use_run3_shared_name):
-            stitle = "%s_%s"%(stitle, next(iter(year_tokens)))
+        stitle = "%s%s%s"%(s['title'],mergeStr,tierNameSuffix)
+        # if s['title'].startswith("lumi_"):
+        #   year_tokens = set()
+        #   for y in d['year'].unique():
+        #     if not isinstance(y, str):
+        #       continue
+        #     match = re.search(r'\d{4}', y)
+        #     if match:
+        #       year_tokens.add(match.group(0))
+        #   use_run3_shared_name = re.fullmatch(r"lumi_\d+", s['title']) is not None
+        #   if (len(year_tokens) == 1) and (not use_run3_shared_name):
+        #     stitle = "%s_%s"%(stitle, next(iter(year_tokens)))
         lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
         # Loop over categories and then iterate over rows in category
         for cat in d.cat.unique():
           for ir,r in d[d['cat']==cat].iterrows():
             if r['proc'] == "data_obs": continue
             # Extract value and add to line (with checks)
-            sval = r["%s%s%s"%(s['name'],mergeStr,tierStr)]
+            sval = r["%s%s%s"%(s['name'],mergeStr,tierNameSuffix)]
             lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
             # code.interact(local=locals())
         # Remove final space from line and add to file
@@ -165,7 +166,7 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
           if(tier!='mnorm')&("scaleWeight" in s['name']):
             for ps,psProcs in scaleCorrScheme.iteritems():
               psStr = "_%s"%ps
-              stitle = "%s%s%s"%(s['title'],psStr,tierStr)
+              stitle = "%s%s%s"%(s['title'],psStr,tierNameSuffix)
               lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
               # Loop over categories and then iterate over rows in category
               for cat in d.cat.unique():
@@ -176,15 +177,15 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
                   p = re.sub("_2017_hgg","",p)
                   p = re.sub("_2018_hgg","",p)
                   # Add value if in proc in phase space else -
-                  if p in psProcs: sval = r["%s%s"%(s['name'],tierStr)]
+                  if p in psProcs: sval = r["%s%s"%(s['name'],tierNameSuffix)]
                   else: sval = '-'
                   lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
               # Remove final space from line and add to file
               f.write("%s\n"%lsyst[:-1])
       else:
         for year in options.years.split(","):
-          stitle = "%s%s%s_%s"%(s['title'],mergeStr,tierStr,year)
-          sname = "%s%s%s_%s"%(s['name'],mergeStr,tierStr,year)
+          stitle = "%s%s%s_%s"%(s['title'],mergeStr,tierNameSuffix,year)
+          sname = "%s%s%s_%s"%(s['name'],mergeStr,tierNameSuffix,year)
           lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
           # Loop over categories and then iterate over rows in category
           for cat in d.cat.unique():
