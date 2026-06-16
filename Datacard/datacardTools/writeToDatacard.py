@@ -82,13 +82,15 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
 
   # For signal shape systematics add simple line
   if s['type'] == 'signal_shape':
-    stitle = "%s_%s"%(outputWSNuisanceTitle__,s['title'])
+    stitle = s['title']
     if s['mode'] != 'other':
       if outputNuisanceExtMap[s['mode']] != '':
         stitle += "_%s"%outputNuisanceExtMap[s['mode']]
     # Hard-coded split for Zmmg scale nuisances:
     # correlate 2022 and 2023 with each other, but keep 2024 separate.
-    if s['title'] in ['ScaleEBZmmg', 'ScaleEEZmmg']:
+    # Match both the old bare titles and the new CMS_HIG26007-prefixed titles.
+    zmmgScaleNames = ['ScaleEBZmmg', 'ScaleEEZmmg']
+    if s.get('name') in zmmgScaleNames or any(s['title'].endswith(name) for name in zmmgScaleNames):
       years = options.years.split(",")
       if any(isZmmgScale2022Or2023Label(year) for year in years):
         lsyst = "%-70s  param    %-6s %-6s"%(f"{stitle}_2022_2023",s['mean'],s['sigma'])
@@ -144,7 +146,7 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
             match = re.search(r'\d{4}', y)
             if match:
               year_tokens.add(match.group(0))
-          use_run3_shared_name = re.fullmatch(r"lumi_\d+", s['title']) is not None
+          use_run3_shared_name = re.fullmatch(r"lumi_\d+", s['name']) is not None
           if (len(year_tokens) == 1) and (not use_run3_shared_name):
             stitle = "%s_%s"%(stitle, next(iter(year_tokens)))
         lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
