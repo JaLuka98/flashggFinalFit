@@ -82,7 +82,7 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
 
   # For signal shape systematics add simple line
   if s['type'] == 'signal_shape':
-    stitle = "%s_%s"%(outputWSNuisanceTitle__,s['title'])
+    stitle = s['title']
     if s['mode'] != 'other':
       if outputNuisanceExtMap[s['mode']] != '':
         stitle += "_%s"%outputNuisanceExtMap[s['mode']]
@@ -146,7 +146,7 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
             match = re.search(r'\d{4}', y)
             if match:
               year_tokens.add(match.group(0))
-          use_run3_shared_name = re.fullmatch(r"lumi_\d+", s['title']) is not None
+          use_run3_shared_name = re.fullmatch(r"lumi_\d+", s['name']) is not None
           if (len(year_tokens) == 1) and (not use_run3_shared_name):
             stitle = "%s_%s"%(stitle, next(iter(year_tokens)))
         lsyst = '%-50s  %-10s    '%(stitle,s['prior'])
