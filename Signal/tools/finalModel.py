@@ -80,6 +80,11 @@ def initialiseXSBR():
   if('ggZH' in productionModes)&('ZH' in productionModes): xsbr['qqZH'] = xsbr['ZH']-xsbr['ggZH']
   return xsbr
 
+def getSignalShapeNuisanceParamName(nuisanceName):
+  if (nuisanceName == 'deltafracright') or nuisanceName.startswith('Scale') or nuisanceName.startswith('Smearing'):
+    return "CMS_HIG26007_%s"%nuisanceName
+  return "%s_%s"%(outputWSNuisanceTitle__,nuisanceName)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
 class FinalModel:
   # Constructor
@@ -180,9 +185,10 @@ class FinalModel:
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Function for making nuisance param w/ info to add to Nuisance dict
   def makeNuisance(self,nuisanceName,nuisanceMeanConst,nuisanceSigmaConst,nuisanceRateConst,nuisanceType,nuisanceOpts=[]):
+    nuisanceParamName = getSignalShapeNuisanceParamName(nuisanceName)
     self.NuisanceMap[nuisanceType][nuisanceName] = {
       'name':nuisanceName,
-      'param':ROOT.RooRealVar("%s_%s"%(outputWSNuisanceTitle__,nuisanceName),"%s_%s"%(outputWSNuisanceTitle__,nuisanceName),0.,-5.,5.),
+      'param':ROOT.RooRealVar(nuisanceParamName,nuisanceParamName,0.,-5.,5.),
       'meanConst':ROOT.RooConstVar("const_%s_mean_%s"%(self.name,nuisanceName),"const_%s_mean_%s"%(self.name,nuisanceName),nuisanceMeanConst),
       'sigmaConst':ROOT.RooConstVar("const_%s_sigma_%s"%(self.name,nuisanceName),"const_%s_sigma_%s"%(self.name,nuisanceName),nuisanceSigmaConst),
       'rateConst':ROOT.RooConstVar("const_%s_rate_%s"%(self.name,nuisanceName),"const_%s_rate_%s"%(self.name,nuisanceName),nuisanceRateConst),
