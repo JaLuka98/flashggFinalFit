@@ -1299,6 +1299,17 @@ globalXSBRMap['Run3FidXSAnalysis']['bbh_PTHvDPhiJ0J1_300p0_10000p0_1p5708_3p1416
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PTHvDPhiJ0J1_0p0_10000p0_m4p0_4p0_out'] = {'mode':'constant','factor':0.52218}
 
 
+for _proc, _factor in [
+  ('ggh', 51.96),
+  ('vbf', 4.067),
+  ('vh', 2.3781),
+  ('tth', 0.5638),
+  ('bbh', 0.52218),
+]:
+  for _, _bin_name in differentialProcTable_['PTHvsNJ']:
+    globalXSBRMap['Run3FidXSAnalysis'][f'{_proc}_{_bin_name}'] = {'mode':'constant','factor':_factor}
+
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Functions for loading XS*BR below

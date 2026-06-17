@@ -42,11 +42,14 @@ lumiMap = {
     '222324': 172.13,
 }
 
-def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW):
+def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW, reco_bins=None):
+    if reco_bins is None:
+        reco_bins = bins
+
     paramStr = [f"r_{gen_variable}_{bin}=1" for bin in bins]
     paramStrNoOne = [f"r_{gen_variable}_{bin}" for bin in bins]
-    catsStr = [f"RECO_{reco_variable}_{bin}" for bin in bins]
-    catsStrWithBMW = [f"RECO_{reco_variable}_{bin}_{bmw}" for bin in bins for bmw in BMW]
+    catsStr = [f"RECO_{reco_variable}_{bin}" for bin in reco_bins]
+    catsStrWithBMW = [f"RECO_{reco_variable}_{bin}_{bmw}" for bin in reco_bins for bmw in BMW]
 
     if "_" in year:
         years = year.split("_")
@@ -55,7 +58,7 @@ def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW):
 
     pdfIndeces = [
         f"pdfindex_RECO_{reco_variable}_{bin}_{bmw}_{yr}_{sqrts__}"
-        for bin in bins for bmw in BMW for yr in years
+        for bin in reco_bins for bmw in BMW for yr in years
     ]
 
     VariableDict = {
@@ -173,7 +176,8 @@ jetVariables = [
     "DPhiHJ0J1",
     "DEtaJ0J1H",
     "MassJ0J1",
-    "EtaJ0J1"
+    "EtaJ0J1",
+    "PTHvsNJ",
 ]
 
 differentialProcTable_ = {
@@ -411,6 +415,29 @@ differentialProcTable_ = {
         (4612, "PTHvYH_105p0_10000p0_1p0_2p5_in"),
         (4631, "PTHvYH_0p0_10000p0_0p0_2p5_out")
     ],
+    "PTHvsNJ": [
+        (46001, "PTHvsNJ_NJ0_PTH_0p0_5p0_in"),
+        (46002, "PTHvsNJ_NJ0_PTH_5p0_10p0_in"),
+        (46003, "PTHvsNJ_NJ0_PTH_10p0_15p0_in"),
+        (46004, "PTHvsNJ_NJ0_PTH_15p0_20p0_in"),
+        (46005, "PTHvsNJ_NJ0_PTH_20p0_25p0_in"),
+        (46006, "PTHvsNJ_NJ0_PTH_25p0_30p0_in"),
+        (46007, "PTHvsNJ_NJ0_PTH_30p0_35p0_in"),
+        (46008, "PTHvsNJ_NJ0_PTH_35p0_45p0_in"),
+        (46009, "PTHvsNJ_NJ0_PTH_45p0_60p0_in"),
+        (46010, "PTHvsNJ_NJ0_PTH_60p0_10000p0_in"),
+        (46011, "PTHvsNJ_NJ1_PTH_0p0_30p0_in"),
+        (46012, "PTHvsNJ_NJ1_PTH_30p0_60p0_in"),
+        (46013, "PTHvsNJ_NJ1_PTH_60p0_100p0_in"),
+        (46014, "PTHvsNJ_NJ1_PTH_100p0_170p0_in"),
+        (46015, "PTHvsNJ_NJ1_PTH_170p0_10000p0_in"),
+        (46016, "PTHvsNJ_NJ2p_PTH_0p0_100p0_in"),
+        (46017, "PTHvsNJ_NJ2p_PTH_100p0_170p0_in"),
+        (46018, "PTHvsNJ_NJ2p_PTH_170p0_250p0_in"),
+        (46019, "PTHvsNJ_NJ2p_PTH_250p0_350p0_in"),
+        (46020, "PTHvsNJ_NJ2p_PTH_350p0_10000p0_in"),
+        (46021, "PTHvsNJ_NJ0p_PTH_0p0_10000p0_out"),
+    ],
 }
 
 #BMW == Best Medium Worst
@@ -437,8 +464,66 @@ variableBins = {
     "DEtaJ0J1H": ["m10000p0_0p0", "0p0_0p2", "0p2_0p5", "0p5_0p85", "0p85_1p2", "1p2_1p7", "1p7_100p0"],
     "MassJ0J1": ["m10000p0_0p0", "0p0_90p0", "90p0_160p0", "160p0_300p0", "300p0_500p0", "500p0_1000p0", "1000p0_10000p0"],
     "EtaJ0J1": ["m10000p0_0p0", "0p0_0p7", "0p7_1p6", "1p6_3p0", "3p0_5p0", "5p0_100p0"],
-    "PTHvYH": ["0p0_50p0_0p0_0p2", "0p0_50p0_0p2_0p4", "0p0_50p0_0p4_0p65", "0p0_50p0_0p65_0p9", "0p0_50p0_0p9_1p2", "0p0_50p0_1p2_2p5", "50p0_105p0_0p0_0p5", "50p0_105p0_0p5_1p15", "50p0_105p0_1p15_2p5", "105p0_10000p0_0p0_0p45", "105p0_10000p0_0p45_1p0", "105p0_10000p0_1p0_2p5"]
+    "PTHvYH": ["0p0_50p0_0p0_0p2", "0p0_50p0_0p2_0p4", "0p0_50p0_0p4_0p65", "0p0_50p0_0p65_0p9", "0p0_50p0_0p9_1p2", "0p0_50p0_1p2_2p5", "50p0_105p0_0p0_0p5", "50p0_105p0_0p5_1p15", "50p0_105p0_1p15_2p5", "105p0_10000p0_0p0_0p45", "105p0_10000p0_0p45_1p0", "105p0_10000p0_1p0_2p5"],
+    "PTHvsNJ": [
+        "NJ0_PTH_0p0_5p0",
+        "NJ0_PTH_5p0_10p0",
+        "NJ0_PTH_10p0_15p0",
+        "NJ0_PTH_15p0_20p0",
+        "NJ0_PTH_20p0_25p0",
+        "NJ0_PTH_25p0_30p0",
+        "NJ0_PTH_30p0_35p0",
+        "NJ0_PTH_35p0_45p0",
+        "NJ0_PTH_45p0_60p0",
+        "NJ0_PTH_60p0_10000p0",
+        "NJ1_PTH_0p0_30p0",
+        "NJ1_PTH_30p0_60p0",
+        "NJ1_PTH_60p0_100p0",
+        "NJ1_PTH_100p0_170p0",
+        "NJ1_PTH_170p0_10000p0",
+        "NJ2p_PTH_0p0_100p0",
+        "NJ2p_PTH_100p0_170p0",
+        "NJ2p_PTH_170p0_250p0",
+        "NJ2p_PTH_250p0_350p0",
+        "NJ2p_PTH_350p0_10000p0",
+    ],
 }
+
+recoVariableBins = {
+    variable: bins[:] for variable, bins in variableBins.items()
+}
+recoVariableBins["YJ0"] = [
+    "m10000p0_0p0",
+    "0p0_0p3",
+    "0p3_0p6",
+    "0p6_0p9",
+    "0p9_1p2",
+    "1p2_1p6",
+    "1p6_2p0",
+    "2p0_2p5",
+]
+recoVariableBins["PTHvsNJ"] = [
+    "NJ0p0_PTH0p0_5p0",
+    "NJ0p0_PTH5p0_10p0",
+    "NJ0p0_PTH10p0_15p0",
+    "NJ0p0_PTH15p0_20p0",
+    "NJ0p0_PTH20p0_25p0",
+    "NJ0p0_PTH25p0_30p0",
+    "NJ0p0_PTH30p0_35p0",
+    "NJ0p0_PTH35p0_45p0",
+    "NJ0p0_PTH45p0_60p0",
+    "NJ0p0_PTH60p0_10000p0",
+    "NJ1p0_PTH0p0_30p0",
+    "NJ1p0_PTH30p0_60p0",
+    "NJ1p0_PTH60p0_100p0",
+    "NJ1p0_PTH100p0_170p0",
+    "NJ1p0_PTH170p0_10000p0",
+    "NJ2p0_PTH0p0_100p0",
+    "NJ2p0_PTH100p0_170p0",
+    "NJ2p0_PTH170p0_250p0",
+    "NJ2p0_PTH250p0_350p0",
+    "NJ2p0_PTH350p0_10000p0",
+]
 
 def combineVariableDict(variable, year):
     # Split the years if it's a combined year, otherwise just use the single year
@@ -447,11 +532,11 @@ def combineVariableDict(variable, year):
     if len(year_list) > 1:
         # Add the pdfIndices from all the years together for the combined year
         combined_pdf_indices = []
-        combined_payload = CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], year=template_year, BMW=BMW)
+        combined_payload = CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)
         for y in year_list:
             year_payload = combineVariableDict(variable, y)
             combined_pdf_indices.extend(year_payload["pdfIndeces"])
         combined_payload["pdfIndeces"] = combined_pdf_indices
         return combined_payload
     else:
-        return CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], year=template_year, BMW=BMW)
+        return CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)

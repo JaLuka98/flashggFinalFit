@@ -142,7 +142,9 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
+            print("Script output:", e.stdout)
             print("Error executing script:", e.stderr)
+            raise
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -416,7 +418,9 @@ class CalcPhotonSystCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
+            print("Script output:", e.stdout)
             print("Error executing script:", e.stderr)
+            raise
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -713,7 +717,9 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
+            print("Script output:", e.stdout)
             print("Error executing script:", e.stderr)
+            raise
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
