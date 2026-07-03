@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_Zmmg_SaS_ICHEP_final_production/2024_PTH/'
+outputFolder: '/net/data_cms3a-1/linuserdmann/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_Zmmg_SaS_ICHEP_final_production/2024_PTH/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials/2024/PTH/root/data/allData_2024.root'
-  Trees2WS:     '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials/2024/PTH/root/mc/'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/linuserdmann/HIG-26-007/2024/PTH/root/data/allData_2024.root'
+  Trees2WS:     '/net/data_cms3a-2/nobackup/linuserdmann/HIG-26-007/2024/PTH/root/mc/'
 
 backgroundScriptCfg:
   # Setup
@@ -21,7 +21,7 @@ trees2wsCfg:
   inputTreeDir: 'DiphotonTree' # Name of RooDirectory storing input tree
 
   apply_mass_cut: False # Apply cut on CMS_hgg_mass
-  mass_cut_range: '100,180' # CMS_hgg_mass cut range
+  mass_cut_range: '100,180' # CMS_hgg_mass cut range,
   doSTXSSplitting: False # Split output WS per STXS bin
   doDiffSplitting: True # Split output WS per differential bin
   doInOutSplitting: False # Split output WS into in/out fiducial based on some variable in the input trees (to be improved).
@@ -37,6 +37,7 @@ trees2wsCfg:
     - "*Down"
     - "fiducialGeometricFlag"
     - "diffVariable_GenPTH"
+    - "GenPTH"
   
   dataVars:
     - "CMS_hgg_mass"
@@ -160,7 +161,7 @@ datacard_clean:
 combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
-  setParameterRange: "r=0,3"
+  setParameterRange: "r=0,2" #"r=0,3"
   cminApproxPreFitTolerance: 0.01
   rMin: 0.0
   rMax: 2.0
@@ -176,7 +177,7 @@ combine_impacts:
   stepSize: 0.05
   setCrossingTolerance: 0.00005
   not_show_POI: True
-  execution: 'htcondor'
+  execution: #'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
