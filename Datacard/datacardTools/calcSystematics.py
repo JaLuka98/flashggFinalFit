@@ -461,9 +461,24 @@ def compareYield(row,factoryType,sname,mode='default',mname=None):
   if( mode == 'default' )|( mode == 'ishape' ):
     # FIX: some a_h variations are not centred around nominal_yield, take symmetric
     if factoryType == "a_h":
-      midpoint_yield = 0.5*(row["%s_down_yield"%sname]+row["%s_up_yield"%sname])
-      if midpoint_yield == 0: return [1.,1.]
-      else: return [(row["%s_down_yield"%sname]/midpoint_yield),(row["%s_up_yield"%sname]/midpoint_yield)]
+      down_yield = row["%s_down_yield"%sname]
+      up_yield = row["%s_up_yield"%sname]
+
+      # Guard against pathological templates (tiny/negative sums from weighted events).
+      # These produce non-physical lnN factors such as -0.000/2.000 and break text2workspace.
+      if (down_yield <= 0.) or (up_yield <= 0.):
+        return [1.,1.]
+
+      midpoint_yield = 0.5*(down_yield+up_yield)
+      if midpoint_yield <= 0.:
+        return [1.,1.]
+
+      down_ratio = down_yield/midpoint_yield
+      up_ratio = up_yield/midpoint_yield
+      if (down_ratio <= 0.) or (up_ratio <= 0.):
+        return [1.,1.]
+
+      return [down_ratio,up_ratio]
     elif factoryType == "a_w": return [(row["%s_down_yield"%sname]/row['nominal_yield']),(row["%s_up_yield"%sname]/row['nominal_yield'])]
     else: return [row["%s_yield"%sname]/row['nominal_yield']]
 

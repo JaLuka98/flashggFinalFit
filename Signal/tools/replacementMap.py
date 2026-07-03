@@ -296,6 +296,88 @@ _PTH_WV_BIN = "35p0_45p0"
 globalReplacementMap["Run3FidXSAnalysisPTH"]['procWV'] = f"ggh_PTH_{_PTH_WV_BIN}_in"
 globalReplacementMap["Run3FidXSAnalysisPTH"]['catWV'] = f"RECO_PTH_{_PTH_WV_BIN}_cat2"
 
+
+
+########## Map containing the processes used to replace OOA events
+OOA_BinMap_PTH = {
+    "RECO_PTH_0p0_5p0_cat0": "10p0_15p0", #"0p0_5p0",
+    "RECO_PTH_0p0_5p0_cat1": "0p0_5p0",
+    "RECO_PTH_0p0_5p0_cat2": "0p0_5p0",
+
+    "RECO_PTH_5p0_10p0_cat0": "10p0_15p0",
+    "RECO_PTH_5p0_10p0_cat1": "5p0_10p0",
+    "RECO_PTH_5p0_10p0_cat2": "5p0_10p0",
+
+    "RECO_PTH_10p0_15p0_cat0": "10p0_15p0",
+    "RECO_PTH_10p0_15p0_cat1": "10p0_15p0",
+    "RECO_PTH_10p0_15p0_cat2": "10p0_15p0",
+
+    "RECO_PTH_15p0_20p0_cat0": "15p0_20p0",
+    "RECO_PTH_15p0_20p0_cat1": "15p0_20p0",
+    "RECO_PTH_15p0_20p0_cat2": "15p0_20p0",
+
+    "RECO_PTH_20p0_25p0_cat0": "20p0_25p0",
+    "RECO_PTH_20p0_25p0_cat1": "20p0_25p0",
+    "RECO_PTH_20p0_25p0_cat2": "20p0_25p0",
+
+    "RECO_PTH_25p0_30p0_cat0": "25p0_30p0",
+    "RECO_PTH_25p0_30p0_cat1": "25p0_30p0",
+    "RECO_PTH_25p0_30p0_cat2": "25p0_30p0",
+
+    "RECO_PTH_30p0_35p0_cat0": "30p0_35p0",
+    "RECO_PTH_30p0_35p0_cat1": "30p0_35p0",
+    "RECO_PTH_30p0_35p0_cat2": "30p0_35p0",
+
+    "RECO_PTH_35p0_45p0_cat0": "35p0_45p0",
+    "RECO_PTH_35p0_45p0_cat1": "35p0_45p0",
+    "RECO_PTH_35p0_45p0_cat2": "35p0_45p0",
+
+    "RECO_PTH_45p0_60p0_cat0": "45p0_60p0",
+    "RECO_PTH_45p0_60p0_cat1": "45p0_60p0",
+    "RECO_PTH_45p0_60p0_cat2": "45p0_60p0",
+
+    "RECO_PTH_60p0_80p0_cat0": "60p0_80p0",
+    "RECO_PTH_60p0_80p0_cat1": "60p0_80p0",
+    "RECO_PTH_60p0_80p0_cat2": "60p0_80p0",
+
+    "RECO_PTH_80p0_100p0_cat0": "80p0_100p0",
+    "RECO_PTH_80p0_100p0_cat1": "80p0_100p0",
+    "RECO_PTH_80p0_100p0_cat2": "80p0_100p0",
+
+    "RECO_PTH_100p0_120p0_cat0": "100p0_120p0",
+    "RECO_PTH_100p0_120p0_cat1": "100p0_120p0",
+    "RECO_PTH_100p0_120p0_cat2": "100p0_120p0",
+
+    "RECO_PTH_120p0_140p0_cat0": "120p0_140p0",
+    "RECO_PTH_120p0_140p0_cat1": "120p0_140p0",
+    "RECO_PTH_120p0_140p0_cat2": "120p0_140p0",
+
+    "RECO_PTH_140p0_170p0_cat0": "140p0_170p0",
+    "RECO_PTH_140p0_170p0_cat1": "140p0_170p0",
+    "RECO_PTH_140p0_170p0_cat2": "140p0_170p0",
+
+    "RECO_PTH_170p0_200p0_cat0": "170p0_200p0",
+    "RECO_PTH_170p0_200p0_cat1": "170p0_200p0",
+    "RECO_PTH_170p0_200p0_cat2": "170p0_200p0",
+
+    "RECO_PTH_200p0_250p0_cat0": "200p0_250p0",
+    "RECO_PTH_200p0_250p0_cat1": "200p0_250p0",
+    "RECO_PTH_200p0_250p0_cat2": "200p0_250p0",
+
+    "RECO_PTH_250p0_350p0_cat0": "250p0_350p0",
+    "RECO_PTH_250p0_350p0_cat1": "250p0_350p0",
+    "RECO_PTH_250p0_350p0_cat2": "250p0_350p0",
+
+    "RECO_PTH_350p0_450p0_cat0": "350p0_450p0",
+    "RECO_PTH_350p0_450p0_cat1": "350p0_450p0",
+    "RECO_PTH_350p0_450p0_cat2": "350p0_450p0",
+
+    "RECO_PTH_450p0_10000p0_cat0": "450p0_10000p0",
+    "RECO_PTH_450p0_10000p0_cat1": "450p0_10000p0",
+    "RECO_PTH_450p0_10000p0_cat2": "350p0_450p0", #"450p0_10000p0",
+}
+
+
 # Replacement processes for RV
 globalReplacementMap["Run3FidXSAnalysisPTH"]['procRVMap'] = od()
 for _bin in PTH_BINS:
@@ -303,7 +385,16 @@ for _bin in PTH_BINS:
         _target_bin = _PTH_SECOND_BIN if (_bin == _PTH_FIRST_BIN and _cat == 'cat0') else _bin
         reco_key = f"RECO_PTH_{_bin}_{_cat}"
         proc_value = f"ggh_PTH_{_target_bin}_in"
-        globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key] = proc_value
+        ############################################################################
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key] = od()
+
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key]["in"] = proc_value
+
+        _target_bin_out = OOA_BinMap_PTH.get(reco_key, _bin)
+        proc_value_out = f"ggh_PTH_{_target_bin_out}_out"
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key]["out"] = proc_value #proc_value_out
+        ############################################################################
+        # globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key]["in"] = proc_value
 
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"] = od()
@@ -312,11 +403,62 @@ for _bin in PTH_BINS:
         _target_bin = _PTH_SECOND_BIN if (_bin == _PTH_FIRST_BIN and _cat == 'cat0') else _bin
         reco_key = f"RECO_PTH_{_bin}_{_cat}"
         target_value = f"RECO_PTH_{_target_bin}_{_cat}"
-        globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key] = target_value
+        ############################################################################
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key] = od()
+
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key]["in"] = target_value
+
+        _target_bin_out = OOA_BinMap_PTH.get(reco_key, _bin)
+        target_value_out = f"RECO_PTH_{_target_bin_out}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key]["out"] = target_value #target_value_out
+        ############################################################################
+        # globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key] = target_value
 
 
 
 # Differential Y (Rapidity)
+OOA_BinMap_YH = {
+    "RECO_YH_0p0_0p15_cat0": "0p0_0p15",
+    "RECO_YH_0p0_0p15_cat1": "0p0_0p15",
+    "RECO_YH_0p0_0p15_cat2": "0p0_0p15",
+
+    "RECO_YH_0p15_0p3_cat0": "0p15_0p3",
+    "RECO_YH_0p15_0p3_cat1": "0p15_0p3",
+    "RECO_YH_0p15_0p3_cat2": "0p15_0p3",
+
+    "RECO_YH_0p3_0p45_cat0": "0p3_0p45",
+    "RECO_YH_0p3_0p45_cat1": "0p3_0p45",
+    "RECO_YH_0p3_0p45_cat2": "0p3_0p45",
+
+    "RECO_YH_0p45_0p6_cat0": "0p45_0p6",
+    "RECO_YH_0p45_0p6_cat1": "0p45_0p6",
+    "RECO_YH_0p45_0p6_cat2": "0p45_0p6",
+
+    "RECO_YH_0p6_0p75_cat0": "0p6_0p75",
+    "RECO_YH_0p6_0p75_cat1": "0p6_0p75",
+    "RECO_YH_0p6_0p75_cat2": "0p6_0p75",
+
+    "RECO_YH_0p75_0p9_cat0": "0p75_0p9",
+    "RECO_YH_0p75_0p9_cat1": "0p75_0p9",
+    "RECO_YH_0p75_0p9_cat2": "0p75_0p9",
+
+    "RECO_YH_0p9_1p2_cat0": "0p9_1p2",
+    "RECO_YH_0p9_1p2_cat1": "0p9_1p2",
+    "RECO_YH_0p9_1p2_cat2": "0p9_1p2",
+
+    "RECO_YH_1p2_1p6_cat0": "1p2_1p6",
+    "RECO_YH_1p2_1p6_cat1": "1p2_1p6",
+    "RECO_YH_1p2_1p6_cat2": "1p2_1p6",
+
+    "RECO_YH_1p6_2p0_cat0": "1p6_2p0",
+    "RECO_YH_1p6_2p0_cat1": "1p6_2p0",
+    "RECO_YH_1p6_2p0_cat2": "1p6_2p0",
+
+    "RECO_YH_2p0_2p5_cat0": "2p0_2p5",
+    "RECO_YH_2p0_2p5_cat1": "2p0_2p5",
+    "RECO_YH_2p0_2p5_cat2": "2p0_2p5",
+}
+
 _RAPIDITY_BINS = variableBins["rapidity"]
 
 globalReplacementMap["Run3FidXSAnalysisYH"] = od()
@@ -342,6 +484,28 @@ globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_c
 
 
 # Differential NJ (Number of Jets)
+OOA_BinMap_NJ = {
+    "RECO_NJ_0p0_1p0_cat0": "0p0_1p0",
+    "RECO_NJ_0p0_1p0_cat1": "0p0_1p0",
+    "RECO_NJ_0p0_1p0_cat2": "0p0_1p0",
+
+    "RECO_NJ_1p0_2p0_cat0": "1p0_2p0",
+    "RECO_NJ_1p0_2p0_cat1": "1p0_2p0",
+    "RECO_NJ_1p0_2p0_cat2": "1p0_2p0",
+
+    "RECO_NJ_2p0_3p0_cat0": "2p0_3p0",
+    "RECO_NJ_2p0_3p0_cat1": "2p0_3p0",
+    "RECO_NJ_2p0_3p0_cat2": "2p0_3p0",
+
+    "RECO_NJ_3p0_4p0_cat0": "3p0_4p0",
+    "RECO_NJ_3p0_4p0_cat1": "3p0_4p0",
+    "RECO_NJ_3p0_4p0_cat2": "3p0_4p0",
+
+    "RECO_NJ_4p0_100p0_cat0": "4p0_100p0",
+    "RECO_NJ_4p0_100p0_cat1": "4p0_100p0",
+    "RECO_NJ_4p0_100p0_cat2": "4p0_100p0",
+}
+
 _NJ_BINS = variableBins["NJ"]
 
 globalReplacementMap["Run3FidXSAnalysisNJ"] = od()
@@ -364,8 +528,9 @@ for _bin in _NJ_BINS:
         reco_key = f"RECO_NJ_{_bin}_{_cat}"
         globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"][reco_key] = reco_key
 
-# Differential PTJ0 (PT of the leading jet)
 
+
+# Differential PTJ0 (PT of the leading jet)
 _PTJ0_BINS = variableBins["PTJ0"]
 _PTJ0_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
 _PTJ0_WV_BIN = "55p0_75p0"

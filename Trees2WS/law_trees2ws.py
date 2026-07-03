@@ -559,63 +559,285 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                     return False
 
         elif doDiffSplitting:
-            
-            for diffId in data[diffVar].unique():
-                # diffId should be a gen-level pt bin
-                df = data[data[diffVar]==diffId]
-                sdf = None
-                if doSystematics: sdf = sdata[sdata[diffVar]==diffId]
 
-                # For the moment, skip these events (as their count is usually very small)
-                if int(diffId) == 0: continue
+            variable_map = {
+                "PTH": "GenPTH",
+                "rapidity": "GenYH",
+                "NJ": "GenNJ",
+                "PTJ0": "GenPTJ0",
+                "CosThetaStarCS": "GenCosThetaStarCS",
+                "PhiEtaStar": "GenPhiEtaStar",
+                "NBJet": "GenNBJet",
+                "YJ0": "GenYJ0",
+                "DPhiHJ0": "GenDPhiHJ0",
+                "DYHJ0": "GenDYHJ0",
+                "TauJC": "GenTauJC",
+                "PTJ1": "GenPTJ1",
+                "YJ1": "GenYJ1",
+                "DPhiJ0J1": "GenDPhiJ0J1",
+                "DPhiHJ0J1": "GenDPhiHJ0J1",
+                "DEtaJ0J1H": "GenDEtaJ0J1H",
+                "MassJ0J1": "GenMassJ0J1",
+                "EtaJ0J1": "GenEtaJ0J1"
+            }
 
-                # Extract diffBin
-                currentBin = getBinNameByHiggsDNANumber(self.variable, int(diffId))
-                diffBin = productionMode + "_" + currentBin
-                print("diffBin", diffBin)
+            def get_bounds_from_bin_name(bin_name):
+                # split bin name in components, e.g. ['PTH', '0p0', '5p0', 'in']
+                parts = bin_name.split("_")
+                
+                # convert to float by replacing p with . and converting to float, e.g. '0p0' -> 0.0
+                raw_low = parts[1]
+                raw_high = parts[2]
+                
+                # If boundary starts with 'm' (e.g., m10000p0), replace it with '-'
+                if raw_low.startswith("m"):
+                    raw_low = "-" + raw_low[1:]
+                if raw_high.startswith("m"): # should not happen but just in case
+                    raw_high = "-" + raw_high[1:]
+                    
+                low_bound = float(raw_low.replace("p", "."))
+                high_bound = float(raw_high.replace("p", "."))
+                
+                return low_bound, high_bound
 
-                # Define output workspace file
-                if self.output_dir is not None:
-                    if self.batch_flavor == "slurm/psi":
-                        outputWSDir = os.path.join(temp_output_dir, "ws_{}".format(diffBin))
+            if self.variable in variable_map:
+                particleVar = variable_map[self.variable]
+            else:
+                raise KeyError(f"Variable '{self.variable}'not defined in variable_map!")
+
+            # variables with dedicated negative boundary (e.g. PTJ0)
+            negative_variable_boundaries =  ["PTJ0", "YJ0", "DPhiHJ0", "DYHJ0", "TauJC", "PTJ1", "YJ1", "DPhiJ0J1", "DPhiHJ0J1", "DEtaJ0J1H", "MassJ0J1", "EtaJ0J1"]
+
+            if self.variable not in ["PTHvDPhiJ0J1","PTHvYH"]:
+                for diffID_map, binName_map in differentialProcTable_[self.variable]:
+                    print("diffID_map", diffID_map,flush=True)
+                    print("binName_map", binName_map,flush=True)
+
+                    low_bound, high_bound = get_bounds_from_bin_name(binName_map)
+                    print("low_bound", low_bound,flush=True)
+                    print("high_bound", high_bound,flush=True)
+                    # Gib alle Spaltennamen des DataFrames aus
+                    print("Verfügbare Spalten in data:", data.columns.tolist(), flush=True)
+                    print("sdata columns", sdata.columns.tolist(), flush=True)
+                    print("diffVar", diffVar, flush=True)
+
+########################################## Add variables to configs (see 2022 PTH condif where GenPTH was added (~l.30))!!!
+
+                    if self.variable in negative_variable_boundaries:
+                        mask_variable = (data[particleVar] >= low_bound) & (data[particleVar] < high_bound)
                     else:
-                        outputWSDir = os.path.join(self.output_dir, "ws_{}".format(diffBin))
-                else:
-                    if self.batch_flavor == "slurm/psi":
-                        outputWSDir = os.path.join(temp_output_dir, "ws_{}".format(diffBin))
-                    else:    
-                        outputWSDir = os.path.join(os.path.dirname(input_path), "ws_{}".format(diffBin))
+                        mask_variable = (abs(data[particleVar]) >= low_bound) & (abs(data[particleVar]) < high_bound)
 
-                if not os.path.exists(outputWSDir): 
-                    os.system("mkdir -p %s"%outputWSDir)
+                    # Fiducial geometric flag depending on whether we are in the "in" or "out" bin, if applicable
+                    if binName_map.endswith("_in"): 
+                        mask_fiducial = data['fiducialGeometricFlag'] == True
+                    elif binName_map.endswith("_out"):
+                        mask_fiducial = data['fiducialGeometricFlag'] == False
+                    else:
+                        raise ValueError(f"Bin name {binName_map} does not end with 'in' or 'out' for fiducial splitting!")
 
-                if self.batch_flavor == "slurm/psi":
-                    os.system("mkdir -p %s"%os.path.join(temp_output_dir, 'filechecker'))
-                else:
-                    os.system("mkdir -p %s"%os.path.join(self.output_dir, 'filechecker'))
-                outputWSFile = os.path.join(outputWSDir, re.sub(r"\.root","_{}.root".format(diffBin),os.path.basename(input_path)))
-                print(" --> Creating output workspace for differential bin: %s (%s)"%(diffBin,outputWSFile))
+                    final_mask = mask_fiducial & mask_variable
+                    df = data[final_mask]
 
-                productionMode_string = productionMode
-
-                create_workspace(df, sdf, outputWSFile, productionMode_string)
-        
-                # Check if output workspace is > 2000 bytes (== file empty)
-                try:
-                    file_size = os.path.getsize(outputWSFile)  # Get the file size in bytes
-                    if file_size > 2000:
-                        if self.batch_flavor == "slurm/psi":
-                            print(os.path.join(temp_output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'))
-                            with open(os.path.join(temp_output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'), 'w') as f:
-                                pass
+                    
+                    sdf = None
+                    if doSystematics: 
+                        # For the systematics, the variable mask is the same, since the systematics do not afffect the kinematic properties on generator level
+                        # Only the fiducial mask needs to be adapted depending on whether we are in the "in" or "out" bin
+                        if binName_map.endswith("_in"): 
+                            s_mask_fiducial = sdata['fiducialGeometricFlag'] == True
+                        elif binName_map.endswith("_out"):
+                            s_mask_fiducial = sdata['fiducialGeometricFlag'] == False
                         else:
-                            print(os.path.join(self.output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'))
-                            with open(os.path.join(self.output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'), 'w') as f:
-                                pass
-                except OSError:
-                    # Handle the case where the file does not exist or is inaccessible
-                    print(f"Error creating file. Probably I/O error.")
-                    return False
+                            raise ValueError(f"Bin name {binName_map} does not end with 'in' or 'out' for fiducial splitting!")
+                        s_final_mask = s_mask_fiducial & mask_variable
+                        sdf = sdata[s_final_mask]
+
+                    currentBin = binName_map
+                    print("Current bin", currentBin,flush=True)
+                    diffBin = productionMode + "_" + currentBin
+                    print("diffBin", diffBin,flush=True)
+
+                    # Define output workspace file
+                    if self.output_dir is not None:
+                        if self.batch_flavor == "slurm/psi":
+                            outputWSDir = os.path.join(temp_output_dir, "ws_{}".format(diffBin))
+                        else:
+                            outputWSDir = os.path.join(self.output_dir, "ws_{}".format(diffBin))
+                    else:
+                        if self.batch_flavor == "slurm/psi":
+                            outputWSDir = os.path.join(temp_output_dir, "ws_{}".format(diffBin))
+                        else:    
+                            outputWSDir = os.path.join(os.path.dirname(input_path), "ws_{}".format(diffBin))
+
+                    if not os.path.exists(outputWSDir): 
+                        os.system("mkdir -p %s"%outputWSDir)
+
+                    if self.batch_flavor == "slurm/psi":
+                        os.system("mkdir -p %s"%os.path.join(temp_output_dir, 'filechecker'))
+                    else:
+                        os.system("mkdir -p %s"%os.path.join(self.output_dir, 'filechecker'))
+                    outputWSFile = os.path.join(outputWSDir, re.sub(r"\.root","_{}.root".format(diffBin),os.path.basename(input_path)))
+                    print(" --> Creating output workspace for differential bin: %s (%s)"%(diffBin,outputWSFile))
+
+                    productionMode_string = productionMode
+
+                    create_workspace(df, sdf, outputWSFile, productionMode_string)
+            
+                    # Check if output workspace is > 2000 bytes (== file empty)
+                    try:
+                        file_size = os.path.getsize(outputWSFile)  # Get the file size in bytes
+                        if file_size > 2000:
+                            if self.batch_flavor == "slurm/psi":
+                                print(os.path.join(temp_output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'))
+                                with open(os.path.join(temp_output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'), 'w') as f:
+                                    pass
+                            else:
+                                print(os.path.join(self.output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'))
+                                with open(os.path.join(self.output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'), 'w') as f:
+                                    pass
+                    except OSError:
+                        # Handle the case where the file does not exist or is inaccessible
+                        print(f"Error creating file. Probably I/O error.")
+                        return False
+
+            else:
+                for diffId in data[diffVar].unique():
+                    # diffId should be a gen-level pt bin
+                    print("DiffId", diffId,flush=True)
+                    print("DiffVar", diffVar,flush=True)
+                    df = data[data[diffVar]==diffId]
+                    sdf = None
+                    if doSystematics: sdf = sdata[sdata[diffVar]==diffId]
+
+                    # For the moment, skip these events (as their count is usually very small)
+                    if int(diffId) == 0: continue
+
+                    # Extract diffBin
+                    currentBin = getBinNameByHiggsDNANumber(self.variable, int(diffId))
+                    print("Current bin", currentBin,flush=True)
+                    if currentBin is None:
+                        exit()
+                    diffBin = productionMode + "_" + currentBin
+                    print("diffBin", diffBin)
+
+                    # Define output workspace file
+                    if self.output_dir is not None:
+                        if self.batch_flavor == "slurm/psi":
+                            outputWSDir = os.path.join(temp_output_dir, "ws_{}".format(diffBin))
+                        else:
+                            outputWSDir = os.path.join(self.output_dir, "ws_{}".format(diffBin))
+                    else:
+                        if self.batch_flavor == "slurm/psi":
+                            outputWSDir = os.path.join(temp_output_dir, "ws_{}".format(diffBin))
+                        else:    
+                            outputWSDir = os.path.join(os.path.dirname(input_path), "ws_{}".format(diffBin))
+
+                    if not os.path.exists(outputWSDir): 
+                        os.system("mkdir -p %s"%outputWSDir)
+
+                    if self.batch_flavor == "slurm/psi":
+                        os.system("mkdir -p %s"%os.path.join(temp_output_dir, 'filechecker'))
+                    else:
+                        os.system("mkdir -p %s"%os.path.join(self.output_dir, 'filechecker'))
+                    outputWSFile = os.path.join(outputWSDir, re.sub(r"\.root","_{}.root".format(diffBin),os.path.basename(input_path)))
+                    print(" --> Creating output workspace for differential bin: %s (%s)"%(diffBin,outputWSFile))
+
+                    productionMode_string = productionMode
+
+                    create_workspace(df, sdf, outputWSFile, productionMode_string)
+            
+                    # Check if output workspace is > 2000 bytes (== file empty)
+                    try:
+                        file_size = os.path.getsize(outputWSFile)  # Get the file size in bytes
+                        if file_size > 2000:
+                            if self.batch_flavor == "slurm/psi":
+                                print(os.path.join(temp_output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'))
+                                with open(os.path.join(temp_output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'), 'w') as f:
+                                    pass
+                            else:
+                                print(os.path.join(self.output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'))
+                                with open(os.path.join(self.output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'), 'w') as f:
+                                    pass
+                    except OSError:
+                        # Handle the case where the file does not exist or is inaccessible
+                        print(f"Error creating file. Probably I/O error.")
+                        return False
+
+
+
+
+
+
+
+
+
+
+
+
+##################################################################################################
+##################################################################################################           
+#            for diffId in data[diffVar].unique():
+#                # diffId should be a gen-level pt bin
+#                print("DiffId", diffId,flush=True)
+#                print("DiffVar", diffVar,flush=True)
+#                df = data[data[diffVar]==diffId]
+#                sdf = None
+#                if doSystematics: sdf = sdata[sdata[diffVar]==diffId]
+#
+#                # For the moment, skip these events (as their count is usually very small)
+#                if int(diffId) == 0: continue
+#
+#                # Extract diffBin
+#                currentBin = getBinNameByHiggsDNANumber(self.variable, int(diffId))
+#                print("Current bin", currentBin,flush=True)
+#                if currentBin is None:
+#                    exit()
+#                diffBin = productionMode + "_" + currentBin
+#                print("diffBin", diffBin)
+#
+#                # Define output workspace file
+#                if self.output_dir is not None:
+#                    if self.batch_flavor == "slurm/psi":
+#                        outputWSDir = os.path.join(temp_output_dir, "ws_{}".format(diffBin))
+#                    else:
+#                        outputWSDir = os.path.join(self.output_dir, "ws_{}".format(diffBin))
+#                else:
+#                    if self.batch_flavor == "slurm/psi":
+#                        outputWSDir = os.path.join(temp_output_dir, "ws_{}".format(diffBin))
+#                    else:    
+#                        outputWSDir = os.path.join(os.path.dirname(input_path), "ws_{}".format(diffBin))
+#
+#                if not os.path.exists(outputWSDir): 
+#                    os.system("mkdir -p %s"%outputWSDir)
+#
+#                if self.batch_flavor == "slurm/psi":
+#                    os.system("mkdir -p %s"%os.path.join(temp_output_dir, 'filechecker'))
+#                else:
+#                    os.system("mkdir -p %s"%os.path.join(self.output_dir, 'filechecker'))
+#                outputWSFile = os.path.join(outputWSDir, re.sub(r"\.root","_{}.root".format(diffBin),os.path.basename(input_path)))
+#                print(" --> Creating output workspace for differential bin: %s (%s)"%(diffBin,outputWSFile))
+#
+#                productionMode_string = productionMode
+#
+#                create_workspace(df, sdf, outputWSFile, productionMode_string)
+#        
+#                # Check if output workspace is > 2000 bytes (== file empty)
+#                try:
+#                    file_size = os.path.getsize(outputWSFile)  # Get the file size in bytes
+#                    if file_size > 2000:
+#                        if self.batch_flavor == "slurm/psi":
+#                            print(os.path.join(temp_output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'))
+#                            with open(os.path.join(temp_output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'), 'w') as f:
+#                                pass
+#                        else:
+#                            print(os.path.join(self.output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'))
+#                            with open(os.path.join(self.output_dir, 'filechecker', f'{productionMode}_{input_mass}_{currentBin}.txt'), 'w') as f:
+#                                pass
+#                except OSError:
+#                    # Handle the case where the file does not exist or is inaccessible
+#                    print(f"Error creating file. Probably I/O error.")
+#                    return False
 
         if self.batch_flavor == "slurm/psi":
             execute_command([f"ls -al {temp_output_dir}/*"], shell=True)

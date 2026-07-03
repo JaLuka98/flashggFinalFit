@@ -5,6 +5,7 @@ import glob
 import yaml
 import errno
 import time
+import shlex
 
 from commonTools import *
 from commonObjects import *
@@ -137,12 +138,47 @@ class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
         ]
         command = arguments
         print(command)
+####################################################################################################
+        stdout_log_path = os.path.join(
+        output_dir,
+            f"outdir_{self.ext}/fTest/logs/fTest_stdout_{self.year}_{cat}.log"
+        )
+        stderr_log_path = os.path.join(
+            output_dir,
+            f"outdir_{self.ext}/fTest/logs/fTest_stderr_{self.year}_{cat}.log"
+        )
+        execute_command([f'mkdir -p {output_dir}/outdir_{self.ext}/fTest/logs'], shell=True)
+
+
+        def _write_ftest_logs(stdout_content, stderr_content, return_code):
+            header = [
+                "# Auto-generated FTest runtime log",
+                "# Generated: %s" % time.strftime("%Y-%m-%d %H:%M:%S"),
+                "# Task: FTestCategoryProcess",
+                "# Return code: %s" % return_code,
+                "",
+            ]
+            try:
+                with open(stdout_log_path, "w") as stdout_log_file:
+                    stdout_log_file.write("\n".join(header))
+                    if stdout_content:
+                        stdout_log_file.write(str(stdout_content))
+                with open(stderr_log_path, "w") as stderr_log_file:
+                    stderr_log_file.write("\n".join(header))
+                    if stderr_content:
+                        stderr_log_file.write(str(stderr_content))
+            except OSError as e:
+                print("Warning: failed to write FTest runtime logs (%s)" % e)
+####################################################################################################
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
+            _write_ftest_logs(result.stdout, result.stderr, result.returncode) #########################################
         except subprocess.CalledProcessError as e:
+            _write_ftest_logs(e.stdout, e.stderr, e.returncode) #########################################
             print("Error executing script:", e.stderr)
+            raise RuntimeError("FTest script failed with return code %s" % e.returncode)
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -676,6 +712,8 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             execute_command([f'mkdir -p {self.output_dir}/outdir_{self.ext}/signalFit/Plots'], shell=True)
             output_dir = self.output_dir
 
+        execute_command([f'mkdir -p {output_dir}/outdir_{self.ext}/signalFit/logs'], shell=True)
+
         script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Signal/scripts/signalFit.py")
         arguments = [
             "python3",
@@ -695,6 +733,13 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             "--beamspotWidthData", f"{self.beamspotWidthData}",
             "--beamspotWidthMC", f"{self.beamspotWidthMC}"
         ]
+
+        replacement_report_path = os.path.join(
+            output_dir,
+            f"outdir_{self.ext}/signalFit/logs/replacements_{proc}_{self.year}_{cat}.txt"
+        )
+        arguments += ["--replacementReportFile", replacement_report_path]
+
         if convert_boolean_string(self.doPlots):
             arguments += ["--doPlots"]
         if self.scalesCorr != "":
@@ -706,14 +751,65 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         if (self.batch_flavor == "slurm/psi"):
             arguments += ["--ingredientsDir"]
             arguments += ["%s"%self.output_dir]
+
+        command_log_path = os.path.join(
+            output_dir,
+            f"outdir_{self.ext}/signalFit/logs/signalFit_command_{proc}_{self.year}_{cat}.txt"
+        )
+
+        try:
+            with open(command_log_path, "w") as command_log_file:
+                command_log_file.write("# Auto-generated SignalFit command\n")
+                command_log_file.write("# Generated: %s\n" % time.strftime("%Y-%m-%d %H:%M:%S"))
+                command_log_file.write("# Task: SignalFitCategoryProcess\n")
+                command_log_file.write("\n")
+                command_log_file.write(shlex.join(arguments) + "\n")
+            os.chmod(command_log_path, 0o755)
+        except OSError as e:
+            print("Warning: failed to write SignalFit command log %s (%s)" % (command_log_path, e))
+
         command = arguments
         print(command)
+
+#####################################################################################################
+        stdout_log_path = os.path.join(
+            output_dir,
+            f"outdir_{self.ext}/signalFit/logs/signalFit_stdout_{proc}_{self.year}_{cat}.log"
+        )
+        stderr_log_path = os.path.join(
+            output_dir,
+            f"outdir_{self.ext}/signalFit/logs/signalFit_stderr_{proc}_{self.year}_{cat}.log"
+        )
+
+        def _write_process_logs(stdout_content, stderr_content, return_code):
+            header = [
+                "# Auto-generated SignalFit runtime log",
+                "# Generated: %s" % time.strftime("%Y-%m-%d %H:%M:%S"),
+                "# Task: SignalFitCategoryProcess",
+                "# Return code: %s" % return_code,
+                "",
+            ]
+            try:
+                with open(stdout_log_path, "w") as stdout_log_file:
+                    stdout_log_file.write("\n".join(header))
+                    if stdout_content:
+                        stdout_log_file.write(str(stdout_content))
+                with open(stderr_log_path, "w") as stderr_log_file:
+                    stderr_log_file.write("\n".join(header))
+                    if stderr_content:
+                        stderr_log_file.write(str(stderr_content))
+            except OSError as e:
+                print("Warning: failed to write SignalFit runtime logs (%s)" % e)
+#####################################################################################################
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
+            _write_process_logs(result.stdout, result.stderr, result.returncode) #########################################
         except subprocess.CalledProcessError as e:
+            _write_process_logs(e.stdout, e.stderr, e.returncode) #########################################
             print("Error executing script:", e.stderr)
+            raise RuntimeError("SignalFit script failed with return code %s" % e.returncode)
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -802,6 +898,7 @@ class SignalFit(law.Task):
             currentConfig['massLow'], currentConfig['massHigh'] = '%s'%min(mps), '%s'%max(mps)         
             
             tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysisXSBR=currentConfig['analysisXSBR'], analysisRM=currentConfig['analysisRM'], replacementThreshold=currentConfig['replacementThreshold'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable, version=f"{self.year}_{self.variable}_v{i}" if self.variable != "" else f"{self.year}_v{i}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
+            #tasks.append(SignalFitCategoryProcess(input_path=input_path, output_dir=output_dir, ext=currentConfig['ext'], cats=currentConfig['cats'], procs=currentConfig['procs'], scales=currentConfig['scales'], scalesCorr=currentConfig['scalesCorr'], scalesGlobal=currentConfig['scalesGlobal'], smears=currentConfig['smears'], year=currentConfig['year'], analysisXSBR=currentConfig['analysisXSBR'], analysisRM=currentConfig['analysisRM'], replacementThreshold=currentConfig['replacementThreshold'], massPoints=currentConfig['massPoints'], beamspotWidthData=currentConfig['beamspotWidthData'], beamspotWidthMC=currentConfig['beamspotWidthMC'], doPlots=currentConfig['doPlots'], variable=self.variable, version=f"{self.year}_{self.variable}_v{i}" if self.variable != "" else f"{self.year}_v{i}", workflow=currentConfig['execution'], batch_flavor=self.batch_flavor, slurm_partition=currentConfig['batchPartition'], slurm_memory=currentConfig['batchMemory'], slurm_max_runtime=currentConfig['batchMaxRuntime'], htcondor_partition=currentConfig['batchPartition'], htcondor_memory=currentConfig['batchMemory'], htcondor_max_runtime=currentConfig['batchMaxRuntime']))
             i += 1
                 
         return tasks

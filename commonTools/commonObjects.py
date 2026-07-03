@@ -197,7 +197,26 @@ differentialProcTable_ = {
         (116, "PTH_250p0_350p0_in"),
         (117, "PTH_350p0_450p0_in"),
         (118, "PTH_450p0_10000p0_in"),
-        (119, "PTH_0p0_10000p0_out")
+        (910, "PTH_0p0_5p0_out"),  # Add 9 in front for out fiducial
+        (911, "PTH_5p0_10p0_out"),
+        (912, "PTH_10p0_15p0_out"),
+        (913, "PTH_15p0_20p0_out"),
+        (914, "PTH_20p0_25p0_out"),
+        (915, "PTH_25p0_30p0_out"),
+        (916, "PTH_30p0_35p0_out"),
+        (917, "PTH_35p0_45p0_out"),
+        (918, "PTH_45p0_60p0_out"),
+        (919, "PTH_60p0_80p0_out"),
+        (9110, "PTH_80p0_100p0_out"),
+        (9111, "PTH_100p0_120p0_out"),
+        (9112, "PTH_120p0_140p0_out"),
+        (9113, "PTH_140p0_170p0_out"),
+        (9114, "PTH_170p0_200p0_out"),
+        (9115, "PTH_200p0_250p0_out"),
+        (9116, "PTH_250p0_350p0_out"),
+        (9117, "PTH_350p0_450p0_out"),
+        (9118, "PTH_450p0_10000p0_out")
+        # (119, "PTH_0p0_10000p0_out")
     ],
     "rapidity": [
         (20, "YH_0p0_0p15_in"),
