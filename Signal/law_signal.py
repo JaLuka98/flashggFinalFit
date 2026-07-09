@@ -996,7 +996,7 @@ class SignalPackagingCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWo
                 else:
                     slurm_copy_command = [
                         'xrdcp', '-rf',
-                        'root://t3dcachedb03.psi.ch:1094//'+f"{self.output_dir}/outdir_{signalScriptCfg['ext']}",
+                        'root://t3dcachedb03.psi.ch:1094//'+f"{self.output_dir}/outdir_{currentConfig['ext']}",
                         f"{os.environ['TARGET_PATH']}/"
                     ]
                 print(slurm_copy_command)
