@@ -129,10 +129,13 @@ class Trees2WSData(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
 
         if categories == 'auto':
             categories = []
-        for tn in list_of_tree_names:
-            if "sigma" in tn: continue
-            c = tn.split("_%s_"%sqrts__)[-1].split(";")[0]
-            categories.append(c)
+            for tn in list_of_tree_names:
+                if "sigma" in tn: continue
+                c = tn.split("_%s_"%sqrts__)[-1].split(";")[0]
+                categories.append(c)
+        elif isinstance(categories, str):
+            # YAML configs can provide an explicit comma-separated category list.
+            categories = [c.strip() for c in categories.split(",") if c.strip()]
             
         f = ROOT.TFile(input_path)
 

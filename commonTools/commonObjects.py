@@ -118,7 +118,10 @@ production_modes = [
     ("tth", "ttHtoGG"),
     ("tth", "ttHto2G"),
     ("bbh", "bbHtoGG"),
-    ("bbh", "bbHto2G")
+    ("bbh", "bbHto2G"),
+    ("uuH", "uuHToGG"),
+    ("ddH", "ddHToGG"),
+    ("ssH", "ssHToGG")
 ]
 
 # Getting production XS from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWG136TeVxsec_extrap, for 125.38 @ 13.6 TeV
@@ -133,6 +136,9 @@ production_XS = {
     "ttHto2G": 0.5638,
     "bbHtoGG": 0.52218,
     "bbHto2G": 0.52218,
+    "uuHToGG": 1.0,
+    "ddHToGG": 1.0,
+    "ssHToGG": 1.0,
 }
 
 short_production_modes = ["ggh", "vbf", "vh", "tth", "bbh"]
@@ -158,6 +164,9 @@ conversionTable_ = {
     "VBFHto2G": "vbf",
     "VHtoGG": "vh",
     "VHto2G": "vh",
+    "uuH": "uuH",
+    "ddH": "ddH",
+    "ssH": "ssH",
     }
 
 # List of all jet-related variables. Variables listed here will get the CMS_scale_j and CMS_res_j uncertainty in the datacard step.
@@ -170,7 +179,6 @@ jetVariables = [
     "TauJC",
     "PTJ1",
     "YJ1",
-    "YJ0",
     "DPhiHJ0",
     "DPhiJ0J1",
     "DPhiHJ0J1",
@@ -263,10 +271,10 @@ differentialProcTable_ = {
         (1022, "PhiEtaStar_0p0_4p0_out")
     ],
     "NBJet": [
-        (1020, "NBJet_0p0_1p0_in"),
-        (1021, "NBJet_1p0_2p0_in"),
-        (1022, "NBJet_2p0_100p0_in"),
-        (1023, "NBJet_0p0_100p0_out")
+        (1270, "NBJet_0p0_1p0_in"),
+        (1271, "NBJet_1p0_2p0_in"),
+        (1272, "NBJet_2p0_100p0_in"),
+        (1273, "NBJet_0p0_100p0_out")
     ],
     "YJ0": [
         (1100, "YJ0_m10000p0_0p0_in"),
@@ -502,6 +510,15 @@ recoVariableBins["YJ0"] = [
     "1p6_2p0",
     "2p0_2p5",
 ]
+recoVariableBins["YJ1"] = [
+    "m10000p0_0p0",
+    "0p0_0p6",
+    "0p6_1p2",
+    "1p2_1p8",
+    "1p8_2p5",
+    "2p5_3p5",
+    "3p5_4p7",
+]
 recoVariableBins["PTHvsNJ"] = [
     "NJ0p0_PTH0p0_5p0",
     "NJ0p0_PTH5p0_10p0",
@@ -525,18 +542,39 @@ recoVariableBins["PTHvsNJ"] = [
     "NJ2p0_PTH350p0_10000p0",
 ]
 
+differentialProcTable_["PTH_lightquarks"] = differentialProcTable_["PTH"]
+variableBins["PTH_lightquarks"] = variableBins["PTH"]
+recoVariableBins["PTH_lightquarks"] = recoVariableBins["PTH"]
+
+differentialProcTable_["rapidity_lightquarks"] = differentialProcTable_["rapidity"]
+variableBins["rapidity_lightquarks"] = variableBins["rapidity"]
+recoVariableBins["rapidity_lightquarks"] = recoVariableBins["rapidity"]
+
 def combineVariableDict(variable, year):
+    if variable == "inclusive_lightquarks":
+        return {
+            "paramStr": ["r=1"],
+            "paramStrNoOne": ["r"],
+            "catsStr": [],
+            "catsStrWithBMW": [],
+            "pdfIndeces": [],
+        }
+
     # Split the years if it's a combined year, otherwise just use the single year
     year_list = year.split('_') if '_' in year else [year]
     template_year = year_list[0]
     if len(year_list) > 1:
         # Add the pdfIndices from all the years together for the combined year
         combined_pdf_indices = []
-        combined_payload = CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)
+        gen_variable = "YH" if variable in ["rapidity", "rapidity_lightquarks"] else variable
+        reco_variable = "rapidity" if variable == "rapidity_lightquarks" else variable
+        combined_payload = CreateVariableParameters(gen_variable=gen_variable, reco_variable=reco_variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)
         for y in year_list:
             year_payload = combineVariableDict(variable, y)
             combined_pdf_indices.extend(year_payload["pdfIndeces"])
         combined_payload["pdfIndeces"] = combined_pdf_indices
         return combined_payload
     else:
-        return CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)
+        gen_variable = "YH" if variable in ["rapidity", "rapidity_lightquarks"] else variable
+        reco_variable = "rapidity" if variable == "rapidity_lightquarks" else variable
+        return CreateVariableParameters(gen_variable=gen_variable, reco_variable=reco_variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)

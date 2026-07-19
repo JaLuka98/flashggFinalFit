@@ -1,6 +1,6 @@
 # Config file: options for signal fitting
 
-outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_Zmmg_SaS_ICHEP_final_production/2022_2023_2024_PTJ1/'
+outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_2023_2024_PTJ1/'
 
 inputFiles:
   # Trees2WS
@@ -323,11 +323,11 @@ spectra:
   overflow_bin_width: 200
   last_bin_center: 175
   first_bin_center: 15
-  plot_log: 0
+  plot_log: 1
   variable: "p_{T}^{j_{2}}"
   y_unit: "(fb/GeV)"
   x_unit: "(GeV)"
-  x_lim: [30, 200]
-  y_lim: [0,2.5]
-  y_lim_top: 1.0
+  x_lim: [0, 200]
+  y_lim: [0.01,3.0]
+  y_lim_top: 150
   overflow: 200

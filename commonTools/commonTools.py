@@ -79,24 +79,25 @@ def getBinNameByHiggsDNANumber(key, myNumber):
 def extractListOfProcsFromHiggsDNASignal(_listOfSubDirectories, _variable, _inoutSplitting):
   procs = [] # ggh_in, ggh_out, etc.
   main_procs = [] # ggh, etc.
+  isDifferential = bool(_variable) and (_variable in differentialProcTable_)
   for dName in _listOfSubDirectories:
     dName = dName.split("/")[-1]
     p = conversionTable_[dName.split("_")[0]]
     if p not in main_procs: 
       main_procs.append(p)
-      if (_inoutSplitting) and (_variable == ''):
+      if (_inoutSplitting) and not isDifferential:
         # inclusive case
         procs.append(p+'_in')
         procs.append(p+'_out')
-      if (_inoutSplitting) and (_variable != ''):
+      if (_inoutSplitting) and isDifferential:
         # differential case
         for i, currentTuple in enumerate(differentialProcTable_[_variable]):
           currentBin = currentTuple[1]
           procs.append(p+'_'+currentBin)
-      if not (_inoutSplitting) and (_variable == ''):
+      if not (_inoutSplitting) and not isDifferential:
         # inclusive case with no inout splitting
         procs.append(p)
-      if not (_inoutSplitting) and (_variable != ''):
+      if not (_inoutSplitting) and isDifferential:
         # differential case
         for i, currentTuple in enumerate(differentialProcTable_[_variable]):
           # Remove in/out label
@@ -130,6 +131,9 @@ def signalFromFileName(_fileName):
   elif "THQ" in _fileName: p = "thq"
   elif "THW" in _fileName: p = "thw"
   elif "bbH" in _fileName: p = "bbh"
+  elif "uuH" in _fileName: p = "uuH"
+  elif "ddH" in _fileName: p = "ddH"
+  elif "ssH" in _fileName: p = "ssH"
   else:
     print(" --> [ERROR]: cannot extract production mode from input file name. Please update tools.commonTools.signalFromFileName")
     exit(1)
@@ -164,6 +168,9 @@ procToDataMap['QQ2HLL'] = 'zh'
 procToDataMap['TTH_in'] = 'tth_in'
 procToDataMap['TTH_out'] = 'tth_out'
 procToDataMap['BBH'] = 'bbh'
+procToDataMap['uuH'] = 'uuH'
+procToDataMap['ddH'] = 'ddH'
+procToDataMap['ssH'] = 'ssH'
 procToDataMap['THQ'] = 'thq'
 procToDataMap['THW'] = 'thw'
 procToDataMap['GG2HQQ'] = 'ggzh'

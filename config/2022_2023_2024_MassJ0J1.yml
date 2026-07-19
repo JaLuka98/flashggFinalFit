@@ -276,7 +276,9 @@ datacard_clean:
 combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
-  setParameterRange: "r=0,3"
+  setParameterRange: "r=-1,3"
+  rMin: 0
+  rMax: 2
   cminApproxPreFitTolerance: 0.01
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
@@ -320,14 +322,17 @@ spectra:
   xh_xs: "fidXS_MassJ0J1_xH"
   ggh_powheg_xs: "fidXS_MassJ0J1_ggH_powheg"
   ggh_no_nnlops_xs: "fidXS_MassJ0J1_ggH_genWeight"
-  underflow_bin_normalized: False # Underflow bin normalized with binwidth
+  underflow_bin_normalized: True # Underflow bin normalized with binwidth
+  underflow_bin_width: 130
+  overflow_bin_width: 500
+  show_underflow_bin: True
   last_bin_center: 1250
-  first_bin_center: -500
-  plot_log: 0
+  first_bin_center: -65
+  plot_log: 1
   variable: "m_{jj}"
   y_unit: "(fb/GeV)"
   x_unit: "(GeV)"
-  x_lim: [0, 1500]
-  y_lim: [0, 2.5]
-  y_lim_top: 0.1
+  x_lim: [-130, 1500]
+  y_lim: [0.0001, 2.5]
+  y_lim_top: 1000
   overflow: 1500

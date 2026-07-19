@@ -1,9 +1,14 @@
+lumi: 172
+cms_rlabel: "172 $\\mathrm{fb^{-1}}$ (13.6 TeV)"
+cms_label_fontsize: 22
+
 frame1:
   ylim:
     bottom: 0
-    top: 140
+    top: 180
   fontsize: 11
   title_fontsize: 11
+cms_label_fontsize: 17
 frame2:
   xticks: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
   xtick_labels: ["0", "0.2", "0.4", "0.6", "0.8", "1.0"]

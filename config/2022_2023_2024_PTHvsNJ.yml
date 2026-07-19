@@ -288,10 +288,10 @@ combine_fit:
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
   approx: "none" # Fast impact mode. Use "none" for exact per-nuisance scans, or "hesse"/"robust" for covariance-based impacts.
-  cminApproxPreFitTolerance: 0.1 # should be 0.01
+  cminApproxPreFitTolerance: 0.2 # should be 0.01
   setParameters: 1.000
   stepSize: 0.05
-  setCrossingTolerance: 0.0005 # should be: 0.00005
+  setCrossingTolerance: 0.005 # should be: 0.00005
   not_show_POI: True
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
@@ -332,7 +332,7 @@ spectra:
   last_bin_center: 500
   first_bin_center: 2.5
   plot_log: 1
-  variable: "p_{t}"
+  variable: "p_T^H"
   y_unit: "(fb/GeV)"
   x_unit: "(GeV)"
   x_lim: [0, 300]

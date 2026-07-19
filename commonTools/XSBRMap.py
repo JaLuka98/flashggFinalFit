@@ -182,6 +182,16 @@ globalXSBRMap['Run3FidXSAnalysis']['vh_out'] = {'mode':'constant','factor':2.378
 globalXSBRMap['Run3FidXSAnalysis']['tth_out'] = {'mode':'constant','factor':0.5638}
 globalXSBRMap['Run3FidXSAnalysis']['bbh_out'] = {'mode':'constant','factor':0.52218}
 
+# Factors derived from light_quarks_combine/inclusive/{ssH,uuH,ddH}_13p6TeV_total-aafidR3.csv
+# (post-BR(H->gg), fiducial cross sections), calibrated against the actual packaged signal
+# workspace normalization (factor = target_events / current_events_at_factor=1, summed over
+# all categories/eras, luminosity-weighted across 2022+2023+2024). See conversation notes.
+light_quark_factors = {"uuH": 16.21, "ddH": 11.5, "ssH": 4.3}
+for light_quark_proc, lq_factor in light_quark_factors.items():
+    globalXSBRMap['Run3FidXSAnalysis'][light_quark_proc] = {'mode':'constant','factor':lq_factor}
+    globalXSBRMap['Run3FidXSAnalysis'][f'{light_quark_proc}_in'] = {'mode':'constant','factor':lq_factor}
+    globalXSBRMap['Run3FidXSAnalysis'][f'{light_quark_proc}_out'] = {'mode':'constant','factor':lq_factor}
+
 
 
 
@@ -289,6 +299,19 @@ globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_250p0_350p0_in'] = {'mode':'constant
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_350p0_450p0_in'] = {'mode':'constant','factor':0.52218}
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_450p0_10000p0_in'] = {'mode':'constant','factor':0.52218}
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PTH_0p0_10000p0_out'] = {'mode':'constant','factor':0.52218}
+
+for light_quark_proc, lq_factor in light_quark_factors.items():
+    for _, pth_bin in differentialProcTable_["PTH"]:
+        # NOTE: this applies the same flat inclusive factor to every PTH bin (placeholder
+        # improvement over factor=1.0). It does NOT redistribute the CSV total according to
+        # the true per-bin kinematic shape - revisit if PTH_lightquarks is used for real.
+        globalXSBRMap['Run3FidXSAnalysis'][f'{light_quark_proc}_{pth_bin}'] = {'mode':'constant','factor':lq_factor}
+
+for light_quark_proc, lq_factor in light_quark_factors.items():
+    for _, yh_bin in differentialProcTable_["rapidity"]:
+        # Same convention as PTH_lightquarks: use the inclusive light-quark factor for
+        # each differential bin and let the workspace acceptance control the bin yield.
+        globalXSBRMap['Run3FidXSAnalysis'][f'{light_quark_proc}_{yh_bin}'] = {'mode':'constant','factor':lq_factor}
 
 
 
@@ -564,6 +587,7 @@ globalXSBRMap['Run3FidXSAnalysis']['ggh_PhiEtaStar_0p7_1p0_in'] = {'mode':'const
 globalXSBRMap['Run3FidXSAnalysis']['ggh_PhiEtaStar_1p0_1p5_in'] = {'mode':'constant','factor':51.96}
 globalXSBRMap['Run3FidXSAnalysis']['ggh_PhiEtaStar_1p5_2p5_in'] = {'mode':'constant','factor':51.96}
 globalXSBRMap['Run3FidXSAnalysis']['ggh_PhiEtaStar_2p5_4p0_in'] = {'mode':'constant','factor':51.96}
+globalXSBRMap['Run3FidXSAnalysis']['ggh_PhiEtaStar_4p0_100p0_in'] = {'mode':'constant','factor':51.96}
 globalXSBRMap['Run3FidXSAnalysis']['ggh_PhiEtaStar_0p0_4p0_out'] = {'mode':'constant','factor':51.96}
 
 globalXSBRMap['Run3FidXSAnalysis']['vbf_PhiEtaStar_0p0_0p05_in'] = {'mode':'constant','factor':4.067}
@@ -577,6 +601,7 @@ globalXSBRMap['Run3FidXSAnalysis']['vbf_PhiEtaStar_0p7_1p0_in'] = {'mode':'const
 globalXSBRMap['Run3FidXSAnalysis']['vbf_PhiEtaStar_1p0_1p5_in'] = {'mode':'constant','factor':4.067}
 globalXSBRMap['Run3FidXSAnalysis']['vbf_PhiEtaStar_1p5_2p5_in'] = {'mode':'constant','factor':4.067}
 globalXSBRMap['Run3FidXSAnalysis']['vbf_PhiEtaStar_2p5_4p0_in'] = {'mode':'constant','factor':4.067}
+globalXSBRMap['Run3FidXSAnalysis']['vbf_PhiEtaStar_4p0_100p0_in'] = {'mode':'constant','factor':4.067}
 globalXSBRMap['Run3FidXSAnalysis']['vbf_PhiEtaStar_0p0_4p0_out'] = {'mode':'constant','factor':4.067}
 
 globalXSBRMap['Run3FidXSAnalysis']['vh_PhiEtaStar_0p0_0p05_in'] = {'mode':'constant','factor':2.3781}
@@ -590,6 +615,7 @@ globalXSBRMap['Run3FidXSAnalysis']['vh_PhiEtaStar_0p7_1p0_in'] = {'mode':'consta
 globalXSBRMap['Run3FidXSAnalysis']['vh_PhiEtaStar_1p0_1p5_in'] = {'mode':'constant','factor':2.3781}
 globalXSBRMap['Run3FidXSAnalysis']['vh_PhiEtaStar_1p5_2p5_in'] = {'mode':'constant','factor':2.3781}
 globalXSBRMap['Run3FidXSAnalysis']['vh_PhiEtaStar_2p5_4p0_in'] = {'mode':'constant','factor':2.3781}
+globalXSBRMap['Run3FidXSAnalysis']['vh_PhiEtaStar_4p0_100p0_in'] = {'mode':'constant','factor':2.3781}
 globalXSBRMap['Run3FidXSAnalysis']['vh_PhiEtaStar_0p0_4p0_out'] = {'mode':'constant','factor':2.3781}
 
 globalXSBRMap['Run3FidXSAnalysis']['tth_PhiEtaStar_0p0_0p05_in'] = {'mode':'constant','factor':0.5638}
@@ -603,6 +629,7 @@ globalXSBRMap['Run3FidXSAnalysis']['tth_PhiEtaStar_0p7_1p0_in'] = {'mode':'const
 globalXSBRMap['Run3FidXSAnalysis']['tth_PhiEtaStar_1p0_1p5_in'] = {'mode':'constant','factor':0.5638}
 globalXSBRMap['Run3FidXSAnalysis']['tth_PhiEtaStar_1p5_2p5_in'] = {'mode':'constant','factor':0.5638}
 globalXSBRMap['Run3FidXSAnalysis']['tth_PhiEtaStar_2p5_4p0_in'] = {'mode':'constant','factor':0.5638}
+globalXSBRMap['Run3FidXSAnalysis']['tth_PhiEtaStar_4p0_100p0_in'] = {'mode':'constant','factor':0.5638}
 globalXSBRMap['Run3FidXSAnalysis']['tth_PhiEtaStar_0p0_4p0_out'] = {'mode':'constant','factor':0.5638}
 
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PhiEtaStar_0p0_0p05_in'] = {'mode':'constant','factor':0.52218}
@@ -616,6 +643,7 @@ globalXSBRMap['Run3FidXSAnalysis']['bbh_PhiEtaStar_0p7_1p0_in'] = {'mode':'const
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PhiEtaStar_1p0_1p5_in'] = {'mode':'constant','factor':0.52218}
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PhiEtaStar_1p5_2p5_in'] = {'mode':'constant','factor':0.52218}
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PhiEtaStar_2p5_4p0_in'] = {'mode':'constant','factor':0.52218}
+globalXSBRMap['Run3FidXSAnalysis']['bbh_PhiEtaStar_4p0_100p0_in'] = {'mode':'constant','factor':0.52218}
 globalXSBRMap['Run3FidXSAnalysis']['bbh_PhiEtaStar_0p0_4p0_out'] = {'mode':'constant','factor':0.52218}
 
 

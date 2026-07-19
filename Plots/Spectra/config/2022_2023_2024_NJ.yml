@@ -1,3 +1,7 @@
+lumi: 172
+cms_rlabel: "172 $\\mathrm{fb^{-1}}$ (13.6 TeV)"
+cms_label_fontsize: 22
+
 frame1:
   custom_xtick_labels:
     - "0"
@@ -15,11 +19,16 @@ frame1:
     text: '$\sigma_{\text{fid}}$ (fb)'
     fontsize: 20
   ylim:
-    bottom: 0
+    bottom: 0.1
+    top: 1000
   fontsize: 14
   title_fontsize: 14
+cms_label_fontsize: 16
 
 frame2:
+  ylim:
+    bottom: 0.0
+    top: 2.0
   xtick_labels:
     - "0"
     - "1"
@@ -59,4 +68,4 @@ frame2:
       - 1
       - 1.5
       - 2
-      - 3
+      - 2.5

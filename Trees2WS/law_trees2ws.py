@@ -92,6 +92,24 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             for mass in input_masses
             for input_path in glob.glob(f"{self.input_paths}/{process}_M-{mass}_{self.year}/*.root")
             ]
+            branch_map = {i: mode_proc_mass for i, mode_proc_mass in enumerate(mode_proc_mass_list)}
+        if not branch_map:
+            print("branch_map is empty, trying process_year directories with M<mass> file names.")
+            mode_proc_mass_list = [
+            (mode, mass, input_path)
+            for mode, process in production_modes
+            for mass in input_masses
+            for input_path in glob.glob(f"{self.input_paths}/{mode}_{self.year}/output_{process}_M{mass}_*.root")
+            ]
+            branch_map = {i: mode_proc_mass for i, mode_proc_mass in enumerate(mode_proc_mass_list)}
+        if not branch_map:
+            print("branch_map is empty, trying process_era directories with M<mass> file names.")
+            mode_proc_mass_list = [
+            (mode, mass, input_path)
+            for mode, process in production_modes
+            for mass in input_masses
+            for input_path in glob.glob(f"{self.input_paths}/{mode}_{self.era}/output_{process}_M{mass}_*.root")
+            ]
         branch_map = {i: mode_proc_mass for i, mode_proc_mass in enumerate(mode_proc_mass_list)}
         return branch_map
 
@@ -171,6 +189,7 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         current_mode_proc_mass = self.branch_data
         
         productionMode = current_mode_proc_mass[0]
+        inputProductionMode = productionMode.lower() if productionMode in ["uuH", "ddH", "ssH"] else productionMode
         input_mass = current_mode_proc_mass[1]
         input_path = current_mode_proc_mass[2]
         
@@ -347,6 +366,9 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 if "sigma" in tn: continue
                 c = tn.split("_%s_"%sqrts__)[-1].split(";")[0]
                 cats.append(c)
+        elif isinstance(cats, str):
+            # YAML configs can provide an explicit comma-separated category list.
+            cats = [c.strip() for c in cats.split(",") if c.strip()]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # 1) Convert tree to pandas dataframe
         # Create dataframe to store all events in file
@@ -356,8 +378,8 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         # Loop over categories: fill dataframe
         for cat in cats:
             print( " --> Extracting events from category: %s"%cat)
-            if inputTreeDir == '': treeName = "%s_%s_%s_%s"%(productionMode,input_mass,sqrts__,cat)
-            else: treeName = "%s/%s_%s_%s_%s"%(inputTreeDir,productionMode,input_mass,sqrts__,cat)
+            if inputTreeDir == '': treeName = "%s_%s_%s_%s"%(inputProductionMode,input_mass,sqrts__,cat)
+            else: treeName = "%s/%s_%s_%s_%s"%(inputTreeDir,inputProductionMode,input_mass,sqrts__,cat)
             print("    * tree: %s"%treeName)
             # Extract tree from uproot
             t = f[treeName]
@@ -561,13 +583,17 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         elif doDiffSplitting:
             
             for diffId in data[diffVar].unique():
+                # diffId == 0 is not a real gen-level bin (it's the default/unset code,
+                # not the first table entry) - skip it, matching trees2ws.py:390. Mapping
+                # it onto differentialProcTable_[self.variable][0][1] previously caused it
+                # to overwrite the real first "in" bin's output file (same diffBin/filename).
+                if int(diffId) == 0:
+                    continue
+
                 # diffId should be a gen-level pt bin
                 df = data[data[diffVar]==diffId]
                 sdf = None
                 if doSystematics: sdf = sdata[sdata[diffVar]==diffId]
-
-                # For the moment, skip these events (as their count is usually very small)
-                if int(diffId) == 0: continue
 
                 # Extract diffBin
                 currentBin = getBinNameByHiggsDNANumber(self.variable, int(diffId))
@@ -699,7 +725,8 @@ class Trees2WS(law.Task):
                     output_dir, f"input_output_{var}_{self.year}{era_suffix}"
                 )
              
-            tasks.append(Trees2WSSingleProcess(input_paths=path_to_root_files, era=era, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version=f"v{i}", workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime']))
+            task_version = f"{self.year}_{var if var != '' else 'inclusive'}_v{i}"
+            tasks.append(Trees2WSSingleProcess(input_paths=path_to_root_files, era=era, apply_mass_cut=mass_cut, mass_cut_range=mass_cut_r, year=f"{self.year}{era}", doSystematics=doSystematics, doDiffSplitting=doDiffSplitting, doSTXSSplitting=doSTXSSplitting, doInOutSplitting=doInOutSplitting, output_dir=current_output_path, variable=var, version=task_version, workflow=config['execution'], batch_flavor=self.batch_flavor, slurm_partition=config['batchPartition'], slurm_memory=config['batchMemory'], slurm_max_runtime=config['batchMaxRuntime'], htcondor_partition=config['batchPartition'], htcondor_memory=config['batchMemory'], htcondor_max_runtime=config['batchMaxRuntime']))
             i += 1
         return tasks
 

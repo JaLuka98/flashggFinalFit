@@ -283,6 +283,19 @@ globalReplacementMap["Run3FidXSAnalysisInclusive"]["catRVMap"]["cat1"]  = "cat1"
 globalReplacementMap["Run3FidXSAnalysisInclusive"]["catRVMap"]["cat2"]   = "cat2"
 
 
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"] = od()
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]['procWV'] = "uuH_in"
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]['catWV'] = "cat2"
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]['procRVMap'] = od()
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]["procRVMap"]["cat0"] = "uuH_in"
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]["procRVMap"]["cat1"] = "uuH_in"
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]["procRVMap"]["cat2"] = "uuH_in"
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]["catRVMap"] = od()
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]["catRVMap"]["cat0"] = "cat0"
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]["catRVMap"]["cat1"] = "cat1"
+globalReplacementMap["Run3FidXSAnalysisInclusiveLightQuarks"]["catRVMap"]["cat2"] = "cat2"
+
+
 # Differential PT
 
 PTH_BINS = variableBins["PTH"]
@@ -315,6 +328,45 @@ for _bin in PTH_BINS:
         globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key] = target_value
 
 
+# Differential PT - light quarks (uuH/ddH/ssH), same binning/categories as Run3FidXSAnalysisPTH,
+# but pointing the replacement donor process at uuH (the representative light-quark process,
+# consistent with Run3FidXSAnalysisInclusiveLightQuarks) instead of ggh.
+
+globalReplacementMap["Run3FidXSAnalysisPTHLightQuarks"] = od()
+
+# Wrong vertex reference
+globalReplacementMap["Run3FidXSAnalysisPTHLightQuarks"]['procWV'] = f"uuH_PTH_{_PTH_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisPTHLightQuarks"]['catWV'] = f"RECO_PTH_{_PTH_WV_BIN}_cat2"
+
+# Replacement processes for RV
+globalReplacementMap["Run3FidXSAnalysisPTHLightQuarks"]['procRVMap'] = od()
+for _bin in PTH_BINS:
+    for _cat in _PTH_RECO_CATS:
+        _target_bin = _PTH_SECOND_BIN if (_bin == _PTH_FIRST_BIN and _cat in ['cat0', 'cat1', 'cat2']) else _bin
+        reco_key = f"RECO_PTH_{_bin}_{_cat}"
+        proc_value = f"uuH_PTH_{_target_bin}_in"
+        globalReplacementMap["Run3FidXSAnalysisPTHLightQuarks"]["procRVMap"][reco_key] = proc_value
+
+# Replacement categories for RV
+globalReplacementMap["Run3FidXSAnalysisPTHLightQuarks"]["catRVMap"] = od()
+for _bin in PTH_BINS:
+    for _cat in _PTH_RECO_CATS:
+        _target_bin = _PTH_SECOND_BIN if (_bin == _PTH_FIRST_BIN and _cat in ['cat0', 'cat1', 'cat2']) else _bin
+        reco_key = f"RECO_PTH_{_bin}_{_cat}"
+        target_value = f"RECO_PTH_{_target_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisPTHLightQuarks"]["catRVMap"][reco_key] = target_value
+
+_PTH_LIGHTQUARK_HIGH_RV_BIN = "350p0_450p0"
+_PTH_LIGHTQUARK_HIGH_RV_CAT = "cat2"
+for _reco_key in [
+    "RECO_PTH_350p0_450p0_cat1",
+    "RECO_PTH_450p0_10000p0_cat1",
+    "RECO_PTH_450p0_10000p0_cat2",
+]:
+    globalReplacementMap["Run3FidXSAnalysisPTHLightQuarks"]["procRVMap"][_reco_key] = f"uuH_PTH_{_PTH_LIGHTQUARK_HIGH_RV_BIN}_in"
+    globalReplacementMap["Run3FidXSAnalysisPTHLightQuarks"]["catRVMap"][_reco_key] = f"RECO_PTH_{_PTH_LIGHTQUARK_HIGH_RV_BIN}_{_PTH_LIGHTQUARK_HIGH_RV_CAT}"
+
+
 
 # Differential Y (Rapidity)
 _RAPIDITY_BINS = variableBins["rapidity"]
@@ -340,6 +392,27 @@ for _bin in _RAPIDITY_BINS:
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"] = "RECO_rapidity_1p2_1p6_cat2"
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"] = "RECO_rapidity_1p6_2p0_cat2"
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_2p0_2p5_cat0"] = "RECO_rapidity_2p0_2p5_cat2"
+
+# Differential Y (Rapidity) - light quarks
+globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"] = od()
+globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"]['procWV'] = f"uuH_YH_{_RAPIDITY_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"]['catWV'] = f"RECO_rapidity_{_RAPIDITY_WV_BIN}_cat2"
+globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"]['procRVMap'] = od()
+for _bin in _RAPIDITY_BINS:
+    for _cat in _RAPIDITY_RECO_CATS:
+        reco_key = f"RECO_rapidity_{_bin}_{_cat}"
+        proc_value = f"uuH_YH_{_bin}_in"
+        globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"]["procRVMap"][reco_key] = proc_value
+
+globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"]["catRVMap"] = od()
+for _bin in _RAPIDITY_BINS:
+    for _cat in _RAPIDITY_RECO_CATS:
+        reco_key = f"RECO_rapidity_{_bin}_{_cat}"
+        globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"]["catRVMap"][reco_key] = reco_key
+
+globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"] = "RECO_rapidity_1p2_1p6_cat2"
+globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"] = "RECO_rapidity_1p6_2p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisYHLightQuarks"]["catRVMap"]["RECO_rapidity_2p0_2p5_cat0"] = "RECO_rapidity_2p0_2p5_cat2"
 
 
 # Differential NJ (Number of Jets)
@@ -521,6 +594,7 @@ for bin_name in _PTJ1_BINS:
 
 # Differential YJ1
 _YJ1_BINS = variableBins["YJ1"]
+_YJ1_RECO_BINS = recoVariableBins["YJ1"]
 _YJ1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
 _YJ1_WV_BIN = "0p0_0p6"
 
@@ -530,16 +604,17 @@ globalReplacementMap["Run3FidXSAnalysisYJ1"]['procWV'] = f"ggh_YJ1_{_YJ1_WV_BIN}
 globalReplacementMap["Run3FidXSAnalysisYJ1"]['catWV'] = f"RECO_YJ1_{_YJ1_WV_BIN}_cat2"
 # Relacement processes for RV
 globalReplacementMap["Run3FidXSAnalysisYJ1"]['procRVMap'] = od()
-for bin_name in _YJ1_BINS:
+for bin_name in _YJ1_RECO_BINS:
     for cat in _YJ1_RECO_CATS:
         reco_key = f"RECO_YJ1_{bin_name}_{cat}"
-        proc_val = f"ggh_YJ1_{bin_name}_in"
+        proc_bin = bin_name if bin_name in _YJ1_BINS else "3p5_5p0"
+        proc_val = f"ggh_YJ1_{proc_bin}_in"
         globalReplacementMap["Run3FidXSAnalysisYJ1"]["procRVMap"][reco_key] = proc_val
 
 
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisYJ1"]["catRVMap"] = od()
-for bin_name in _YJ1_BINS:
+for bin_name in _YJ1_RECO_BINS:
     for cat in _YJ1_RECO_CATS:
         reco_key = f"RECO_YJ1_{bin_name}_{cat}"
         globalReplacementMap["Run3FidXSAnalysisYJ1"]["catRVMap"][reco_key] = reco_key

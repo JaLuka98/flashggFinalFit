@@ -331,4 +331,4 @@ spectra:
   x_unit: ""
   x_lim: [0, 1]
   y_lim: [0, 2]
-  y_lim_top: 140
+  y_lim_top: 180
