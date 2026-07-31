@@ -1,6 +1,6 @@
 # Config file: options for signal fitting
 
-outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_2023_2024_rapidity/'
+outputFolder: '/net/data_cms3a-1/linuserdmann/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_2023_2024_rapidity/'
 
 inputFiles:
   # Trees2WS
@@ -38,6 +38,7 @@ trees2wsCfg:
     - "*Down"
     - "fiducialGeometricFlag"
     - "diffVariable_GenYH"
+    - "GenYH"
   
   dataVars:
     - "CMS_hgg_mass"

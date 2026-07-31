@@ -298,86 +298,6 @@ globalReplacementMap["Run3FidXSAnalysisPTH"]['catWV'] = f"RECO_PTH_{_PTH_WV_BIN}
 
 
 
-########## Map containing the processes used to replace OOA events
-OOA_BinMap_PTH = {
-    "RECO_PTH_0p0_5p0_cat0": "10p0_15p0", #"0p0_5p0",
-    "RECO_PTH_0p0_5p0_cat1": "0p0_5p0",
-    "RECO_PTH_0p0_5p0_cat2": "0p0_5p0",
-
-    "RECO_PTH_5p0_10p0_cat0": "10p0_15p0",
-    "RECO_PTH_5p0_10p0_cat1": "5p0_10p0",
-    "RECO_PTH_5p0_10p0_cat2": "5p0_10p0",
-
-    "RECO_PTH_10p0_15p0_cat0": "10p0_15p0",
-    "RECO_PTH_10p0_15p0_cat1": "10p0_15p0",
-    "RECO_PTH_10p0_15p0_cat2": "10p0_15p0",
-
-    "RECO_PTH_15p0_20p0_cat0": "15p0_20p0",
-    "RECO_PTH_15p0_20p0_cat1": "15p0_20p0",
-    "RECO_PTH_15p0_20p0_cat2": "15p0_20p0",
-
-    "RECO_PTH_20p0_25p0_cat0": "20p0_25p0",
-    "RECO_PTH_20p0_25p0_cat1": "20p0_25p0",
-    "RECO_PTH_20p0_25p0_cat2": "20p0_25p0",
-
-    "RECO_PTH_25p0_30p0_cat0": "25p0_30p0",
-    "RECO_PTH_25p0_30p0_cat1": "25p0_30p0",
-    "RECO_PTH_25p0_30p0_cat2": "25p0_30p0",
-
-    "RECO_PTH_30p0_35p0_cat0": "30p0_35p0",
-    "RECO_PTH_30p0_35p0_cat1": "30p0_35p0",
-    "RECO_PTH_30p0_35p0_cat2": "30p0_35p0",
-
-    "RECO_PTH_35p0_45p0_cat0": "35p0_45p0",
-    "RECO_PTH_35p0_45p0_cat1": "35p0_45p0",
-    "RECO_PTH_35p0_45p0_cat2": "35p0_45p0",
-
-    "RECO_PTH_45p0_60p0_cat0": "45p0_60p0",
-    "RECO_PTH_45p0_60p0_cat1": "45p0_60p0",
-    "RECO_PTH_45p0_60p0_cat2": "45p0_60p0",
-
-    "RECO_PTH_60p0_80p0_cat0": "60p0_80p0",
-    "RECO_PTH_60p0_80p0_cat1": "60p0_80p0",
-    "RECO_PTH_60p0_80p0_cat2": "60p0_80p0",
-
-    "RECO_PTH_80p0_100p0_cat0": "80p0_100p0",
-    "RECO_PTH_80p0_100p0_cat1": "80p0_100p0",
-    "RECO_PTH_80p0_100p0_cat2": "80p0_100p0",
-
-    "RECO_PTH_100p0_120p0_cat0": "100p0_120p0",
-    "RECO_PTH_100p0_120p0_cat1": "100p0_120p0",
-    "RECO_PTH_100p0_120p0_cat2": "100p0_120p0",
-
-    "RECO_PTH_120p0_140p0_cat0": "120p0_140p0",
-    "RECO_PTH_120p0_140p0_cat1": "120p0_140p0",
-    "RECO_PTH_120p0_140p0_cat2": "120p0_140p0",
-
-    "RECO_PTH_140p0_170p0_cat0": "140p0_170p0",
-    "RECO_PTH_140p0_170p0_cat1": "140p0_170p0",
-    "RECO_PTH_140p0_170p0_cat2": "140p0_170p0",
-
-    "RECO_PTH_170p0_200p0_cat0": "170p0_200p0",
-    "RECO_PTH_170p0_200p0_cat1": "170p0_200p0",
-    "RECO_PTH_170p0_200p0_cat2": "170p0_200p0",
-
-    "RECO_PTH_200p0_250p0_cat0": "200p0_250p0",
-    "RECO_PTH_200p0_250p0_cat1": "200p0_250p0",
-    "RECO_PTH_200p0_250p0_cat2": "200p0_250p0",
-
-    "RECO_PTH_250p0_350p0_cat0": "250p0_350p0",
-    "RECO_PTH_250p0_350p0_cat1": "250p0_350p0",
-    "RECO_PTH_250p0_350p0_cat2": "250p0_350p0",
-
-    "RECO_PTH_350p0_450p0_cat0": "350p0_450p0",
-    "RECO_PTH_350p0_450p0_cat1": "350p0_450p0",
-    "RECO_PTH_350p0_450p0_cat2": "350p0_450p0",
-
-    "RECO_PTH_450p0_10000p0_cat0": "450p0_10000p0",
-    "RECO_PTH_450p0_10000p0_cat1": "450p0_10000p0",
-    "RECO_PTH_450p0_10000p0_cat2": "350p0_450p0", #"450p0_10000p0",
-}
-
-
 # Replacement processes for RV
 globalReplacementMap["Run3FidXSAnalysisPTH"]['procRVMap'] = od()
 for _bin in PTH_BINS:
@@ -385,16 +305,9 @@ for _bin in PTH_BINS:
         _target_bin = _PTH_SECOND_BIN if (_bin == _PTH_FIRST_BIN and _cat == 'cat0') else _bin
         reco_key = f"RECO_PTH_{_bin}_{_cat}"
         proc_value = f"ggh_PTH_{_target_bin}_in"
-        ############################################################################
         globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key] = od()
-
         globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key]["in"] = proc_value
-
-        _target_bin_out = OOA_BinMap_PTH.get(reco_key, _bin)
-        proc_value_out = f"ggh_PTH_{_target_bin_out}_out"
-        globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key]["out"] = proc_value #proc_value_out
-        ############################################################################
-        # globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key]["in"] = proc_value
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["procRVMap"][reco_key]["out"] = proc_value
 
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"] = od()
@@ -403,62 +316,11 @@ for _bin in PTH_BINS:
         _target_bin = _PTH_SECOND_BIN if (_bin == _PTH_FIRST_BIN and _cat == 'cat0') else _bin
         reco_key = f"RECO_PTH_{_bin}_{_cat}"
         target_value = f"RECO_PTH_{_target_bin}_{_cat}"
-        ############################################################################
         globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key] = od()
-
         globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key]["in"] = target_value
+        globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key]["out"] = target_value
 
-        _target_bin_out = OOA_BinMap_PTH.get(reco_key, _bin)
-        target_value_out = f"RECO_PTH_{_target_bin_out}_{_cat}"
-        globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key]["out"] = target_value #target_value_out
-        ############################################################################
-        # globalReplacementMap["Run3FidXSAnalysisPTH"]["catRVMap"][reco_key] = target_value
-
-
-
-# Differential Y (Rapidity)
-OOA_BinMap_YH = {
-    "RECO_YH_0p0_0p15_cat0": "0p0_0p15",
-    "RECO_YH_0p0_0p15_cat1": "0p0_0p15",
-    "RECO_YH_0p0_0p15_cat2": "0p0_0p15",
-
-    "RECO_YH_0p15_0p3_cat0": "0p15_0p3",
-    "RECO_YH_0p15_0p3_cat1": "0p15_0p3",
-    "RECO_YH_0p15_0p3_cat2": "0p15_0p3",
-
-    "RECO_YH_0p3_0p45_cat0": "0p3_0p45",
-    "RECO_YH_0p3_0p45_cat1": "0p3_0p45",
-    "RECO_YH_0p3_0p45_cat2": "0p3_0p45",
-
-    "RECO_YH_0p45_0p6_cat0": "0p45_0p6",
-    "RECO_YH_0p45_0p6_cat1": "0p45_0p6",
-    "RECO_YH_0p45_0p6_cat2": "0p45_0p6",
-
-    "RECO_YH_0p6_0p75_cat0": "0p6_0p75",
-    "RECO_YH_0p6_0p75_cat1": "0p6_0p75",
-    "RECO_YH_0p6_0p75_cat2": "0p6_0p75",
-
-    "RECO_YH_0p75_0p9_cat0": "0p75_0p9",
-    "RECO_YH_0p75_0p9_cat1": "0p75_0p9",
-    "RECO_YH_0p75_0p9_cat2": "0p75_0p9",
-
-    "RECO_YH_0p9_1p2_cat0": "0p9_1p2",
-    "RECO_YH_0p9_1p2_cat1": "0p9_1p2",
-    "RECO_YH_0p9_1p2_cat2": "0p9_1p2",
-
-    "RECO_YH_1p2_1p6_cat0": "1p2_1p6",
-    "RECO_YH_1p2_1p6_cat1": "1p2_1p6",
-    "RECO_YH_1p2_1p6_cat2": "1p2_1p6",
-
-    "RECO_YH_1p6_2p0_cat0": "1p6_2p0",
-    "RECO_YH_1p6_2p0_cat1": "1p6_2p0",
-    "RECO_YH_1p6_2p0_cat2": "1p6_2p0",
-
-    "RECO_YH_2p0_2p5_cat0": "2p0_2p5",
-    "RECO_YH_2p0_2p5_cat1": "2p0_2p5",
-    "RECO_YH_2p0_2p5_cat2": "2p0_2p5",
-}
-
+# Differential YH
 _RAPIDITY_BINS = variableBins["rapidity"]
 
 globalReplacementMap["Run3FidXSAnalysisYH"] = od()
@@ -471,41 +333,26 @@ for _bin in _RAPIDITY_BINS:
     for _cat in _RAPIDITY_RECO_CATS:
         reco_key = f"RECO_rapidity_{_bin}_{_cat}"
         proc_value = f"ggh_YH_{_bin}_in"
-        globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"][reco_key] = proc_value
+        globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"][reco_key]["in"] = proc_value
+        globalReplacementMap["Run3FidXSAnalysisYH"]["procRVMap"][reco_key]["out"] = proc_value
 
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"] = od()
 for _bin in _RAPIDITY_BINS:
     for _cat in _RAPIDITY_RECO_CATS:
         reco_key = f"RECO_rapidity_{_bin}_{_cat}"
-        globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"][reco_key]["out"] = reco_key
 
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"] = "RECO_rapidity_1p2_1p6_cat2"
-globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"] = "RECO_rapidity_1p6_2p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"]["in"] = "RECO_rapidity_1p2_1p6_cat2"
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"]["in"] = "RECO_rapidity_1p6_2p0_cat2"
+
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"]["out"] = "RECO_rapidity_1p2_1p6_cat2"
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"]["out"] = "RECO_rapidity_1p6_2p0_cat2"
 
 
 # Differential NJ (Number of Jets)
-OOA_BinMap_NJ = {
-    "RECO_NJ_0p0_1p0_cat0": "0p0_1p0",
-    "RECO_NJ_0p0_1p0_cat1": "0p0_1p0",
-    "RECO_NJ_0p0_1p0_cat2": "0p0_1p0",
-
-    "RECO_NJ_1p0_2p0_cat0": "1p0_2p0",
-    "RECO_NJ_1p0_2p0_cat1": "1p0_2p0",
-    "RECO_NJ_1p0_2p0_cat2": "1p0_2p0",
-
-    "RECO_NJ_2p0_3p0_cat0": "2p0_3p0",
-    "RECO_NJ_2p0_3p0_cat1": "2p0_3p0",
-    "RECO_NJ_2p0_3p0_cat2": "2p0_3p0",
-
-    "RECO_NJ_3p0_4p0_cat0": "3p0_4p0",
-    "RECO_NJ_3p0_4p0_cat1": "3p0_4p0",
-    "RECO_NJ_3p0_4p0_cat2": "3p0_4p0",
-
-    "RECO_NJ_4p0_100p0_cat0": "4p0_100p0",
-    "RECO_NJ_4p0_100p0_cat1": "4p0_100p0",
-    "RECO_NJ_4p0_100p0_cat2": "4p0_100p0",
-}
-
 _NJ_BINS = variableBins["NJ"]
 
 globalReplacementMap["Run3FidXSAnalysisNJ"] = od()
@@ -519,14 +366,18 @@ globalReplacementMap["Run3FidXSAnalysisNJ"]['procRVMap'] = od()
 for _bin in _NJ_BINS:
     for _cat in _NJ_RECO_CATS:
         reco_key = f"RECO_NJ_{_bin}_{_cat}"
-        globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"][reco_key] = f"ggh_NJ_{_bin}_in"
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"][reco_key]["in"] = f"ggh_NJ_{_bin}_in"
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["procRVMap"][reco_key]["out"] = f"ggh_NJ_{_bin}_in"
         
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"] = od()
 for _bin in _NJ_BINS:
     for _cat in _NJ_RECO_CATS:
         reco_key = f"RECO_NJ_{_bin}_{_cat}"
-        globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisNJ"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 
@@ -545,7 +396,9 @@ for bin_name in _PTJ0_BINS:
     for cat in _PTJ0_RECO_CATS:
         reco_key = f"RECO_PTJ0_{bin_name}_{cat}"
         proc_val = f"ggh_PTJ0_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["procRVMap"][reco_key]["out"] = proc_val
 
 
 # Replacement categories for RV
@@ -553,7 +406,10 @@ globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"] = od()
 for bin_name in _PTJ0_BINS:
     for cat in _PTJ0_RECO_CATS:
         reco_key = f"RECO_PTJ0_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"][reco_key]["out"] = reco_key
+
 
 
 # Differential DPhiJ0J1
@@ -570,14 +426,22 @@ globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['procRVMap'] = od()
 for _bin in _DPhiJ0J1_BINS:
     for _cat in _DPhiJ0J1_RECO_CATS:
         reco_key = f"RECO_DPhiJ0J1_{_bin}_{_cat}"
-        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key] = f"ggh_DPhiJ0J1_{_bin}_in"
+         globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key]["in"] = f"ggh_DPhiJ0J1_{_bin}_in"
+        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key]["out"] = f"ggh_DPhiJ0J1_{_bin}_in"
+
         
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"] = od()
 for _bin in _DPhiJ0J1_BINS:
     for _cat in _DPhiJ0J1_RECO_CATS:
         reco_key = f"RECO_DPhiJ0J1_{_bin}_{_cat}"
-        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"][reco_key]["out"] = reco_key
+
+
+
 
 # Differential NBJet
 _NBJET_BINS = variableBins["NBJet"]
@@ -594,7 +458,10 @@ for bin_name in _NBJET_BINS:
     for cat in _NBJET_RECO_CATS:
         reco_key = f"RECO_NBJet_{bin_name}_{cat}"
         proc_val = f"ggh_NBJet_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisNBJet"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisNBJet"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisNBJet"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisNBJet"]["procRVMap"][reco_key]["out"] = proc_val
+
 
 
 # Replacement categories for RV
@@ -602,7 +469,10 @@ globalReplacementMap["Run3FidXSAnalysisNBJet"]["catRVMap"] = od()
 for bin_name in _NBJET_BINS:
     for cat in _NBJET_RECO_CATS:
         reco_key = f"RECO_NBJet_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisNBJet"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisNBJet"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisNBJet"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisNBJet"]["catRVMap"][reco_key]["out"] = reco_key
+
 
 # Differential DYHJ0
 _DYHJ0_BINS = variableBins["DYHJ0"]
@@ -620,6 +490,11 @@ for bin_name in _DYHJ0_BINS:
         reco_key = f"RECO_DYHJ0_{bin_name}_{cat}"
         proc_val = f"ggh_DYHJ0_{bin_name}_in"
         globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["procRVMap"][reco_key]["out"] = proc_val
+
+
 
 
 # Replacement categories for RV
@@ -627,7 +502,10 @@ globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["catRVMap"] = od()
 for bin_name in _DYHJ0_BINS:
     for cat in _DYHJ0_RECO_CATS:
         reco_key = f"RECO_DYHJ0_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDYHJ0"]["catRVMap"][reco_key]["out"] = reco_key
+
 
 
 # Differential TauJC
@@ -645,7 +523,9 @@ for bin_name in _TauJC_BINS:
     for cat in _TauJC_RECO_CATS:
         reco_key = f"RECO_TauJC_{bin_name}_{cat}"
         proc_val = f"ggh_TauJC_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisTauJC"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisTauJC"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisTauJC"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisTauJC"]["procRVMap"][reco_key]["out"] = proc_val
 
 
 # Replacement categories for RV
@@ -653,7 +533,9 @@ globalReplacementMap["Run3FidXSAnalysisTauJC"]["catRVMap"] = od()
 for bin_name in _TauJC_BINS:
     for cat in _TauJC_RECO_CATS:
         reco_key = f"RECO_TauJC_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisTauJC"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisTauJC"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisTauJC"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisTauJC"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 # Differential PTJ1
@@ -671,7 +553,9 @@ for bin_name in _PTJ1_BINS:
     for cat in _PTJ1_RECO_CATS:
         reco_key = f"RECO_PTJ1_{bin_name}_{cat}"
         proc_val = f"ggh_PTJ1_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["procRVMap"][reco_key]["out"] = proc_val
 
 
 # Replacement categories for RV
@@ -679,7 +563,9 @@ globalReplacementMap["Run3FidXSAnalysisPTJ1"]["catRVMap"] = od()
 for bin_name in _PTJ1_BINS:
     for cat in _PTJ1_RECO_CATS:
         reco_key = f"RECO_PTJ1_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPTJ1"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 
@@ -698,7 +584,11 @@ for bin_name in _YJ1_BINS:
     for cat in _YJ1_RECO_CATS:
         reco_key = f"RECO_YJ1_{bin_name}_{cat}"
         proc_val = f"ggh_YJ1_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisYJ1"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisYJ1"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisYJ1"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisYJ1"]["procRVMap"][reco_key]["out"] = proc_val
+
+
 
 
 # Replacement categories for RV
@@ -706,7 +596,9 @@ globalReplacementMap["Run3FidXSAnalysisYJ1"]["catRVMap"] = od()
 for bin_name in _YJ1_BINS:
     for cat in _YJ1_RECO_CATS:
         reco_key = f"RECO_YJ1_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisYJ1"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisYJ1"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisYJ1"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisYJ1"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 # Differential CosThetaStarCS
@@ -724,7 +616,9 @@ for bin_name in _CosThetaStarCS_BINS:
     for cat in _CosThetaStarCS_RECO_CATS:
         reco_key = f"RECO_CosThetaStarCS_{bin_name}_{cat}"
         proc_val = f"ggh_CosThetaStarCS_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["procRVMap"][reco_key]["out"] = proc_val
 
 
 # Replacement categories for RV
@@ -732,7 +626,9 @@ globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["catRVMap"] = od()
 for bin_name in _CosThetaStarCS_BINS:
     for cat in _CosThetaStarCS_RECO_CATS:
         reco_key = f"RECO_CosThetaStarCS_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisCosThetaStarCS"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 # Differential PhiEtaStar
@@ -750,7 +646,10 @@ for bin_name in _PhiEtaStar_BINS:
     for cat in _PhiEtaStar_RECO_CATS:
         reco_key = f"RECO_PhiEtaStar_{bin_name}_{cat}"
         proc_val = f"ggh_PhiEtaStar_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["procRVMap"][reco_key]["out"] = proc_val
+
 
 
 # Replacement categories for RV
@@ -758,7 +657,9 @@ globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["catRVMap"] = od()
 for bin_name in _PhiEtaStar_BINS:
     for cat in _PhiEtaStar_RECO_CATS:
         reco_key = f"RECO_PhiEtaStar_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPhiEtaStar"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 # Differential DPhiHJ0
@@ -776,7 +677,10 @@ for bin_name in _DPhiHJ0_BINS:
     for cat in _DPhiHJ0_RECO_CATS:
         reco_key = f"RECO_DPhiHJ0_{bin_name}_{cat}"
         proc_val = f"ggh_DPhiHJ0_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["procRVMap"][reco_key]["out"] = proc_val
+
 
 
 # Replacement categories for RV
@@ -784,7 +688,10 @@ globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["catRVMap"] = od()
 for bin_name in _DPhiHJ0_BINS:
     for cat in _DPhiHJ0_RECO_CATS:
         reco_key = f"RECO_DPhiHJ0_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0"]["catRVMap"][reco_key]["out"] = reco_key
+
 
 
 # Differential YJ0
@@ -802,7 +709,9 @@ for bin_name in _YJ0_BINS:
     for cat in _YJ0_RECO_CATS:
         reco_key = f"RECO_YJ0_{bin_name}_{cat}"
         proc_val = f"ggh_YJ0_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisYJ0"]["procRVMap"][reco_key]["out"] = proc_val
 
 
 # Replacement categories for RV
@@ -810,7 +719,9 @@ globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"] = od()
 for bin_name in _YJ0_BINS:
     for cat in _YJ0_RECO_CATS:
         reco_key = f"RECO_YJ0_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisYJ0"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 # Differential DPhiHJ0J1
@@ -828,7 +739,10 @@ for bin_name in _DPhiHJ0J1_BINS:
     for cat in _DPhiHJ0J1_RECO_CATS:
         reco_key = f"RECO_DPhiHJ0J1_{bin_name}_{cat}"
         proc_val = f"ggh_DPhiHJ0J1_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["procRVMap"][reco_key]["out"] = proc_val
+
 
 
 # Replacement categories for RV
@@ -836,7 +750,9 @@ globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["catRVMap"] = od()
 for bin_name in _DPhiHJ0J1_BINS:
     for cat in _DPhiHJ0J1_RECO_CATS:
         reco_key = f"RECO_DPhiHJ0J1_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDPhiHJ0J1"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 # Differential DEtaJ0J1H
@@ -854,7 +770,9 @@ for bin_name in _DEtaJ0J1H_BINS:
     for cat in _DEtaJ0J1H_RECO_CATS:
         reco_key = f"RECO_DEtaJ0J1H_{bin_name}_{cat}"
         proc_val = f"ggh_DEtaJ0J1H_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["procRVMap"][reco_key]["out"] = proc_val
 
 
 # Replacement categories for RV
@@ -862,7 +780,10 @@ globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["catRVMap"] = od()
 for bin_name in _DEtaJ0J1H_BINS:
     for cat in _DEtaJ0J1H_RECO_CATS:
         reco_key = f"RECO_DEtaJ0J1H_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisDEtaJ0J1H"]["catRVMap"][reco_key]["out"] = reco_key
+
 
 
 # Differential MassJ0J1
@@ -880,7 +801,10 @@ for bin_name in _MassJ0J1_BINS:
     for cat in _MassJ0J1_RECO_CATS:
         reco_key = f"RECO_MassJ0J1_{bin_name}_{cat}"
         proc_val = f"ggh_MassJ0J1_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["procRVMap"][reco_key]["out"] = proc_val
+
 
 
 # Replacement categories for RV
@@ -888,7 +812,9 @@ globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["catRVMap"] = od()
 for bin_name in _MassJ0J1_BINS:
     for cat in _MassJ0J1_RECO_CATS:
         reco_key = f"RECO_MassJ0J1_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 # Differential EtaJ0J1
@@ -906,7 +832,9 @@ for bin_name in _EtaJ0J1_BINS:
     for cat in _EtaJ0J1_RECO_CATS:
         reco_key = f"RECO_EtaJ0J1_{bin_name}_{cat}"
         proc_val = f"ggh_EtaJ0J1_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["procRVMap"][reco_key]["out"] = proc_val
 
 
 # Replacement categories for RV
@@ -914,7 +842,10 @@ globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["catRVMap"] = od()
 for bin_name in _EtaJ0J1_BINS:
     for cat in _EtaJ0J1_RECO_CATS:
         reco_key = f"RECO_EtaJ0J1_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisEtaJ0J1"]["catRVMap"][reco_key]["out"] = reco_key
+
 
 
 
@@ -933,7 +864,11 @@ for bin_name in _PTHvsDPhiJ0J1_BINS:
     for cat in _PTHvsDPhiJ0J1_RECO_CATS:
         reco_key = f"RECO_PTHvsDPhiJ0J1_{bin_name}_{cat}"
         proc_val = f"ggh_PTHvsDPhiJ0J1_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["procRVMap"][reco_key]["out"] = proc_val
+
+
 
 
 # Replacement categories for RV
@@ -941,7 +876,9 @@ globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["catRVMap"] = od()
 for bin_name in _PTHvsDPhiJ0J1_BINS:
     for cat in _PTHvsDPhiJ0J1_RECO_CATS:
         reco_key = f"RECO_PTHvsDPhiJ0J1_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPTHvsDPhiJ0J1"]["catRVMap"][reco_key]["out"] = reco_key
 
 
 
@@ -960,7 +897,10 @@ for bin_name in _PTHvYH_BINS:
     for cat in _PTHvYH_RECO_CATS:
         reco_key = f"RECO_PTHvYH_{bin_name}_{cat}"
         proc_val = f"ggh_PTHvYH_{bin_name}_in"
-        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["procRVMap"][reco_key] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["procRVMap"][reco_key]["in"] = proc_val
+        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["procRVMap"][reco_key]["out"] = proc_val
+
 
 
 # Replacement categories for RV
@@ -968,4 +908,7 @@ globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"] = od()
 for bin_name in _PTHvYH_BINS:
     for cat in _PTHvYH_RECO_CATS:
         reco_key = f"RECO_PTHvYH_{bin_name}_{cat}"
-        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"][reco_key] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"][reco_key]["in"] = reco_key
+        globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"][reco_key]["out"] = reco_key
+

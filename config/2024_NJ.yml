@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_Zmmg_SaS_ICHEP_final_production/2024_NJ/'
+outputFolder: '/net/data_cms3a-1/linuserdmann/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_Zmmg_SaS_ICHEP_final_production/2024_NJ/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials/2024/NJ/root/data_merged_cats/allData_2024.root'
-  Trees2WS:     '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials/2024/NJ/root/mc_merged_cats/'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/linuserdmann/HIG-26-007/2024/NJ/root/data_merged_cats/allData_2024.root'
+  Trees2WS:     '/net/data_cms3a-2/nobackup/linuserdmann/HIG-26-007/2024/NJ/root/mc_merged_cats/'
 
 backgroundScriptCfg:
   # Setup
@@ -37,6 +37,7 @@ trees2wsCfg:
     - "*Down"
     - "fiducialGeometricFlag"
     - "diffVariable_GenNJ"
+    - "GenNJ"
   
   dataVars:
     - "CMS_hgg_mass"
