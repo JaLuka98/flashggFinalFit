@@ -426,7 +426,7 @@ globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['procRVMap'] = od()
 for _bin in _DPhiJ0J1_BINS:
     for _cat in _DPhiJ0J1_RECO_CATS:
         reco_key = f"RECO_DPhiJ0J1_{_bin}_{_cat}"
-         globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key] = od()
+        globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key] = od()
         globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key]["in"] = f"ggh_DPhiJ0J1_{_bin}_in"
         globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key]["out"] = f"ggh_DPhiJ0J1_{_bin}_in"
 
