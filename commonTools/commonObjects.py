@@ -229,7 +229,17 @@ differentialProcTable_ = {
         (27, "YH_1p2_1p6_in"),
         (28, "YH_1p6_2p0_in"),
         (29, "YH_2p0_2p5_in"),
-        (120, "YH_0p0_2p5_out")
+        (920, "YH_0p0_0p15_out"),
+        (921, "YH_0p15_0p3_out"),
+        (922, "YH_0p3_0p45_out"),
+        (923, "YH_0p45_0p6_out"),
+        (924, "YH_0p6_0p75_out"),
+        (925, "YH_0p75_0p9_out"),
+        (926, "YH_0p9_1p2_out"),
+        (927, "YH_1p2_1p6_out"),
+        (928, "YH_1p6_2p0_out"),
+        (929, "YH_2p0_2p5_out")
+        # (120, "YH_0p0_2p5_out")
     ],
     "NJ": [
         (30, "NJ_0p0_1p0_in"),
@@ -237,7 +247,12 @@ differentialProcTable_ = {
         (32, "NJ_2p0_3p0_in"),
         (33, "NJ_3p0_4p0_in"),
         (34, "NJ_4p0_100p0_in"),
-        (35, "NJ_0p0_100p0_out")
+        (930, "NJ_0p0_1p0_out"),
+        (931, "NJ_1p0_2p0_out"),
+        (932, "NJ_2p0_3p0_out"),
+        (933, "NJ_3p0_4p0_out"),
+        (934, "NJ_4p0_100p0_out")
+        # (35, "NJ_0p0_100p0_out")
     ],
     "PTJ0": [
         (40, "PTJ0_m10000p0_30p0_in"),
@@ -249,7 +264,16 @@ differentialProcTable_ = {
         (46, "PTJ0_120p0_150p0_in"),
         (47, "PTJ0_150p0_200p0_in"),
         (48, "PTJ0_200p0_10000p0_in"),
-        (49, "PTJ0_0p0_10000p0_out")
+        (940, "PTJ0_m10000p0_30p0_out"),
+        (941, "PTJ0_30p0_40p0_out"),
+        (942, "PTJ0_40p0_55p0_out"),
+        (943, "PTJ0_55p0_75p0_out"),
+        (944, "PTJ0_75p0_95p0_out"),
+        (945, "PTJ0_95p0_120p0_out"),
+        (946, "PTJ0_120p0_150p0_out"),
+        (947, "PTJ0_150p0_200p0_out"),
+        (948, "PTJ0_200p0_10000p0_out")
+        # (49, "PTJ0_0p0_10000p0_out")
     ],
     "CosThetaStarCS": [
         (1000, "CosThetaStarCS_0p0_0p07_in"),
@@ -260,7 +284,15 @@ differentialProcTable_ = {
         (1005, "CosThetaStarCS_0p45_0p55_in"),
         (1006, "CosThetaStarCS_0p55_0p75_in"),
         (1007, "CosThetaStarCS_0p75_1p0_in"),
-        (1008, "CosThetaStarCS_0p0_1p0_out")
+        (91000, "CosThetaStarCS_0p0_0p07_out"),
+        (91001, "CosThetaStarCS_0p07_0p15_out"),
+        (91002, "CosThetaStarCS_0p15_0p22_out"),
+        (91003, "CosThetaStarCS_0p22_0p35_out"),
+        (91004, "CosThetaStarCS_0p35_0p45_out"),
+        (91005, "CosThetaStarCS_0p45_0p55_out"),
+        (91006, "CosThetaStarCS_0p55_0p75_out"),
+        (91007, "CosThetaStarCS_0p75_1p0_out")
+        # (1008, "CosThetaStarCS_0p0_1p0_out")
     ],
     "PhiEtaStar": [
         (1010, "PhiEtaStar_0p0_0p05_in"),
@@ -275,13 +307,28 @@ differentialProcTable_ = {
         (1019, "PhiEtaStar_1p5_2p5_in"),
         (1020, "PhiEtaStar_2p5_4p0_in"),
         (1021, "PhiEtaStar_4p0_100p0_in"),
-        (1022, "PhiEtaStar_0p0_4p0_out")
+        (91010, "PhiEtaStar_0p0_0p05_out"),
+        (91011, "PhiEtaStar_0p05_0p1_out"),
+        (91012, "PhiEtaStar_0p1_0p2_out"),
+        (91013, "PhiEtaStar_0p2_0p3_out"),
+        (91014, "PhiEtaStar_0p3_0p4_out"),
+        (91015, "PhiEtaStar_0p4_0p5_out"),
+        (91016, "PhiEtaStar_0p5_0p7_out"),
+        (91017, "PhiEtaStar_0p7_1p0_out"),
+        (91018, "PhiEtaStar_1p0_1p5_out"),
+        (91019, "PhiEtaStar_1p5_2p5_out"),
+        (91020, "PhiEtaStar_2p5_4p0_out"),
+        (91021, "PhiEtaStar_4p0_100p0_out")
+        # (1022, "PhiEtaStar_0p0_4p0_out")
     ],
     "NBJet": [
         (1020, "NBJet_0p0_1p0_in"),
         (1021, "NBJet_1p0_2p0_in"),
         (1022, "NBJet_2p0_100p0_in"),
-        (1023, "NBJet_0p0_100p0_out")
+        (91020, "NBJet_0p0_1p0_out"),
+        (91021, "NBJet_1p0_2p0_out"),
+        (91022, "NBJet_2p0_100p0_out")
+        # (1023, "NBJet_0p0_100p0_out")
     ],
     "YJ0": [
         (1100, "YJ0_m10000p0_0p0_in"),
@@ -292,7 +339,15 @@ differentialProcTable_ = {
         (1105, "YJ0_1p2_1p6_in"),
         (1106, "YJ0_1p6_2p0_in"),
         (1107, "YJ0_2p0_2p5_in"),
-        (1108, "YJ0_0p0_2p5_out")
+        (91100, "YJ0_m10000p0_0p0_out"),
+        (91101, "YJ0_0p0_0p3_out"),
+        (91102, "YJ0_0p3_0p6_out"),
+        (91103, "YJ0_0p6_0p9_out"),
+        (91104, "YJ0_0p9_1p2_out"),
+        (91105, "YJ0_1p2_1p6_out"),
+        (91106, "YJ0_1p6_2p0_out"),
+        (91107, "YJ0_2p0_2p5_out")
+        # (1108, "YJ0_0p0_2p5_out")
     ],
     "DPhiHJ0": [
         (1110, "DPhiHJ0_m10000p0_0p0_in"),
@@ -302,7 +357,14 @@ differentialProcTable_ = {
         (1114, "DPhiHJ0_2p85_3p0_in"),
         (1115, "DPhiHJ0_3p0_3p07_in"),
         (1116, "DPhiHJ0_3p07_3p1416_in"),
-        (1117, "DPhiHJ0_0p0_3p1416_out")
+        (91110, "DPhiHJ0_m10000p0_0p0_out"),
+        (91111, "DPhiHJ0_0p0_2p0_out"),
+        (91112, "DPhiHJ0_2p0_2p6_out"),
+        (91113, "DPhiHJ0_2p6_2p85_out"),
+        (91114, "DPhiHJ0_2p85_3p0_out"),
+        (91115, "DPhiHJ0_3p0_3p07_out"),
+        (91116, "DPhiHJ0_3p07_3p1416_out")
+        # (1117, "DPhiHJ0_0p0_3p1416_out")
     ],
     "DYHJ0": [
         (1120, "DYHJ0_m10000p0_0p0_in"),
@@ -313,7 +375,15 @@ differentialProcTable_ = {
         (1125, "DYHJ0_1p4_1p9_in"),
         (1126, "DYHJ0_1p9_2p5_in"),
         (1127, "DYHJ0_2p5_100p0_in"),
-        (1128, "DYHJ0_0p0_100p0_out")
+        (91120, "DYHJ0_m10000p0_0p0_out"),
+        (91121, "DYHJ0_0p0_0p3_out"),
+        (91122, "DYHJ0_0p3_0p6_out"),
+        (91123, "DYHJ0_0p6_1p0_out"),
+        (91124, "DYHJ0_1p0_1p4_out"),
+        (91125, "DYHJ0_1p4_1p9_out"),
+        (91126, "DYHJ0_1p9_2p5_out"),
+        (91127, "DYHJ0_2p5_100p0_out")
+        # (1128, "DYHJ0_0p0_100p0_out")
     ],
     "TauJC": [
         (1130, "TauJC_m10000p0_0p0_in"),
@@ -323,7 +393,14 @@ differentialProcTable_ = {
         (1134, "TauJC_30p0_50p0_in"),
         (1135, "TauJC_50p0_80p0_in"),
         (1136, "TauJC_80p0_10000p0_in"),
-        (1137, "TauJC_0p0_10000p0_out")
+        (91130, "TauJC_m10000p0_0p0_out"),
+        (91131, "TauJC_0p0_15p0_out"),
+        (91132, "TauJC_15p0_20p0_out"),
+        (91133, "TauJC_20p0_30p0_out"),
+        (91134, "TauJC_30p0_50p0_out"),
+        (91135, "TauJC_50p0_80p0_out"),
+        (91136, "TauJC_80p0_10000p0_out")
+        # (1137, "TauJC_0p0_10000p0_out")
     ],
     "PTJ1": [
         (50, "PTJ1_m10000p0_30p0_in"),
@@ -332,7 +409,13 @@ differentialProcTable_ = {
         (53, "PTJ1_65p0_90p0_in"),
         (54, "PTJ1_90p0_150p0_in"),
         (55, "PTJ1_150p0_10000p0_in"),
-        (56, "PTJ1_m10000p0_10000p0_out")
+        (950, "PTJ1_m10000p0_30p0_out"),
+        (951, "PTJ1_30p0_45p0_out"),
+        (952, "PTJ1_45p0_65p0_out"),
+        (953, "PTJ1_65p0_90p0_out"),
+        (954, "PTJ1_90p0_150p0_out"),
+        (955, "PTJ1_150p0_10000p0_out")
+        # (56, "PTJ1_m10000p0_10000p0_out")
     ],
     "YJ1": [
         (1210, "YJ1_m10000p0_0p0_in"),
@@ -342,7 +425,14 @@ differentialProcTable_ = {
         (1214, "YJ1_1p8_2p5_in"),
         (1215, "YJ1_2p5_3p5_in"),
         (1216, "YJ1_3p5_5p0_in"),
-        (1217, "YJ1_0p0_5p0_out")
+        (91210, "YJ1_m10000p0_0p0_out"),
+        (91211, "YJ1_0p0_0p6_out"),
+        (91212, "YJ1_0p6_1p2_out"),
+        (91213, "YJ1_1p2_1p8_out"),
+        (91214, "YJ1_1p8_2p5_out"),
+        (91215, "YJ1_2p5_3p5_out"),
+        (91216, "YJ1_3p5_5p0_out")
+        # (1217, "YJ1_0p0_5p0_out")
     ],
     "DPhiJ0J1": [
         (50, "DPhiJ0J1_m10000p0_m3p1416_in"),
@@ -352,7 +442,14 @@ differentialProcTable_ = {
         (54, "DPhiJ0J1_0p0_1p0472_in"),
         (55, "DPhiJ0J1_1p0472_2p0944_in"),
         (56, "DPhiJ0J1_2p0944_3p1416_in"),
-        (57, "DPhiJ0J1_m3p1416_3p1416_out")
+        (950, "DPhiJ0J1_m10000p0_m3p1416_out"),
+        (951, "DPhiJ0J1_m3p1416_m2p0944_out"),
+        (952, "DPhiJ0J1_m2p0944_m1p0472_out"),
+        (953, "DPhiJ0J1_m1p0472_0p0_out"),
+        (954, "DPhiJ0J1_0p0_1p0472_out"),
+        (955, "DPhiJ0J1_1p0472_2p0944_out"),
+        (956, "DPhiJ0J1_2p0944_3p1416_out")
+        # (57, "DPhiJ0J1_m3p1416_3p1416_out")
     ],
     "DPhiHJ0J1": [
         (1230, "DPhiHJ0J1_m10000p0_0p0_in"),
@@ -361,7 +458,13 @@ differentialProcTable_ = {
         (1233, "DPhiHJ0J1_2p7_2p95_in"),
         (1234, "DPhiHJ0J1_2p95_3p07_in"),
         (1235, "DPhiHJ0J1_3p07_3p1416_in"),
-        (1236, "DPhiHJ0J1_0p0_3p1416_out")
+        (91230, "DPhiHJ0J1_m10000p0_0p0_out"),
+        (91231, "DPhiHJ0J1_0p0_2p0_out"),
+        (91232, "DPhiHJ0J1_2p0_2p7_out"),
+        (91233, "DPhiHJ0J1_2p7_2p95_out"),
+        (91234, "DPhiHJ0J1_2p95_3p07_out"),
+        (91235, "DPhiHJ0J1_3p07_3p1416_out")
+        # (1236, "DPhiHJ0J1_0p0_3p1416_out")
     ],
     "DEtaJ0J1H": [
         (1240, "DEtaJ0J1H_m10000p0_0p0_in"),
@@ -371,7 +474,14 @@ differentialProcTable_ = {
         (1244, "DEtaJ0J1H_0p85_1p2_in"),
         (1245, "DEtaJ0J1H_1p2_1p7_in"),
         (1246, "DEtaJ0J1H_1p7_100p0_in"),
-        (1247, "DEtaJ0J1H_0p0_100p0_out")
+        (91240, "DEtaJ0J1H_m10000p0_0p0_out"),
+        (91241, "DEtaJ0J1H_0p0_0p2_out"),
+        (91242, "DEtaJ0J1H_0p2_0p5_out"),
+        (91243, "DEtaJ0J1H_0p5_0p85_out"),
+        (91244, "DEtaJ0J1H_0p85_1p2_out"),
+        (91245, "DEtaJ0J1H_1p2_1p7_out"),
+        (91246, "DEtaJ0J1H_1p7_100p0_out")
+        # (1247, "DEtaJ0J1H_0p0_100p0_out")
     ],
     "MassJ0J1": [
         (70, "MassJ0J1_m10000p0_0p0_in"),
@@ -381,7 +491,14 @@ differentialProcTable_ = {
         (74, "MassJ0J1_300p0_500p0_in"),
         (75, "MassJ0J1_500p0_1000p0_in"),
         (76, "MassJ0J1_1000p0_10000p0_in"),
-        (77, "MassJ0J1_m10000p0_10000p0_out")
+        (970, "MassJ0J1_m10000p0_0p0_out"),
+        (971, "MassJ0J1_0p0_90p0_out"),
+        (972, "MassJ0J1_90p0_160p0_out"),
+        (973, "MassJ0J1_160p0_300p0_out"),
+        (974, "MassJ0J1_300p0_500p0_out"),
+        (975, "MassJ0J1_500p0_1000p0_out"),
+        (976, "MassJ0J1_1000p0_10000p0_out")
+        # (77, "MassJ0J1_m10000p0_10000p0_out")
     ],
     "EtaJ0J1": [
         (1260, "EtaJ0J1_m10000p0_0p0_in"),
@@ -390,7 +507,13 @@ differentialProcTable_ = {
         (1263, "EtaJ0J1_1p6_3p0_in"),
         (1264, "EtaJ0J1_3p0_5p0_in"),
         (1265, "EtaJ0J1_5p0_100p0_in"),
-        (1266, "EtaJ0J1_0p0_100p0_out")
+        (91260, "EtaJ0J1_m10000p0_0p0_out"),
+        (91261, "EtaJ0J1_0p0_0p7_out"),
+        (91262, "EtaJ0J1_0p7_1p6_out"),
+        (91263, "EtaJ0J1_1p6_3p0_out"),
+        (91264, "EtaJ0J1_3p0_5p0_out"),
+        (91265, "EtaJ0J1_5p0_100p0_out")
+        #(1266, "EtaJ0J1_0p0_100p0_out")
     ],
     "PTHvDPhiJ0J1": [
         (4501, "PTHvDPhiJ0J1_0p0_35p0_m3p1416_m1p5708_in"),
