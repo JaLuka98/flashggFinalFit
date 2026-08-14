@@ -15,6 +15,71 @@ models = {
   --PO \"map=.*/vh_in.*:r[1,0,2]\" \
   --PO \"map=.*/tth_in.*:r[1,0,2]\"",
 
+  "inclusive_lightquarks":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/uuH_in.*:r[1,0,2]\" \
+--PO \"map=.*/ddH_in.*:r[1,0,2]\" \
+--PO \"map=.*/ssH_in.*:r[1,0,2]\"",
+
+  "PTH_lightquarks":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/uuH_PTH_0p0_5p0.*:r_PTH_lightquarks_0p0_5p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_0p0_5p0.*:r_PTH_lightquarks_0p0_5p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_0p0_5p0.*:r_PTH_lightquarks_0p0_5p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_5p0_10p0.*:r_PTH_lightquarks_5p0_10p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_5p0_10p0.*:r_PTH_lightquarks_5p0_10p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_5p0_10p0.*:r_PTH_lightquarks_5p0_10p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_10p0_15p0.*:r_PTH_lightquarks_10p0_15p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_10p0_15p0.*:r_PTH_lightquarks_10p0_15p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_10p0_15p0.*:r_PTH_lightquarks_10p0_15p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_15p0_20p0.*:r_PTH_lightquarks_15p0_20p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_15p0_20p0.*:r_PTH_lightquarks_15p0_20p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_15p0_20p0.*:r_PTH_lightquarks_15p0_20p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_20p0_25p0.*:r_PTH_lightquarks_20p0_25p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_20p0_25p0.*:r_PTH_lightquarks_20p0_25p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_20p0_25p0.*:r_PTH_lightquarks_20p0_25p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_25p0_30p0.*:r_PTH_lightquarks_25p0_30p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_25p0_30p0.*:r_PTH_lightquarks_25p0_30p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_25p0_30p0.*:r_PTH_lightquarks_25p0_30p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_30p0_35p0.*:r_PTH_lightquarks_30p0_35p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_30p0_35p0.*:r_PTH_lightquarks_30p0_35p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_30p0_35p0.*:r_PTH_lightquarks_30p0_35p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_35p0_45p0.*:r_PTH_lightquarks_35p0_45p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_35p0_45p0.*:r_PTH_lightquarks_35p0_45p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_35p0_45p0.*:r_PTH_lightquarks_35p0_45p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_45p0_60p0.*:r_PTH_lightquarks_45p0_60p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_45p0_60p0.*:r_PTH_lightquarks_45p0_60p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_45p0_60p0.*:r_PTH_lightquarks_45p0_60p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_60p0_80p0.*:r_PTH_lightquarks_60p0_80p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_60p0_80p0.*:r_PTH_lightquarks_60p0_80p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_60p0_80p0.*:r_PTH_lightquarks_60p0_80p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_80p0_100p0.*:r_PTH_lightquarks_80p0_100p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_80p0_100p0.*:r_PTH_lightquarks_80p0_100p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_80p0_100p0.*:r_PTH_lightquarks_80p0_100p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_100p0_120p0.*:r_PTH_lightquarks_100p0_120p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_100p0_120p0.*:r_PTH_lightquarks_100p0_120p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_100p0_120p0.*:r_PTH_lightquarks_100p0_120p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_120p0_140p0.*:r_PTH_lightquarks_120p0_140p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_120p0_140p0.*:r_PTH_lightquarks_120p0_140p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_120p0_140p0.*:r_PTH_lightquarks_120p0_140p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_140p0_170p0.*:r_PTH_lightquarks_140p0_170p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_140p0_170p0.*:r_PTH_lightquarks_140p0_170p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_140p0_170p0.*:r_PTH_lightquarks_140p0_170p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_170p0_200p0.*:r_PTH_lightquarks_170p0_200p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_170p0_200p0.*:r_PTH_lightquarks_170p0_200p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_170p0_200p0.*:r_PTH_lightquarks_170p0_200p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_200p0_250p0.*:r_PTH_lightquarks_200p0_250p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_200p0_250p0.*:r_PTH_lightquarks_200p0_250p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_200p0_250p0.*:r_PTH_lightquarks_200p0_250p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_250p0_350p0.*:r_PTH_lightquarks_250p0_350p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_250p0_350p0.*:r_PTH_lightquarks_250p0_350p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_250p0_350p0.*:r_PTH_lightquarks_250p0_350p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_350p0_450p0.*:r_PTH_lightquarks_350p0_450p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_350p0_450p0.*:r_PTH_lightquarks_350p0_450p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_350p0_450p0.*:r_PTH_lightquarks_350p0_450p0[1,-16,16]\" \
+--PO \"map=.*/uuH_PTH_450p0_10000p0.*:r_PTH_lightquarks_450p0_10000p0[1,-16,16]\" \
+--PO \"map=.*/ddH_PTH_450p0_10000p0.*:r_PTH_lightquarks_450p0_10000p0[1,-16,16]\" \
+--PO \"map=.*/ssH_PTH_450p0_10000p0.*:r_PTH_lightquarks_450p0_10000p0[1,-16,16]\"",
+
+
   "mu":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggH.*:r_ggH[1,0,2]\" \
 --PO \"map=.*/bbH.*:r_ggH[1,0,2]\" \
@@ -614,6 +679,35 @@ models = {
 --PO \"map=.*/vh_PhiEtaStar_4p0_100p0.*:r_PhiEtaStar_4p0_100p0[1,-8,8]\" \
 --PO \"map=.*/vbf_PhiEtaStar_4p0_100p0.*:r_PhiEtaStar_4p0_100p0[1,-8,8]\"",
 
+  "YJ1":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
+--PO \"map=.*/ggh_YJ1_m10000p0_0p0.*:r_YJ1_m10000p0_0p0[1,-8,8]\" \
+--PO \"map=.*/tth_YJ1_m10000p0_0p0.*:r_YJ1_m10000p0_0p0[1,-8,8]\" \
+--PO \"map=.*/vh_YJ1_m10000p0_0p0.*:r_YJ1_m10000p0_0p0[1,-8,8]\" \
+--PO \"map=.*/vbf_YJ1_m10000p0_0p0.*:r_YJ1_m10000p0_0p0[1,-8,8]\" \
+--PO \"map=.*/ggh_YJ1_0p0_0p6.*:r_YJ1_0p0_0p6[1,-8,8]\" \
+--PO \"map=.*/tth_YJ1_0p0_0p6.*:r_YJ1_0p0_0p6[1,-8,8]\" \
+--PO \"map=.*/vh_YJ1_0p0_0p6.*:r_YJ1_0p0_0p6[1,-8,8]\" \
+--PO \"map=.*/vbf_YJ1_0p0_0p6.*:r_YJ1_0p0_0p6[1,-8,8]\" \
+--PO \"map=.*/ggh_YJ1_0p6_1p2.*:r_YJ1_0p6_1p2[1,-8,8]\" \
+--PO \"map=.*/tth_YJ1_0p6_1p2.*:r_YJ1_0p6_1p2[1,-8,8]\" \
+--PO \"map=.*/vh_YJ1_0p6_1p2.*:r_YJ1_0p6_1p2[1,-8,8]\" \
+--PO \"map=.*/vbf_YJ1_0p6_1p2.*:r_YJ1_0p6_1p2[1,-8,8]\" \
+--PO \"map=.*/ggh_YJ1_1p2_1p8.*:r_YJ1_1p2_1p8[1,-8,8]\" \
+--PO \"map=.*/tth_YJ1_1p2_1p8.*:r_YJ1_1p2_1p8[1,-8,8]\" \
+--PO \"map=.*/vh_YJ1_1p2_1p8.*:r_YJ1_1p2_1p8[1,-8,8]\" \
+--PO \"map=.*/vbf_YJ1_1p2_1p8.*:r_YJ1_1p2_1p8[1,-8,8]\" \
+--PO \"map=.*/ggh_YJ1_1p8_2p5.*:r_YJ1_1p8_2p5[1,-8,8]\" \
+--PO \"map=.*/tth_YJ1_1p8_2p5.*:r_YJ1_1p8_2p5[1,-8,8]\" \
+--PO \"map=.*/vh_YJ1_1p8_2p5.*:r_YJ1_1p8_2p5[1,-8,8]\" \
+--PO \"map=.*/vbf_YJ1_1p8_2p5.*:r_YJ1_1p8_2p5[1,-8,8]\" \
+--PO \"map=.*/ggh_YJ1_2p5_3p5.*:r_YJ1_2p5_3p5[1,-8,8]\" \
+--PO \"map=.*/tth_YJ1_2p5_3p5.*:r_YJ1_2p5_3p5[1,-8,8]\" \
+--PO \"map=.*/vh_YJ1_2p5_3p5.*:r_YJ1_2p5_3p5[1,-8,8]\" \
+--PO \"map=.*/vbf_YJ1_2p5_3p5.*:r_YJ1_2p5_3p5[1,-8,8]\" \
+--PO \"map=.*/ggh_YJ1_3p5_5p0.*:r_YJ1_3p5_5p0[1,-8,8]\" \
+--PO \"map=.*/tth_YJ1_3p5_5p0.*:r_YJ1_3p5_5p0[1,-8,8]\" \
+--PO \"map=.*/vh_YJ1_3p5_5p0.*:r_YJ1_3p5_5p0[1,-8,8]\" \
+--PO \"map=.*/vbf_YJ1_3p5_5p0.*:r_YJ1_3p5_5p0[1,-8,8]\"",
 
   "YJ0":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggh_YJ0_m10000p0_0p0.*:r_YJ0_m10000p0_0p0[1,-8,8]\" \

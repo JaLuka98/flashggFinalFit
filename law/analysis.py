@@ -3,6 +3,8 @@ import luigi
 import os
 import yaml
 import errno
+import shutil
+import subprocess
 
 from commonTools import *
 from commonObjects import *
@@ -28,6 +30,9 @@ def convert_boolean_string(string):
         return True
     else:
         return False
+
+def is_signal_only_datacard(config):
+    return convert_boolean_string(config.get("datacard_yields", {}).get("skipBkg", False))
 
 HIGGS_MASS = "125.07"
 
@@ -92,164 +97,266 @@ class FinalFits(law.WrapperTask):
 
         combined_label = "_".join(years)
         if self.variable == '':
-            combined_output_dir = base_dir / f"output_{combined_label}_inclusive" / "Combine"
-        else:
-            combined_output_dir = base_dir / f"output_{combined_label}_{self.variable}" / "Combine"
-        combined_output_dir.mkdir(parents=True, exist_ok=True)
-        
-        if self.variable == '':
-            root_path = base_dir / f"output_{combined_label}_inclusive" / "Combine" / f"Datacard_{combined_label}.root"
-        else:
-            root_path = base_dir / f"output_{combined_label}_{self.variable}" / "Combine" / f"Datacard_{self.variable}_{combined_label}.root"
-
-        if root_path.exists() and root_path.stat().st_size > 0:
-            print(f"Combined workspace already exists: {root_path}")
-            print("Skipping all intermediate steps (datacard/model copy, combine, text2workspace).")
-        else:
-            print("Combined .root file not found or empty — running Combine setup and workspace creation ...")
-            
-            # --- 1. Get output paths from configs ---
-            year_output_paths = {}
-            for y in years:
-                if self.variable == '':
-                    config_path = config_dir / f"{y}_inclusive.yml"
-                else:
-                    config_path = config_dir / f"{y}_{self.variable}.yml"
-                if config_path.exists():
-                    with open(config_path) as f:
-                        cfg = yaml.safe_load(f)
-                    year_output_paths[y] = Path(cfg["outputFolder"].rstrip("/"))
-                else:
-                    # fallback
-                    if self.variable == '':
-                        year_output_paths[y] = base_dir / f"output_{y}_inclusive"
-                    else:
-                        year_output_paths[y] = base_dir / f"output_{y}_{self.variable}"
-                    print(f"Using default path for {y}: {year_output_paths[y]}")
-
-            # --- 2. Copy Datacards ---
-            for y, out_path in year_output_paths.items():
-                if self.variable == '':
-                    src = out_path / "Combine" / f"Datacard_{y}.txt"
-                    dst = combined_output_dir / f"Datacard_{y}.txt"
-                else:
-                    src = out_path / "Combine" / f"Datacard_{self.variable}_{y}.txt"
-                    dst = combined_output_dir / f"Datacard_{self.variable}_{y}.txt"
-                if src.exists():
-                    shutil.copy2(src, dst)
-                    print(f"Copied datacard for {y}")
-                else:
-                    print(f"⚠️  Missing datacard: {src}")
-
-            # --- 3. Copy Models ---
-            if self.variable == '':
-                for y, out_path in year_output_paths.items():
-                    src_models = out_path / "Combine" / "Models"
-                    dst_models = combined_output_dir / f"Models_{y}"
-                    if src_models.exists():
-                        shutil.copytree(src_models, dst_models, dirs_exist_ok=True)
-                        print(f"Copied models for {y}")
-                    else:
-                        print(f"Missing models directory: {src_models}")
-            else:
-                for y, out_path in year_output_paths.items():
-                    src_models = out_path / "Combine" / f"Models_{self.variable}"
-                    dst_models = combined_output_dir / f"Models_{self.variable}_{y}"
-                    if src_models.exists():
-                        shutil.copytree(src_models, dst_models, dirs_exist_ok=True)
-                        print(f"Copied models for {y}")
-                    else:
-                        print(f"Missing models directory: {src_models}")
-
-            # --- 4. Combine datacards ---
-            os.chdir(combined_output_dir)
-            if self.variable == '':
-                card_args = " ".join([f"Y{y[-2:]}=Datacard_{y}.txt" for y in years])
-                combined_card = f"Datacard_{combined_label}.txt"
-            else:
-                card_args = " ".join([f"Y{y[-2:]}=Datacard_{self.variable}_{y}.txt" for y in years])
-                combined_card = f"Datacard_{self.variable}_{combined_label}.txt"
-
-            print("Combining datacards...")
-            subprocess.run(f"combineCards.py {card_args} > {combined_card}", shell=True, check=True)
-
-            # --- 5. Fix model paths per year ---
-            print("Fixing model paths per year...")
-            if self.variable == '':
-                for y in years:
-                    tag = f"Y{y[-2:]}"
-                    models_dir = f"./Models_{y}/"
-                    subprocess.run(
-                        f"sed -i -E '/^shapes\\s+\\S+\\s+{tag}_/ s|(\\s)\\./Models/|\\1{models_dir}|g' {combined_card}",
-                        shell=True,
-                        check=True,
-                    )
-            else:
-                for y in years:
-                    tag = f"Y{y[-2:]}"
-                    models_dir = f"./Models_{self.variable}_{y}/"
-                    subprocess.run(
-                        f"sed -i -E '/^shapes\\s+\\S+\\s+{tag}_/ s|(\\s)\\./Models_{self.variable}/|\\1{models_dir}|g' {combined_card}",
-                        shell=True,
-                        check=True,
-                    )
-
-            # --- 6. Delete some stuff ---
-            if self.variable == '':
-                for y in years:
-                    tmp_path = combined_output_dir / f"Datacard_{y}.txt"
-                    if tmp_path.exists():
-                        tmp_path.unlink()
-            else:
-                for y in years:
-                    tmp_path = combined_output_dir / f"Datacard_{self.variable}_{y}.txt"
-                    if tmp_path.exists():
-                        tmp_path.unlink()
-
-            # --- 7. run RunText2Workspace for new Datacard ---
-            print("Running RunText2Workspace.py...")
-            runtext2ws_path = combine_dir / "RunText2Workspace.py"
-            if self.variable == '':
-                # Inclusive case
-                output_dir = base_dir / f"output_{combined_label}_inclusive"
-
-                cmd = (
-                    f"python3 {runtext2ws_path} "
-                    f"--inputName Datacard_{combined_label} "
-                    f"--outputDir {output_dir} "
-                    f"--outputName Datacard_{combined_label} "
-                    "--mode mu_fiducial "
-                    f"--common_opts \"-m {HIGGS_MASS} higgsMassRange=122,128\" "
-                    "--batch local"
-                )
-            else:
-                # Differential variable case (correct mode = variable)
-                output_dir = base_dir / f"output_{combined_label}_{self.variable}"
-
-                cmd = (
-                    f"python3 {runtext2ws_path} "
-                    f"--inputName Datacard_{self.variable}_{combined_label} "
-                    f"--outputDir {output_dir} "
-                    f"--outputName Datacard_{self.variable}_{combined_label} "
-                    f"--mode {self.variable} "
-                    f"--common_opts \"-m {HIGGS_MASS} higgsMassRange=122,128\" "
-                    "--batch local "
-                    f"--ext {self.variable}"
-                )
-
-            subprocess.run(cmd, shell=True, check=True)
-
-            print(f"Combined workspace created in {combined_output_dir}")
-
-
-        combined_label = "_".join(years)
-        if self.variable == '':
             config_path = config_dir / f"{combined_label}_inclusive.yml"
         else:
             config_path = config_dir / f"{combined_label}_{self.variable}.yml"
 
+        combined_config = None
+        combined_signal_only = False
         if config_path.exists():
-            combined_datacard_only = not any(
+            with open(config_path) as f:
+                combined_config = yaml.safe_load(f)
+            combined_signal_only = is_signal_only_datacard(combined_config)
+
+        if self.variable == '':
+            combined_output_dir = base_dir / f"output_{combined_label}_inclusive" / "Combine"
+        else:
+            combined_output_dir = base_dir / f"output_{combined_label}_{self.variable}" / "Combine"
+
+        if combined_signal_only:
+            print("Signal-only combined datacard detected: combining per-year datacards and skipping text2workspace.")
+
+            default_combined_output_dir = base_dir / f"output_{combined_label}_inclusive" if self.variable == '' else base_dir / f"output_{combined_label}_{self.variable}"
+            combined_base_dir = Path(combined_config.get("outputFolder", str(default_combined_output_dir)).rstrip("/"))
+            combined_combine_dir = combined_base_dir / "Combine"
+            combined_datacards_dir = combined_base_dir / "Datacards"
+            combined_combine_dir.mkdir(parents=True, exist_ok=True)
+            combined_datacards_dir.mkdir(parents=True, exist_ok=True)
+
+            year_output_paths = {}
+            year_card_names = {}
+            for y in years:
+                if self.variable == '':
+                    year_config_path = config_dir / f"{y}_inclusive.yml"
+                else:
+                    year_config_path = config_dir / f"{y}_{self.variable}.yml"
+
+                if year_config_path.exists():
+                    with open(year_config_path) as f:
+                        year_config = yaml.safe_load(f)
+                    year_output_paths[y] = Path(year_config["outputFolder"].rstrip("/"))
+                    year_card_names[y] = year_config.get("datacard", {}).get(
+                        "output",
+                        f"Datacard_{y}" if self.variable == '' else f"Datacard_{self.variable}_{y}",
+                    )
+                else:
+                    year_output_paths[y] = base_dir / (f"output_{y}_inclusive" if self.variable == '' else f"output_{y}_{self.variable}")
+                    year_card_names[y] = f"Datacard_{y}" if self.variable == '' else f"Datacard_{self.variable}_{y}"
+                    print(f"Using default path for {y}: {year_output_paths[y]}")
+
+            model_dir_name = "Models" if self.variable == '' else f"Models_{self.variable}"
+            card_args = []
+            for y, out_path in year_output_paths.items():
+                card_name = year_card_names[y]
+                src_card_candidates = [
+                    out_path / "Combine" / f"{card_name}.txt",
+                    out_path / "Datacards" / f"{card_name}.txt",
+                ]
+                src_card = next((p for p in src_card_candidates if p.exists()), None)
+                if src_card is None:
+                    raise FileNotFoundError(f"Could not find datacard for {y}. Tried: {src_card_candidates}")
+
+                dst_card = combined_combine_dir / f"{card_name}.txt"
+                shutil.copy2(src_card, dst_card)
+                card_args.append(f"Y{y[-2:]}={dst_card.name}")
+                print(f"Copied datacard for {y}: {src_card}")
+
+                dst_models = combined_combine_dir / f"{model_dir_name}_{y}"
+                src_models = out_path / "Combine" / model_dir_name
+                if src_models.exists():
+                    shutil.copytree(src_models, dst_models, dirs_exist_ok=True)
+                    print(f"Copied signal models for {y}: {src_models}")
+                else:
+                    packaged_dir = out_path / "outdir_packaged"
+                    packaged_roots = sorted(packaged_dir.glob("CMS-HGG_sigfit_packaged*.root"))
+                    if not packaged_roots:
+                        raise FileNotFoundError(
+                            f"Could not find signal models for {y}. Tried {src_models} and {packaged_dir}/CMS-HGG_sigfit_packaged*.root"
+                        )
+                    dst_signal_dir = dst_models / "signal"
+                    dst_signal_dir.mkdir(parents=True, exist_ok=True)
+                    for root_file in packaged_roots:
+                        shutil.copy2(root_file, dst_signal_dir / root_file.name)
+                    print(f"Copied signal models for {y}: {packaged_dir}")
+
+            combined_card_name = combined_config["datacard"]["output"]
+            combined_card = combined_combine_dir / f"{combined_card_name}.txt"
+
+            print("Combining signal-only datacards...")
+            subprocess.run(
+                f"combineCards.py {' '.join(card_args)} > {combined_card.name}",
+                shell=True,
+                check=True,
+                cwd=str(combined_combine_dir),
+            )
+
+            lines = combined_card.read_text().splitlines()
+            fixed_lines = []
+            for line in lines:
+                fields = line.split()
+                if len(fields) >= 4 and fields[0] == "shapes":
+                    for y in years:
+                        tag = f"Y{y[-2:]}_"
+                        if fields[2].startswith(tag):
+                            line = line.replace(f"./{model_dir_name}/", f"./{model_dir_name}_{y}/")
+                            break
+                fixed_lines.append(line)
+            combined_card.write_text("\n".join(fixed_lines) + "\n")
+            shutil.copy2(combined_card, combined_datacards_dir / combined_card.name)
+            print(f"Combined signal-only datacard created: {combined_datacards_dir / combined_card.name}")
+            return
+        else:
+            combined_output_dir.mkdir(parents=True, exist_ok=True)
+
+            if self.variable == '':
+                root_path = base_dir / f"output_{combined_label}_inclusive" / "Combine" / f"Datacard_{combined_label}.root"
+            else:
+                root_path = base_dir / f"output_{combined_label}_{self.variable}" / "Combine" / f"Datacard_{self.variable}_{combined_label}.root"
+
+            if root_path.exists() and root_path.stat().st_size > 0:
+                print(f"Combined workspace already exists: {root_path}")
+                print("Skipping all intermediate steps (datacard/model copy, combine, text2workspace).")
+            else:
+                print("Combined .root file not found or empty — running Combine setup and workspace creation ...")
+            
+                # --- 1. Get output paths from configs ---
+                year_output_paths = {}
+                for y in years:
+                    if self.variable == '':
+                        year_config_path = config_dir / f"{y}_inclusive.yml"
+                    else:
+                        year_config_path = config_dir / f"{y}_{self.variable}.yml"
+                    if year_config_path.exists():
+                        with open(year_config_path) as f:
+                            cfg = yaml.safe_load(f)
+                        year_output_paths[y] = Path(cfg["outputFolder"].rstrip("/"))
+                    else:
+                        # fallback
+                        if self.variable == '':
+                            year_output_paths[y] = base_dir / f"output_{y}_inclusive"
+                        else:
+                            year_output_paths[y] = base_dir / f"output_{y}_{self.variable}"
+                        print(f"Using default path for {y}: {year_output_paths[y]}")
+
+                # --- 2. Copy Datacards ---
+                for y, out_path in year_output_paths.items():
+                    if self.variable == '':
+                        src = out_path / "Combine" / f"Datacard_{y}.txt"
+                        dst = combined_output_dir / f"Datacard_{y}.txt"
+                    else:
+                        src = out_path / "Combine" / f"Datacard_{self.variable}_{y}.txt"
+                        dst = combined_output_dir / f"Datacard_{self.variable}_{y}.txt"
+                    if src.exists():
+                        shutil.copy2(src, dst)
+                        print(f"Copied datacard for {y}")
+                    else:
+                        print(f"⚠️  Missing datacard: {src}")
+
+                # --- 3. Copy Models ---
+                if self.variable == '':
+                    for y, out_path in year_output_paths.items():
+                        src_models = out_path / "Combine" / "Models"
+                        dst_models = combined_output_dir / f"Models_{y}"
+                        if src_models.exists():
+                            shutil.copytree(src_models, dst_models, dirs_exist_ok=True)
+                            print(f"Copied models for {y}")
+                        else:
+                            print(f"Missing models directory: {src_models}")
+                else:
+                    for y, out_path in year_output_paths.items():
+                        src_models = out_path / "Combine" / f"Models_{self.variable}"
+                        dst_models = combined_output_dir / f"Models_{self.variable}_{y}"
+                        if src_models.exists():
+                            shutil.copytree(src_models, dst_models, dirs_exist_ok=True)
+                            print(f"Copied models for {y}")
+                        else:
+                            print(f"Missing models directory: {src_models}")
+
+                # --- 4. Combine datacards ---
+                os.chdir(combined_output_dir)
+                if self.variable == '':
+                    card_args = " ".join([f"Y{y[-2:]}=Datacard_{y}.txt" for y in years])
+                    combined_card = f"Datacard_{combined_label}.txt"
+                else:
+                    card_args = " ".join([f"Y{y[-2:]}=Datacard_{self.variable}_{y}.txt" for y in years])
+                    combined_card = f"Datacard_{self.variable}_{combined_label}.txt"
+
+                print("Combining datacards...")
+                subprocess.run(f"combineCards.py {card_args} > {combined_card}", shell=True, check=True)
+
+                # --- 5. Fix model paths per year ---
+                print("Fixing model paths per year...")
+                if self.variable == '':
+                    for y in years:
+                        tag = f"Y{y[-2:]}"
+                        models_dir = f"./Models_{y}/"
+                        subprocess.run(
+                            f"sed -i -E '/^shapes\\s+\\S+\\s+{tag}_/ s|(\\s)\\./Models/|\\1{models_dir}|g' {combined_card}",
+                            shell=True,
+                            check=True,
+                        )
+                else:
+                    for y in years:
+                        tag = f"Y{y[-2:]}"
+                        models_dir = f"./Models_{self.variable}_{y}/"
+                        subprocess.run(
+                            f"sed -i -E '/^shapes\\s+\\S+\\s+{tag}_/ s|(\\s)\\./Models_{self.variable}/|\\1{models_dir}|g' {combined_card}",
+                            shell=True,
+                            check=True,
+                        )
+
+                # --- 6. Delete some stuff ---
+                if self.variable == '':
+                    for y in years:
+                        tmp_path = combined_output_dir / f"Datacard_{y}.txt"
+                        if tmp_path.exists():
+                            tmp_path.unlink()
+                else:
+                    for y in years:
+                        tmp_path = combined_output_dir / f"Datacard_{self.variable}_{y}.txt"
+                        if tmp_path.exists():
+                            tmp_path.unlink()
+
+                # --- 7. run RunText2Workspace for new Datacard ---
+                print("Running RunText2Workspace.py...")
+                runtext2ws_path = combine_dir / "RunText2Workspace.py"
+                if self.variable == '':
+                    # Inclusive case
+                    output_dir = base_dir / f"output_{combined_label}_inclusive"
+
+                    cmd = (
+                        f"python3 {runtext2ws_path} "
+                        f"--inputName Datacard_{combined_label} "
+                        f"--outputDir {output_dir} "
+                        f"--outputName Datacard_{combined_label} "
+                        "--mode mu_fiducial "
+                        f"--common_opts \"-m {HIGGS_MASS} higgsMassRange=122,128\" "
+                        "--batch local"
+                    )
+                else:
+                    # Differential variable case (correct mode = variable)
+                    output_dir = base_dir / f"output_{combined_label}_{self.variable}"
+
+                    cmd = (
+                        f"python3 {runtext2ws_path} "
+                        f"--inputName Datacard_{self.variable}_{combined_label} "
+                        f"--outputDir {output_dir} "
+                        f"--outputName Datacard_{self.variable}_{combined_label} "
+                        f"--mode {self.variable} "
+                        f"--common_opts \"-m {HIGGS_MASS} higgsMassRange=122,128\" "
+                        "--batch local "
+                        f"--ext {self.variable}"
+                    )
+
+                subprocess.run(cmd, shell=True, check=True)
+
+                print(f"Combined workspace created in {combined_output_dir}")
+
+        if config_path.exists():
+            if combined_config is None:
+                with open(config_path) as f:
+                    combined_config = yaml.safe_load(f)
+            combined_datacard_only = combined_signal_only or not any(
                 convert_boolean_string(flag)
                 for flag in [
                     self.unblinded_fits,
@@ -265,22 +372,24 @@ class FinalFits(law.WrapperTask):
                     self.asimov_diff_spectra,
                 ]
             )
+            default_combined_output_dir = base_dir / f"output_{combined_label}_inclusive" if self.variable == '' else base_dir / f"output_{combined_label}_{self.variable}"
+            combined_task_output_dir = Path(combined_config.get("outputFolder", str(default_combined_output_dir)).rstrip("/"))
             combined_task = FinalFitsYear(
                 variable=self.variable,
-                output_dir=str(base_dir / f"output_{combined_label}_inclusive" if self.variable == '' else base_dir / f"output_{combined_label}_{self.variable}"),
+                output_dir=str(combined_task_output_dir),
                 year=combined_label,
                 datacard_only=combined_datacard_only,
-                unblinded_fits=self.unblinded_fits,
-                unblinded_stage_one=self.unblinded_stage_one,
-                unblinded_stage_two=self.unblinded_stage_two,
-                unblinded_stage_three=self.unblinded_stage_three,
-                unblinded_covcorr=self.unblinded_covcorr,
-                pvalue=self.pvalue,
-                asimov_fits=self.asimov_fits,
-                asimov_impacts=self.asimov_impacts,
-                asimov_covcorr=self.asimov_covcorr,
-                unblinded_diff_spectra=self.unblinded_diff_spectra,
-                asimov_diff_spectra=self.asimov_diff_spectra,
+                unblinded_fits=False if combined_signal_only else self.unblinded_fits,
+                unblinded_stage_one=False if combined_signal_only else self.unblinded_stage_one,
+                unblinded_stage_two=False if combined_signal_only else self.unblinded_stage_two,
+                unblinded_stage_three=False if combined_signal_only else self.unblinded_stage_three,
+                unblinded_covcorr=False if combined_signal_only else self.unblinded_covcorr,
+                pvalue=False if combined_signal_only else self.pvalue,
+                asimov_fits=False if combined_signal_only else self.asimov_fits,
+                asimov_impacts=False if combined_signal_only else self.asimov_impacts,
+                asimov_covcorr=False if combined_signal_only else self.asimov_covcorr,
+                unblinded_diff_spectra=False if combined_signal_only else self.unblinded_diff_spectra,
+                asimov_diff_spectra=False if combined_signal_only else self.asimov_diff_spectra,
                 batch_system=self.batch_system,
                 batch_flavor=self.batch_flavor,
             )
@@ -304,7 +413,22 @@ class FinalFits(law.WrapperTask):
 
         # Use the repository root (same base_dir as in run()) instead of cwd.
         base_dir = Path(__file__).resolve().parent.parent
+        config_dir = base_dir / "config"
         combined_label = "_".join(years)
+
+        if self.variable == '':
+            config_path = config_dir / f"{combined_label}_inclusive.yml"
+        else:
+            config_path = config_dir / f"{combined_label}_{self.variable}.yml"
+
+        if config_path.exists():
+            with open(config_path) as f:
+                config = yaml.safe_load(f)
+            if is_signal_only_datacard(config):
+                output_dir = Path(config["outputFolder"].rstrip("/"))
+                datacard_name = config["datacard"]["output"]
+                return law.LocalFileTarget(output_dir / "Datacards" / f"{datacard_name}.txt")
+
         if self.variable == '':
             combined_card_path = os.path.join(
                 base_dir,
@@ -333,29 +457,38 @@ class FinalFits(law.WrapperTask):
         combined_label = "_".join(years)
         if self.variable == '':
             config_path = config_dir / f"{combined_label}_inclusive.yml"
-            combined_output_dir = base_dir / f"output_{combined_label}_inclusive"
+            default_combined_output_dir = base_dir / f"output_{combined_label}_inclusive"
         else:
             config_path = config_dir / f"{combined_label}_{self.variable}.yml"
-            combined_output_dir = base_dir / f"output_{combined_label}_{self.variable}"
+            default_combined_output_dir = base_dir / f"output_{combined_label}_{self.variable}"
 
         if not config_path.exists():
             return yearly_done and output.exists()
+
+        with open(config_path) as f:
+            combined_config = yaml.safe_load(f)
+        combined_signal_only = is_signal_only_datacard(combined_config)
+        if combined_signal_only:
+            return yearly_done and output.exists()
+
+        combined_output_dir = Path(combined_config.get("outputFolder", str(default_combined_output_dir)).rstrip("/"))
 
         combined_task = FinalFitsYear(
             variable=self.variable,
             output_dir=str(combined_output_dir),
             year=combined_label,
-            unblinded_fits=self.unblinded_fits,
-            unblinded_stage_one=self.unblinded_stage_one,
-            unblinded_stage_two=self.unblinded_stage_two,
-            unblinded_stage_three=self.unblinded_stage_three,
-            unblinded_covcorr=self.unblinded_covcorr,
-            pvalue=self.pvalue,
-            asimov_fits=self.asimov_fits,
-            asimov_impacts=self.asimov_impacts,
-            asimov_covcorr=self.asimov_covcorr,
-            unblinded_diff_spectra=self.unblinded_diff_spectra,
-            asimov_diff_spectra=self.asimov_diff_spectra,
+            datacard_only=combined_signal_only,
+            unblinded_fits=False if combined_signal_only else self.unblinded_fits,
+            unblinded_stage_one=False if combined_signal_only else self.unblinded_stage_one,
+            unblinded_stage_two=False if combined_signal_only else self.unblinded_stage_two,
+            unblinded_stage_three=False if combined_signal_only else self.unblinded_stage_three,
+            unblinded_covcorr=False if combined_signal_only else self.unblinded_covcorr,
+            pvalue=False if combined_signal_only else self.pvalue,
+            asimov_fits=False if combined_signal_only else self.asimov_fits,
+            asimov_impacts=False if combined_signal_only else self.asimov_impacts,
+            asimov_covcorr=False if combined_signal_only else self.asimov_covcorr,
+            unblinded_diff_spectra=False if combined_signal_only else self.unblinded_diff_spectra,
+            asimov_diff_spectra=False if combined_signal_only else self.asimov_diff_spectra,
             batch_system=self.batch_system,
             batch_flavor=self.batch_flavor,
         )
@@ -411,23 +544,39 @@ class FinalFitsYear(law.Task):
         else:
             output_dir = self.output_dir
 
-        fitConfig = config["combine_fit"]
-
         if convert_boolean_string(self.datacard_only):
-            tasks["RunT2WS"] = RunText2Workspace(
-                output_dir=output_dir,
-                variable=self.variable,
-                year=self.year,
-                version=self.variable if self.variable != "" else "inclusive",
-                batch_flavor=self.batch_flavor,
-                workflow=fitConfig["execution"],
-                slurm_partition=fitConfig['batchPartition'],
-                slurm_memory=fitConfig['batchMemory'],
-                slurm_max_runtime=fitConfig['batchMaxRuntime'],
-                htcondor_partition=fitConfig['batchPartition'],
-                htcondor_memory=fitConfig['batchMemory'],
-                htcondor_max_runtime=fitConfig['batchMaxRuntime'],
-            )
+            if is_signal_only_datacard(config):
+                yieldsConfig = config["datacard_yields"]
+                tasks["MakeDatacard"] = MakeDatacard(
+                    output_dir=output_dir,
+                    variable=self.variable,
+                    year=self.year,
+                    version=self.variable if self.variable != "" else "inclusive",
+                    batch_flavor=self.batch_flavor,
+                    workflow=yieldsConfig["execution"],
+                    slurm_partition=yieldsConfig['batchPartition'],
+                    slurm_memory=yieldsConfig['batchMemory'],
+                    slurm_max_runtime=yieldsConfig['batchMaxRuntime'],
+                    htcondor_partition=yieldsConfig['batchPartition'],
+                    htcondor_memory=yieldsConfig['batchMemory'],
+                    htcondor_max_runtime=yieldsConfig['batchMaxRuntime'],
+                )
+            else:
+                fitConfig = config["combine_fit"]
+                tasks["RunT2WS"] = RunText2Workspace(
+                    output_dir=output_dir,
+                    variable=self.variable,
+                    year=self.year,
+                    version=self.variable if self.variable != "" else "inclusive",
+                    batch_flavor=self.batch_flavor,
+                    workflow=fitConfig["execution"],
+                    slurm_partition=fitConfig['batchPartition'],
+                    slurm_memory=fitConfig['batchMemory'],
+                    slurm_max_runtime=fitConfig['batchMaxRuntime'],
+                    htcondor_partition=fitConfig['batchPartition'],
+                    htcondor_memory=fitConfig['batchMemory'],
+                    htcondor_max_runtime=fitConfig['batchMaxRuntime'],
+                )
             return tasks
 
         if convert_boolean_string(self.unblinded_fits):
@@ -493,6 +642,20 @@ class FinalFitsYear(law.Task):
             output_dir = self.output_dir
 
         if convert_boolean_string(self.datacard_only):
+            if is_signal_only_datacard(config):
+                datacard_config = config["datacard"]
+                datacard_name = datacard_config["output"]
+                output_paths = []
+                if datacard_config['saveDataFrame']:
+                    if self.variable == '':
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/Dataframe/{datacard_name}.pkl")))
+                    else:
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/Dataframe/{datacard_name}.pkl")))
+                        output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/Dataframe/{datacard_name}_unsymmetrized.pkl")))
+                output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/{datacard_name}.txt")))
+                if self.variable != '':
+                    output_paths.append(law.LocalFileTarget(os.path.join(output_dir, f"Datacards/{datacard_name}_unsymmetrized.txt")))
+                return output_paths
             if self.variable == '':
                 return [
                     law.LocalFileTarget(os.path.join(output_dir, "Combine", f"Datacard_{self.year}.txt")),

@@ -1,5 +1,28 @@
+lumi: 172
+cms_rlabel: "172 $\\mathrm{fb^{-1}}$ (13.6 TeV)"
+cms_label_fontsize: 22
+
 frame1:
   ylim:
-    bottom: 0
-    top: 0.1
-frame2: {}
+    bottom: 0.0001
+    top: 1000
+  figtext:
+    x: 0.875
+    y: 0.52
+    text: '$\frac{\sigma_{fid}(m_{jj} > 1000\ \mathrm{GeV})}{500\ \mathrm{GeV}}$'
+    horizontalalignment: "right"
+    rotation: 90
+    fontsize: 20
+frame2:
+  xlabel_fontsize: 18
+  additional_labels:
+    is_data:
+      - text: "$\\sigma(N_{\\mathrm{jets}}\\leq 1)$"
+        position: [-210, -1.05]
+        rotation: 45
+        fontsize: 16
+    not_data:
+      - text: "$\\sigma(N_{\\mathrm{jets}}\\leq 1)$"
+        position: [-210, -1.05]
+        rotation: 45
+        fontsize: 16

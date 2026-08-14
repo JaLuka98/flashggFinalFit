@@ -1,3 +1,6 @@
+lumi: 172
+cms_rlabel: "172 $\\mathrm{fb^{-1}}$ (13.6 TeV)"
+
 frame1:
   figtext:
     x: 0.875

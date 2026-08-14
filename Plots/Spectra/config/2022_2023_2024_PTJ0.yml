@@ -1,6 +1,10 @@
+lumi: 172
+cms_rlabel: "172 $\\mathrm{fb^{-1}}$ (13.6 TeV)"
+cms_label_fontsize: 22
+
 frame1:
   custom_xtick_labels:
-    - "0j"
+    - ""
     - "50"
     - "100"
     - "150"
@@ -26,7 +30,7 @@ frame1:
     lw: 1
     alpha: 1
   ylabel:
-    text: '$\\Delta\\sigma_{\\mathrm{fid}} / \\Delta p_{T}^{j1}$ (fb/GeV)'
+    text: '$\Delta\sigma_{\mathrm{fid}} / \Delta p_{T}^{j1}$ (fb/GeV)'
     fontsize: 20
   ylim:
     bottom: 0.001
@@ -35,7 +39,7 @@ frame1:
   title_fontsize: 14
   figtext:
     x: 0.875
-    y: 0.58
+    y: 0.52
     text: '$\frac{\sigma_{fid}(p_{T}^{j1} > 200.0\ GeV)}{200.0\ GeV}$'
     horizontalalignment: "right"
     rotation: 90
@@ -43,7 +47,7 @@ frame1:
 
 frame2:
   xtick_labels:
-    - "0j"
+    - ""
     - "50"
     - "100"
     - "150"
@@ -91,14 +95,14 @@ frame2:
   additional_labels:
     is_data:
       - text: '$\sigma(N_{Jets}=0)$'
-        position: [5, 0.1]
+        position: [-24, -1.30]
         rotation: 45
-        fontsize: 14
+        fontsize: 18
     not_data:
       - text: '$\sigma(N_{Jets}=0)$'
-        position: [5, 0.1]
+        position: [-24, -1.30]
         rotation: 45
-        fontsize: 14
+        fontsize: 18
   axvline:
     x: 30
     color: "black"

@@ -20,6 +20,10 @@ import mplhep as hep
 # Use CMS style from mplhep for plotting
 plt.style.use(hep.style.CMS)
 
+FIDXS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fidXS")
+if FIDXS_PATH not in sys.path:
+    sys.path.insert(0, FIDXS_PATH)
+
 from commonTools import *
 from commonObjects import *
 
@@ -334,11 +338,13 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             bins_c = np.array(bins_c, dtype=float)
             bin_w = np.array(bin_w, dtype=float)
             bin_w_plot = np.array(bin_w_plot, dtype=float)
+            bin_w_visual = bin_w_plot.copy()
         else:
             bins_plot = np.array(bins)
             if "overflow" in current_config.keys(): bins_plot[-1] = current_config['overflow']
-            # If first_bin_center <= 0, clip the left edge of bins_plot to x_lim start
-            # so the underflow bin histogram bar and its transition line are completely hidden.
+            # If first_bin_center <= 0, clip the left edge of bins_plot to x_lim start.
+            # This either hides an underflow bin cleanly or draws it with a finite
+            # visible width when show_underflow_bin is enabled.
             if current_config.get('first_bin_center', 1) <= 0:
                 bins_plot[0] = current_config.get('x_lim', [0, 1])[0]
             
@@ -346,6 +352,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             bins_c = (bins_plot[1:]+bins_plot[:-1])*0.5
             bin_w = np.array([bins_plot[k+1]-bins_plot[k] for k in range(len(bins)-1)])
             bin_w_plot = bin_w.copy()
+            bin_w_visual = bin_w.copy()  # actual plot-space widths, never overwritten by overflow/underflow widths
         xs['ggh'] = np.array(ggh_xs.fidXS)
         ggh_xs_norm = xs['ggh'] / bin_w
 
@@ -431,11 +438,14 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             unc_th_powheg_dn[0] = unc_th_powheg_dn[0] * bin_w[0]
             unc_th_no_nnlops_up[0] = unc_th_no_nnlops_up[0] * bin_w[0]
             unc_th_no_nnlops_dn[0] = unc_th_no_nnlops_dn[0] * bin_w[0]
-            bin_w[0] = 15
-            bin_w[-1] = 100
-            bin_w_plot[0] = 15
-            bin_w_plot[-1] = 100
-            
+            underflow_width = current_config.get('underflow_bin_width', 15)
+            overflow_width = current_config.get('overflow_bin_width', 100)
+            bin_w[0] = underflow_width
+            bin_w[-1] = overflow_width
+            bin_w_plot[0] = underflow_width
+            bin_w_plot[-1] = overflow_width
+            bin_w_visual[0] = underflow_width  # bins_plot[0] is -1000; use display width for patch positioning
+
         # Compute expected cross-section and uncertainties
         exp_xs = np.array(exp_xs_list) * (ggh_xs_norm + xh_xs_norm)
         err_up = np.array(err_up_list) * (ggh_xs_norm + xh_xs_norm)
@@ -470,8 +480,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         with open(plotting_config_path, 'r') as file:
             plotting_config = yaml.safe_load(file)
 
-        fig = plt.figure(figsize=(10,8), dpi=120) # (10,8)
-        frame1 = fig.add_axes((.1, .35, .8, .6)) #(.1, .35, .8, .6)
+        fig = plt.figure(figsize=tuple(plotting_config.get("figsize", (10, 8))), dpi=120) # (10,8)
+        frame1 = fig.add_axes(tuple(plotting_config.get("frame1_axes", (.1, .35, .8, .6)))) #(.1, .35, .8, .6)
         # frame1 = fig.add_axes((.1, .35, .8, .8))
         if current_config['no_preliminary']:
             cms_label = ""
@@ -482,8 +492,20 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         # print(args.no_preliminary, cms_label)
         # Use lumi from config if available, else build it from the individual years if something like 2022_2023 is queried
         # If that is also not the case, it is a single year, so take lumi from the map
-        if "lumi" in plotting_config:
-            intLumi = plotting_config["lumi"]
+        cms_label_kwargs = {
+            "data": convert_boolean_string(self.is_unblinded),
+            "fontsize": plotting_config.get("cms_label_fontsize", 20),
+            "com": plotting_config.get("com", 13.6),
+            "ax": frame1,
+        }
+        if "cms_label_loc" in plotting_config:
+            cms_label_kwargs["loc"] = plotting_config["cms_label_loc"]
+        if "cms_label_pad" in plotting_config:
+            cms_label_kwargs["pad"] = plotting_config["cms_label_pad"]
+        if "cms_rlabel" in plotting_config:
+            cms_label_kwargs["rlabel"] = plotting_config["cms_rlabel"]
+        elif "lumi" in plotting_config:
+            cms_label_kwargs["lumi"] = plotting_config["lumi"]
         else:
             year_str = str(self.year)
             if "_" in year_str:
@@ -491,7 +513,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
                 intLumi = sum(lumiMap[y] for y in years)
             else:
                 intLumi = lumiMap[year_str]
-        hep.cms.label(cms_label, data=convert_boolean_string(self.is_unblinded), lumi=intLumi, fontsize=20, com=13.6)
+            cms_label_kwargs["lumi"] = intLumi
+        hep.cms.label(cms_label, **cms_label_kwargs)
 
         # Plot theoretical predictions and experimental data
         plt.stairs((ggh_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + NNLOPS + Pythia) + xH', color='tab:blue')
@@ -503,22 +526,26 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         if (not plot_2d_as_1d) and current_config['last_bin_center'] > 0:
             bins_c[-1] = current_config['last_bin_center']
             
+        show_underflow_bin = current_config.get('show_underflow_bin', False)
+
         if plot_2d_as_1d:
             pass
         elif current_config['first_bin_center'] > 0:
+            bins_c[0] = current_config['first_bin_center']
+        elif show_underflow_bin:
             bins_c[0] = current_config['first_bin_center']
         else:
             # Push the underflow data point far off-screen (not plotted)
             bins_c[0] = current_config.get('x_lim', [0, 1])[0] - 1e6
         
         plt.rcParams['hatch.linewidth'] = 2
-        for center, value, err_low, err_high, width in zip(bins_c, ggh_xs_norm+xh_xs_norm, unc_th_dn, unc_th_up, bin_w_plot):
+        for center, value, err_low, err_high, width in zip(bins_c, ggh_xs_norm+xh_xs_norm, unc_th_dn, unc_th_up, bin_w_visual):
             plt.gca().add_patch(plt.Rectangle((center - width/4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:blue', hatch='///'))
         # POWHEG
-        for center, value, err_low, err_high, width in zip(bins_c, ggh_powheg_xs_norm+xh_xs_norm, unc_th_powheg_dn, unc_th_powheg_up, bin_w_plot):
+        for center, value, err_low, err_high, width in zip(bins_c, ggh_powheg_xs_norm+xh_xs_norm, unc_th_powheg_dn, unc_th_powheg_up, bin_w_visual):
             plt.gca().add_patch(plt.Rectangle((center + width/10, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='brown', hatch='////'))
         # Madgraph w/o NNLOPS
-        for center, value, err_low, err_high, width in zip(bins_c, ggh_no_nnlops_xs_norm+xh_xs_norm, unc_th_no_nnlops_dn, unc_th_no_nnlops_up, bin_w_plot):
+        for center, value, err_low, err_high, width in zip(bins_c, ggh_no_nnlops_xs_norm+xh_xs_norm, unc_th_no_nnlops_dn, unc_th_no_nnlops_up, bin_w_visual):
             plt.gca().add_patch(plt.Rectangle((center + width/3.6, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:purple', hatch='////'))
             
         # Default font sizes
@@ -586,18 +613,20 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         if not locals().get("custom_frame1_ylabel", False):
             plt.ylabel(r'$\Delta\sigma_{\text{fid}} / \Delta ' + current_config["variable"] + r'$ ' + current_config["y_unit"], fontsize=20)
         
-        if "y_lim_top" in current_config.keys(): plt.ylim(top=current_config["y_lim_top"])
+        frame1_has_ylim = 'frame1' in plotting_config and 'ylim' in plotting_config.get('frame1', {})
+        if "y_lim_top" in current_config.keys() and not frame1_has_ylim:
+            plt.ylim(top=current_config["y_lim_top"])
         plt.xlim(current_config['x_lim'])
 
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
     
-        legend_location = current_config.get('legend_location', 'upper right')
+        legend_location = plotting_config.get('legend_location', current_config.get('legend_location', 'upper right'))
         
         plt.legend(fontsize=fontsize, title='p-value (MadGraph NNLOPS) = '+ str(pvalue), alignment='left', loc= legend_location, title_fontsize=title_fontsize)
         frame1.set_xticklabels([])
 
-        frame2 = fig.add_axes((.1,.05,.8,.25))
+        frame2 = fig.add_axes(tuple(plotting_config.get("frame2_axes", (.1,.05,.8,.25))))
 
         # Plot ratio (Data/Prediction) in a separate frame
         ratio_xs = exp_xs / (ggh_xs_norm+xh_xs_norm)
@@ -620,13 +649,13 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
 
         plt.stairs(ratio_madgraph, bins_plot, linewidth=2, color='tab:blue')
 
-        for center, value, err_low, err_high, width in zip(bins_c, ratio_madgraph, ratio_unc_up, ratio_unc_dn, bin_w_plot):
+        for center, value, err_low, err_high, width in zip(bins_c, ratio_madgraph, ratio_unc_up, ratio_unc_dn, bin_w_visual):
             plt.gca().add_patch(plt.Rectangle((center - width/4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:blue', hatch='/////')) #/2
         # POWHEG
-        for center, value, err_low, err_high, width in zip(bins_c, ratio_powheg, ratio_unc_powheg_dn, ratio_unc_powheg_up, bin_w_plot):
+        for center, value, err_low, err_high, width in zip(bins_c, ratio_powheg, ratio_unc_powheg_dn, ratio_unc_powheg_up, bin_w_visual):
             plt.gca().add_patch(plt.Rectangle((center + width/10, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='brown', hatch='/////'))
         # Madgraph w/o NNLOPS
-        for center, value, err_low, err_high, width in zip(bins_c, ratio_no_nnlops, ratio_unc_no_nnlops_dn, ratio_unc_no_nnlops_up, bin_w_plot):
+        for center, value, err_low, err_high, width in zip(bins_c, ratio_no_nnlops, ratio_unc_no_nnlops_dn, ratio_unc_no_nnlops_up, bin_w_visual):
             plt.gca().add_patch(plt.Rectangle((center + width/3.6, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:purple', hatch='////'))
         
         plt.stairs(ratio_powheg, bins_plot, linewidth=2, color='brown')
@@ -690,7 +719,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         for b in bins_plot:
             plt.axvline(x=b, color='gray', ls='dashed', lw=1, alpha=0.5)
         
-        plt.ylabel(r'Data / Prediction', fontsize=frame2_ylabel_fontsize) #Not MC, since NNLOPS is based on a calculation
+        plt.ylabel(r'Ratio to MG5+NNLOPS', fontsize=16)
 
         plt.xlabel(r'$' + current_config["variable"] + r'$ ' + current_config["x_unit"], fontsize=frame2_xlabel_fontsize)
         plt.xticks(fontsize=frame2_xtick_fontsize, rotation=frame2_xtick_rotation)

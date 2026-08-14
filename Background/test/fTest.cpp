@@ -34,6 +34,7 @@
 #include "TH1I.h"
 #include "TArrow.h"
 #include "TKey.h"
+#include "TIterator.h"
 
 #include "RooCategory.h"
 #include "HiggsAnalysis/CombinedLimit/interface/RooMultiPdf.h"
@@ -78,6 +79,26 @@ struct GoFResult {
   int nFitParams;
   int ndof;
 };
+
+bool hasFiniteFitState(RooAbsPdf *pdf, RooDataSet *data, double nll, const std::string &context) {
+  if (!std::isfinite(nll)) {
+    std::cout << "[WARNING] Skipping " << context << ": non-finite NLL = " << nll << std::endl;
+    return false;
+  }
+
+  std::unique_ptr<RooArgSet> params(pdf->getParameters(*data));
+  std::unique_ptr<TIterator> iter(params->createIterator());
+  TObject *obj = nullptr;
+  while ((obj = iter->Next())) {
+    RooRealVar *var = dynamic_cast<RooRealVar*>(obj);
+    if (var && !std::isfinite(var->getVal())) {
+      std::cout << "[WARNING] Skipping " << context << ": non-finite parameter "
+                << var->GetName() << " = " << var->getVal() << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
 
 bool isSidebandPoint(double x) {
   return ((x >= mgg_low) && (x < blind_low)) || ((x >= blind_high) && (x <= mgg_high));
@@ -702,15 +723,20 @@ int getBestFitFunction(RooMultiPdf *bkg, RooDataSet *data, RooCategory *cat, boo
 		}
 		
 		//minim.minimize("Minuit2","minimize");
-		double minNll=0; //(nllm->getVal())+bkg->getCorrection();
-		int fitStatus=1;		
-		runFit(bkg->getCurrentPdf(),data,&minNll,&fitStatus,/*max iterations*/3);
-		// Add the penalty
+			double minNll=0; //(nllm->getVal())+bkg->getCorrection();
+			int fitStatus=1;		
+			runFit(bkg->getCurrentPdf(),data,&minNll,&fitStatus,/*max iterations*/3);
+			// Add the penalty
 
-		minNll=minNll+bkg->getCorrection();
+			minNll=minNll+bkg->getCorrection();
+			if (!hasFiniteFitState(bkg->getCurrentPdf(),data,minNll,
+			    Form("best-fit candidate %s",bkg->getCurrentPdf()->GetName()))) {
+			  params->assignValueOnly(clean);
+			  continue;
+			}
 
-		if (!silent) {
-			/*
+			if (!silent) {
+				/*
 			std::cout << "After Minimization ------------------  " <<std::endl;
 			std::cout << bkg->getCurrentPdf()->GetName() << " " << minNll <<std::endl;
 			bkg->Print("v");
@@ -998,10 +1024,15 @@ int main(int argc, char* argv[]){
 					int fitStatus = 0;
 					//thisNll = fitRes->minNll();
         bkgPdf->Print();
-					runFit(bkgPdf,data,&thisNll,&fitStatus,/*max iterations*/3);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
-					if (fitStatus!=0) std::cout << "[WARNING] Warning -- Fit status for " << bkgPdf->GetName() << " at " << fitStatus <<std::endl;
-       
-					chi2 = 2.*(prevNll-thisNll);
+						runFit(bkgPdf,data,&thisNll,&fitStatus,/*max iterations*/3);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
+						if (fitStatus!=0) std::cout << "[WARNING] Warning -- Fit status for " << bkgPdf->GetName() << " at " << fitStatus <<std::endl;
+						if (!hasFiniteFitState(bkgPdf,data,thisNll,
+						    Form("truth candidate %s",bkgPdf->GetName()))) {
+							order++;
+							continue;
+						}
+	       
+						chi2 = 2.*(prevNll-thisNll);
 					if (chi2<0. && order>1) chi2=0.;
 					if (prev_pdf!=NULL){
 						prob = getProbabilityFtest(chi2,order-prev_order,prev_pdf,bkgPdf,mass,data
@@ -1042,7 +1073,7 @@ int main(int argc, char* argv[]){
 				std::cout << "[INFO] Determining Envelope Functions for Family " << *funcType << ", cat " << cat << std::endl;
 				std::cout << "[INFO] Upper end Threshold for highest order function " << upperEnvThreshold <<std::endl;
 
-				while (prob<upperEnvThreshold){
+				while (prob<upperEnvThreshold && order < 7){
 					RooAbsPdf *bkgPdf = getPdf(pdfsModel,*funcType,order,Form("env_pdf_%d_%s",(cat+catOffset),ext.c_str()));
 					if (!bkgPdf ){
 						// assume this order is not allowed
@@ -1052,10 +1083,15 @@ int main(int argc, char* argv[]){
 					else {
 						//RooFitResult *fitRes;
 						int fitStatus=0;
-						runFit(bkgPdf,data,&thisNll,&fitStatus,/*max iterations*/3);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
-						//thisNll = fitRes->minNll();
-						if (fitStatus!=0) std::cout << "[WARNING] Warning -- Fit status for " << bkgPdf->GetName() << " at " << fitStatus <<std::endl;
-						double myNll = 2.*thisNll;
+							runFit(bkgPdf,data,&thisNll,&fitStatus,/*max iterations*/3);//bkgPdf->fitTo(*data,Save(true),RooFit::Minimizer("Minuit2","minimize"));
+							//thisNll = fitRes->minNll();
+							if (fitStatus!=0) std::cout << "[WARNING] Warning -- Fit status for " << bkgPdf->GetName() << " at " << fitStatus <<std::endl;
+							if (!hasFiniteFitState(bkgPdf,data,thisNll,
+							    Form("envelope candidate %s",bkgPdf->GetName()))) {
+								order++;
+								continue;
+							}
+							double myNll = 2.*thisNll;
 						chi2 = 2.*(prevNll-thisNll);
 						if (chi2<0. && order>1) chi2=0.;
 						prob = TMath::Prob(chi2,order-prev_order);

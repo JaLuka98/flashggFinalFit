@@ -10,6 +10,67 @@ import re
 
 HIGGS_MASS = "125.07"
 
+def get_lumi_label(year):
+  if year == "2022_2023_2024":
+    return "172 fb^{-1} (13.6 TeV)"
+  return "%0.1f fb^{-1} (13.6 TeV)"%lumiMap[f"{year}"]
+
+def get_matrix_style(mode, do_cov=False):
+  style = {
+    "canvas": (900, 900),
+    "top_margin": 0.13,
+    "right_margin": 0.15,
+    "left_margin": 0.22,
+    "bottom_margin": 0.22,
+    "axis_label_size": 0.05,
+    "marker_size": 1.35,
+    "top_text_size": 0.045,
+    "info_text_size": 0.040,
+    "manual_text": False,
+    "manual_text_size": 0.028,
+    "text_threshold": 0.005 if not do_cov else 0.004,
+  }
+  if mode.count("PTH"):
+    style.update({
+      "canvas": (2300, 2150),
+      "top_margin": 0.13,
+      "right_margin": 0.14,
+      "left_margin": 0.23,
+      "bottom_margin": 0.26,
+      "axis_label_size": 0.027,
+      "marker_size": 0.75,
+      "top_text_size": 0.045,
+      "info_text_size": 0.040,
+      "manual_text": True,
+      "manual_text_size": 0.014,
+      "text_threshold": None,
+    })
+  elif mode.count("rapidity"):
+    style.update({
+      "canvas": (1200, 1150),
+      "axis_label_size": 0.044,
+      "marker_size": 1.05,
+      "top_text_size": 0.045,
+      "info_text_size": 0.040,
+    })
+  elif mode.count("NJ"):
+    style.update({
+      "canvas": (1050, 1000),
+      "axis_label_size": 0.052,
+      "marker_size": 1.35,
+      "top_text_size": 0.045,
+      "info_text_size": 0.040,
+    })
+  elif mode in ["PTJ0", "PTJ1", "YJ0", "CosThetaStarCS", "MassJ0J1"]:
+    style.update({
+      "canvas": (1200, 1150),
+      "axis_label_size": 0.046,
+      "marker_size": 1.20,
+      "top_text_size": 0.045,
+      "info_text_size": 0.040,
+    })
+  return style
+
 def get_options():
   parser = OptionParser()
   parser.add_option('--inputJson', dest='inputJson', default='inputs.json', help="Input json file to define fits")
@@ -22,7 +83,7 @@ def get_options():
   parser.add_option('--dropTHQ', dest='dropTHQ', default=False, action="store_true", help='Drop r_tHq from the poi list')
   parser.add_option('--doObserved', dest='doObserved', default=False, action="store_true", help='Do observed correlation')
   parser.add_option('--noPreliminary', dest='noPreliminary', default=False, action="store_true", help='Flag, if final plot should bear the Preliminary.')
-  parser.add_option('--year', dest='year', default='2022', help='Considered year (necessary for correct integrated luminosity.)')
+  parser.add_option('--year', dest='year', default='2022_2023_2024', help='Considered year (necessary for correct integrated luminosity.)')
   return parser.parse_args()
 (opt,args) = get_options() 
 
@@ -52,6 +113,7 @@ modes[opt.mode] = pois
 translate = {} if opt.translate is None else LoadTranslations(opt.translate)
 
 for mode,pois in modes.items():
+  matrix_style = get_matrix_style(mode, opt.doCov)
   fileName = opt.input
   # fileName = '%s/src/flashggFinalFit/Combine/runFits%s_%s/robustHesse_%s%s.root'%(os.environ['CMSSW_BASE'],opt.ext,opt.mode,name,obs_ext)
   inFile = ROOT.TFile(fileName,'READ')
@@ -112,12 +174,12 @@ for mode,pois in modes.items():
 
   if mode.count('stage1p2'): canv = setCanvasCorr(stage='1p2')
   elif mode.count('mu_reco'): canv = setCanvasCorr(stage='1p2')
-  elif mode.count("PTH"):
-    canv = ROOT.TCanvas("can", "can", 1900, 1800)
-    canv.GetPad(0).SetTopMargin(0.10)
-    canv.GetPad(0).SetRightMargin(0.14)
-    canv.GetPad(0).SetLeftMargin(0.22)
-    canv.GetPad(0).SetBottomMargin(0.25)
+  elif mode in differentialProcTable_:
+    canv = ROOT.TCanvas("can", "can", matrix_style["canvas"][0], matrix_style["canvas"][1])
+    canv.GetPad(0).SetTopMargin(matrix_style["top_margin"])
+    canv.GetPad(0).SetRightMargin(matrix_style["right_margin"])
+    canv.GetPad(0).SetLeftMargin(matrix_style["left_margin"])
+    canv.GetPad(0).SetBottomMargin(matrix_style["bottom_margin"])
     canv.GetPad(0).SetTicks(1, 1)
   else:
     if opt.doCov:
@@ -170,49 +232,27 @@ for mode,pois in modes.items():
     theHist.GetXaxis().SetLabelOffset(0.003)
     theHist.GetXaxis().LabelsOption("v")
     if opt.doCov:
-      if mode.count("PTH"):
-        label_size = 0.030
-        theHist.GetXaxis().SetLabelSize(label_size)
-        theHist.GetYaxis().SetLabelSize(label_size)
-        theHist.SetMarkerSize(1.0)
-      else:
-        label_size = 0.06
-        theHist.GetXaxis().SetLabelSize(label_size)
-        theHist.GetYaxis().SetLabelSize(label_size)
-        theHist.SetMarkerSize(2)
-    else:
-      if mode.count("PTH"):
-        label_size = 0.030
-      elif mode.count("rapidity"):
-        label_size = 0.06
-      elif mode.count("NJ"):
-        label_size = 0.06
-      elif mode.count("PTJ0"):
-        label_size = 0.06
-      else:
-        label_size = 0.03
+      label_size = matrix_style["axis_label_size"]
       theHist.GetXaxis().SetLabelSize(label_size)
       theHist.GetYaxis().SetLabelSize(label_size)
-      if mode.count("PTH"):
-        theHist.SetMarkerSize(1.0)
-      else:
-        theHist.SetMarkerSize(1.5)
+      theHist.SetMarkerSize(matrix_style["marker_size"])
+    else:
+      label_size = matrix_style["axis_label_size"]
+      theHist.GetXaxis().SetLabelSize(label_size)
+      theHist.GetYaxis().SetLabelSize(label_size)
+      theHist.SetMarkerSize(matrix_style["marker_size"])
   else:
     theHist.GetYaxis().SetLabelOffset(0.007)  
     theHist.SetMarkerSize(1.5)
-  draw_text_manually = mode.count("PTH")
+  draw_text_manually = matrix_style["manual_text"]
   draw_option = 'colz' if draw_text_manually else 'colz,text'
   theHist.Draw(draw_option)
   latex = ROOT.TLatex()
   latex.SetNDC()
   latex.SetTextFont(42)
   latex.SetTextAlign(12)
-  if mode.count("PTH"):
-    top_text_size = 0.03
-    info_text_size = 0.032
-  else:
-    top_text_size = 0.045
-    info_text_size = 0.04
+  top_text_size = matrix_style["top_text_size"]
+  info_text_size = matrix_style["info_text_size"]
   latex.SetTextSize(top_text_size)
   cms_x = canv.GetLeftMargin() + 0.005
   top_y = 1.00-canv.GetTopMargin()+0.025
@@ -222,13 +262,10 @@ for mode,pois in modes.items():
     else:
       latex.DrawLatex(cms_x, top_y, '#bf{CMS} #it{Preliminary}')
   else:
-    if opt.noPreliminary:
-      latex.DrawLatex(cms_x, top_y, '#bf{CMS} #it{Simulation}')
-    else:
-      latex.DrawLatex(cms_x, top_y, '#bf{CMS} #it{Simulation Preliminary}')
+    latex.DrawLatex(cms_x, top_y, '#bf{CMS} #it{Simulation}')
   latex.SetTextSize(top_text_size)
   latex.SetTextAlign(32)
-  latex.DrawLatex(1.00-canv.GetRightMargin(), top_y, '%0.1f fb^{-1} (13.6 TeV)'%lumiMap[f"{opt.year}"])
+  latex.DrawLatex(1.00-canv.GetRightMargin(), top_y, get_lumi_label(opt.year))
   latex.SetTextSize(info_text_size)
   latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.04,f'{translate[opt.mode]}')
   latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.10,'H #rightarrow #gamma#gamma')
@@ -237,8 +274,8 @@ for mode,pois in modes.items():
   text_latex = ROOT.TLatex()
   text_latex.SetTextAlign(22)
   text_latex.SetTextFont(42)
-  text_latex.SetTextSize(0.018 if mode.count("PTH") else 0.03)
-  text_threshold = None if mode.count("PTH") else (0.004 if opt.doCov else 0.005)
+  text_latex.SetTextSize(matrix_style["manual_text_size"])
+  text_threshold = matrix_style["text_threshold"]
   for binx in range(1, theHist.GetNbinsX() + 1):
     for biny in range(1, theHist.GetNbinsY() + 1):
         value = theHist.GetBinContent(binx, biny)
@@ -252,6 +289,24 @@ for mode,pois in modes.items():
         label = "{:.2f}".format(value)
         text_latex.SetTextColor(ROOT.kWhite if abs(value) > 0.8 else ROOT.kBlack)
         text_latex.DrawLatex(theHist.GetXaxis().GetBinCenter(binx), theHist.GetYaxis().GetBinCenter(biny), label)
+  if mode == "PTHvsNJ":
+    group_sizes = [10, 5, 5]  # NJ=0, NJ=1, NJ>=2 bin counts
+    separators = []
+    cumsum = 0
+    for gs in group_sizes[:-1]:
+      cumsum += gs
+      separators.append(cumsum - 0.5)  # 9.5, 14.5
+    pthvsnj_lines = []
+    for sep in separators:
+      diag = (nPars - 1) - sep
+      for coords in [(sep, -0.5, sep, diag), (-0.5, diag, sep, diag)]:
+        ln = ROOT.TLine(*coords)
+        ln.SetLineStyle(2)
+        ln.SetLineWidth(2)
+        ln.SetLineColor(ROOT.kBlack)
+        ln.Draw()
+        pthvsnj_lines.append(ln)
+
   output_dir = opt.output
   if opt.doCov:
     output_path_png = os.path.join(opt.output, "covMatrix_%s_%s%s%s.png"%(mode,name.split("_")[-1],obs_ext,opt.ext))

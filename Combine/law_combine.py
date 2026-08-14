@@ -65,6 +65,16 @@ def _save_specified_index_args(pdf_indices):
         return []
     return ["--saveSpecifiedIndex", save_specified_index]
 
+def _scan_parameter_range_args(config, poi):
+    range_spec = config.get("combine_fit", {}).get("setParameterRange", "")
+    if not range_spec:
+        return []
+    parts = [
+        f"{poi}={part.split('=', 1)[1]}" if part.split("=", 1)[0] == "r" else part
+        for part in range_spec.split(":")
+    ]
+    return ["--setParameterRanges", ":".join(parts)]
+
 def execute_command(command, return_output=False, shell=False):
     try:
         result = subprocess.run(command, check=True, text=True, capture_output=True, shell=shell, env=os.environ)
@@ -296,7 +306,7 @@ class PrepareTheDirectory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkfl
 
         for cat in cat_list:
             output_data.append(os.path.join(output_dir, 'Combine', background_model_folder_name, 'background', f'CMS-HGG_multipdf_{cat}.root'))
-            output_data.append(os.path.join(output_dir, 'Combine', model_folder_name, 'signal', f'CMS-HGG_sigfit_packaged{outputExt}_{cat}.root'))
+            output_data.append(os.path.join(output_dir, 'Combine', signal_model_folder_name, 'signal', f'CMS-HGG_sigfit_packaged{outputExt}_{cat}.root'))
 
         # Define the file paths
         if self.variable == '':
@@ -1155,6 +1165,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--snapshotName", "MultiDimFit",
                 "--setParameters", set_param_string,
             ]
+            arguments.extend(_scan_parameter_range_args(config, current_cat))
             arguments.extend(_save_specified_index_args(pdf_indices))
             command = arguments
             # print(command)
@@ -1449,6 +1460,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--snapshotName", "MultiDimFit",
                 "--setParameters", set_param_string,
             ]
+            arguments.extend(_scan_parameter_range_args(config, current_cat))
             arguments.extend(_save_specified_index_args(pdf_indices))
             command = arguments
             # print(command)
@@ -3573,6 +3585,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--setParameters", paramStr,
                 "-w", "w",
             ]
+            arguments.extend(_scan_parameter_range_args(config, current_cat))
         command = arguments
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
@@ -3784,6 +3797,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--lastPoint", f"{current_point}",
                 "-w", "w",
             ]
+            arguments.extend(_scan_parameter_range_args(config, cat))
         command = arguments
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)

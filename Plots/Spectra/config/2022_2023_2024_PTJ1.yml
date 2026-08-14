@@ -1,12 +1,16 @@
+lumi: 172
+cms_rlabel: "172 $\\mathrm{fb^{-1}}$ (13.6 TeV)"
+cms_label_fontsize: 22
+
 frame1:
   custom_xtick_labels:
-    - "30"
+    - ""
     - "50"
     - "100"
     - "150"
     - "200"
   custom_xticks:
-    - 30
+    - 15
     - 50
     - 100
     - 150
@@ -20,32 +24,41 @@ frame1:
   fontsize: 14
   title_fontsize: 14
   ylim:
-    bottom: 0
-    top: 1.0
+    bottom: 0.0001
+    top: 2500
   figtext:
     x: 0.875
-    y: 0.58
+    y: 0.55
     text: '$\frac{\sigma_{fid}(p_{T}^{j_{1}} > 200.0\ GeV)}{200.0\ GeV}$'
     horizontalalignment: "right"
     rotation: 90
-    fontsize: 14
+    fontsize: 18
 
 frame2:
   xtick_labels:
-    - "30"
+    - ""
     - "50"
     - "100"
     - "150"
     - "200"
   xticks:
-    - 30
+    - 15
     - 50
     - 100
     - 150
     - 200
+  #xlabel_fontsize: 22
   additional_labels:
-    is_data: []
-    not_data: []
+    is_data:
+      - text: "$\\sigma(N_{\\mathrm{jets}}\\leq 1)$"
+        position: [-7, -1.40]
+        rotation: 45
+        fontsize: 18
+    not_data:
+      - text: "$\\sigma(N_{\\mathrm{jets}}\\leq 1)$"
+        position: [-7, -1.40]
+        rotation: 45
+        fontsize: 18
   axvline:
     x: 30
     color: "black"
