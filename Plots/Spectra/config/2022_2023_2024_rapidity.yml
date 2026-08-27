@@ -1,8 +1,13 @@
 frame1:
   ylim:
-    top: 78   # pick a value that leaves headroom
-  fontsize: 13
-  title_fontsize: 13
+    top: 90   # pick a value that leaves headroom
+  fontsize: 14
+  title_fontsize: 14
+frame2:
+  ylim:
+    bottom: 0.1
+    top: 2.1   # pick a value that leaves headroom
+
 
 lumi: 172
 cms_rlabel: "172 $\\mathrm{fb^{-1}}$ (13.6 TeV)"

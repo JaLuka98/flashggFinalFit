@@ -14,7 +14,7 @@ frame1:
     rotation: 90
     fontsize: 20
 frame2:
-  xlabel_fontsize: 18
+  xlabel_fontsize: 20
   additional_labels:
     is_data:
       - text: "$\\sigma(N_{\\mathrm{jets}}\\leq 1)$"

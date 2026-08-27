@@ -711,7 +711,7 @@ def plotSplines(_finalModel,_outdir="./",_nominalMass='125',splinesToPlot=['xs',
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Function for plotting final signal model: neat
 def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
-  colorMap = {'2016':38,'2017':30,'2018':46,'2022preEE':38,'2022postEE':30}
+  colorMap = {'2016':38,'2017':30,'2018':46,'2022preEE':38,'2022postEE':30,'2022':38,'2023':30,'2024':46}
   canv = ROOT.TCanvas("c","c",650,600)
   canv.SetBottomMargin(0.12)
   canv.SetLeftMargin(0.15)
@@ -747,14 +747,15 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
     leg0.AddEntry(_hists['pdf'],"#splitline{Parametric}{model}","l")
     leg0.Draw("Same")
 
-    leg1 = ROOT.TLegend(0.17+offset,0.45,0.4+offset,0.61)
+    leg1 = ROOT.TLegend(0.17+offset,0.37,0.5+offset,0.61)
     leg1.SetFillStyle(0)
     leg1.SetLineColor(0)
     leg1.SetTextSize(0.03)
-    for year in _opt.years.split(","): leg1.AddEntry(_hists['pdf_%s'%year],"#splitline{%s:}{#scale[0.8]{#sigma_{eff} = %1.2f GeV}}"%(year,getEffSigma(_hists['pdf_%s'%year])),"l")
+    leg1.SetMargin(0.15)
+    for year in _opt.years.split(","): leg1.AddEntry(_hists['pdf_%s'%year],"%s: #sigma_{eff} = %1.2f GeV"%(year,getEffSigma(_hists['pdf_%s'%year])),"l")
     leg1.Draw("Same")
 
-    leg2 = ROOT.TLegend(0.15+offset,0.3,0.5+offset,0.45)
+    leg2 = ROOT.TLegend(0.15+offset,0.22,0.5+offset,0.37)
     leg2.SetFillStyle(0)
     leg2.SetLineColor(0)
     leg2.SetTextSize(0.03)
@@ -824,8 +825,9 @@ def plotSignalModel(_hists,_opt,_outdir=".",offset=0.02):
   lat0.SetNDC()
   lat0.SetTextSize(0.045)
   lat0.DrawLatex(0.15,0.92,"#bf{CMS} #it{%s}"%_opt.label)
-  #lat0.DrawLatex(0.77,0.92,"%s TeV"%(sqrts__.split("TeV")[0]))
-  lat0.DrawLatex(0.77,0.92,"13.6 TeV")
+  lat0.SetTextAlign(31)
+  lat0.DrawLatex(1.-canv.GetRightMargin(),0.92,"13.6 TeV")
+  lat0.SetTextAlign(11)
   lat0.DrawLatex(0.16+offset,0.83,"H #rightarrow #gamma#gamma")
 
   # Load translations
