@@ -5,10 +5,10 @@ cms_label_fontsize: 22
 frame1:
   ylim:
     bottom: 0
-    top: 180
-  fontsize: 11
-  title_fontsize: 11
-cms_label_fontsize: 17
+    top: 210
+  fontsize: 14
+  title_fontsize: 14
+
 frame2:
   xticks: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
   xtick_labels: ["0", "0.2", "0.4", "0.6", "0.8", "1.0"]

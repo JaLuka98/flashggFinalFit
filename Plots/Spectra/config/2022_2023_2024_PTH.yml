@@ -11,8 +11,8 @@ frame1:
     fontsize: 22
     usetex: True
     usetex: True
-  fontsize: 13
-  title_fontsize: 13
+  fontsize: 14
+  title_fontsize: 14
 frame2:
   figtext:
     x: 0.875
@@ -23,5 +23,5 @@ frame2:
     fontsize: 22
     usetex: True
     usetex: True
-  fontsize: 13
-  title_fontsize: 13
+  fontsize: 14
+  title_fontsize: 14

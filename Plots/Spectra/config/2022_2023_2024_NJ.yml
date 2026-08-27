@@ -20,10 +20,9 @@ frame1:
     fontsize: 20
   ylim:
     bottom: 0.1
-    top: 1000
+    top: 10000
   fontsize: 14
   title_fontsize: 14
-cms_label_fontsize: 16
 
 frame2:
   ylim:

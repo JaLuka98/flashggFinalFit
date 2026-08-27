@@ -24,7 +24,7 @@ PLOT_YEARS = {
     "2022": ["2022preEE", "2022postEE", "2022preEE,2022postEE"],
     "2023": ["2023preBPix", "2023postBPix", "2023preBPix,2023postBPix"],
     "2024": ["2024"],
-    "2022_2023_2024": ["2022preEE,2022postEE,2023preBPix,2023postBPix,2024"],
+    "2022_2023_2024": ["2022,2023,2024"],
 }
 
 CATEGORIES = {
@@ -40,7 +40,7 @@ CATEGORY_LABELS = {
     "worst_resolution": "Worst resolution",
 }
 
-LABEL = "Simulation Preliminary"
+LABEL = "Simulation"
 DO_FWHM = False
 MAX_WORKERS = 8
 
@@ -131,7 +131,14 @@ def make_runplotter_inputs(label, config):
     return ext, output_dir, category_labels
 
 
-def run_plotter(output_dir, ext, years, category, category_labels):
+# Label for which per-sub-era years are merged into single calendar-year
+# curves (e.g. 2022preEE+2022postEE -> "2022"); this is the only label that
+# also gets a "wall" (S/(S+B)-weighted all-categories) plot, using weights
+# computed by compute_inclusive_cat_weights.py from the inclusive datacard.
+MERGED_YEARS_LABEL = "2022_2023_2024"
+
+
+def run_plotter(output_dir, ext, years, category, category_labels, plot_years_separate=False, cat_weights=None):
     command = [
         sys.executable,
         "RunPlotter.py",
@@ -152,6 +159,12 @@ def run_plotter(output_dir, ext, years, category, category_labels):
     if DO_FWHM:
         command.append("--doFWHM")
 
+    if plot_years_separate:
+        command.append("--plot-years-separate")
+
+    if cat_weights:
+        command += ["--loadCatWeights", str(cat_weights)]
+
     print(" ".join(command))
     env = os.environ.copy()
     env["RUNPLOTTER_SIGNAL_DIR"] = str(output_dir)
@@ -167,10 +180,20 @@ def main():
     for label, config_path in CONFIGS.items():
         config = read_config(config_path)
         ext, output_dir, category_labels = make_runplotter_inputs(label, config)
+        plot_years_separate = label == MERGED_YEARS_LABEL
+        cat_weights = output_dir / f"outdir_{ext}" / "catWeights.json" if label == MERGED_YEARS_LABEL else None
 
         for years in PLOT_YEARS[label]:
             for category in CATEGORIES.values():
-                jobs.append((output_dir, ext, years, category, category_labels))
+                jobs.append((output_dir, ext, years, category, category_labels, plot_years_separate, None))
+
+            if label == MERGED_YEARS_LABEL:
+                if not cat_weights.exists():
+                    raise FileNotFoundError(
+                        f"Missing category weights for wall plot: {cat_weights}. "
+                        "Run Signal/compute_inclusive_cat_weights.py first."
+                    )
+                jobs.append((output_dir, ext, years, "wall", category_labels, plot_years_separate, cat_weights))
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         futures = [pool.submit(run_plotter, *job) for job in jobs]
