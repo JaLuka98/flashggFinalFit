@@ -4,8 +4,8 @@ outputFolder: '/net/data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/s
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials_correct_nj/2024/MassJ0J1/root/data/allData_2024.root'
-  Trees2WS: '/net/data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_differentials_correct_nj/2024/MassJ0J1/root/mc/'
+  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2026_27_08/Mjj_hig_19_016_binning/2024/data/allData_2024.root'
+  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2026_27_08/Mjj_hig_19_016_binning/2024/signal/'
 
 backgroundScriptCfg:
   # Setup
