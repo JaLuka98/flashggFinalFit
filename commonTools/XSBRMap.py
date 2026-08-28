@@ -184,6 +184,17 @@ globalXSBRMap['Run3FidXSAnalysis']['bbh_out'] = {'mode':'constant','factor':0.49
 
 
 
+def _add_differential_out_xsbr(mode, factor, variable):
+    """Add normalization entries for every declared out-of-fiducial bin."""
+    for _, process_name in differentialProcTable_[variable]:
+        if process_name.endswith("_out"):
+            key = f"{mode}_{process_name}"
+            globalXSBRMap['Run3FidXSAnalysis'][key] = {
+                'mode': 'constant',
+                'factor': factor,
+            }
+
+
 for _mode, _factor in [
     ("ggh", 51.96),
     ("vbf", 4.067),
@@ -194,7 +205,7 @@ for _mode, _factor in [
     for _bin in PTH_BINS:
         key = f"{_mode}_PTH_{_bin}_in"
         globalXSBRMap['Run3FidXSAnalysis'][key] = {'mode':'constant','factor':_factor}
-    globalXSBRMap['Run3FidXSAnalysis'][f"{_mode}_PTH_0p0_10000p0_out"] = {'mode':'constant','factor':_factor}
+    _add_differential_out_xsbr(_mode, _factor, "PTH")
 
 
 for _mode, _factor in [
@@ -207,9 +218,7 @@ for _mode, _factor in [
     for _bin in MASSJ0J1_BINS:
         key = f"{_mode}_MassJ0J1_{_bin}_in"
         globalXSBRMap['Run3FidXSAnalysis'][key] = {'mode':'constant','factor':_factor}
-    for _out_bin in ["m10000p0_10000p0", "0p0_10000p0"]:
-        key = f"{_mode}_MassJ0J1_{_out_bin}_out"
-        globalXSBRMap['Run3FidXSAnalysis'][key] = {'mode':'constant','factor':_factor}
+    _add_differential_out_xsbr(_mode, _factor, "MassJ0J1")
 
 
 RAPIDITY_BINS = [
@@ -243,7 +252,7 @@ for _mode, _factor in [
     for _bin in RAPIDITY_BINS:
         key = f"{_mode}_YH_{_bin}_in"
         globalXSBRMap['Run3FidXSAnalysis'][key] = {'mode':'constant','factor':_factor}
-    globalXSBRMap['Run3FidXSAnalysis'][f"{_mode}_YH_0p0_2p5_out"] = {'mode':'constant','factor':_factor}
+    _add_differential_out_xsbr(_mode, _factor, "rapidity")
 
 
 for _mode, _factor in [

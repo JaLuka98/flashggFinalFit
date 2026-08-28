@@ -29,7 +29,7 @@ def _build_pth_model():
   for _bin in _PTH_BINS:
     for _proc in _PTH_PROCS:
       segments.append(
-        f'--PO "map=.*/{_proc}_PTH_{_bin}.*:r_PTH_{_bin}[1,-1,3]"'
+        f'--PO "map=.*/{_proc}_PTH_{_bin}_in.*:r_PTH_{_bin}[1,-1,3]"'
       )
   return " ".join(segments)
 
@@ -54,7 +54,34 @@ def _build_massj0j1_model():
   for _bin in _MASSJ0J1_BINS:
     for _proc in _MASSJ0J1_PROCS:
       segments.append(
-        f'--PO "map=.*/{_proc}_MassJ0J1_{_bin}.*:r_MassJ0J1_{_bin}[1,-8,8]"'
+        f'--PO "map=.*/{_proc}_MassJ0J1_{_bin}_in.*:r_MassJ0J1_{_bin}[1,-8,8]"'
+      )
+  return " ".join(segments)
+
+
+_RAPIDITY_BINS = [
+  "0p0_0p15",
+  "0p15_0p3",
+  "0p3_0p45",
+  "0p45_0p6",
+  "0p6_0p75",
+  "0p75_0p9",
+  "0p9_1p2",
+  "1p2_1p6",
+  "1p6_2p0",
+  "2p0_2p5",
+]
+_RAPIDITY_PROCS = ["ggh", "tth", "vh", "vbf"]
+
+
+def _build_rapidity_model():
+  segments = [
+    "-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel",
+  ]
+  for _bin in _RAPIDITY_BINS:
+    for _proc in _RAPIDITY_PROCS:
+      segments.append(
+        f'--PO "map=.*/{_proc}_YH_{_bin}_in.*:r_YH_{_bin}[1,-3,3]"'
       )
   return " ".join(segments)
 
@@ -319,47 +346,7 @@ models = {
 
   "MassJ0J1": _build_massj0j1_model(),
 
-  "rapidity":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
---PO \"map=.*/ggh_YH_0p0_0p15.*:r_YH_0p0_0p15[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p0_0p15.*:r_YH_0p0_0p15[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p0_0p15.*:r_YH_0p0_0p15[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p0_0p15.*:r_YH_0p0_0p15[1,-3,3]\" \
---PO \"map=.*/ggh_YH_0p15_0p3.*:r_YH_0p15_0p3[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p15_0p3.*:r_YH_0p15_0p3[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p15_0p3.*:r_YH_0p15_0p3[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p15_0p3.*:r_YH_0p15_0p3[1,-3,3]\" \
---PO \"map=.*/ggh_YH_0p3_0p45.*:r_YH_0p3_0p45[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p3_0p45.*:r_YH_0p3_0p45[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p3_0p45.*:r_YH_0p3_0p45[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p3_0p45.*:r_YH_0p3_0p45[1,-3,3]\" \
---PO \"map=.*/ggh_YH_0p45_0p6.*:r_YH_0p45_0p6[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p45_0p6.*:r_YH_0p45_0p6[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p45_0p6.*:r_YH_0p45_0p6[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p45_0p6.*:r_YH_0p45_0p6[1,-3,3]\" \
---PO \"map=.*/ggh_YH_0p6_0p75.*:r_YH_0p6_0p75[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p6_0p75.*:r_YH_0p6_0p75[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p6_0p75.*:r_YH_0p6_0p75[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p6_0p75.*:r_YH_0p6_0p75[1,-3,3]\" \
---PO \"map=.*/ggh_YH_0p75_0p9.*:r_YH_0p75_0p9[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p75_0p9.*:r_YH_0p75_0p9[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p75_0p9.*:r_YH_0p75_0p9[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p75_0p9.*:r_YH_0p75_0p9[1,-3,3]\" \
---PO \"map=.*/ggh_YH_0p9_1p2.*:r_YH_0p9_1p2[1,-3,3]\" \
---PO \"map=.*/tth_YH_0p9_1p2.*:r_YH_0p9_1p2[1,-3,3]\" \
---PO \"map=.*/vh_YH_0p9_1p2.*:r_YH_0p9_1p2[1,-3,3]\" \
---PO \"map=.*/vbf_YH_0p9_1p2.*:r_YH_0p9_1p2[1,-3,3]\" \
---PO \"map=.*/ggh_YH_1p2_1p6.*:r_YH_1p2_1p6[1,-3,3]\" \
---PO \"map=.*/tth_YH_1p2_1p6.*:r_YH_1p2_1p6[1,-3,3]\" \
---PO \"map=.*/vh_YH_1p2_1p6.*:r_YH_1p2_1p6[1,-3,3]\" \
---PO \"map=.*/vbf_YH_1p2_1p6.*:r_YH_1p2_1p6[1,-3,3]\" \
---PO \"map=.*/ggh_YH_1p6_2p0.*:r_YH_1p6_2p0[1,-3,3]\" \
---PO \"map=.*/tth_YH_1p6_2p0.*:r_YH_1p6_2p0[1,-3,3]\" \
---PO \"map=.*/vh_YH_1p6_2p0.*:r_YH_1p6_2p0[1,-3,3]\" \
---PO \"map=.*/vbf_YH_1p6_2p0.*:r_YH_1p6_2p0[1,-3,3]\" \
---PO \"map=.*/ggh_YH_2p0_2p5.*:r_YH_2p0_2p5[1,-3,3]\" \
---PO \"map=.*/tth_YH_2p0_2p5.*:r_YH_2p0_2p5[1,-3,3]\" \
---PO \"map=.*/vh_YH_2p0_2p5.*:r_YH_2p0_2p5[1,-3,3]\" \
---PO \"map=.*/vbf_YH_2p0_2p5.*:r_YH_2p0_2p5[1,-3,3]\"",
+  "rapidity": _build_rapidity_model(),
 
   "Njets2p5_5bin":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggh_NJ_0p0_1p0.*:r_NJ_0p0_1p0[1,0,3]\" \
