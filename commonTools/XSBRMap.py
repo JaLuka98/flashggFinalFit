@@ -197,6 +197,21 @@ for _mode, _factor in [
     globalXSBRMap['Run3FidXSAnalysis'][f"{_mode}_PTH_0p0_10000p0_out"] = {'mode':'constant','factor':_factor}
 
 
+for _mode, _factor in [
+    ("ggh", 51.96),
+    ("vbf", 4.067),
+    ("vh", 2.3781),
+    ("tth", 0.5638),
+    ("bbh", 0.49),
+]:
+    for _bin in MASSJ0J1_BINS:
+        key = f"{_mode}_MassJ0J1_{_bin}_in"
+        globalXSBRMap['Run3FidXSAnalysis'][key] = {'mode':'constant','factor':_factor}
+    for _out_bin in ["m10000p0_10000p0", "0p0_10000p0"]:
+        key = f"{_mode}_MassJ0J1_{_out_bin}_out"
+        globalXSBRMap['Run3FidXSAnalysis'][key] = {'mode':'constant','factor':_factor}
+
+
 RAPIDITY_BINS = [
     "0p0_0p15",
     "0p15_0p3",

@@ -34,6 +34,31 @@ def _build_pth_model():
   return " ".join(segments)
 
 
+_MASSJ0J1_BINS = [
+  "m10000p0_0p0",
+  "0p0_75p0",
+  "75p0_120p0",
+  "120p0_180p0",
+  "180p0_300p0",
+  "300p0_500p0",
+  "500p0_1000p0",
+  "1000p0_10000p0",
+]
+_MASSJ0J1_PROCS = ["ggh", "tth", "vh", "vbf"]
+
+
+def _build_massj0j1_model():
+  segments = [
+    "-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel",
+  ]
+  for _bin in _MASSJ0J1_BINS:
+    for _proc in _MASSJ0J1_PROCS:
+      segments.append(
+        f'--PO "map=.*/{_proc}_MassJ0J1_{_bin}.*:r_MassJ0J1_{_bin}[1,-8,8]"'
+      )
+  return " ".join(segments)
+
+
 models = {
   "mu_inclusive":"",
 
@@ -291,6 +316,8 @@ models = {
 
 
   "PTH": _build_pth_model(),
+
+  "MassJ0J1": _build_massj0j1_model(),
 
   "rapidity":"-P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel \
 --PO \"map=.*/ggh_YH_0p0_0p15.*:r_YH_0p0_0p15[1,-3,3]\" \
