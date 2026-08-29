@@ -789,7 +789,7 @@ for bin_name in _DEtaJ0J1H_BINS:
 # Differential MassJ0J1
 _MassJ0J1_BINS = variableBins["MassJ0J1"]
 _MassJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
-_MassJ0J1_WV_BIN = "160p0_300p0"
+_MassJ0J1_WV_BIN = "180p0_300p0"
 
 globalReplacementMap["Run3FidXSAnalysisMassJ0J1"] = od()
 # Wrong vertex stuff, which process should be considered?
@@ -911,4 +911,3 @@ for bin_name in _PTHvYH_BINS:
         globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"][reco_key] = od()
         globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"][reco_key]["in"] = reco_key
         globalReplacementMap["Run3FidXSAnalysisPTHvYH"]["catRVMap"][reco_key]["out"] = reco_key
-
