@@ -5,7 +5,7 @@ from collections import OrderedDict as od
 # in commonTools.commonObjects (HIG-19-016 style binning).  Import with a
 # fallback so this file can still be used standalone.
 try:
-    from commonTools.commonObjects import PTH_BINS
+    from commonTools.commonObjects import MASSJ0J1_BINS, PTH_BINS
 except ImportError:
     PTH_BINS = [
         "0p0_5p0",
@@ -27,6 +27,16 @@ except ImportError:
         "250p0_350p0",
         "350p0_450p0",
         "450p0_10000p0",
+    ]
+    MASSJ0J1_BINS = [
+        "m10000p0_0p0",
+        "0p0_75p0",
+        "75p0_120p0",
+        "120p0_180p0",
+        "180p0_300p0",
+        "300p0_500p0",
+        "500p0_1000p0",
+        "1000p0_10000p0",
     ]
 
 try:
@@ -435,6 +445,24 @@ for bin_name in [
     for cat in ['cat0', 'cat1', 'cat2']:
         reco_key = f"RECO_PTJ0_{bin_name}_{cat}"
         globalReplacementMap["Run3FidXSAnalysisPTJ0"]["catRVMap"][reco_key] = reco_key
+
+
+# Differential invariant mass of the two leading jets
+_MassJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
+_MassJ0J1_WV_BIN = "180p0_300p0"
+
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"] = od()
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]['procWV'] = f"ggh_MassJ0J1_{_MassJ0J1_WV_BIN}_in"
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]['catWV'] = f"RECO_MassJ0J1_{_MassJ0J1_WV_BIN}_cat2"
+
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]['procRVMap'] = od()
+globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]['catRVMap'] = od()
+for bin_name in MASSJ0J1_BINS:
+    for cat in _MassJ0J1_RECO_CATS:
+        reco_key = f"RECO_MassJ0J1_{bin_name}_{cat}"
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["procRVMap"][reco_key] = f"ggh_MassJ0J1_{bin_name}_in"
+        globalReplacementMap["Run3FidXSAnalysisMassJ0J1"]["catRVMap"][reco_key] = reco_key
+
 
 # Differential YJ0 (Rapidity of the leading jet)
 globalReplacementMap["Run3FidXSAnalysisYJ0"] = od()
