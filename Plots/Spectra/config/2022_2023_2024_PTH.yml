@@ -4,8 +4,8 @@ cms_rlabel: "172 $\\mathrm{fb^{-1}}$ (13.6 TeV)"
 frame1:
   figtext:
     x: 0.875
-    y: 0.48
-    text: "$\\frac{\\sigma_{fid}(p_{T}^{H} > 450\\,\\mathrm{GeV})}{100\\,\\mathrm{GeV}}$"
+    y: 0.58
+    text: '$\frac{\sigma_{fid}(p_{T}^{H} > 350.0\ GeV)}{150.0\ GeV}$'
     horizontalalignment: "right"
     rotation: 90
     fontsize: 22

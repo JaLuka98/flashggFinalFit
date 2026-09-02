@@ -1,8 +1,0 @@
-frame1:
-  fontsize: 13
-  title_fontsize: 13
-  ylim:
-    bottom: 0
-    top: 1.4
-
-lumi: 109.82
