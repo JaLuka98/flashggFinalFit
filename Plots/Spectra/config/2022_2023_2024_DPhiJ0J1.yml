@@ -1,0 +1,14 @@
+frame1:
+  figtext:
+    x: 0.875
+    y: 0.58
+    text: ""
+    horizontalalignment: "right"
+    rotation: 90
+    fontsize: 14
+  fontsize: 13
+  title_fontsize: 13
+frame2:
+  xticks: [-3.663, -2.3562, -0.7854, 0.7854, 2.618]
+  xtick_labels: ["Underflow", "[-3.14,-1.57)", "[-1.57,0)", "[0,1.57)", "[1.57,3.14)"]
+  xtick_fontsize: 12
