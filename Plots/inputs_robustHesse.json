@@ -98,6 +98,12 @@
         "fits":"robustHesse:syst:r_YJ0_0p6_0p9",
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
+    },
+    "DPhiJ0J1": {
+        "pois": "r_DPhiJ0J1_m10000p0_m3p1416,r_DPhiJ0J1_m3p1416_m1p5708,r_DPhiJ0J1_m1p5708_0p0,r_DPhiJ0J1_0p0_1p5708,r_DPhiJ0J1_1p5708_3p1416",
+        "fits": "robustHesse:syst:r_DPhiJ0J1_m1p5708_0p0",
+        "points": "",
+        "fit_opts": "--saveSpecifiedNuis all --saveInactivePOI 1"
     }
 
 }
