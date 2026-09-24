@@ -726,7 +726,11 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         plt.yticks(fontsize=frame2_ytick_fontsize)
 
         plt.xlim(current_config['x_lim'])
-        plt.ylim(current_config['y_lim'])
+        frame2_ylim = plotting_config.get('frame2', {}).get('ylim', None)
+        if frame2_ylim is not None:
+            plt.ylim(**frame2_ylim)
+        else:
+            plt.ylim(current_config['y_lim'])
         
         if convert_boolean_string(self.is_unblinded):
             plt.savefig(os.path.join(output_dir, 'Combine', fitFolderName, 'spectra.pdf'), bbox_inches='tight', dpi=120)

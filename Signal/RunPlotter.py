@@ -35,6 +35,17 @@ def get_options():
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
 
+# Known "eras" that can appear in workspace object names. Needed to resolve
+# the real era of a matched object when --years passes a merged label (e.g.
+# "2022", grouping "2022preEE" + "2022postEE") that isn't itself a literal
+# era tag present in any object name.
+KNOWN_ERAS = ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix", "2016", "2017", "2018", "2024"]
+
+def real_era_of(name, year):
+  for era in KNOWN_ERAS:
+    if era in name: return era
+  return year
+
 # Extract input files: for first file extract xvar
 inputFiles = od()
 citr = 0
@@ -94,6 +105,10 @@ for cat,f in inputFiles.items():
   w.var("MH").setVal(float(opt.MH))
 
   # Extract normalisations
+  # norms[k] = (norm, year, real_era, proc). "year" is the (possibly merged)
+  # label requested via --years (e.g. "2022"); "real_era" is the actual era
+  # tag embedded in the workspace object names (e.g. "2022preEE"), used for
+  # object lookups + IntLumi, while "year" is used to group histograms.
   norms = od()
   data_rwgt = od()
   hpdfs = od()
@@ -102,27 +117,27 @@ for cat,f in inputFiles.items():
       allNorms = w.allFunctions().selectByName("*%s*normThisLumi"%year)
       for norm in rooiter(allNorms):
         proc = norm.GetName().split("%s_"%outputWSObjectTitle__)[-1].split("_%s"%year)[0]
-        k  =  "%s__%s"%(proc,year)
-        _id = "%s_%s_%s_%s"%(proc,year,cat,sqrts__)
-        norms[k] = w.function("%s_%s_normThisLumi"%(outputWSObjectTitle__,_id))
+        real_era = real_era_of(norm.GetName(), year)
+        k  =  "%s__%s__%s"%(proc,year,real_era)
+        _id = "%s_%s_%s_%s"%(proc,real_era,cat,sqrts__)
+        norms[k] = (w.function("%s_%s_normThisLumi"%(outputWSObjectTitle__,_id)), year, real_era, proc)
     else:
       for proc in opt.procs.split(","):
-        k = "%s__%s"%(proc,year)
-        _id = "%s_%s_%s_%s"%(proc,year,cat,sqrts__)
-        norms[k] = w.function("%s_%s_normThisLumi"%(outputWSObjectTitle__,_id))
-    
+        real_era = year
+        k = "%s__%s__%s"%(proc,year,real_era)
+        _id = "%s_%s_%s_%s"%(proc,real_era,cat,sqrts__)
+        norms[k] = (w.function("%s_%s_normThisLumi"%(outputWSObjectTitle__,_id)), year, real_era, proc)
+
   # Iterate over norms: extract total category norm
   catNorm = 0
-  for k, norm in norms.items():
-    proc, year = k.split("__")
-    w.var("IntLumi").setVal(lumiScaleFactor*lumiMap[year])
+  for k, (norm, year, real_era, proc) in norms.items():
+    w.var("IntLumi").setVal(lumiScaleFactor*lumiMap[real_era])
     catNorm += norm.getVal()
 
   # Iterate over norms and extract data sets + pdfs
-  for k, norm in norms.items():
-    proc, year = k.split("__")
-    _id = "%s_%s_%s_%s"%(proc,year,cat,sqrts__)
-    w.var("IntLumi").setVal(lumiScaleFactor*lumiMap[year])
+  for k, (norm, year, real_era, proc) in norms.items():
+    _id = "%s_%s_%s_%s"%(proc,real_era,cat,sqrts__)
+    w.var("IntLumi").setVal(lumiScaleFactor*lumiMap[real_era])
 
     # Prune
     nval = norm.getVal()
