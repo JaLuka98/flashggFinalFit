@@ -42,6 +42,7 @@ frame1:
     y: 0.52
     text: '$\frac{\sigma_{fid}(p_{T}^{j1} > 200.0\ GeV)}{200.0\ GeV}$'
     horizontalalignment: "right"
+    text: '$\frac{\sigma_{fid}(p_{Tj0}^{H} > 200.0\ GeV)}{100.0\ GeV}$'
     rotation: 90
     fontsize: 18
 

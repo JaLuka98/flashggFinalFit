@@ -470,7 +470,7 @@ _DPhiJ0J1_BINS = variableBins["DPhiJ0J1"]
 
 globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"] = od()
 _DPhiJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
-_DPhiJ0J1_WV_BIN = "m2p0944_m1p0472"
+_DPhiJ0J1_WV_BIN = "m3p1416_m1p5708"
 # Wrong vertex stuff, which process should be considered?
 globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['procWV'] = f"ggh_DPhiJ0J1_{_DPhiJ0J1_WV_BIN}_in"
 globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['catWV'] = f"RECO_DPhiJ0J1_{_DPhiJ0J1_WV_BIN}_cat2"
@@ -480,6 +480,11 @@ for _bin in _DPhiJ0J1_BINS:
     for _cat in _DPhiJ0J1_RECO_CATS:
         reco_key = f"RECO_DPhiJ0J1_{_bin}_{_cat}"
         globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"][reco_key] = f"ggh_DPhiJ0J1_{_bin}_in"
+
+# Account for naming of the underflow bin
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m3p1416_3p1416_underflow_cat0"] = "ggh_DPhiJ0J1_m3p1416_m1p5708_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m3p1416_3p1416_underflow_cat1"] = "ggh_DPhiJ0J1_m3p1416_m1p5708_in"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["procRVMap"]["RECO_DPhiJ0J1_m3p1416_3p1416_underflow_cat2"] = "ggh_DPhiJ0J1_m3p1416_m1p5708_in"
         
 # Replacement categories for RV
 globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"] = od()
@@ -487,6 +492,11 @@ for _bin in _DPhiJ0J1_BINS:
     for _cat in _DPhiJ0J1_RECO_CATS:
         reco_key = f"RECO_DPhiJ0J1_{_bin}_{_cat}"
         globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"][reco_key] = reco_key
+
+# Account for naming of the underflow bin
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m3p1416_3p1416_underflow_cat0"] = "RECO_DPhiJ0J1_m3p1416_3p1416_underflow_cat0"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m3p1416_3p1416_underflow_cat1"] = "RECO_DPhiJ0J1_m3p1416_3p1416_underflow_cat1"
+globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]["catRVMap"]["RECO_DPhiJ0J1_m3p1416_3p1416_underflow_cat2"] = "RECO_DPhiJ0J1_m3p1416_3p1416_underflow_cat2"
 
 # Differential NBJet
 _NBJET_BINS = variableBins["NBJet"]

@@ -117,7 +117,10 @@ class MakeYieldsCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
     def run(self):
 
         cat = self.branch_data
-        execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
+        if self.batch_flavor == "slurm/psi":
+            execute_command([f'xrdfs root://t3dcachedb03.psi.ch:1094/ mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
+        else:
+            execute_command([f'mkdir -p {os.path.join(self.output_dir, f"Datacards/yields_{self.ext}")}'], shell=True)
         if self.batch_flavor == "slurm/psi":
             # Have to use /scratch/batch_username/ for slurm/psi
             os.environ["TARGET_PATH"] = f"/scratch/{os.environ['USER']}/{os.environ['SLURM_JOB_ID']}"
