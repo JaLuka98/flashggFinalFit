@@ -177,14 +177,68 @@ def _validate_multidimfit_snapshot(path):
         root_file.Close()
 
 
-def _unblinded_bestfit_snapshot_args(output_dir, fitFolderName, variable, year):
-    """Return arguments that start an impact fit from a validated unblinded best-fit snapshot."""
+def _unblinded_bestfit_snapshot_path(output_dir, fitFolderName, variable, year):
+    """Return the validated unblinded best-fit snapshot file of the first POI."""
     first_poi = combineVariableDict(variable, year)['paramStrNoOne'][0]
     snapshot_path = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitBestFit_{first_poi}.MultiDimFit.mH125.07.root')
     if not os.path.exists(snapshot_path):
         raise FileNotFoundError(f"Best-fit snapshot not found: {snapshot_path}. Run the unblinded fit first.")
     _validate_multidimfit_snapshot(snapshot_path)
+    return snapshot_path
+
+def _unblinded_bestfit_snapshot_args(output_dir, fitFolderName, variable, year):
+    """Return arguments that start an impact fit from a validated unblinded best-fit snapshot."""
+    snapshot_path = _unblinded_bestfit_snapshot_path(output_dir, fitFolderName, variable, year)
     return ["-d", snapshot_path, "-w", "w", "--snapshotName", "MultiDimFit"]
+
+def _refine_unblinded_bestfit(bestfit_path, singles_arguments, max_iterations=3, nll_tolerance=0.01):
+    """
+    Refit from the saved best-fit snapshot until the NLL stops decreasing.
+    A single fit from prefit can stop in a local minimum with a non-optimal background function
+    choice (seen for PTJ0: refitting from the snapshot lowered the NLL by 2.15 and changed 11 of 81
+    pdfindex values). Each improvement is followed by redoing the singles fit from the better point,
+    so the output file keeps its usual format.
+    """
+    refine_name = "DataPostFitRefine"
+    refine_path = os.path.join(os.path.dirname(bestfit_path), f"higgsCombine{refine_name}.MultiDimFit.mH125.07.root")
+    # Drop the options the refit sets itself (combine rejects repeated options).
+    refit_options = []
+    skip_next = False
+    for arg in singles_arguments:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in ("-n", "--algo"):
+            skip_next = True
+            continue
+        if arg in ("--saveFitResult", "--saveWorkspace"):
+            continue
+        refit_options.append(arg)
+    for iteration in range(max_iterations):
+        refit_arguments = [
+            "combine", "-M", "MultiDimFit",
+            "-d", bestfit_path, "-w", "w", "--snapshotName", "MultiDimFit",
+            "--algo", "none", "--saveNLL", "--saveWorkspace",
+            "-n", refine_name,
+        ] + refit_options
+        subprocess.run(refit_arguments, check=True, text=True, capture_output=True)
+        root_file = ROOT.TFile.Open(refine_path)
+        tree = root_file.Get("limit")
+        tree.GetEntry(0)
+        delta_nll = tree.GetLeaf("nll").GetValue()
+        root_file.Close()
+        print(f"Best-fit refinement {iteration + 1}: NLL change {delta_nll:+.4f}")
+        if delta_nll > -nll_tolerance:
+            break
+        singles_from_refined = [
+            "combine", "-M", "MultiDimFit",
+            "-d", refine_path, "-w", "w", "--snapshotName", "MultiDimFit",
+        ] + singles_arguments
+        subprocess.run(singles_from_refined, check=True, text=True, capture_output=True)
+    else:
+        print(f"WARNING: best fit still improving after {max_iterations} refinements.")
+    if os.path.exists(refine_path):
+        os.remove(refine_path)
 
 def manually_copy_t3(src, dst):
     # List files in the directory
@@ -3209,6 +3263,9 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                     _validate_multidimfit_snapshot(snapshot_path)
                 except RuntimeError as exc:
                     raise RuntimeError(f"Best-fit output is invalid: {exc}; combine stderr: {result.stderr[-4000:]}") from exc
+                # arguments[4:] are the fit options without "combine -M MultiDimFit <datacard>"
+                _refine_unblinded_bestfit(snapshot_path, arguments[4:])
+                _validate_multidimfit_snapshot(snapshot_path)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"Best-fit combine command failed: {e.stderr}") from e
@@ -4806,7 +4863,9 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
         if not root_file or root_file.IsZombie():
             return False
         tree = root_file.Get("limit")
-        valid = bool(tree and tree.GetEntries() > 0)
+        # A finished impact fit has 3 entries (best fit, -1 sigma, +1 sigma); fewer means the job
+        # was interrupted (e.g. suspended on a worker) after writing only the best fit.
+        valid = bool(tree and tree.GetEntries() >= 3)
         root_file.Close()
         return valid
 
