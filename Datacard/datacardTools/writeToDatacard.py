@@ -78,6 +78,17 @@ def writeProcesses(f,d,options):
   return True
 
 
+def getSystValue(row, baseName, mergeStr='', tierNameSuffix='', tier='shape'):
+  col = "%s%s%s"%(baseName, mergeStr, tierNameSuffix)
+  if col in row.index:
+    return row[col]
+  if tier == 'shape':
+    altCol = "%s%s_shape"%(baseName, mergeStr)
+    if altCol in row.index:
+      return row[altCol]
+  return '-'
+
+
 def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
 
   # For signal shape systematics add simple line
@@ -156,7 +167,7 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
           for ir,r in d[d['cat']==cat].iterrows():
             if r['proc'] == "data_obs": continue
             # Extract value and add to line (with checks)
-            sval = r["%s%s%s"%(s['name'],mergeStr,tierNameSuffix)]
+            sval = getSystValue(r, s['name'], mergeStr=mergeStr, tierNameSuffix=tierNameSuffix, tier=tier)
             lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
             # code.interact(local=locals())
         # Remove final space from line and add to file
@@ -177,7 +188,7 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
                   p = re.sub("_2017_hgg","",p)
                   p = re.sub("_2018_hgg","",p)
                   # Add value if in proc in phase space else -
-                  if p in psProcs: sval = r["%s%s"%(s['name'],tierNameSuffix)]
+                  if p in psProcs: sval = getSystValue(r, s['name'], tierNameSuffix=tierNameSuffix, tier=tier)
                   else: sval = '-'
                   lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
               # Remove final space from line and add to file
@@ -192,7 +203,7 @@ def writeSystematic(f,d,s,options,stxsMergeScheme=None,scaleCorrScheme=None):
             for ir,r in d[d['cat']==cat].iterrows():
               if r['proc'] == "data_obs": continue
               # Extract value and add to line (with checks)
-              sval = r[sname]
+              sval = getSystValue(r, sname, tierNameSuffix='', tier='shape')
               lsyst = addSyst(lsyst,sval,stitle,r['proc'],cat,r['numEvents'])
           # Remove final space from line and add to file
           f.write("%s\n"%lsyst[:-1])
@@ -301,3 +312,6 @@ def writePdfIndex(f,d,options):
 def writeBreak(f):
   lbreak = '----------------------------------------------------------------------------------------------------------------------------------'
   f.write("%s\n"%lbreak)
+
+
+############### WriteToDatacard und calcSystematics

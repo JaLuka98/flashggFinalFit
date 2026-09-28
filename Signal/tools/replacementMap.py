@@ -789,7 +789,9 @@ for bin_name in _DEtaJ0J1H_BINS:
 # Differential MassJ0J1
 _MassJ0J1_BINS = variableBins["MassJ0J1"]
 _MassJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
-_MassJ0J1_WV_BIN = "180p0_300p0"
+# Highest-statistics regular Mjj bin whose cat2 WV sample stays above the
+# replacement threshold in every Run-3 era.
+_MassJ0J1_WV_BIN = "1000p0_10000p0"
 
 globalReplacementMap["Run3FidXSAnalysisMassJ0J1"] = od()
 # Wrong vertex stuff, which process should be considered?

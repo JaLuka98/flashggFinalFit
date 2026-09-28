@@ -1,3 +1,5 @@
+lumi: 171.4
+
 frame1:
   custom_xtick_labels:
     - "0"
@@ -12,10 +14,8 @@ frame1:
     - 3.5
     - 4.5
   ylabel:
-    text: '$\sigma_{\text{fid}}$ (fb)'
+    text: '$\Delta\sigma_{\text{fid}} / \Delta N_{\mathrm{jets}}$ (fb)'
     fontsize: 20
-  ylim:
-    bottom: 0
   fontsize: 14
   title_fontsize: 14
 

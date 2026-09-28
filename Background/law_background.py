@@ -32,6 +32,7 @@ def execute_command(command, return_output=False, shell=False):
             return (result.stdout).split("\n")[0]
     except subprocess.CalledProcessError as e:
         print("Error executing script:", e.stderr)
+        raise
 
 class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_path = law.Parameter(description="Path to the alldata input ROOT file")
@@ -146,7 +147,9 @@ class BackgroundCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
-        os.chdir(original_dir)
+            raise
+        finally:
+            os.chdir(original_dir)
 
         if self.batch_flavor == "slurm/psi":
             bkg_folder = f"outdir_{self.ext}"
@@ -353,7 +356,9 @@ class Background(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
-        os.chdir(original_dir)
+            raise
+        finally:
+            os.chdir(original_dir)
 
         if self.batch_flavor == "slurm/psi":
             bkg_folder = f"outdir_{config['ext']}"

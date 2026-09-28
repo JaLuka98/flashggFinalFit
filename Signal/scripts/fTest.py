@@ -36,6 +36,10 @@ def get_options():
   parser.add_option("--cat", dest='cat', default='', help="RECO category")
   parser.add_option('--mass', dest='mass', default='125', help="Mass point to fit")
   parser.add_option('--doPlots', dest='doPlots', default=False, action="store_true", help="Produce Signal fTest plots")
+  parser.add_option('--plotLabelRV', dest='plotLabelRV', default='', help="Custom top-right label for RV fTest plots")
+  parser.add_option('--plotLabelWV', dest='plotLabelWV', default='', help="Custom top-right label for WV fTest plots")
+  parser.add_option('--plots', dest='plots', default='', help="Comma-separated plot selection: RV,RVResults,WV,WVResults (default: all)")
+  parser.add_option('--skipJsonOutput', dest='skipJsonOutput', default=False, action="store_true", help="Do not overwrite the fTest nGauss JSON")
   parser.add_option('--nBins', dest='nBins', default=80, type='int', help="Number of bins for fit")
   parser.add_option('--threshold', dest='threshold', default=30, type='int', help="Threshold number of events")
   parser.add_option('--nGaussMax', dest='nGaussMax', default=5, type='int', help="Max number of gaussians to test")
@@ -45,6 +49,10 @@ def get_options():
   parser.add_option('--minimizerTolerance', dest='minimizerTolerance', default=1e-8, type='float', help="(Scipy) Minimizer toleranve")
   return parser.parse_args()
 (opt,args) = get_options()
+
+plotsToMake = set(p.strip() for p in opt.plots.split(",") if p.strip())
+def shouldMakePlot(name):
+  return not plotsToMake or name in plotsToMake
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.gROOT.SetBatch(True)
@@ -124,8 +132,10 @@ for pidx, proc in enumerate(procsToFTest):
     df.loc[df['proc']==proc,'nRV'] = nGauss_opt
     # Make plots
     if( opt.doPlots )&( len(ssfs.keys())!=0 ):
-      plotFTest(ssfs,_opt=nGauss_opt,_outdir="%s/outdir_%s/fTest/Plots"%(opt.outputDir,opt.ext),_extension="RV",_proc=proc,_cat=opt.cat,_mass=opt.mass)
-      plotFTestResults(ssfs,_opt=nGauss_opt,_outdir="%s/outdir_%s/fTest/Plots"%(opt.outputDir,opt.ext),_extension="RV",_proc=proc,_cat=opt.cat,_mass=opt.mass)
+      if shouldMakePlot("RV"):
+        plotFTest(ssfs,_opt=nGauss_opt,_outdir="%s/outdir_%s/fTest/Plots"%(opt.outputDir,opt.ext),_extension="RV",_proc=proc,_cat=opt.cat,_mass=opt.mass,_label=opt.plotLabelRV)
+      if shouldMakePlot("RVResults"):
+        plotFTestResults(ssfs,_opt=nGauss_opt,_outdir="%s/outdir_%s/fTest/Plots"%(opt.outputDir,opt.ext),_extension="RV",_proc=proc,_cat=opt.cat,_mass=opt.mass,_label=opt.plotLabelRV)
 
   # Run fTest: WV
   # If numEntries below threshold then keep as n = 1
@@ -149,25 +159,28 @@ for pidx, proc in enumerate(procsToFTest):
     df.loc[df['proc']==proc,'nWV'] = nGauss_opt
     # Make plots
     if( opt.doPlots )&( len(ssfs.keys())!=0 ):
-      plotFTest(ssfs,_opt=nGauss_opt,_outdir="%s/outdir_%s/fTest/Plots"%(opt.outputDir,opt.ext),_extension="WV",_proc=proc,_cat=opt.cat,_mass=opt.mass)
-      plotFTestResults(ssfs,_opt=nGauss_opt,_outdir="%s/outdir_%s/fTest/Plots"%(opt.outputDir,opt.ext),_extension="WV",_proc=proc,_cat=opt.cat,_mass=opt.mass)
+      if shouldMakePlot("WV"):
+        plotFTest(ssfs,_opt=nGauss_opt,_outdir="%s/outdir_%s/fTest/Plots"%(opt.outputDir,opt.ext),_extension="WV",_proc=proc,_cat=opt.cat,_mass=opt.mass,_label=opt.plotLabelWV)
+      if shouldMakePlot("WVResults"):
+        plotFTestResults(ssfs,_opt=nGauss_opt,_outdir="%s/outdir_%s/fTest/Plots"%(opt.outputDir,opt.ext),_extension="WV",_proc=proc,_cat=opt.cat,_mass=opt.mass,_label=opt.plotLabelWV)
 
   # Close ROOT file
   inputWS.Delete()
   f.Close()
 
 # Make output
-if not os.path.isdir("%s/outdir_%s/fTest/json"%(opt.outputDir,opt.ext)): os.system("mkdir %s/outdir_%s/fTest/json"%(opt.outputDir,opt.ext))
-ff = open("%s/outdir_%s/fTest/json/nGauss_%s.json"%(opt.outputDir,opt.ext,opt.cat),"w")
-ff.write("{\n")
-# Iterate over rows in dataframe: sorted by sumEntries
-pitr = 1
-for ir,r in df.sort_values('sumEntries',ascending=False).iterrows():
-  k = "\"%s__%s\""%(r['proc'],opt.cat)
-  ff.write("    %-90s : {\"nRV\":%s,\"nWV\":%s}"%(k,r['nRV'],r['nWV']))
-  # Drop comma for last proc
-  if pitr == len(df): ff.write("\n")
-  else: ff.write(",\n")
-  pitr += 1
-ff.write("}")
-ff.close()
+if not opt.skipJsonOutput:
+  if not os.path.isdir("%s/outdir_%s/fTest/json"%(opt.outputDir,opt.ext)): os.system("mkdir %s/outdir_%s/fTest/json"%(opt.outputDir,opt.ext))
+  ff = open("%s/outdir_%s/fTest/json/nGauss_%s.json"%(opt.outputDir,opt.ext,opt.cat),"w")
+  ff.write("{\n")
+  # Iterate over rows in dataframe: sorted by sumEntries
+  pitr = 1
+  for ir,r in df.sort_values('sumEntries',ascending=False).iterrows():
+    k = "\"%s__%s\""%(r['proc'],opt.cat)
+    ff.write("    %-90s : {\"nRV\":%s,\"nWV\":%s}"%(k,r['nRV'],r['nWV']))
+    # Drop comma for last proc
+    if pitr == len(df): ff.write("\n")
+    else: ff.write(",\n")
+    pitr += 1
+  ff.write("}")
+  ff.close()

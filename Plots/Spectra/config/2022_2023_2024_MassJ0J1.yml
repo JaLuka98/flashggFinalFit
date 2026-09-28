@@ -1,5 +1,41 @@
+lumi: 171.4
+
 frame1:
+  suppress_minor_xticks:
+    - -130
+    - 0
+  additional_xaxis_ticks:
+    - position: -65
+  axvline:
+    x: 0
+    color: "black"
+    ls: "dashed"
+    lw: 1
+    alpha: 1
+    zorder: 3
+  ylabel:
+    text: '$\Delta\sigma_{\text{fid}} / \Delta m_{jj}$ (fb/GeV)'
+    fontsize: 20
   ylim:
-    bottom: 0
-    top: 0.1
-frame2: {}
+    bottom: 0.001
+  fontsize: 13
+  title_fontsize: 13
+
+frame2:
+  suppress_minor_xticks:
+    - -130
+    - 0
+  axvline:
+    x: 0
+    color: "black"
+    ls: "dashed"
+    lw: 1
+    alpha: 1
+    zorder: 3
+  additional_xaxis_labels:
+    - position: -65
+      text: "$<2j$"
+      x_offset: 0
+      y_offset: -7
+      horizontalalignment: "right"
+      fontsize: 20

@@ -1,4 +1,9 @@
+lumi: 171.4
+
 frame1:
+  ylabel:
+    text: "$\\Delta\\sigma_{\\text{fid}} / \\Delta p_T^H$ (fb/GeV)"
+    fontsize: 20
   figtext:
     x: 0.875
     y: 0.48
@@ -8,6 +13,18 @@ frame1:
     fontsize: 22
     usetex: True
     usetex: True
+  overflow_annotation_log_x:
+    text: "$\\frac{\\sigma_{fid}(p_{T}^{H} > 450\\,\\mathrm{GeV})}{100\\,\\mathrm{GeV}}$"
+    text_position: [0.72, 0.12]
+    horizontalalignment: "center"
+    verticalalignment: "center"
+    rotation: 0
+    fontsize: 22
+    arrowprops:
+      arrowstyle: "->"
+      color: "black"
+      linewidth: 1.5
+      connectionstyle: "arc3,rad=0"
   fontsize: 13
   title_fontsize: 13
 frame2:

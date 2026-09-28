@@ -50,7 +50,66 @@ def get_lumi_label(year):
     return f"{lumi:.1f} fb^{{-1}} (13.6 TeV)"
 
 
+def parameter_range_for_poi(range_expression, poi, range_overrides=None):
+    """Map a generic ``r=min,max`` range to the POI scanned in this branch.
+
+    Combine separates multiple parameter ranges with colons.  Literal ranges
+    for parameters other than ``r`` are retained, while a generic ``r`` entry
+    is replaced by the differential POI name, e.g. ``r_PTH_350p0_450p0``.
+    An optional per-POI override allows narrow refinement scans for selected
+    differential bins without changing the range used by all other bins.
+    """
+    if range_overrides and poi in range_overrides:
+        bounds = str(range_overrides[poi]).strip()
+        range_expression = bounds if "=" in bounds else f"{poi}={bounds}"
+
+    mapped_ranges = []
+    for item in str(range_expression).split(":"):
+        item = item.strip()
+        if not item:
+            continue
+        name, separator, bounds = item.partition("=")
+        if not separator:
+            raise ValueError(f"Invalid parameter range expression: {item}")
+        mapped_ranges.append(f"{poi if name.strip() == 'r' else name.strip()}={bounds.strip()}")
+    if not mapped_ranges:
+        raise ValueError("Parameter range expression must not be empty")
+    return ":".join(mapped_ranges)
+
+
+def scan_grid_configuration(n_points, grid_points, first_point, last_point):
+    """Return the full grid size and the subset of grid indices to evaluate.
+
+    By default, preserve the legacy behaviour and evaluate all ``n_points``.
+    A larger ``grid_points`` value together with first/last indices permits a
+    high-resolution local refinement while the parameter range still contains
+    the global best fit needed for a consistently normalized deltaNLL.
+    """
+    n_points = int(n_points)
+    grid_points = int(grid_points)
+    first_point = int(first_point)
+    last_point = int(last_point)
+
+    total_points = grid_points if grid_points > 0 else n_points
+    if first_point < 0 and last_point < 0:
+        return total_points, list(range(n_points))
+    if first_point < 0 or last_point < first_point or last_point >= total_points:
+        raise ValueError(
+            "invalid scan grid subset: require 0 <= first_point <= last_point "
+            f"< {total_points}, got {first_point}..{last_point}"
+        )
+    return total_points, list(range(first_point, last_point + 1))
+
+
 _PDFINDEX_CACHE = {}
+
+
+class ScanRootFileTarget(law.LocalFileTarget):
+    """A scan-point target that rejects truncated ROOT files from killed jobs."""
+
+    def exists(self):
+        return super().exists() and os.path.getsize(self.path) >= 1024
+
 
 def execute_command(command, return_output=False, shell=False):
     try:
@@ -740,16 +799,17 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
             
         elif self.variable != '':
-            pdf_indices = combineVariableDict(self.variable, self.year)['pdfIndeces']
             cache_key = (datacard_path,)
-            if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
-                datacard_pdf_indices = extract_pdf_indices(datacard_path)
-                if datacard_pdf_indices:
-                    _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
-            if cache_key in _PDFINDEX_CACHE:
-                pdf_indices = _PDFINDEX_CACHE[cache_key]
+            if cache_key not in _PDFINDEX_CACHE:
+                _PDFINDEX_CACHE[cache_key] = (
+                    extract_pdf_indices(datacard_path)
+                    if os.path.exists(datacard_path)
+                    else []
+                )
+            pdf_indices = _PDFINDEX_CACHE[cache_key]
             saveSpecifiedIndex = ",".join(pdf_indices)
             arguments = [
                 "combine",
@@ -769,9 +829,10 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
                 "-t", "-1",
                 "-P", f"{current_branch}",
                 "--saveFitResult",
-                "--saveSpecifiedIndex", saveSpecifiedIndex,
                 "--floatOtherPOIs", "1"
             ]
+            if saveSpecifiedIndex:
+                arguments.extend(["--saveSpecifiedIndex", saveSpecifiedIndex])
             arguments.append("--setParameters")
             arguments.append(f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""")
             command = arguments
@@ -898,6 +959,14 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     cat = law.Parameter(default="", description="Current category")
     cats = law.Parameter(default="", description="Comma separated list of categories to process")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
+    grid_points = law.Parameter(
+        default=0, description="Total number of points defining the full scan grid"
+    )
+    first_point = law.Parameter(default=-1, description="First full-grid point index to run")
+    last_point = law.Parameter(default=-1, description="Last full-grid point index to run")
+    range_profile = law.Parameter(
+        default="", description="Optional named Asimov parameter-range profile from the config"
+    )
     set_pdfidx_inclusives = law.Parameter(default=False, description="Year") # convert_boolean_string
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
@@ -930,7 +999,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return tasks
     
     def create_branch_map(self):
-        points = list(range(int(self.nPoints)))
+        _, points = scan_grid_configuration(
+            self.nPoints, self.grid_points, self.first_point, self.last_point
+        )
         if not self.cats:
             return {i: point for i, point in enumerate(points)}
 
@@ -986,12 +1057,16 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         outputFileTargets = []
                 
         for _, current_output_path in enumerate(output):
-            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+            target_cls = ScanRootFileTarget if current_output_path.endswith(".root") else law.LocalFileTarget
+            outputFileTargets.append(target_cls(current_output_path))
             
         return outputFileTargets
 
     def run(self):
         current_cat, current_point = self._current_branch_info()
+        total_grid_points, _ = scan_grid_configuration(
+            self.nPoints, self.grid_points, self.first_point, self.last_point
+        )
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -1072,7 +1147,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
-                "--points", f"{int(self.nPoints)}",
+                "--points", f"{total_grid_points}",
                 "--expectSignal", "1",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
@@ -1104,14 +1179,14 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Error executing script:", e.stderr)
             
         else:
-            pdf_indices = combineVariableDict(self.variable, self.year)['pdfIndeces']
             cache_key = (datacard_path,)
-            if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
-                datacard_pdf_indices = extract_pdf_indices(datacard_path)
-                if datacard_pdf_indices:
-                    _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
-            if cache_key in _PDFINDEX_CACHE:
-                pdf_indices = _PDFINDEX_CACHE[cache_key]
+            if cache_key not in _PDFINDEX_CACHE:
+                _PDFINDEX_CACHE[cache_key] = (
+                    extract_pdf_indices(datacard_path)
+                    if os.path.exists(datacard_path)
+                    else []
+                )
+            pdf_indices = _PDFINDEX_CACHE[cache_key]
             saveSpecifiedIndex = ",".join(pdf_indices)
             paramStr = ",".join(combineVariableDict(self.variable, self.year)['paramStr'])
             set_param_string = paramStr
@@ -1128,7 +1203,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
-                "--points", f"{int(self.nPoints)}",
+                "--points", f"{total_grid_points}",
                 "--expectSignal", "1",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
@@ -1142,9 +1217,17 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--floatOtherPOIs", "1",
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
-                "--saveSpecifiedIndex", saveSpecifiedIndex,
                 "--setParameters", set_param_string,
+                "--setParameterRanges", parameter_range_for_poi(
+                    config["combine_fit"]["setParameterRange"],
+                    current_cat,
+                    config["combine_fit"].get("asimov_parameterRangeProfiles", {}).get(
+                        str(self.range_profile), {}
+                    ),
+                ),
             ]
+            if saveSpecifiedIndex:
+                arguments.extend(["--saveSpecifiedIndex", saveSpecifiedIndex])
             command = arguments
             # print(command)
             try:
@@ -1188,6 +1271,14 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     cat = law.Parameter(default="", description="Current category")
     cats = law.Parameter(default="", description="Comma separated list of categories to process")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
+    grid_points = law.Parameter(
+        default=0, description="Total number of points defining the full scan grid"
+    )
+    first_point = law.Parameter(default=-1, description="First full-grid point index to run")
+    last_point = law.Parameter(default=-1, description="Last full-grid point index to run")
+    range_profile = law.Parameter(
+        default="", description="Optional named Asimov parameter-range profile from the config"
+    )
     set_pdfidx_inclusives = law.Parameter(default=False, description="Year")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
@@ -1220,7 +1311,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         return tasks
     
     def create_branch_map(self):
-        points = list(range(int(self.nPoints)))
+        _, points = scan_grid_configuration(
+            self.nPoints, self.grid_points, self.first_point, self.last_point
+        )
         if not self.cats:
             return {i: point for i, point in enumerate(points)}
 
@@ -1276,7 +1369,8 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         outputFileTargets = []
                 
         for _, current_output_path in enumerate(output):
-            outputFileTargets.append(law.LocalFileTarget(current_output_path))
+            target_cls = ScanRootFileTarget if current_output_path.endswith(".root") else law.LocalFileTarget
+            outputFileTargets.append(target_cls(current_output_path))
             
         # print("AsimovFitCategoryStat", outputFileTargets)
         
@@ -1284,6 +1378,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
 
     def run(self):
         current_cat, current_point = self._current_branch_info()
+        total_grid_points, _ = scan_grid_configuration(
+            self.nPoints, self.grid_points, self.first_point, self.last_point
+        )
         
         if self.variable == '':
             configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"],"config",f"{self.year}_inclusive.yml")
@@ -1366,7 +1463,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
-                "--points", f"{int(self.nPoints)}",
+                "--points", f"{total_grid_points}",
                 "--expectSignal", "1",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
@@ -1397,16 +1494,17 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+                raise
             
         else:
-            pdf_indices = combineVariableDict(self.variable, self.year)['pdfIndeces']
             cache_key = (datacard_path,)
-            if cache_key not in _PDFINDEX_CACHE and os.path.exists(datacard_path):
-                datacard_pdf_indices = extract_pdf_indices(datacard_path)
-                if datacard_pdf_indices:
-                    _PDFINDEX_CACHE[cache_key] = datacard_pdf_indices
-            if cache_key in _PDFINDEX_CACHE:
-                pdf_indices = _PDFINDEX_CACHE[cache_key]
+            if cache_key not in _PDFINDEX_CACHE:
+                _PDFINDEX_CACHE[cache_key] = (
+                    extract_pdf_indices(datacard_path)
+                    if os.path.exists(datacard_path)
+                    else []
+                )
+            pdf_indices = _PDFINDEX_CACHE[cache_key]
             saveSpecifiedIndex = ",".join(pdf_indices)
             paramStr = ",".join(combineVariableDict(self.variable, self.year)['paramStr'])
             set_param_string = paramStr
@@ -1423,7 +1521,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "grid",
-                "--points", f"{int(self.nPoints)}",
+                "--points", f"{total_grid_points}",
                 "--expectSignal", "1",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
                 "--X-rtd", "MINIMIZER_multiMin_hideConstants",
@@ -1437,9 +1535,17 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--floatOtherPOIs", "1",
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
-                "--saveSpecifiedIndex", saveSpecifiedIndex,
                 "--setParameters", set_param_string,
+                "--setParameterRanges", parameter_range_for_poi(
+                    config["combine_fit"]["setParameterRange"],
+                    current_cat,
+                    config["combine_fit"].get("asimov_parameterRangeProfiles", {}).get(
+                        str(self.range_profile), {}
+                    ),
+                ),
             ]
+            if saveSpecifiedIndex:
+                arguments.extend(["--saveSpecifiedIndex", saveSpecifiedIndex])
             command = arguments
             # print(command)
             try:

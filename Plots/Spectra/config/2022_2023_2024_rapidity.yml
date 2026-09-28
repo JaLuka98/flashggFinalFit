@@ -1,7 +1,10 @@
+lumi: 171.4
+
 frame1:
+  ylabel:
+    text: "$\\Delta\\sigma_{\\text{fid}} / \\Delta |y^H|$ (fb)"
+    fontsize: 20
   ylim:
     top: 74.2   # pick a value that leaves headroom
   fontsize: 13
   title_fontsize: 13
-
-lumi: 172.13

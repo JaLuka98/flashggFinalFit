@@ -43,6 +43,10 @@ def get_options():
   parser.add_option('--massPoints', dest='massPoints', default='120,125,130', help="Mass points to fit")
   parser.add_option('--skipBeamspotReweigh', dest='skipBeamspotReweigh', default=False, action="store_true", help="Skip beamspot reweigh to match beamspot distribution in data")
   parser.add_option('--doPlots', dest='doPlots', default=False, action="store_true", help="Produce Signal Fitting plots")
+  parser.add_option('--plotRVComponentsOnly', dest='plotRVComponentsOnly', default=False, action="store_true", help="Only produce the RV PDF-components plot")
+  parser.add_option('--plotModelAndSplinesOnly', dest='plotModelAndSplinesOnly', default=False, action="store_true", help="Only produce the interpolation and spline plots")
+  parser.add_option('--plotLabel', dest='plotLabel', default='', help="Custom top-right label for signal-fit plots")
+  parser.add_option('--skipWorkspaceOutput', dest='skipWorkspaceOutput', default=False, action="store_true", help="Do not overwrite the fitted signal workspace")
   parser.add_option("--doVoigtian", dest='doVoigtian', default=False, action="store_true", help="Use Voigtians instead of Gaussians for signal models with Higgs width as parameter")
   parser.add_option("--useDCB", dest='useDCB', default=False, action="store_true", help="Use DCB in signal fitting")
   parser.add_option("--useDiagonalProcForShape", dest='useDiagonalProcForShape', default=False, action="store_true", help="Use shape of diagonal process, keeping normalisation (requires diagonal mapping produced by getDiagProc script)")
@@ -370,15 +374,16 @@ fm = FinalModel(ssfMap,opt.proc,opt.cat,opt.ext,opt.year,sqrts__,nominalDatasets
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # SAVE: to output workspace
-foutDir = "%s/outdir_%s/signalFit/output"%(opt.outputDir,opt.ext)
-foutName = "%s/outdir_%s/signalFit/output/CMS-HGG_sigfit_%s_%s_%s_%s.root"%(opt.outputDir,opt.ext,opt.ext,opt.proc,opt.year,opt.cat)
-print("\n --> Saving output workspace to file: %s"%foutName)
-if not os.path.isdir(foutDir): os.system("mkdir %s"%foutDir)
-fout = ROOT.TFile(foutName,"RECREATE")
-outWS = ROOT.RooWorkspace("%s_%s"%(outputWSName__,sqrts__),"%s_%s"%(outputWSName__,sqrts__))
-fm.save(outWS)
-outWS.Write()
-fout.Close()
+if not opt.skipWorkspaceOutput:
+  foutDir = "%s/outdir_%s/signalFit/output"%(opt.outputDir,opt.ext)
+  foutName = "%s/outdir_%s/signalFit/output/CMS-HGG_sigfit_%s_%s_%s_%s.root"%(opt.outputDir,opt.ext,opt.ext,opt.proc,opt.year,opt.cat)
+  print("\n --> Saving output workspace to file: %s"%foutName)
+  if not os.path.isdir(foutDir): os.system("mkdir %s"%foutDir)
+  fout = ROOT.TFile(foutName,"RECREATE")
+  outWS = ROOT.RooWorkspace("%s_%s"%(outputWSName__,sqrts__),"%s_%s"%(outputWSName__,sqrts__))
+  fm.save(outWS)
+  outWS.Write()
+  fout.Close()
   
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # PLOTTING
@@ -386,14 +391,16 @@ if opt.doPlots:
   try:
     print("\n --> Making plots...")
     if not os.path.isdir("%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext)): os.system("mkdir %s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext))
-    if opt.skipVertexScenarioSplit:
-      plotPdfComponents(ssfRV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="total_",_proc=procRVFit,_cat=catRVFit) 
-    if not opt.skipVertexScenarioSplit:
-      plotPdfComponents(ssfRV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="RV_",_proc=procRVFit,_cat=catRVFit) 
-      plotPdfComponents(ssfWV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="WV_",_proc=procWVFit,_cat=catRVFit) 
-    # Plot interpolation
-    plotInterpolation(fm,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext)) 
-    plotSplines(fm,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_nominalMass=MHNominal) 
+    if opt.skipVertexScenarioSplit and not opt.plotModelAndSplinesOnly:
+      plotPdfComponents(ssfRV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="total_",_proc=procRVFit,_cat=catRVFit,_label=opt.plotLabel)
+    if not opt.skipVertexScenarioSplit and not opt.plotModelAndSplinesOnly:
+      plotPdfComponents(ssfRV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="RV_",_proc=procRVFit,_cat=catRVFit,_label=opt.plotLabel)
+      if not opt.plotRVComponentsOnly:
+        plotPdfComponents(ssfWV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="WV_",_proc=procWVFit,_cat=catRVFit)
+    if not opt.plotRVComponentsOnly:
+      # Plot interpolation
+      plotInterpolation(fm,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_label=opt.plotLabel)
+      plotSplines(fm,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_nominalMass=MHNominal,_label=opt.plotLabel)
   except:
     print("\n --> Creating plots unsuccessful. (Probably due to a empty bin.)")
 

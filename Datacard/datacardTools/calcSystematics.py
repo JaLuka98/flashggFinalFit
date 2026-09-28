@@ -571,7 +571,8 @@ def groupSystematics(d,systs,options,prefix="scaleWeight",groupings=[],stxsMerge
       else:
         s0_name = "%s_%s"%(s0['name'],tier)
         s1_name = "%s_%s"%(s1['name'],tier)
-        gr_name = "%s_gr%g_%s"%(prefix,group_idx,tier)
+        tierNameSuffix = '' if tier == 'shape' else '_%s'%tier
+        gr_name = "%s_gr%g%s"%(prefix,group_idx,tierNameSuffix)
         d[gr_name] = '-'
         # Define mask as all entries where d[s0_name]!='-' and d[s1_name]!='-'
         mask = (d[s0_name]!='-')&(d[s1_name]!='-')
