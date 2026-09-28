@@ -191,15 +191,44 @@ def _unblinded_bestfit_snapshot_args(output_dir, fitFolderName, variable, year):
     snapshot_path = _unblinded_bestfit_snapshot_path(output_dir, fitFolderName, variable, year)
     return ["-d", snapshot_path, "-w", "w", "--snapshotName", "MultiDimFit"]
 
-def _refine_unblinded_bestfit(bestfit_path, singles_arguments, max_iterations=3, nll_tolerance=0.01):
+_DEGENERATE_BKG_PARAM_RE = re.compile(r"^env_pdf_.*_(exp|pow)[0-9]+_p[0-9]+$")
+
+def _unblinded_freeze_parameters(output_dir, fitFolderName, variable, year):
     """
-    Refit from the saved best-fit snapshot until the NLL stops decreasing.
+    Return the --freezeParameters value for the unblinded impact fits: MH plus the exponents of
+    exp/pow background functions that sit exactly on a range boundary at 0 in the best fit.
+    Such a term is flat and degenerate with the rest of the function, which makes the likelihood
+    singular and lets Minuit fail at random (rapidity: ~20% of the impact fits failed with status -1;
+    fixing env_pdf_7_2022_13TeV_exp3_p2 & co. at 0 made them converge with unchanged results).
+    """
+    snapshot_path = _unblinded_bestfit_snapshot_path(output_dir, fitFolderName, variable, year)
+    root_file = ROOT.TFile.Open(snapshot_path)
+    try:
+        snapshot = root_file.Get("w").getSnapshot("MultiDimFit")
+        degenerate = []
+        for arg in snapshot:
+            name = arg.GetName()
+            if not _DEGENERATE_BKG_PARAM_RE.match(name) or not hasattr(arg, "getMin"):
+                continue
+            if abs(arg.getVal()) < 1e-6 and (abs(arg.getMax()) < 1e-12 or abs(arg.getMin()) < 1e-12):
+                degenerate.append(name)
+    finally:
+        root_file.Close()
+    if degenerate:
+        print(f"Freezing {len(degenerate)} degenerate background parameters at their boundary: {', '.join(degenerate)}")
+    return ",".join(["MH"] + degenerate)
+
+def _refine_unblinded_bestfit(bestfit_path, singles_arguments, max_iterations=10, nll_tolerance=0.01):
+    """
+    Refit from the saved best-fit snapshot until the NLL stops decreasing; return True if converged.
     A single fit from prefit can stop in a local minimum with a non-optimal background function
     choice (seen for PTJ0: refitting from the snapshot lowered the NLL by 2.15 and changed 11 of 81
-    pdfindex values). Each improvement is followed by redoing the singles fit from the better point,
-    so the output file keeps its usual format.
+    pdfindex values; PTHvsNJ with 180 pdfindex categories needs more than 3 passes). Each improvement
+    is followed by redoing the singles fit from the better point, so the output file keeps its format.
     """
-    refine_name = "DataPostFitRefine"
+    # One temporary refit file per best fit: the POI branches run in parallel in the same directory.
+    tag = os.path.basename(bestfit_path).replace("higgsCombine", "").replace(".MultiDimFit.mH125.07.root", "")
+    refine_name = f"{tag}_Refine"
     refine_path = os.path.join(os.path.dirname(bestfit_path), f"higgsCombine{refine_name}.MultiDimFit.mH125.07.root")
     # Drop the options the refit sets itself (combine rejects repeated options).
     refit_options = []
@@ -227,8 +256,9 @@ def _refine_unblinded_bestfit(bestfit_path, singles_arguments, max_iterations=3,
         tree.GetEntry(0)
         delta_nll = tree.GetLeaf("nll").GetValue()
         root_file.Close()
-        print(f"Best-fit refinement {iteration + 1}: NLL change {delta_nll:+.4f}")
+        print(f"Best-fit refinement {iteration + 1}: NLL change {delta_nll:+.4f}", flush=True)
         if delta_nll > -nll_tolerance:
+            converged = True
             break
         singles_from_refined = [
             "combine", "-M", "MultiDimFit",
@@ -236,9 +266,11 @@ def _refine_unblinded_bestfit(bestfit_path, singles_arguments, max_iterations=3,
         ] + singles_arguments
         subprocess.run(singles_from_refined, check=True, text=True, capture_output=True)
     else:
-        print(f"WARNING: best fit still improving after {max_iterations} refinements.")
+        converged = False
+        print(f"WARNING: best fit still improving after {max_iterations} refinements.", flush=True)
     if os.path.exists(refine_path):
         os.remove(refine_path)
+    return converged
 
 def manually_copy_t3(src, dst):
     # List files in the directory
@@ -3227,15 +3259,24 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
             
-        else:         
+        else:
             pdf_indices = extract_pdf_indices(datacard_path)
+            # Two-stage best fit: a first fit with the background functions kept at their fTest
+            # choice (fast, lands near the minimum), then the refinement loop with the full discrete
+            # search. Starting the discrete search from prefit is slow and can end in a local minimum
+            # (PTHvsNJ: the one-stage fit failed after 2 h; the two-stage fit improved the NLL by ~25).
+            two_stage = config.get("combine_fit", {}).get("bestFitTwoStage", True)
+            max_refinements = config.get("combine_fit", {}).get("bestFitMaxRefinements", 10)
+            # Work on temporary names and only move the result to its final name once the
+            # refinement has converged, so an interrupted job never leaves a complete-looking output.
+            tmp_name = f"DataPostFitBestFitTmp_{current_cat}"
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
                 datacard_path,
                 "--freezeParameters", "MH",
                 "-m", "125.07",
-                "-n", f"DataPostFitBestFit_{current_cat}",
+                "-n", tmp_name,
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "singles",
@@ -3253,19 +3294,23 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             ]
             if pdf_indices:
                 arguments.extend(_save_specified_index_args(pdf_indices))
-            command = arguments
+            command = arguments + (["--X-rtd", "MINIMIZER_skipDiscreteIterations"] if two_stage else [])
             # print(command)
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
                 print("Script output:", result.stdout)
-                snapshot_path = os.path.join(os.getcwd(), f"higgsCombineDataPostFitBestFit_{current_cat}.MultiDimFit.mH125.07.root")
+                tmp_path = os.path.join(os.getcwd(), f"higgsCombine{tmp_name}.MultiDimFit.mH125.07.root")
                 try:
-                    _validate_multidimfit_snapshot(snapshot_path)
+                    _validate_multidimfit_snapshot(tmp_path)
                 except RuntimeError as exc:
                     raise RuntimeError(f"Best-fit output is invalid: {exc}; combine stderr: {result.stderr[-4000:]}") from exc
-                # arguments[4:] are the fit options without "combine -M MultiDimFit <datacard>"
-                _refine_unblinded_bestfit(snapshot_path, arguments[4:])
-                _validate_multidimfit_snapshot(snapshot_path)
+                # arguments[4:] are the fit options without "combine -M MultiDimFit <datacard>";
+                # the refinement always runs with the full discrete search.
+                if not _refine_unblinded_bestfit(tmp_path, arguments[4:], max_iterations=max_refinements):
+                    raise RuntimeError(f"Best fit for {current_cat} did not converge within {max_refinements} refinements.")
+                _validate_multidimfit_snapshot(tmp_path)
+                os.replace(f"multidimfit{tmp_name}.root", f"multidimfitDataPostFitBestFit_{current_cat}.root")
+                os.replace(tmp_path, os.path.join(os.getcwd(), f"higgsCombineDataPostFitBestFit_{current_cat}.MultiDimFit.mH125.07.root"))
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"Best-fit combine command failed: {e.stderr}") from e
@@ -4685,13 +4730,14 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 raise RuntimeError(f"Initial impact fit failed: {e.stderr}") from e
         else:
             snapshot_args = _unblinded_bestfit_snapshot_args(output_dir, fitFolderName, self.variable, self.year)
+            freeze_params = _unblinded_freeze_parameters(output_dir, fitFolderName, self.variable, self.year)
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
                 *snapshot_args,
                 "--algo", "singles",
                 "--redefineSignalPOIs", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStrNoOne'])}""",
-                "--freezeParameters", "MH",
+                "--freezeParameters", freeze_params,
                 "-m", "125.07",
                 "--robustFit", "1",
                 "-n", "_initialFit_Test",
@@ -4997,6 +5043,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
 
             # The snapshot holds the full best fit, including the background PDF indices.
             start_args = _unblinded_bestfit_snapshot_args(output_dir, fitFolderName, self.variable, self.year)
+            freeze_params = _unblinded_freeze_parameters(output_dir, fitFolderName, self.variable, self.year)
 
             arguments = [
                 "combine",
@@ -5004,7 +5051,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 *start_args,
                 "--algo", "impact",
                 "--redefineSignalPOIs", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStrNoOne'])}""",
-                "--freezeParameters", "MH",
+                "--freezeParameters", freeze_params,
                 "-m", "125.07",
                 "-P", f"{current_param}",
                 "--floatOtherPOIs", "1",
@@ -5026,6 +5073,17 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(f"Impact fit failed for nuisance {current_param}: {e.stderr}") from e
+
+        # combine exits with 0 even when the -1/+1 sigma fits fail and only the best fit is written;
+        # fail the job in that case so law retries it instead of step 3 silently dropping the nuisance.
+        impact_output = os.path.join(os.getcwd(), f"higgsCombine_paramFit_Test_{current_param}.MultiDimFit.mH125.07.root")
+        root_file = ROOT.TFile.Open(impact_output)
+        tree = root_file.Get("limit") if root_file and not root_file.IsZombie() else None
+        n_entries = tree.GetEntries() if tree else 0
+        if root_file:
+            root_file.Close()
+        if n_entries < 3:
+            raise RuntimeError(f"Impact fit for nuisance {current_param} is incomplete ({n_entries} of 3 entries): {impact_output}")
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
