@@ -12,9 +12,9 @@ backgroundScriptCfg:
   cats: 'auto' # auto: automatically inferred from input ws
   catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
   ext: 'Run3FidXSAnalysis_NJ' # extension to add to output directory
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 trees2wsCfg:
@@ -70,9 +70,9 @@ trees2wsCfg:
 
   cats: 'auto'
 
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
@@ -99,9 +99,9 @@ signalScriptCfg_2022_preEE:
 
 
   # Job submission options
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use 
 
 signalScriptCfg_2022_postEE:
@@ -127,9 +127,9 @@ signalScriptCfg_2022_postEE:
   beamspotWidthMC: '3.732'
 
   # Job submission options
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2023_preBPix:
@@ -155,9 +155,9 @@ signalScriptCfg_2023_preBPix:
 
 
   # Job submission options
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use 
 
 signalScriptCfg_2023_postBPix:
@@ -183,9 +183,9 @@ signalScriptCfg_2023_postBPix:
   beamspotWidthMC: '3.597'
 
   # Job submission options
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2024:
@@ -210,9 +210,9 @@ signalScriptCfg_2024:
   beamspotWidthMC: '3.601'
 
   # Job submission options
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 packaged_2022_2023_2024:
@@ -220,9 +220,9 @@ packaged_2022_2023_2024:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard_yields:
@@ -240,9 +240,9 @@ datacard_yields:
   skipBkg: False # Only add signal processes to datacard
   bkgScaler: 1. # Add overall scale factor for background
   skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard:
@@ -274,32 +274,32 @@ combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,3"
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 4000 # MB
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
   not_show_POI: True
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 4000 # MB
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_hesse:
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_mggToys:
   nToys: 1000 # Number of toys = nToys * 10
   loadSnapshot: 'MultiDimFit'
   doBands: True
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 spectra:
@@ -324,3 +324,10 @@ spectra:
   y_lim: [0,3]
   y_lim_top: 1000
   overflow: 5
+  total:
+    y_unit: "(pb)"
+    y_lim_top: 1000
+    y_lim: [0.4, 1.6]
+    generator_dependence_uncertainty:
+      module: "rel_uncertainty_acceptance"
+      attribute: "NJ"

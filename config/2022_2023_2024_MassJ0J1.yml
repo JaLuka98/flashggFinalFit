@@ -38,6 +38,7 @@ trees2wsCfg:
     - "*Down"
     - "fiducialGeometricFlag"
     - "diffVariable_GenMassJ0J1"
+    - "GenMassJ0J1"
 
   dataVars:
     - "CMS_hgg_mass"
@@ -282,8 +283,8 @@ combine_fit:
   cminApproxPreFitTolerance: 0.01
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+  batchMemory: 20000 # Memory in MB requested for batch jobs
+  batchMaxRuntime: "08:00:00" # Generous runtime for the combined Hgg+H4l scans
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
@@ -294,8 +295,8 @@ combine_impacts:
   not_show_POI: True
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+  batchMemory: 20000 # Also used by the Asimov first-step fits
+  batchMaxRuntime: "08:00:00" # Generous runtime for the combined workspace
 
 combine_hesse:
   execution: 'htcondor'
@@ -336,3 +337,10 @@ spectra:
   y_lim: [0.0001, 2.5]
   y_lim_top: 1000
   overflow: 1500
+  total:
+    y_unit: "(pb/GeV)"
+    y_lim_top: 10000
+    y_lim: [-0.5, 2.5]
+    generator_dependence_uncertainty:
+      module: "rel_uncertainty_acceptance"
+      attribute: "MassJ0J1"

@@ -36,7 +36,12 @@ class Task(law.Task):
 
     def local_path(self, *path):
         # DATA_PATH is defined in setup.sh
-        output_folder = "$ANALYSIS_PATH/law/remote"
+        # Allow concurrent workflows with identical task versions (for example
+        # Hgg-only and H4l-only scans) to keep independent submission metadata.
+        output_folder = os.environ.get(
+            "LAW_REMOTE_PATH",
+            "$ANALYSIS_PATH/law/remote",
+        )
         # os.mkdir(output_folder)
         parts = (output_folder,) + self.store_parts() + path
         return os.path.join(*parts)
@@ -107,7 +112,9 @@ class HTCondorWorkflow(law.htcondor.HTCondorWorkflow):
         config.custom_content.append(("MY.WantOS", "el9"))
 
         # memory requirements
-        memory_gb = self.htcondor_memory / 1000
+        # Parameters supplied on the command line are strings, whereas values
+        # forwarded from a yaml config are commonly numeric.  Accept both.
+        memory_gb = float(self.htcondor_memory) / 1000
         config.custom_content.append(("RequestMemory", f"{memory_gb}GB")) 
 
         # maximum runtime

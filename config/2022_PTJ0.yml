@@ -15,7 +15,7 @@ backgroundScriptCfg:
   # year: '2022' # Use combined when merging all years in category (for plots)
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
@@ -74,7 +74,7 @@ trees2wsCfg:
 
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 18000 # Slurm memory to use for job submission
+  batchMemory: 25000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
@@ -103,7 +103,7 @@ signalScriptCfg_2022_preEE:
   # Job submission options
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 18000 # Slurm memory to use for job submission
+  batchMemory: 25000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
@@ -132,7 +132,7 @@ signalScriptCfg_2022_postEE:
   # Job submission options
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 18000 # Slurm memory to use for job submission
+  batchMemory: 25000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
@@ -143,7 +143,7 @@ packaged_2022:
   ext: ''
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 16000 # Slurm memory to use for job submission
+  batchMemory: 25000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard_yields:
@@ -164,7 +164,7 @@ datacard_yields:
   skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 16000 # Slurm memory to use for job submission
+  batchMemory: 25000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
@@ -202,7 +202,7 @@ combine_fit:
   rMax: 1.6
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
@@ -215,14 +215,14 @@ combine_impacts:
   not_show_POI: True
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
 combine_hesse:
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 
@@ -232,7 +232,7 @@ combine_mggToys:
   doBands: True
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 10000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 

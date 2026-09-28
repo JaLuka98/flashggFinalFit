@@ -37,6 +37,7 @@ trees2wsCfg:
     - "*Down"
     - "fiducialGeometricFlag"
     - "diffVariable_GenMassJ0J1"
+    - "GenMassJ0J1"
 
   dataVars:
     - "CMS_hgg_mass"

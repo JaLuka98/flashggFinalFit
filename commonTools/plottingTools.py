@@ -16,16 +16,20 @@ def LoadTranslations(jsonfilename):
     with open(jsonfilename) as jsonfile:
         return json.load(jsonfile)
       
-def drawCMS(onTop=False, CMSString="Simulation Private Work", sqrts=13.6):
-    text='#bf{CMS} #scale[0.75]{#it{'+CMSString+'}}'
+def drawCMS(onTop=False, CMSString="Simulation Private Work", sqrts=13.6, showCMS=True, textSize=0.05):
+    if showCMS:
+        text='#bf{CMS} #scale[0.75]{#it{'+CMSString+'}}'
+    else:
+        text='#it{'+CMSString+'}'
     latex = ROOT.TLatex()
     latex.SetNDC()
     latex.SetTextFont(42)
-    latex.SetTextSize(0.05)
-    latex.DrawLatex(0.1, 0.85 if not onTop else 0.91, text)
+    latex.SetTextSize(textSize)
+    leftMargin = ROOT.gPad.GetLeftMargin()
+    latex.DrawLatex(leftMargin, 0.85 if not onTop else 0.91, text)
     if sqrts is not None: latex.DrawLatex(1.00-canv.GetRightMargin()-0.02,1.00-canv.GetTopMargin()-0.12,'('+sqrts+' TeV)')
       
-def plotFTest(ssfs,_opt=1,_outdir='./',_extension='',_proc='',_cat='',_mass='125'):
+def plotFTest(ssfs,_opt=1,_outdir='./',_extension='',_proc='',_cat='',_mass='125',_label=''):
   canv = ROOT.TCanvas()
   canv.SetLeftMargin(0.15)
   LineColorMap = {'1':ROOT.kAzure+1,'2':ROOT.kRed-4,'3':ROOT.kGreen+2,'4':ROOT.kMagenta-9,'5':ROOT.kOrange}
@@ -40,7 +44,7 @@ def plotFTest(ssfs,_opt=1,_outdir='./',_extension='',_proc='',_cat='',_mass='125
     else: hists[k].SetLineWidth(1)
     hists[k].SetLineColor(LineColorMap[k.split("_")[-1]])
     hists[k].SetTitle("")
-    hists[k].GetXaxis().SetTitle("m_{#gamma#gamma} [GeV]")
+    hists[k].GetXaxis().SetTitle("m_{#gamma#gamma} (GeV)")
     hists[k].SetMinimum(0)
     if hists[k].GetMaximum()>hmax: hmax = hists[k].GetMaximum()
     if hists[k].GetMinimum()<hmin: hmin = hists[k].GetMinimum()
@@ -53,7 +57,7 @@ def plotFTest(ssfs,_opt=1,_outdir='./',_extension='',_proc='',_cat='',_mass='125
   hists['data'].SetMarkerColor(1)
   hists['data'].SetLineColor(1)
   hists['data'].SetTitle("")
-  hists['data'].GetXaxis().SetTitle("m_{#gamma#gamma} [GeV]")
+  hists['data'].GetXaxis().SetTitle("m_{#gamma#gamma} (GeV)")
   hists['data'].SetMinimum(0)
   hists['data'].GetXaxis().SetRangeUser(115,140)
   if hists['data'].GetMaximum()>hmax: hmax = hists['data'].GetMaximum()
@@ -83,16 +87,17 @@ def plotFTest(ssfs,_opt=1,_outdir='./',_extension='',_proc='',_cat='',_mass='125
   lat.SetTextAlign(31)
   lat.SetNDC()
   lat.SetTextSize(0.03)
-  lat.DrawLatex(0.9,0.92,"( %s , %s , %s )"%(_extension,_proc,_cat))
+  plotLabel = _label if _label else "( %s , %s , %s )"%(_extension,_proc,_cat)
+  lat.DrawLatex(0.9,0.92,plotLabel)
 
-  drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+  drawCMS(onTop=True, CMSString="Private Work (CMS data/simulation)", sqrts=None, showCMS=False, textSize=0.03)
 
   canv.Update()
   canv.SaveAs("%s/fTest_%s_%s_%s.png"%(_outdir,_cat,_proc,_extension))
   canv.SaveAs("%s/fTest_%s_%s_%s.pdf"%(_outdir,_cat,_proc,_extension))
 
 # Plot reduced chi2 vs nGauss
-def plotFTestResults(ssfs,_opt,_outdir="./",_extension='',_proc='',_cat='',_mass='125'):
+def plotFTestResults(ssfs,_opt,_outdir="./",_extension='',_proc='',_cat='',_mass='125',_label=''):
   canv = ROOT.TCanvas()
   gr = ROOT.TGraph()
   # Loop over nGuassians
@@ -134,10 +139,11 @@ def plotFTestResults(ssfs,_opt,_outdir="./",_extension='',_proc='',_cat='',_mass
   lat.SetTextAlign(31)
   lat.SetNDC()
   lat.SetTextSize(0.03)
-  lat.DrawLatex(0.9,0.92,"( %s , %s , %s )"%(_extension,_proc,_cat))
+  plotLabel = _label if _label else "( %s , %s , %s )"%(_extension,_proc,_cat)
+  lat.DrawLatex(0.9,0.92,plotLabel)
   lat.DrawLatex(0.6,0.75,"Optimum N_{gauss} = %s"%_opt)
 
-  drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+  drawCMS(onTop=True, CMSString="Private Work (CMS data/simulation)", sqrts=None, showCMS=False, textSize=0.03)
 
   canv.Update()
   canv.SaveAs("%s/fTest_%s_%s_%s_chi2_vs_nGauss.png"%(_outdir,_cat,_proc,_extension))
@@ -464,7 +470,7 @@ def makeSplusBPlot(workspace,hD,hSB,hB,hS,hDr,hBr,hSr,cat,options,dB=None,reduce
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Signal fit plots
 # Plot final pdf at MH = 125 (with data) + individual Pdf components
-def plotPdfComponents(ssf,_outdir='./',_extension='',_proc='',_cat=''):
+def plotPdfComponents(ssf,_outdir='./',_extension='',_proc='',_cat='',_label=''):
   canv = ROOT.TCanvas()
   canv.SetLeftMargin(0.1)
   ssf.MH.setVal(125)
@@ -477,7 +483,7 @@ def plotPdfComponents(ssf,_outdir='./',_extension='',_proc='',_cat=''):
   hists['final'].SetLineWidth(2)
   hists['final'].SetLineColor(1)
   hists['final'].SetTitle("")
-  hists['final'].GetXaxis().SetTitle("m_{#gamma#gamma} [GeV]")
+  hists['final'].GetXaxis().SetTitle("m_{#gamma#gamma} (GeV)")
   hists['final'].SetMinimum(0)
   if hists['final'].GetMaximum()>hmax: hmax = hists['final'].GetMaximum()
   if hists['final'].GetMinimum()<hmin: hmin = hists['final'].GetMinimum()
@@ -487,7 +493,7 @@ def plotPdfComponents(ssf,_outdir='./',_extension='',_proc='',_cat=''):
   hists['data'] = ssf.xvar.createHistogram("h_data%s"%_extension,ROOT.RooFit.Binning(ssf.nBins))
   ssf.DataHists['125'].fillHistogram(hists['data'],ROOT.RooArgList(ssf.xvar))
   hists['data'].SetTitle("")
-  hists['data'].GetXaxis().SetTitle("m_{#gamma#gamma} [GeV]")
+  hists['data'].GetXaxis().SetTitle("m_{#gamma#gamma} (GeV)")
   hists['data'].SetMinimum(0)
   #hists['data'].GetXaxis().SetRangeUser(115,140)
   hists['data'].GetXaxis().SetRangeUser(100,150)
@@ -543,7 +549,8 @@ def plotPdfComponents(ssf,_outdir='./',_extension='',_proc='',_cat=''):
   lat.SetTextAlign(31)
   lat.SetNDC()
   lat.SetTextSize(0.03)
-  lat.DrawLatex(0.9,0.92,"( %s , %s , %s )"%(ssf.name,_proc,_cat))
+  plotLabel = _label if _label else "( %s , %s , %s )"%(ssf.name,_proc,_cat)
+  lat.DrawLatex(0.9,0.92,plotLabel)
   lat1 = ROOT.TLatex()
   lat1.SetTextFont(42)
   lat1.SetTextAlign(11)
@@ -551,14 +558,14 @@ def plotPdfComponents(ssf,_outdir='./',_extension='',_proc='',_cat=''):
   lat1.SetTextSize(0.035)
   lat1.DrawLatex(0.65,0.3,"#chi^{2}/n(dof) = %.4f"%(ssf.getChi2()/ssf.Ndof))
 
-  drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+  drawCMS(onTop=True, CMSString="Private Work (CMS data/simulation)", sqrts=None, showCMS=False, textSize=0.03)
 
   canv.Update()
   canv.SaveAs("%s/%sshape_pdf_components_%s_%s.png"%(_outdir,_extension,_proc,_cat))
   canv.SaveAs("%s/%sshape_pdf_components_%s_%s.pdf"%(_outdir,_extension,_proc,_cat))
 
 # Plot final pdf for each mass point
-def plotInterpolation(_finalModel,_outdir='./',_massPoints='120,121,122,123,124,125,126,127,128,129,130'):
+def plotInterpolation(_finalModel,_outdir='./',_massPoints='120,121,122,123,124,125,126,127,128,129,130',_label=''):
 
   canv = ROOT.TCanvas()
   colors = [ROOT.kRed,ROOT.kCyan,ROOT.kBlue+1,ROOT.kOrange-3,ROOT.kMagenta-7,ROOT.kGreen+1,ROOT.kYellow-7,ROOT.kViolet+6,ROOT.kTeal+1,ROOT.kPink+1,ROOT.kAzure+1]
@@ -598,7 +605,7 @@ def plotInterpolation(_finalModel,_outdir='./',_massPoints='120,121,122,123,124,
 
   # Extract first hist and clone for axes
   haxes = hists[list(hists.keys())[0]].Clone()
-  haxes.GetXaxis().SetTitle("m_{#gamma#gamma} [GeV]")
+  haxes.GetXaxis().SetTitle("m_{#gamma#gamma} (GeV)")
   haxes.GetYaxis().SetTitle("Events / %.2f GeV"%((_finalModel.xvar.getMax()-_finalModel.xvar.getMin())/_finalModel.xvar.getBins()))
   haxes.GetYaxis().SetTitleOffset(0.9)
   haxes.SetMinimum(0)
@@ -618,9 +625,10 @@ def plotInterpolation(_finalModel,_outdir='./',_massPoints='120,121,122,123,124,
   lat.SetTextAlign(31)
   lat.SetNDC()
   lat.SetTextSize(0.03)
-  lat.DrawLatex(0.9,0.92,"%s"%(_finalModel.name))
+  plotLabel = _label if _label else "(%s)"%(_finalModel.name)
+  lat.DrawLatex(0.9,0.92,plotLabel)
 
-  drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+  drawCMS(onTop=True, CMSString="Private Work (CMS data/simulation)", sqrts=None, showCMS=False, textSize=0.03)
 
   canv.Update()
   canv.SaveAs("%s/%s_model_vs_mH.png"%(_outdir,_finalModel.name))
@@ -632,7 +640,7 @@ def plotInterpolation(_finalModel,_outdir='./',_massPoints='120,121,122,123,124,
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Plot splines
-def plotSplines(_finalModel,_outdir="./",_nominalMass='125',splinesToPlot=['xs','br','ea','fracRV']):
+def plotSplines(_finalModel,_outdir="./",_nominalMass='125',splinesToPlot=['xs','br','ea','fracRV'],_label=''):
   canv = ROOT.TCanvas()
   colorMap = {'xs':ROOT.kRed-4,'br':ROOT.kAzure+1,'ea':ROOT.kGreen+1,'fracRV':ROOT.kMagenta-7,'norm':ROOT.kBlack}
   grs = od()
@@ -667,7 +675,7 @@ def plotSplines(_finalModel,_outdir="./",_nominalMass='125',splinesToPlot=['xs',
   # Draw axes
   haxes = ROOT.TH1F("h_axes_spl","h_axes_spl",int(_finalModel.MHHigh)-int(_finalModel.MHLow),int(_finalModel.MHLow),int(_finalModel.MHHigh))
   haxes.SetTitle("")
-  haxes.GetXaxis().SetTitle("m_{H} [GeV]")
+  haxes.GetXaxis().SetTitle("m_{H} (GeV)")
   haxes.GetXaxis().SetTitleSize(0.05)
   haxes.GetXaxis().SetTitleOffset(0.85)
   haxes.GetXaxis().SetLabelSize(0.035)
@@ -701,9 +709,10 @@ def plotSplines(_finalModel,_outdir="./",_nominalMass='125',splinesToPlot=['xs',
   lat.SetTextAlign(31)
   lat.SetNDC()
   lat.SetTextSize(0.03)
-  lat.DrawLatex(0.9,0.92,"%s"%(_finalModel.name))
+  plotLabel = _label if _label else "(%s)"%(_finalModel.name)
+  lat.DrawLatex(0.9,0.92,plotLabel)
   # Decorate with CMS label
-  drawCMS(onTop=True, CMSString="Simulation Private Work", sqrts=None)
+  drawCMS(onTop=True, CMSString="Private Work (CMS data/simulation)", sqrts=None, showCMS=False, textSize=0.03)
   canv.Update()
   canv.SaveAs("%s/%s_splines.png"%(_outdir,_finalModel.name))
   canv.SaveAs("%s/%s_splines.pdf"%(_outdir,_finalModel.name))
