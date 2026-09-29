@@ -4994,7 +4994,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 "--floatOtherPOIs", "1",
                 "--saveInactivePOI", "1",
                 "--robustFit", "1",
-                "-n", f"_paramFit_Test_{current_param}",
+                "-n", f"_paramFit_Test_{current_param}_tmp",
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -5057,7 +5057,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 "--floatOtherPOIs", "1",
                 "--saveInactivePOI", "1",
                 "--robustFit", "1",
-                "-n", f"_paramFit_Test_{current_param}",
+                "-n", f"_paramFit_Test_{current_param}_tmp",
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -5076,7 +5076,9 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
 
         # combine exits with 0 even when the -1/+1 sigma fits fail and only the best fit is written;
         # fail the job in that case so law retries it instead of step 3 silently dropping the nuisance.
-        impact_output = os.path.join(os.getcwd(), f"higgsCombine_paramFit_Test_{current_param}.MultiDimFit.mH125.07.root")
+        # combine writes to a temporary name; the result is moved to its final name only once it is
+        # complete, so a job killed by the batch system never leaves an output that law takes as done.
+        impact_output = os.path.join(os.getcwd(), f"higgsCombine_paramFit_Test_{current_param}_tmp.MultiDimFit.mH125.07.root")
         root_file = ROOT.TFile.Open(impact_output)
         tree = root_file.Get("limit") if root_file and not root_file.IsZombie() else None
         n_entries = tree.GetEntries() if tree else 0
@@ -5084,6 +5086,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
             root_file.Close()
         if n_entries < 3:
             raise RuntimeError(f"Impact fit for nuisance {current_param} is incomplete ({n_entries} of 3 entries): {impact_output}")
+        os.replace(impact_output, os.path.join(os.getcwd(), f"higgsCombine_paramFit_Test_{current_param}.MultiDimFit.mH125.07.root"))
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
