@@ -42,6 +42,55 @@ def convert_boolean_string(string):
     else:
         return False
 
+
+def mgg_toy_options(config):
+    """Stage-2 toy options (combine_mggToys), defaults = the production setup:
+    sharedToys (True): produce the toys once per variable (in SplusBModels_<first POI>/toys) and link them into the
+      other bins; the toy fit floats all POIs and the throw sets them all to 0, so a toy does not depend on the bin.
+    toyFitFromBestFit (True): start the toy fit from the data best-fit snapshot
+      (dataFit/higgsCombineDataPostFitBestFit_*.root) instead of the pre-fit values (same model and minimum, faster).
+    toySeedOffset (1000): seed of toy i = toySeedOffset + i (reproducible); null = random seed (-s -1).
+    Set the keys in the config to switch back to the original behaviour (False / False / null)."""
+    mgg = config.get('combine_mggToys', {})
+    return (convert_boolean_string(mgg.get('sharedToys', True)), convert_boolean_string(mgg.get('toyFitFromBestFit', True)),
+            mgg.get('toySeedOffset', 1000))
+
+
+def link_shared_toys(fit_dir, first_cat, cat):
+    """Shared toys: symlink SplusBModels_<first_cat>/toys/toy_*.root and their filechecker markers into SplusBModels_<cat>/toys."""
+    if cat == first_cat:
+        return
+    source = os.path.join(fit_dir, f'SplusBModels_{first_cat}', 'toys'); target = os.path.join(fit_dir, f'SplusBModels_{cat}', 'toys')
+    os.makedirs(os.path.join(target, 'filechecker'), exist_ok=True)
+    for toy_file in glob.glob(os.path.join(source, 'toy_*.root')):
+        name = os.path.basename(toy_file); marker = os.path.join('filechecker', name.replace('.root', '_ok.txt'))
+        for rel in (name, marker):
+            if os.path.exists(os.path.join(source, rel)) and not os.path.lexists(os.path.join(target, rel)):
+                os.symlink(os.path.join(source, rel), os.path.join(target, rel))
+
+
+def splusb_plot_categories(datacard_txt, variable, year, cat):
+    """Reco categories of POI bin <cat> for makeSplusBModelPlot.py. Taken from the datacard's bin line when available,
+    which includes merged categories (e.g. Y22_RECO_PTH_450p0_10000p0_catMerged) and the PTHvsNJ category names
+    (NJ0p0_PTH0p0_5p0 for POI r_PTHvsNJ_NJ0_PTH_0p0_5p0); otherwise the per-year cat0..2 list as before."""
+    bins = []
+    if variable != '' and os.path.exists(datacard_txt):
+        for line in open(datacard_txt):
+            if line.startswith("bin "):
+                bins = sorted(set(line.split()[1:])); break
+    if bins:
+        key = "_RECO_" + variable + "_" + "_".join(cat.split("_")[2:]) + "_"
+        if variable == "PTHvsNJ":
+            nj, rest = cat.split("_")[2], "_".join(cat.split("_")[4:])
+            key = "_RECO_PTHvsNJ_" + (nj + "0" if nj.endswith("p") else nj + "p0") + "_PTH" + rest + "_"
+        cats = [b for b in bins if key in b]
+        if cats:
+            return cats
+    cats = [element for element in combineVariableDict(variable, year)['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+    if "_" in year:
+        cats = [f"Y{y[-2:]}_{c}" for y in year.split("_") for c in cats]
+    return cats
+
 def get_lumi_label(year):
     if year in lumiMap:
         lumi = lumiMap[year]
@@ -5628,6 +5677,8 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
         else:
             cat_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
         nToys = config['combine_mggToys']['nToys']
+        if mgg_toy_options(config)[0] and not convert_boolean_string(self.is_postfit) and self.variable != "":
+            cat_list = cat_list[:1]   # shared toys: one toy set per variable, in SplusBModels_<first POI>/toys
         
         toy_cat_list = [
             (toy, cat)
@@ -5912,6 +5963,8 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 return False
 
         else:
+            shared_toys, toy_fit_from_best_fit, toy_seed_offset = mgg_toy_options(config)
+            toy_seed = str(int(toy_seed_offset) + int(toy)) if toy_seed_offset is not None else "-1"
 
             if self.batch_flavor == "slurm/psi":
                 # Have to use /scratch/batch_username/ for slurm/psi
@@ -5932,11 +5985,11 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 "-M", "GenerateOnly",
                 "-d", datacard_path,
                 "-m", "125.07",
-                "--saveWorkspace",
+                "--saveToys" if toy_fit_from_best_fit else "--saveWorkspace",
                 "--toysFrequentist",
                 "--bypassFrequentistFit",
                 "-t", "1",
-                "-s", "-1",
+                "-s", toy_seed,
                 "-n", f"_{toy}_gen_step",
             ]
             arguments.append("--setParameters")
@@ -5994,7 +6047,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 "--toysFrequentist",
                 "--bypassFrequentistFit",
                 "-t", "1",
-                "-s", "-1",
+                "-s", toy_seed,
                 "-n", f"_{toy}_fit_step",
                 "--cminDefaultMinimizerStrategy", "0",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -6007,6 +6060,32 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 arguments.append('r=1')
             else:
                 arguments.append(f"""{",".join(combineVariableDict(self.variable, self.year)['paramStr'])}""")
+            if toy_fit_from_best_fit:
+                # Start the toy fit from the data best-fit snapshot: the toy dataset (gen step, --saveToys) is read with
+                # --toysFile, the model and all settings are the same, only the starting point of the minimisation changes.
+                best_fit_files = sorted(glob.glob(os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'higgsCombineDataPostFitBestFit_*.root')))
+                if not best_fit_files:
+                    raise RuntimeError(f"toyFitFromBestFit: no dataFit/higgsCombineDataPostFitBestFit_*.root in {output_dir}/Combine/{fitFolderName}")
+                preferred = [f for f in best_fit_files if f"_{cat}." in os.path.basename(f)]
+                arguments = [
+                    "combine",
+                    (preferred or best_fit_files)[0],
+                    "--snapshotName", f"{config['combine_mggToys']['loadSnapshot']}",
+                    "--toysFile", f"gen_{toy}.root",
+                    "-m", "125.07",
+                    "-M", f"{config['combine_mggToys']['loadSnapshot']}",
+                    "-P", f"{cat}",
+                    "--floatOtherPOIs=1",
+                    "--saveWorkspace",
+                    "-t", "1",
+                    "-s", toy_seed,
+                    "-n", f"_{toy}_fit_step",
+                    "--cminDefaultMinimizerStrategy", "0",
+                    "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
+                    "--X-rtd", "MINIMIZER_multiMin_hideConstants",
+                    "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
+                    "--X-rtd", "MINIMIZER_multiMin_maskChannels=2"
+                ]
             command = arguments
             # print(command)
             try:
@@ -6219,14 +6298,7 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
 
         else:
             fitFolderName = f'runFits_{self.variable}'
-            reco_cats_with_bmw = [element for element in combineVariableDict(self.variable, self.year)['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-            if "_" in self.year:
-                cats = []
-                for y in self.year.split("_"):
-                    y2 = y[-2:]
-                    for c in reco_cats_with_bmw:
-                        cats.append(f"Y{y2}_{c}")
-                reco_cats_with_bmw = cats
+            reco_cats_with_bmw = splusb_plot_categories(os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt'), self.variable, self.year, cat)
         
         output = []
         if convert_boolean_string(self.is_postfit):
@@ -6328,14 +6400,7 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
 
             else:
                 # firstStep_path = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitScanFit_{cat}.MultiDimFit.mH125.07.root')
-                reco_cats_with_bmw = [element for element in combineVariableDict(self.variable, self.year)['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-                if "_" in self.year:
-                    cats = []
-                    for y in self.year.split("_"):
-                        y2 = y[-2:]
-                        for c in reco_cats_with_bmw:
-                            cats.append(f"Y{y2}_{c}")
-                    reco_cats_with_bmw = cats
+                reco_cats_with_bmw = splusb_plot_categories(os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt'), self.variable, self.year, cat)
             arguments = [
                 "python3",
                 f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeSplusBModelPlot.py')}",
@@ -6437,16 +6502,10 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                     reco_cats_with_bmw = cats
 
             else:
-                reco_cats_with_bmw = [element for element in combineVariableDict(self.variable, self.year)['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
+                reco_cats_with_bmw = splusb_plot_categories(os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.txt'), self.variable, self.year, cat)
 
-                if "_" in self.year:
-                    cats = []
-                    for y in self.year.split("_"):
-                        y2 = y[-2:]
-                        for c in reco_cats_with_bmw:
-                            cats.append(f"Y{y2}_{c}")
-                    reco_cats_with_bmw = cats
-
+            if mgg_toy_options(config)[0] and self.variable != '':
+                link_shared_toys(os.getcwd(), combineVariableDict(self.variable, self.year)['paramStrNoOne'][0], cat)
             arguments = [
                 "python3",
                 f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeSplusBModelPlot.py')}",
