@@ -161,7 +161,117 @@ def _list_modelconfig_nuisances(datacard_path, poi_list, exclude_expr=""):
     names = _filter_names_by_exclude(names, exclude_expr)
     names.sort()
     return names
-        
+
+def _validate_multidimfit_snapshot(path):
+    root_file = ROOT.TFile.Open(path)
+    if not root_file or root_file.IsZombie():
+        raise RuntimeError(f"Unreadable best-fit snapshot file: {path}")
+    try:
+        workspace = root_file.Get("w")
+        tree = root_file.Get("limit")
+        if not workspace or not workspace.getSnapshot("MultiDimFit"):
+            raise RuntimeError(f"Missing MultiDimFit snapshot in: {path}")
+        if not tree or tree.GetEntries() == 0:
+            raise RuntimeError(f"Missing best-fit entries in: {path}")
+    finally:
+        root_file.Close()
+
+
+def _unblinded_bestfit_snapshot_path(output_dir, fitFolderName, variable, year):
+    """Return the validated unblinded best-fit snapshot file of the first POI."""
+    first_poi = combineVariableDict(variable, year)['paramStrNoOne'][0]
+    snapshot_path = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitBestFit_{first_poi}.MultiDimFit.mH125.07.root')
+    if not os.path.exists(snapshot_path):
+        raise FileNotFoundError(f"Best-fit snapshot not found: {snapshot_path}. Run the unblinded fit first.")
+    _validate_multidimfit_snapshot(snapshot_path)
+    return snapshot_path
+
+def _unblinded_bestfit_snapshot_args(output_dir, fitFolderName, variable, year):
+    """Return arguments that start an impact fit from a validated unblinded best-fit snapshot."""
+    snapshot_path = _unblinded_bestfit_snapshot_path(output_dir, fitFolderName, variable, year)
+    return ["-d", snapshot_path, "-w", "w", "--snapshotName", "MultiDimFit"]
+
+_DEGENERATE_BKG_PARAM_RE = re.compile(r"^env_pdf_.*_(exp|pow)[0-9]+_p[0-9]+$")
+
+def _unblinded_freeze_parameters(output_dir, fitFolderName, variable, year):
+    """
+    Return the --freezeParameters value for the unblinded impact fits: MH plus the exponents of
+    exp/pow background functions that sit exactly on a range boundary at 0 in the best fit.
+    Such a term is flat and degenerate with the rest of the function, which makes the likelihood
+    singular and lets Minuit fail at random (rapidity: ~20% of the impact fits failed with status -1;
+    fixing env_pdf_7_2022_13TeV_exp3_p2 & co. at 0 made them converge with unchanged results).
+    """
+    snapshot_path = _unblinded_bestfit_snapshot_path(output_dir, fitFolderName, variable, year)
+    root_file = ROOT.TFile.Open(snapshot_path)
+    try:
+        snapshot = root_file.Get("w").getSnapshot("MultiDimFit")
+        degenerate = []
+        for arg in snapshot:
+            name = arg.GetName()
+            if not _DEGENERATE_BKG_PARAM_RE.match(name) or not hasattr(arg, "getMin"):
+                continue
+            if abs(arg.getVal()) < 1e-6 and (abs(arg.getMax()) < 1e-12 or abs(arg.getMin()) < 1e-12):
+                degenerate.append(name)
+    finally:
+        root_file.Close()
+    if degenerate:
+        print(f"Freezing {len(degenerate)} degenerate background parameters at their boundary: {', '.join(degenerate)}")
+    return ",".join(["MH"] + degenerate)
+
+def _refine_unblinded_bestfit(bestfit_path, singles_arguments, max_iterations=10, nll_tolerance=0.01):
+    """
+    Refit from the saved best-fit snapshot until the NLL stops decreasing; return True if converged.
+    A single fit from prefit can stop in a local minimum with a non-optimal background function
+    choice (seen for PTJ0: refitting from the snapshot lowered the NLL by 2.15 and changed 11 of 81
+    pdfindex values; PTHvsNJ with 180 pdfindex categories needs more than 3 passes). Each improvement
+    is followed by redoing the singles fit from the better point, so the output file keeps its format.
+    """
+    # One temporary refit file per best fit: the POI branches run in parallel in the same directory.
+    tag = os.path.basename(bestfit_path).replace("higgsCombine", "").replace(".MultiDimFit.mH125.07.root", "")
+    refine_name = f"{tag}_Refine"
+    refine_path = os.path.join(os.path.dirname(bestfit_path), f"higgsCombine{refine_name}.MultiDimFit.mH125.07.root")
+    # Drop the options the refit sets itself (combine rejects repeated options).
+    refit_options = []
+    skip_next = False
+    for arg in singles_arguments:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in ("-n", "--algo"):
+            skip_next = True
+            continue
+        if arg in ("--saveFitResult", "--saveWorkspace"):
+            continue
+        refit_options.append(arg)
+    for iteration in range(max_iterations):
+        refit_arguments = [
+            "combine", "-M", "MultiDimFit",
+            "-d", bestfit_path, "-w", "w", "--snapshotName", "MultiDimFit",
+            "--algo", "none", "--saveNLL", "--saveWorkspace",
+            "-n", refine_name,
+        ] + refit_options
+        subprocess.run(refit_arguments, check=True, text=True, capture_output=True)
+        root_file = ROOT.TFile.Open(refine_path)
+        tree = root_file.Get("limit")
+        tree.GetEntry(0)
+        delta_nll = tree.GetLeaf("nll").GetValue()
+        root_file.Close()
+        print(f"Best-fit refinement {iteration + 1}: NLL change {delta_nll:+.4f}", flush=True)
+        if delta_nll > -nll_tolerance:
+            converged = True
+            break
+        singles_from_refined = [
+            "combine", "-M", "MultiDimFit",
+            "-d", refine_path, "-w", "w", "--snapshotName", "MultiDimFit",
+        ] + singles_arguments
+        subprocess.run(singles_from_refined, check=True, text=True, capture_output=True)
+    else:
+        converged = False
+        print(f"WARNING: best fit still improving after {max_iterations} refinements.", flush=True)
+    if os.path.exists(refine_path):
+        os.remove(refine_path)
+    return converged
+
 def manually_copy_t3(src, dst):
     # List files in the directory
     list_command = ["xrdfs", "root://t3dcachedb03.psi.ch", "ls", src]
@@ -3065,6 +3175,17 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
 
         return outputFileTargets
 
+    def complete(self):
+        if self.is_workflow():
+            return super().complete()
+        if not super().complete():
+            return False
+        try:
+            _validate_multidimfit_snapshot(self.output()[1].path)
+        except RuntimeError:
+            return False
+        return True
+
     def run(self):
         current_cat = self.branch_data
         
@@ -3138,14 +3259,24 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
             
-        else:         
+        else:
+            pdf_indices = extract_pdf_indices(datacard_path)
+            # Two-stage best fit: a first fit with the background functions kept at their fTest
+            # choice (fast, lands near the minimum), then the refinement loop with the full discrete
+            # search. Starting the discrete search from prefit is slow and can end in a local minimum
+            # (PTHvsNJ: the one-stage fit failed after 2 h; the two-stage fit improved the NLL by ~25).
+            two_stage = config.get("combine_fit", {}).get("bestFitTwoStage", True)
+            max_refinements = config.get("combine_fit", {}).get("bestFitMaxRefinements", 10)
+            # Work on temporary names and only move the result to its final name once the
+            # refinement has converged, so an interrupted job never leaves a complete-looking output.
+            tmp_name = f"DataPostFitBestFitTmp_{current_cat}"
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
                 datacard_path,
                 "--freezeParameters", "MH",
                 "-m", "125.07",
-                "-n", f"DataPostFitBestFit_{current_cat}",
+                "-n", tmp_name,
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--algo", "singles",
@@ -3160,16 +3291,29 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
                 "--saveWorkspace",
-                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
             ]
-            command = arguments
+            if pdf_indices:
+                arguments.extend(_save_specified_index_args(pdf_indices))
+            command = arguments + (["--X-rtd", "MINIMIZER_skipDiscreteIterations"] if two_stage else [])
             # print(command)
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
                 print("Script output:", result.stdout)
+                tmp_path = os.path.join(os.getcwd(), f"higgsCombine{tmp_name}.MultiDimFit.mH125.07.root")
+                try:
+                    _validate_multidimfit_snapshot(tmp_path)
+                except RuntimeError as exc:
+                    raise RuntimeError(f"Best-fit output is invalid: {exc}; combine stderr: {result.stderr[-4000:]}") from exc
+                # arguments[4:] are the fit options without "combine -M MultiDimFit <datacard>";
+                # the refinement always runs with the full discrete search.
+                if not _refine_unblinded_bestfit(tmp_path, arguments[4:], max_iterations=max_refinements):
+                    raise RuntimeError(f"Best fit for {current_cat} did not converge within {max_refinements} refinements.")
+                _validate_multidimfit_snapshot(tmp_path)
+                os.replace(f"multidimfit{tmp_name}.root", f"multidimfitDataPostFitBestFit_{current_cat}.root")
+                os.replace(tmp_path, os.path.join(os.getcwd(), f"higgsCombineDataPostFitBestFit_{current_cat}.MultiDimFit.mH125.07.root"))
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Best-fit combine command failed: {e.stderr}") from e
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -3309,7 +3453,7 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         local_first_step = os.path.join(os.getcwd(), os.path.basename(firstStepPath))
         if not os.path.exists(firstStepPath):
             raise RuntimeError(f"Required best fit snapshot not found: {firstStepPath}")
-        if os.path.abspath(local_first_step) != os.path.abspath(firstStepPath):
+        if not os.path.exists(local_first_step) or not os.path.samefile(firstStepPath, local_first_step):
             shutil.copy2(firstStepPath, local_first_step)
         input_path = local_first_step if os.path.exists(local_first_step) else firstStepPath
                 
@@ -3737,7 +3881,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         local_first_step = os.path.join(os.getcwd(), os.path.basename(firstStepPath))
         if not os.path.exists(firstStepPath):
             raise RuntimeError(f"Required stat-only best fit snapshot not found: {firstStepPath}")
-        if os.path.abspath(local_first_step) != os.path.abspath(firstStepPath):
+        if not os.path.exists(local_first_step) or not os.path.samefile(firstStepPath, local_first_step):
             shutil.copy2(firstStepPath, local_first_step)
         input_path = local_first_step if os.path.exists(local_first_step) else firstStepPath
         n_points = int(self.nPoints)
@@ -4449,6 +4593,15 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
 
         tasks["RunT2WS"] = RunText2Workspace(output_dir=output_dir, variable=self.variable, year=self.year, version=self.variable if self.variable != "" else "inclusive", workflow=impactConfig["execution"], batch_flavor=self.batch_flavor, slurm_partition=impactConfig['batchPartition'], slurm_memory=impactConfig['batchMemory'], slurm_max_runtime=impactConfig['batchMaxRuntime'], htcondor_partition=impactConfig['batchPartition'], htcondor_memory=impactConfig['batchMemory'], htcondor_max_runtime=impactConfig['batchMaxRuntime'])
 
+        # Differential impacts start from the unblinded best-fit snapshot of the first POI
+        # (see _unblinded_bestfit_snapshot_args), so only branch 0 of the best fit is needed.
+        # The best fit can take well over an hour, hence the longer default batch runtime.
+        if self.variable != '':
+            fitConfig = config["combine_fit"]
+            bestFitPartition = fitConfig.get('bestFitBatchPartition', 'workday')
+            bestFitMaxRuntime = fitConfig.get('bestFitBatchMaxRuntime', '08:00:00')
+            tasks["UnblindedBestFit"] = UnblindedFitSystSingle(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, version=self.variable, branches=((0, 1),), workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=bestFitMaxRuntime, htcondor_partition=bestFitPartition, htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=bestFitMaxRuntime)
+
         return tasks
 
     def create_branch_map(self):
@@ -4485,6 +4638,25 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             outputFileTargets.append(law.LocalFileTarget(current_output_path))
 
         return outputFileTargets
+
+    def complete(self):
+        if not super().complete():
+            return False
+
+        output_path = self.output()[1].path
+        root_file = ROOT.TFile.Open(output_path)
+        if not root_file or root_file.IsZombie():
+            return False
+        tree = root_file.Get("limit")
+        if not tree or tree.GetEntries() < 1:
+            root_file.Close()
+            return False
+
+        expected_pois = ["r"] if self.variable == "" else combineVariableDict(self.variable, self.year)["paramStrNoOne"]
+        branches = {branch.GetName() for branch in tree.GetListOfBranches()}
+        valid = all(poi in branches for poi in expected_pois)
+        root_file.Close()
+        return valid
 
     def run(self):
        
@@ -4546,7 +4718,7 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
-                "--setParameter", f"{setParameters}",
+                "--setParameters", f"r={setParameters}",
             ]
             command = arguments
             # print(command)
@@ -4555,15 +4727,17 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Initial impact fit failed: {e.stderr}") from e
         else:
+            snapshot_args = _unblinded_bestfit_snapshot_args(output_dir, fitFolderName, self.variable, self.year)
+            freeze_params = _unblinded_freeze_parameters(output_dir, fitFolderName, self.variable, self.year)
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
-                "-d", datacard_path,
+                *snapshot_args,
                 "--algo", "singles",
                 "--redefineSignalPOIs", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStrNoOne'])}""",
-                "--freezeParameters", "MH",
+                "--freezeParameters", freeze_params,
                 "-m", "125.07",
                 "--robustFit", "1",
                 "-n", "_initialFit_Test",
@@ -4581,7 +4755,22 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Initial impact fit failed: {e.stderr}") from e
+
+        initial_fit = os.path.join(os.getcwd(), 'higgsCombine_initialFit_Test.MultiDimFit.mH125.07.root')
+        root_file = ROOT.TFile.Open(initial_fit)
+        if not root_file or root_file.IsZombie():
+            raise RuntimeError(f"Initial impact fit did not produce a readable ROOT file: {initial_fit}")
+        tree = root_file.Get("limit")
+        expected_pois = ["r"] if self.variable == "" else combineVariableDict(self.variable, self.year)["paramStrNoOne"]
+        if not tree or tree.GetEntries() < 1:
+            root_file.Close()
+            raise RuntimeError(f"Initial impact fit has no populated 'limit' tree: {initial_fit}")
+        branches = {branch.GetName() for branch in tree.GetListOfBranches()}
+        missing_pois = [poi for poi in expected_pois if poi not in branches]
+        root_file.Close()
+        if missing_pois:
+            raise RuntimeError(f"Initial impact fit is missing POI branches {missing_pois}: {initial_fit}")
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -4663,27 +4852,13 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
         else:
             datacard_path = os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root')
     
-        # As seen in CMSSW_14_1_0_pre4/src/CombineHarvester/CombineTools/python/combine/Impacts.py
-        def all_free_parameters(file, wsp, mc, pois):
-            res = []
-            wsFile = ROOT.TFile.Open(file)
-            w = wsFile.Get(wsp)
-            config = w.genobj(mc)
-            pdfvars = config.GetPdf().getParameters(config.GetObservables())
-            it = pdfvars.createIterator()
-            var = it.Next()
-            while var:
-                if var.GetName() not in pois and (not var.isConstant()) and var.InheritsFrom("RooRealVar"):
-                    res.append(var.GetName())
-                var = it.Next()
-            return res
-
         if self.variable == '':
             poiList = ["r"]
         else:
             poiList = combineVariableDict(self.variable, self.year)['paramStrNoOne']
-        
-        paramList = all_free_parameters(datacard_path, 'w', 'ModelConfig', poiList)
+
+        exclude_expr = config.get("combine_impacts", {}).get("exclude", "")
+        paramList = _list_modelconfig_nuisances(datacard_path, poiList, exclude_expr=exclude_expr)
 
         
         branch_map = {i: current_param for i, current_param in enumerate(paramList)}
@@ -4724,6 +4899,21 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
         # print(outputFileTargets)
 
         return outputFileTargets
+
+    def complete(self):
+        if not super().complete():
+            return False
+
+        output_path = self.output()[1].path
+        root_file = ROOT.TFile.Open(output_path)
+        if not root_file or root_file.IsZombie():
+            return False
+        tree = root_file.Get("limit")
+        # A finished impact fit has 3 entries (best fit, -1 sigma, +1 sigma); fewer means the job
+        # was interrupted (e.g. suspended on a worker) after writing only the best fit.
+        valid = bool(tree and tree.GetEntries() >= 3)
+        root_file.Close()
+        return valid
 
     def run(self):
         current_param = self.branch_data
@@ -4778,9 +4968,9 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
             f = ROOT.TFile(initial_fit)
             tree = f.Get("limit")
             
-            if not tree:
-                print("Error: Tree 'limit' not found in the file.")
-                exit(1)
+            if not tree or tree.GetEntries() < 1:
+                f.Close()
+                raise RuntimeError(f"Initial impact fit has no populated 'limit' tree: {initial_fit}")
             # Access the branch 'r_YH_2p0_2p5' and get its first value
             if hasattr(tree, 'r'):
                 tree.GetEntry(0)  # Load the first entry
@@ -4804,7 +4994,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 "--floatOtherPOIs", "1",
                 "--saveInactivePOI", "1",
                 "--robustFit", "1",
-                "-n", f"_paramFit_Test_{current_param}",
+                "-n", f"_paramFit_Test_{current_param}_tmp",
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -4823,7 +5013,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Impact fit failed for nuisance {current_param}: {e.stderr}") from e
         else:
 
             initial_fit = os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', f'higgsCombine_initialFit_Test.MultiDimFit.mH125.07.root')
@@ -4833,9 +5023,9 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
             f = ROOT.TFile(initial_fit)
             tree = f.Get("limit")
             
-            if not tree:
-                print("Error: Tree 'limit' not found in the file.")
-                exit(1)
+            if not tree or tree.GetEntries() < 1:
+                f.Close()
+                raise RuntimeError(f"Initial impact fit has no populated 'limit' tree: {initial_fit}")
 
             for poi in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                 # Access the branch 'r_YH_2p0_2p5' and get its first value
@@ -4845,25 +5035,29 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                     poi_bf.append(f'{poi}={first_value}')
                     print(f"First value of branch '{poi}': {first_value}")
                 else:
-                    print(f"Error: Branch '{poi}' not found in the tree.")
-                    exit(1)
+                    f.Close()
+                    raise RuntimeError(f"Initial impact fit is missing POI branch '{poi}': {initial_fit}")
 
             poi_bf_string = ",".join(poi_bf)
-        
+            f.Close()
+
+            # The snapshot holds the full best fit, including the background PDF indices.
+            start_args = _unblinded_bestfit_snapshot_args(output_dir, fitFolderName, self.variable, self.year)
+            freeze_params = _unblinded_freeze_parameters(output_dir, fitFolderName, self.variable, self.year)
+
             arguments = [
                 "combine",
                 "-M", "MultiDimFit",
-                "-d", datacard_path,
+                *start_args,
                 "--algo", "impact",
                 "--redefineSignalPOIs", f"""{",".join(combineVariableDict(self.variable, self.year)['paramStrNoOne'])}""",
-                "--setParameters", poi_bf_string,
-                "--freezeParameters", "MH",
+                "--freezeParameters", freeze_params,
                 "-m", "125.07",
                 "-P", f"{current_param}",
                 "--floatOtherPOIs", "1",
                 "--saveInactivePOI", "1",
                 "--robustFit", "1",
-                "-n", f"_paramFit_Test_{current_param}",
+                "-n", f"_paramFit_Test_{current_param}_tmp",
                 "--cminDefaultMinimizerStrategy=0",
                 "--cminFallbackAlgo", "Minuit2,Migrad,1:10",
                 "--X-rtd", "MINIMIZER_freezeDisassociatedParams",
@@ -4878,7 +5072,21 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Impact fit failed for nuisance {current_param}: {e.stderr}") from e
+
+        # combine exits with 0 even when the -1/+1 sigma fits fail and only the best fit is written;
+        # fail the job in that case so law retries it instead of step 3 silently dropping the nuisance.
+        # combine writes to a temporary name; the result is moved to its final name only once it is
+        # complete, so a job killed by the batch system never leaves an output that law takes as done.
+        impact_output = os.path.join(os.getcwd(), f"higgsCombine_paramFit_Test_{current_param}_tmp.MultiDimFit.mH125.07.root")
+        root_file = ROOT.TFile.Open(impact_output)
+        tree = root_file.Get("limit") if root_file and not root_file.IsZombie() else None
+        n_entries = tree.GetEntries() if tree else 0
+        if root_file:
+            root_file.Close()
+        if n_entries < 3:
+            raise RuntimeError(f"Impact fit for nuisance {current_param} is incomplete ({n_entries} of 3 entries): {impact_output}")
+        os.replace(impact_output, os.path.join(os.getcwd(), f"higgsCombine_paramFit_Test_{current_param}.MultiDimFit.mH125.07.root"))
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -5047,12 +5255,17 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             temp_output_dir = output_dir
 
         if self.variable == '':
+            exclude_expr = config.get("combine_impacts", {}).get("exclude", "")
+            named_params = _list_modelconfig_nuisances(datacard_path, ["r"], exclude_expr=exclude_expr)
+            if not named_params:
+                raise RuntimeError(f"No nuisance parameters found for inclusive impacts (year={self.year}).")
             arguments = [
                 "combineTool.py",
                 "-M", "Impacts",
                 "-d", datacard_path,
                 "-m", "125.07",
-                "-o", "impacts/impacts.json"
+                "-o", "impacts/impacts.json",
+                "--named", ",".join(named_params),
             ]
             command = arguments
             # print(command)
@@ -5061,7 +5274,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Could not collect inclusive impacts: {e.stderr}") from e
                 
             arguments = [
                 "python3",
@@ -5077,7 +5290,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Could not correct inclusive impacts: {e.stderr}") from e
                 
             arguments = [
                 "plotImpacts.py",
@@ -5093,8 +5306,16 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Could not plot inclusive impacts: {e.stderr}") from e
         else:
+            exclude_expr = config.get("combine_impacts", {}).get("exclude", "")
+            named_params = _list_modelconfig_nuisances(
+                datacard_path,
+                combineVariableDict(self.variable, self.year)["paramStrNoOne"],
+                exclude_expr=exclude_expr,
+            )
+            if not named_params:
+                raise RuntimeError(f"No nuisance parameters found for differential impacts (variable={self.variable}, year={self.year}).")
             arguments = [
                 "combineTool.py",
                 "-M", "Impacts",
@@ -5102,10 +5323,8 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--freezeParameters", "MH",
                 "-m", "125.07",
                 "-o", "impacts/impacts.json",
+                "--named", ",".join(named_params),
             ]
-            if (config["combine_impacts"]["exclude"] != ""):
-                arguments.append("--exclude")
-                arguments.append(config["combine_impacts"]["exclude"])
             command = arguments
             # print(command)
             try:
@@ -5113,7 +5332,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Could not collect differential impacts: {e.stderr}") from e
                 
             arguments = [
                 "python3",
@@ -5132,7 +5351,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Could not correct differential impacts: {e.stderr}") from e
                 
             for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                 arguments = [
@@ -5151,7 +5370,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                     print("Script output:", result.stdout)
                     print("Script executed successfully.")
                 except subprocess.CalledProcessError as e:
-                    print("Error executing script:", e.stderr)
+                    raise RuntimeError(f"Could not plot impacts for POI {cat}: {e.stderr}") from e
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -5535,7 +5754,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
-                print("Error executing script:", e.stderr)
+                raise RuntimeError(f"Could not plot inclusive impacts: {e.stderr}") from e
                 
             # Define the source pattern and destination path
             # On the PSI Tier 3 when executed with SLURM, the Toys are on the Storage Element which needs special handling
