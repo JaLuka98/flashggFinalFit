@@ -121,7 +121,7 @@ if opt.skipZeroes:
     d = reduceDataset(inputWS.data("%s_%s_%s_%s_%s"%(procToData(opt.proc.split("_")[0]),procToData(opt.proc.split("_")[-1]),MHNominal,sqrts__,opt.cat)),aset)
   else:
     d = reduceDataset(inputWS.data("%s_%s_%s_%s"%(procToData(opt.proc.split("_")[0]),MHNominal,sqrts__,opt.cat)),aset)
-  if( d.numEntries() == 0. )|( d.sumEntries <= 0. ):
+  if( d.numEntries() == 0. )|( d.sumEntries() <= 0. ):
     print(" --> (%s,%s) has zero events. Will not construct signal model"%(opt.proc,opt.cat))
     exit()
   inputWS.Delete()
