@@ -138,7 +138,6 @@ wdata_cats = OrderedDict()
 for cidx in range(chan.numTypes()):
   chan.setIndex(cidx)
   c = chan.getLabel()
-  print(c)
   if(opt.cats!='all')&(c not in opt.cats.split(",")): continue
   if( opt.doHHMjjFix )&( c in catsfix ): _xvar_argset, _wxvar_argset = xvarfix_argset, wxvarfix_argset
   else: _xvar_argset, _wxvar_argset = xvar_argset, wxvar_argset
