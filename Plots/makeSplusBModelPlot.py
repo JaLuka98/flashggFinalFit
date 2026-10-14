@@ -110,6 +110,27 @@ if opt.doHHMjjFix:
 # Extract the total SB/B models
 sb_model, b_model = w.pdf("model_s"), w.pdf("model_b")
 
+# Exceptional cat naming: some bins are stored in the workspace under a different label
+# than the one passed via --cats. Map requested name -> workspace name where needed
+catNameReplacements = OrderedDict([
+  ("_DPhiJ0J1_m10000p0_m3p1416_", "_DPhiJ0J1_m3p1416_3p1416_underflow_"),
+])
+if opt.cats != 'all':
+  wsCats = []
+  for cidx in range(chan.numTypes()):
+    chan.setIndex(cidx)
+    wsCats.append(chan.getLabel())
+  _cats = []
+  for c in opt.cats.split(","):
+    if c not in wsCats:
+      for _old, _new in catNameReplacements.items():
+        if( _old in c )&( c.replace(_old,_new) in wsCats ):
+          print(" --> Renaming cat %s -> %s (workspace naming)"%(c,c.replace(_old,_new)))
+          c = c.replace(_old,_new)
+          break
+    _cats.append(c)
+  opt.cats = ",".join(_cats)
+
 # Extract dataset for opt.cats
 d_obs = w.data("data_obs")
 data_cats = OrderedDict()
@@ -117,6 +138,7 @@ wdata_cats = OrderedDict()
 for cidx in range(chan.numTypes()):
   chan.setIndex(cidx)
   c = chan.getLabel()
+  print(c)
   if(opt.cats!='all')&(c not in opt.cats.split(",")): continue
   if( opt.doHHMjjFix )&( c in catsfix ): _xvar_argset, _wxvar_argset = xvarfix_argset, wxvarfix_argset
   else: _xvar_argset, _wxvar_argset = xvar_argset, wxvar_argset
@@ -273,7 +295,6 @@ if opt.doBands:
         with open("SplusBModels%s/toyYields_%s.pkl" % (opt.ext, opt.xvar.split(",")[0]), "wb") as fD:
           pickle.dump(df_bands, fD)
 
-
 # Process each category separately
 for cidx in range(len(cats)):
   c = cats[cidx]
@@ -386,6 +407,7 @@ for cidx in range(len(cats)):
       wbkgval = h_wbpdf['nBins'].GetBinContent(ibin)
       h_wdata_ratio.SetBinContent(ibin,wbval-wbkgval)
       h_wdata_ratio.SetBinError(ibin,wberr)
+  
 
   # Sum histograms if processing multiple categories
   if( len(opt.cats.split(",")) > 1 )|( opt.cats == 'all' ):

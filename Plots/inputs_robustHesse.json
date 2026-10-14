@@ -98,6 +98,24 @@
         "fits":"robustHesse:syst:r_YJ0_0p6_0p9",
         "points":"",
         "fit_opts":"--saveSpecifiedNuis all --saveInactivePOI 1"
+    },
+    "DPhiJ0J1": {
+        "pois": "r_DPhiJ0J1_m10000p0_m3p1416,r_DPhiJ0J1_m3p1416_m1p5708,r_DPhiJ0J1_m1p5708_0p0,r_DPhiJ0J1_0p0_1p5708,r_DPhiJ0J1_1p5708_3p1416",
+        "fits": "robustHesse:syst:r_DPhiJ0J1_m1p5708_0p0",
+        "points": "",
+        "fit_opts": "--saveSpecifiedNuis all --saveInactivePOI 1"
+    },
+    "EtaJ0J1": {
+        "pois": "r_EtaJ0J1_m10000p0_0p0,r_EtaJ0J1_0p0_0p7,r_EtaJ0J1_0p7_1p6,r_EtaJ0J1_1p6_3p0,r_EtaJ0J1_3p0_5p0,r_EtaJ0J1_5p0_100p0",
+        "fits": "robustHesse:syst:r_EtaJ0J1_0p0_0p7",
+        "points": "",
+        "fit_opts": "--saveSpecifiedNuis all --saveInactivePOI 1"
+    },
+    "PhiEtaStar": {
+        "pois": "r_PhiEtaStar_0p0_0p05,r_PhiEtaStar_0p05_0p1,r_PhiEtaStar_0p1_0p2,r_PhiEtaStar_0p2_0p3,r_PhiEtaStar_0p3_0p4,r_PhiEtaStar_0p4_0p5,r_PhiEtaStar_0p5_0p7,r_PhiEtaStar_0p7_1p0,r_PhiEtaStar_1p0_1p5,r_PhiEtaStar_1p5_2p5,r_PhiEtaStar_2p5_4p0,r_PhiEtaStar_4p0_100p0",
+        "fits": "robustHesse:syst:r_PhiEtaStar_0p1_0p2",
+        "points": "",
+        "fit_opts": "--saveSpecifiedNuis all --saveInactivePOI 1"
     }
 
 }

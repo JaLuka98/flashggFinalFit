@@ -536,7 +536,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             bins_c[0] = current_config['first_bin_center']
         else:
             # Push the underflow data point far off-screen (not plotted)
-            bins_c[0] = current_config.get('x_lim', [0, 1])[0] - 1e6
+            bins_c[0] = current_config.get('x_lim', [0, 1])[0] - (current_config.get('x_lim', [0, 1])[1] - current_config.get('x_lim', [0, 1])[0])
+            # bins_c[0] = current_config.get('x_lim', [0, 1])[0] - 1e6
         
         plt.rcParams['hatch.linewidth'] = 2
         for center, value, err_low, err_high, width in zip(bins_c, ggh_xs_norm+xh_xs_norm, unc_th_dn, unc_th_up, bin_w_visual):
@@ -726,11 +727,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         plt.yticks(fontsize=frame2_ytick_fontsize)
 
         plt.xlim(current_config['x_lim'])
-        frame2_ylim = plotting_config.get('frame2', {}).get('ylim', None)
-        if frame2_ylim is not None:
-            plt.ylim(**frame2_ylim)
-        else:
-            plt.ylim(current_config['y_lim'])
+        plt.ylim(current_config['y_lim'])
         
         if convert_boolean_string(self.is_unblinded):
             plt.savefig(os.path.join(output_dir, 'Combine', fitFolderName, 'spectra.pdf'), bbox_inches='tight', dpi=120)
