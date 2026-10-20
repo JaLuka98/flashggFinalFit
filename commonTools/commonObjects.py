@@ -1,6 +1,12 @@
 import os
 import copy
 
+def rename_underflow_dphij0j1(variable, reco_cat):
+    """Renames the underflow bin of DPhiJ0J1"""
+    if variable == "DPhiJ0J1":
+        return reco_cat.replace("m10000p0_m3p1416", "m3p1416_3p1416_underflow")
+    return reco_cat
+
 # Paths and directory
 cmsswbase__ = os.environ['CMSSW_BASE']
 if 'ANALYSIS_PATH' in os.environ:
@@ -558,21 +564,28 @@ def combineVariableDict(variable, year):
             "pdfIndeces": [],
         }
 
+    gen_variable = "YH" if variable in ["rapidity", "rapidity_lightquarks"] else variable
+    reco_variable = "rapidity" if variable == "rapidity_lightquarks" else variable
+
     # Split the years if it's a combined year, otherwise just use the single year
-    year_list = year.split('_') if '_' in year else [year]
+    year_list = year.split('_')
     template_year = year_list[0]
+
+    payload = CreateVariableParameters(
+        gen_variable=gen_variable, reco_variable=reco_variable,
+        bins=variableBins[variable], reco_bins=recoVariableBins[variable],
+        year=template_year, BMW=BMW,
+    )
+
     if len(year_list) > 1:
         # Add the pdfIndices from all the years together for the combined year
         combined_pdf_indices = []
-        gen_variable = "YH" if variable in ["rapidity", "rapidity_lightquarks"] else variable
-        reco_variable = "rapidity" if variable == "rapidity_lightquarks" else variable
-        combined_payload = CreateVariableParameters(gen_variable=gen_variable, reco_variable=reco_variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)
         for y in year_list:
-            year_payload = combineVariableDict(variable, y)
-            combined_pdf_indices.extend(year_payload["pdfIndeces"])
-        combined_payload["pdfIndeces"] = combined_pdf_indices
-        return combined_payload
-    else:
-        gen_variable = "YH" if variable in ["rapidity", "rapidity_lightquarks"] else variable
-        reco_variable = "rapidity" if variable == "rapidity_lightquarks" else variable
-        return CreateVariableParameters(gen_variable=gen_variable, reco_variable=reco_variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)
+            combined_pdf_indices.extend(combineVariableDict(variable, y)["pdfIndeces"])
+        payload["pdfIndeces"] = combined_pdf_indices
+
+    payload["pdfIndeces"] = [
+        rename_underflow_dphij0j1(variable, p) for p in payload["pdfIndeces"]
+    ]
+
+    return payload

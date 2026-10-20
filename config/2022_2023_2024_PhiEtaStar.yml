@@ -249,8 +249,8 @@ datacard_clean:
 
 combine_fit:
   asimov_numPoints: 100 # Number of points the Asimov generator should generate for the NLL scan
-  unblindedFit_numPoints: 100 
-  setParameterRange: "r=0,2"
+  unblindedFit_numPoints: 50 
+  setParameterRange: "r=-3,3"
   execution: 'slurm'
   batchPartition: "standard" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
@@ -258,7 +258,7 @@ combine_fit:
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
-  not_show_POI: True
+  not_show_POI: False
   execution: 'slurm'
   batchPartition: "standard" # Slurm partition to use for job submission long
   batchMemory: 30000 # Slurm memory to use for job submission
@@ -287,6 +287,7 @@ spectra:
   tth_xs: "fidXS_PhiEtaStar_ttH"
   xh_xs: "fidXS_PhiEtaStar_xH"
   ggh_powheg_xs: "fidXS_PhiEtaStar_ggH_powheg"
+  ggh_powheg_minlo_xs: "fidXS_PhiEtaStar_ggH_powheg_minlo"
   ggh_no_nnlops_xs: "fidXS_PhiEtaStar_ggH_genWeight"
   underflow_bin_normalized: False # Underflow bin normalized with binwidth
   # keep natural bin centers from fidXS boundaries for angular variable

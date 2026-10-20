@@ -34,6 +34,12 @@ def convert_boolean_string(string):
 def is_signal_only_datacard(config):
     return convert_boolean_string(config.get("datacard_yields", {}).get("skipBkg", False))
 
+def splusb_plot_file_dphij0j1(variable, reco_cat):
+    """Name makeSplusBModelPlot.py uses in the output file for this reco category."""
+    if variable == "DPhiJ0J1":
+        return reco_cat.replace("m10000p0_m3p1416", "m3p1416_3p1416_underflow")
+    return reco_cat
+
 HIGGS_MASS = "125.07"
 
 class FinalFits(law.WrapperTask):
@@ -784,8 +790,8 @@ class FinalFitsYear(law.Task):
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
                     
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{splusb_plot_file_dphij0j1(self.variable, catWithBMW)}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{splusb_plot_file_dphij0j1(self.variable, catWithBMW)}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
@@ -794,8 +800,8 @@ class FinalFitsYear(law.Task):
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
                     
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{splusb_plot_file_dphij0j1(self.variable, catWithBMW)}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{splusb_plot_file_dphij0j1(self.variable, catWithBMW)}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
