@@ -55,6 +55,7 @@ def get_options():
   parser.add_option("--doHHMjjFix", dest="doHHMjjFix", default=False, action="store_true", help="Do fix for HH analysis where some cats have different Mjj var")
   parser.add_option("--POI", dest="POI", default='', help="POI to be considered.")
   parser.add_option("--lumiLabel", dest="lumiLabel", default="61.9 fb^{-1} (13.6 TeV)", help="Luminosity label")
+  parser.add_option("--bkgFromFit", dest="bkgFromFit", default=None, help="File with an S+B fit (MultiDimFit snapshot): take only the background model (shape parameters, normalisations, pdf indices) from it")
   return parser.parse_args()
 (opt,args) = get_options()
 
@@ -74,6 +75,15 @@ if opt.inputWSFile is not None:
     for kv in opt.parameterMap.split(","):
       k, v = kv.split(":")[0], kv.split(":")[1]
       w.var(k).setVal(float(v))
+  # Background model from the S+B fit: signal, mu and nuisances stay as loaded above
+  if opt.bkgFromFit is not None:
+    print("    * Background model from the S+B fit in: %s"%opt.bkgFromFit)
+    fFit = ROOT.TFile(opt.bkgFromFit)
+    for p in fFit.Get("w").getSnapshot("MultiDimFit"):
+      n = p.GetName()
+      if not re.match(r"^(env_pdf|shapeBkg|pdfindex)", n): continue
+      if p.InheritsFrom("RooCategory"): w.cat(n).setIndex(p.getIndex())
+      elif w.var(n): w.var(n).setVal(p.getVal())
 
 # Define blinding region
 blindingRegion = [float(opt.blindingRegion.split(",")[0]),float(opt.blindingRegion.split(",")[1])]

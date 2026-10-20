@@ -6579,6 +6579,10 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 "--ext", f"_{cat}",
                 "--POI", f"{cat}"
             ]
+            # Background curve from the unblinded S+B fit when it exists (signal and nuisances stay pre-fit)
+            bkg_fit = os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombineDataPostFitBestFit_{cat}.MultiDimFit.mH125.07.root')
+            if os.path.exists(bkg_fit):
+                arguments.extend(["--bkgFromFit", bkg_fit])
             if config['combine_mggToys']['doBands']:
                 arguments.append("--doBands")
                 arguments.append("--doToyVeto")
