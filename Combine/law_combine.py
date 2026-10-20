@@ -91,6 +91,12 @@ def splusb_plot_categories(datacard_txt, variable, year, cat):
         cats = [f"Y{y[-2:]}_{c}" for y in year.split("_") for c in cats]
     return cats
 
+def splusb_plot_file_dphij0j1(variable, reco_cat):
+    """Name makeSplusBModelPlot.py uses in the output file for this reco category."""
+    if variable == "DPhiJ0J1":
+        return reco_cat.replace("m10000p0_m3p1416", "m3p1416_3p1416_underflow")
+    return reco_cat
+
 def get_lumi_label(year):
     if year in lumiMap:
         lumi = lumiMap[year]
@@ -3775,7 +3781,8 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--firstPoint", f"{current_point}",
                 "--lastPoint", f"{current_point}",
                 "--saveSpecifiedIndex", saveSpecifiedIndex,
-                "--setParameters", paramStr,
+                "--cminApproxPreFitTolerance", f"{cminApproxPreFitTolerance}",
+                # "--setParameters", paramStr,
                 "-w", "w",
             ]
             arguments.extend(_scan_parameter_range_args(config, current_cat))
@@ -4209,7 +4216,7 @@ class CreateUnblindedFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
             ]
             command = arguments
-            # print(command)
+            print(command)
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
                 print("Script output:", result.stdout)
@@ -6359,9 +6366,9 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
         if convert_boolean_string(self.is_postfit):
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
-
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+            
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{splusb_plot_file_dphij0j1(self.variable, catWithBMW)}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{splusb_plot_file_dphij0j1(self.variable, catWithBMW)}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
@@ -6370,8 +6377,8 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
 
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{splusb_plot_file_dphij0j1(self.variable, catWithBMW)}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+            output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{splusb_plot_file_dphij0j1(self.variable, catWithBMW)}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
             output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
@@ -6757,6 +6764,7 @@ class PValueCalculation(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 "-m", "125.07",
                 "--saveWorkspace"
             ]
+            print(command)
             try:
                 result = subprocess.run(command, check=True, text=True, capture_output=True)
                 print("Script output:", result.stdout)
@@ -6784,6 +6792,7 @@ class PValueCalculation(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 # Open the ROOT file and read the deltaNLL values
                 nll_data = uproot.open(filename)["limit"].arrays()
                 nll = nll_data['deltaNLL'][1]  # Extract the second value in deltaNLL array
+                # nll = nll_data['deltaNLL'][0]
 
                 # Compute the p-value
                 chi2pdf = chi2(n_bins)
