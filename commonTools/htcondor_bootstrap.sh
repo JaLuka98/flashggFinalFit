@@ -7,6 +7,8 @@
 # base tasks in commonTools/framework.py.
 
 action() {
+    # Large combined PTH RooWorkspaces need more than the default stack size.
+    ulimit -s unlimited || return 1
     source "{{law_dir}}/htcondor_setup.sh" "$@"
 }
 action "$@"

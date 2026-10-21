@@ -344,6 +344,15 @@ combineVariableDict = {
 }
 
 
+# Generator bin order used by the copied Mjj combination scans.
+combineVariableDict["2022_2023_2024"]["MassJ0J1"] = CreateVariableParameters(
+    gen_variable="MassJ0J1", reco_variable="MassJ0J1",
+    bins=["m10000p0_0p0", "0p0_75p0", "75p0_120p0", "120p0_180p0",
+          "180p0_300p0", "300p0_500p0", "500p0_1000p0", "1000p0_10000p0"],
+    year="2022_2023_2024", BMW=BMW,
+)
+
+
 def _apply_pdfindex_overrides():
     override_path = os.path.join(cwd__, "config", "pdfindex_overrides.json")
     if not os.path.exists(override_path):

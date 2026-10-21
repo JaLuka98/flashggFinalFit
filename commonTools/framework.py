@@ -32,7 +32,16 @@ class Task(law.Task):
     version = luigi.Parameter()
 
     def store_parts(self):
-        return (self.__class__.__name__, self.version)
+        parts = (self.__class__.__name__, self.version)
+        # Tasks with the same version but different --output-dir (e.g. several fits of the same
+        # variable/year) must not share job submission files, otherwise parallel law runs pick up
+        # each other's HTCondor job ids. Default output_dir ('') keeps the old path.
+        output_dir = getattr(self, "output_dir", "")
+        if output_dir:
+            tag = os.path.basename(os.path.normpath(output_dir))
+            digest = law.util.create_hash(os.path.normpath(output_dir), l=8)
+            parts += (f"{tag}_{digest}",)
+        return parts
 
     def local_path(self, *path):
         # DATA_PATH is defined in setup.sh
@@ -111,7 +120,11 @@ class HTCondorWorkflow(law.htcondor.HTCondorWorkflow):
         config.custom_content.append(("RequestMemory", f"{memory_gb}GB")) 
 
         # maximum runtime
-        config.custom_content.append(("+MaxRuntime", int(math.floor(self.htcondor_max_runtime * 3600)) - 1))
+        max_runtime_seconds = int(math.floor(self.htcondor_max_runtime * 3600)) - 1
+        config.custom_content.append(("+MaxRuntime", max_runtime_seconds))
+        # +MaxRuntime is advisory on the RWTH pool; enforce the configured limit.
+        config.custom_content.append(("periodic_hold", f"(JobStatus == 2) && ((time() - EnteredCurrentStatus) > {max_runtime_seconds})"))
+        config.custom_content.append(("periodic_hold_reason", '"Configured LAW runtime limit exceeded"'))
 
         # job flavor
         config.custom_content.append(("+JobFlavour", f'"{self.htcondor_partition}"'))
