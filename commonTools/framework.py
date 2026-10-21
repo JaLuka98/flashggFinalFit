@@ -32,7 +32,16 @@ class Task(law.Task):
     version = luigi.Parameter()
 
     def store_parts(self):
-        return (self.__class__.__name__, self.version)
+        parts = (self.__class__.__name__, self.version)
+        # Tasks with the same version but different output_dir (e.g. the per-year chains of one
+        # FinalFits run) must not share job submission files, otherwise parallel law runs pick up
+        # each other's HTCondor job ids. Default output_dir ('') keeps the old path.
+        output_dir = getattr(self, "output_dir", "")
+        if output_dir:
+            tag = os.path.basename(os.path.normpath(output_dir))
+            digest = law.util.create_hash(os.path.normpath(output_dir), 8)
+            parts += (f"{tag}_{digest}",)
+        return parts
 
     def local_path(self, *path):
         # DATA_PATH is defined in setup.sh
@@ -60,9 +69,15 @@ class HTCondorWorkflow(law.htcondor.HTCondorWorkflow):
     """
 
     parallel_jobs = luigi.IntParameter(
-        default=600,
+        default=100,
         significant=False,
-        description="maximum number of parallel htcondor jobs; default: 600",
+        description="maximum number of parallel htcondor jobs; default: 100 (was 600 before the 2026-10-05 file-server overload)",
+    )
+    poll_interval = law.DurationParameter(
+        default=3,
+        unit="m",
+        significant=False,
+        description="time between status polls; default unit is minutes; default: 3 (law default 1)",
     )
     htcondor_partition = luigi.Parameter(
         default="workday",
