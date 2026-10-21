@@ -2,6 +2,12 @@
 """
 Utility to extend an existing fiducial datacard with the ingredients needed
 to perform an inclusive total cross-section measurement.
+
+Not used for the Hgg+H4l combination (branch Hzz_Hyy_222324_combination): it adds a
+flat CMS_BR_hgg 0.98/1.021 row, which is neither split into the partial-width
+uncertainties nor correlated with H4l. Use instead, on that branch,
+combination/run_combination.sh <obs> hgg-card, i.e.
+Datacard/addAcceptanceUncertainties.py + Datacard/addBranchingRatioUncertainties.py.
 """
 
 from __future__ import annotations
@@ -356,6 +362,8 @@ def add_new_lines(lines: List[str], new_lines: Sequence[str]) -> List[str]:
 
 
 def main() -> int:
+    print("[WARNING] prepare_total_xsec_datacard.py is superseded for the Hgg+H4l combination: use "
+          "combination/run_combination.sh <obs> hgg-card (branch Hzz_Hyy_222324_combination)", file=sys.stderr)
     args = parse_args()
     input_path = pathlib.Path(args.input_datacard)
     output_path = pathlib.Path(args.output_datacard)
