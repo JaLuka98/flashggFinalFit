@@ -352,6 +352,14 @@ combineVariableDict["2022_2023_2024"]["MassJ0J1"] = CreateVariableParameters(
     year="2022_2023_2024", BMW=BMW,
 )
 
+# The first PTJ0 bin (no jet) is m10000p0_30p0 in the Hgg cards (process and RECO category names)
+# and in the combination POI maps; PTJ0_BINS has 0p0_30p0, which matches no POI and no pdfindex.
+combineVariableDict["2022_2023_2024"]["PTJ0"] = CreateVariableParameters(
+    gen_variable="PTJ0", reco_variable="PTJ0",
+    bins=["m10000p0_30p0"] + PTJ0_BINS[1:],
+    year="2022_2023_2024", BMW=BMW,
+)
+
 
 def _apply_pdfindex_overrides():
     override_path = os.path.join(cwd__, "config", "pdfindex_overrides.json")
