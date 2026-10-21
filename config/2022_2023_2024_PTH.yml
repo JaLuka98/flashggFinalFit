@@ -257,10 +257,10 @@ combine_fit:
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
   not_show_POI: True
-  execution: 'local'
+  execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
-  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+  batchMemory: 24000 # Slurm memory to use for job submission
+  batchMaxRuntime: "24:00:00" # Slurm max runtime to use
 
 combine_hesse:
   execution: 'local'
@@ -299,3 +299,23 @@ spectra:
   y_lim_top: 500
   overflow: 500
 
+combined_spectra:
+  # Output directories of the three fits (can be overridden with --hgg-output-dir etc.)
+  hgg_output_dir: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_PTH_HggH4l/hgg/'
+  hzz_output_dir: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_PTH_HggH4l/h4l/'
+  comb_output_dir: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_PTH_HggH4l/comb/'
+  # The fidXS modules in `spectra` are Hgg fiducial sigma x BR (see config/2022_2023_2024_rapidity.yml for the options).
+  prediction_scale: 1.
+  prediction_label: 'aMC@NLO NNLOPS + xH'
+  hgg_label: 'H$\rightarrow\gamma\gamma$'
+  hzz_label: 'H$\rightarrow$ZZ$\rightarrow$4$\ell$'
+  comb_label: 'H$\rightarrow\gamma\gamma$ + H$\rightarrow$ZZ'
+  expected_title: 'Expected (Asimov)'
+  # overflow bin (> 450 GeV) drawn with the width of the last but one bin
+  overflow_width_as_previous: True
+  spectra_overrides:
+    y_lim_top: 20 # upper edge of the spectrum panel (fb/GeV)
+    first_bin_center: 0
+    last_bin_center: 0
+    x_lim: [0, 550]
+    y_lim: [0, 2]

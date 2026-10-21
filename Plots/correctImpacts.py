@@ -30,6 +30,13 @@ for param in data['params']:
       poivals = param[poi]
       poisCorrected[poi] = 0.5*( poivals[0]+poivals[2] ) # Midpoint of up and down variation
 
+# If the frozen parameter is not among the impact parameters (e.g. when impacts are restricted to the
+# ModelConfig nuisances with --named, MH is not fitted), use the best-fit value of the initial fit
+for poi in data['POIs']:
+  if poi['name'] not in poisCorrected:
+    print("Frozen parameter %s not found in impacts: using the initial-fit best-fit value of %s" % (opt.frozenParam, poi['name']))
+    poisCorrected[poi['name']] = poi['fit'][1]
+
 # Correct values in json
 POICorrected = []
 for poi in data['POIs']:
@@ -114,7 +121,7 @@ with open(outImpacts,"w") as jf:
       if iv == (len(param['fit'])-1): jf.write("        %.16f\n"%v)
       else: jf.write("        %.16f,\n"%v)
     jf.write("      ],\n")
-    jf.write("      \"groups\": %s,\n"%param['groups'])
+    jf.write("      \"groups\": %s,\n"%json.dumps(param['groups'])) # valid JSON (double quotes), e.g. for "nuis group" definitions
     for poi in pois: jf.write("      \"impact_%s\": %.16f,\n"%(poi,param['impacts_%s'%poi]))
     jf.write("      \"name\": \"%s\",\n"%param['name'])
     jf.write("      \"prefit\": [\n")

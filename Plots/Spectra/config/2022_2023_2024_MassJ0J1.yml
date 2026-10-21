@@ -1,0 +1,65 @@
+lumi: 171.4
+equal_width_bins: true
+frame1:
+  ylabel:
+    text: $\Delta\sigma_{\mathrm{fid}}^{H\to\gamma\gamma}/\Delta m_{jj}$ (fb/GeV)
+    fontsize: 19
+  ylim:
+    bottom: 0.0001
+    top: 150
+  legend_location: upper right
+  fontsize: 12
+  title_fontsize: 12
+  axvline:
+    x: 0
+    color: black
+    ls: dashed
+    lw: 1
+frame2:
+  xticks:
+  - -130
+  - 0
+  - 75
+  - 120
+  - 180
+  - 300
+  - 500
+  - 1000
+  - 1500
+  xtick_labels:
+  - ''
+  - '0'
+  - '75'
+  - '120'
+  - '180'
+  - '300'
+  - '500'
+  - '1000'
+  - $\infty$
+  xtick_fontsize: 12
+  ylim:
+  - 0
+  - 2.5
+  additional_labels:
+    is_data:
+    - text: $N_{\mathrm{jets}}<2$ (fb)
+      position:
+      - 0.015
+      - -0.5
+      rotation: 0
+      fontsize: 12
+      coords: axes
+    not_data:
+    - text: $N_{\mathrm{jets}}<2$ (fb)
+      position:
+      - 0.015
+      - -0.5
+      rotation: 0
+      fontsize: 12
+      coords: axes
+  axvline:
+    x: 0
+    color: black
+    ls: dashed
+    lw: 1
+  xtick_rotation: 45

@@ -1,0 +1,24 @@
+lumi: 171.4
+equal_width_bins: True # every |y_H| bin drawn with the same width, labelled with the real bin edges
+
+frame1:
+  ylabel:
+    text: '$\Delta\sigma_{\text{fid}} / \Delta |y^{H}|$ (fb)'
+    fontsize: 20
+  ylim:
+    bottom: 0
+  legend_location: 'lower left'
+  fontsize: 14
+  title_fontsize: 14
+
+frame2:
+  xticks: [0.0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.2, 1.6, 2.0, 2.5]
+  xtick_labels: ["0.0", "0.15", "0.3", "0.45", "0.6", "0.75", "0.9", "1.2", "1.6", "2.0", "2.5"]
+  xtick_fontsize: 16
+  ylim: [0, 2]
+  yticks:
+    is_data: [0, 1, 2, 3]
+    not_data: [0, 0.5, 1, 1.5, 2]
+  ytick_labels:
+    is_data: ["0.0", "1.0", "2.0", "3.0"]
+    not_data: ["0.0", "0.5", "1.0", "1.5", "2.0"]

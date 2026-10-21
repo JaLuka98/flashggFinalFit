@@ -1,0 +1,45 @@
+lumi: 171.4
+equal_width_bins: True # every bin drawn with the same width, labelled with the real bin edges
+
+frame1:
+  ylabel:
+    text: '$\Delta\sigma_{\text{fid}} / \Delta p_{T}^{j_{1}}$ (fb/GeV)'
+    fontsize: 20
+  legend_location: 'upper right'
+  fontsize: 14
+  title_fontsize: 14
+  axvline: # separates the N_jets = 0 bin (a cross section in fb) from the p_T^j1 bins
+    x: 30
+    color: "black"
+    ls: "dashed"
+    lw: 1
+    alpha: 1
+
+frame2:
+  xticks: [-1000, 30, 40, 55, 75, 95, 120, 150, 200, 900]
+  xtick_labels: ["", "30", "40", "55", "75", "95", "120", "150", "200", "$\\infty$"]
+  xtick_fontsize: 16
+  ylim: [0, 2]
+  yticks:
+    is_data: [0, 1, 2, 3]
+    not_data: [0, 0.5, 1, 1.5, 2]
+  ytick_labels:
+    is_data: ["0.0", "1.0", "2.0", "3.0"]
+    not_data: ["0.0", "0.5", "1.0", "1.5", "2.0"]
+  additional_labels:
+    is_data:
+      - text: '$N_{jets}=0$ (fb)'
+        position: [0.02, -0.42]
+        rotation: 0
+        fontsize: 13
+    not_data:
+      - text: '$N_{jets}=0$ (fb)'
+        position: [0.02, -0.42]
+        rotation: 0
+        fontsize: 13
+  axvline:
+    x: 30
+    color: "black"
+    ls: "dashed"
+    lw: 1
+    alpha: 1

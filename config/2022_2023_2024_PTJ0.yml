@@ -1,0 +1,96 @@
+# Config file: 2022+2023+2024 PTJ0 Asimov fits for Hgg-only, H4l-only and Hgg+H4l.
+# The fit outputs (Combine/runFits_*/asimov) were copied from
+# /net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/combination_inputs/HCOMB/extrapolated_inputs/{diphoton,fourLepton,combination}/*_PTJ0
+# into output_asimov_PTJ0_HggH4l/{hgg,h4l,comb}; only the Combine steps and the plotting are configured here.
+
+outputFolder: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_PTJ0_HggH4l/comb/'
+
+backgroundScriptCfg:
+  cats: 'auto'
+  catOffset: 0
+  ext: 'Run3FidXSAnalysis_PTJ0'
+  execution: 'htcondor'
+  batchPartition: "short"
+  batchMemory: 4000
+  batchMaxRuntime: "01:00:00"
+
+datacard:
+  prune: True
+  pruneThreshold: 0.001
+  doTrueYield: True
+  analysis: 'Run3FidXSAnalysis'
+  skipCOWCorr: True
+  doSystematics: True
+  doMCStatUncertainty: True
+  doSTXSMerging: False
+  doSTXSScaleCorrelationScheme: False
+  saveDataFrame: False
+  output: 'Datacard_PTJ0_2022_2023_2024'
+
+combine_fit:
+  asimov_numPoints: 40 # Number of points the Asimov generator should generate for the NLL scan
+  unblindedFit_numPoints: 100
+  setParameterRange: "r=0,3"
+  execution: 'htcondor'
+  batchPartition: "short"
+  batchMemory: 6000 # MB, the combined Hgg+H4l workspace is large
+  batchMaxRuntime: "04:00:00"
+
+combine_impacts:
+  exclude: ""
+  not_show_POI: True
+  execution: 'htcondor'
+  batchPartition: "short"
+  batchMemory: 6000
+  batchMaxRuntime: "04:00:00"
+
+combine_hesse:
+  execution: 'htcondor'
+  batchPartition: "short"
+  batchMemory: 6000
+  batchMaxRuntime: "04:00:00"
+
+combine_mggToys:
+  nToys: 1000
+  loadSnapshot: 'MultiDimFit'
+  doBands: True
+  execution: 'htcondor'
+  batchPartition: "short"
+  batchMemory: 4000
+  batchMaxRuntime: "01:00:00"
+
+spectra:
+  no_preliminary: True
+  private_work : False
+  ggh_xs: "fidXS_PTJ0_ggH"
+  vbf_xs: "fidXS_PTJ0_VBFH"
+  vh_xs: "fidXS_PTJ0_VH"
+  tth_xs: "fidXS_PTJ0_ttH"
+  xh_xs: "fidXS_PTJ0_xH"
+  ggh_powheg_xs: "fidXS_PTJ0_ggH_powheg"
+  ggh_no_nnlops_xs: "fidXS_PTJ0_ggH_genWeight"
+  underflow_bin_normalized: True # first bin (N_jets = 0) is a cross section, not divided by its width
+  last_bin_center: 0
+  first_bin_center: 0
+  plot_log: 1
+  variable: "p_{T}^{j_{1}}"
+  y_unit: "(fb/GeV)"
+  x_unit: "(GeV)"
+  x_lim: [-1000, 900]
+  y_lim: [0, 2]
+
+combined_spectra:
+  # Output directories of the three fits (can be overridden with --hgg-output-dir etc.)
+  hgg_output_dir: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_PTJ0_HggH4l/hgg/'
+  hzz_output_dir: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_PTJ0_HggH4l/h4l/'
+  comb_output_dir: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_PTJ0_HggH4l/comb/'
+  # The fidXS modules in `spectra` are Hgg fiducial sigma x BR (see config/2022_2023_2024_rapidity.yml for the options).
+  prediction_scale: 1.
+  prediction_label: 'aMC@NLO NNLOPS + xH'
+  hgg_label: 'H$\rightarrow\gamma\gamma$'
+  hzz_label: 'H$\rightarrow$ZZ$\rightarrow$4$\ell$'
+  comb_label: 'H$\rightarrow\gamma\gamma$ + H$\rightarrow$ZZ'
+  expected_title: 'Expected (Asimov)'
+  overflow_width_as_previous: False
+  # the fits name the N_jets = 0 bin r_PTJ0_m10000p0_30p0
+  poi_names: [r_PTJ0_m10000p0_30p0, r_PTJ0_30p0_40p0, r_PTJ0_40p0_55p0, r_PTJ0_55p0_75p0, r_PTJ0_75p0_95p0, r_PTJ0_95p0_120p0, r_PTJ0_120p0_150p0, r_PTJ0_150p0_200p0, r_PTJ0_200p0_10000p0]
