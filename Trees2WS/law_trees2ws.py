@@ -212,6 +212,10 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 mainVars         = config['mainVars']
                 stxsVar          = config['stxsVar']
                 diffVar          = config['diffVar']
+                # True: split by the HiggsDNA diffVar codes (needs per-bin out ids in the trees). The
+                # systematics trees carry no Gen* branches, so the Gen-variable split below cannot select
+                # them: its nominal-tree mask would be applied to them by row label.
+                diffSplitByCode  = config.get('diffSplitByCode', False)
                 systematicsVars  = config['systematicsVars']
                 theoryWeightContainers = config['theoryWeightContainers']
                 systematics      = config['systematics']
@@ -608,7 +612,7 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             # variables with dedicated negative boundary (e.g. PTJ0)
             negative_variable_boundaries =  ["PTJ0", "YJ0", "DPhiHJ0", "DYHJ0", "TauJC", "PTJ1", "YJ1", "DPhiJ0J1", "DPhiHJ0J1", "DEtaJ0J1H", "MassJ0J1", "EtaJ0J1"]
 
-            if self.variable not in ["PTHvDPhiJ0J1","PTHvYH"]:
+            if self.variable not in ["PTHvDPhiJ0J1","PTHvYH"] and not diffSplitByCode:
                 for diffID_map, binName_map in differentialProcTable_[self.variable]:
                     print("diffID_map", diffID_map,flush=True)
                     print("binName_map", binName_map,flush=True)
@@ -623,10 +627,15 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
 
 ########################################## Add variables to configs (see 2022 PTH condif where GenPTH was added (~l.30))!!!
 
-                    if self.variable in negative_variable_boundaries:
-                        mask_variable = (data[particleVar] >= low_bound) & (data[particleVar] < high_bound)
-                    else:
-                        mask_variable = (abs(data[particleVar]) >= low_bound) & (abs(data[particleVar]) < high_bound)
+                    def gen_bin_mask(frame):
+                        if self.variable in negative_variable_boundaries:
+                            return (frame[particleVar] >= low_bound) & (frame[particleVar] < high_bound)
+                        # Events without a defined gen diphoton carry the sentinel -999; without the
+                        # > -900 guard abs() turns it into 999 and they land in the highest bin
+                        # (e.g. the PTH 450-10000 out process). They match no bin, as in HiggsDNA.
+                        return (frame[particleVar] > -900) & (abs(frame[particleVar]) >= low_bound) & (abs(frame[particleVar]) < high_bound)
+
+                    mask_variable = gen_bin_mask(data)
 
                     # Fiducial geometric flag depending on whether we are in the "in" or "out" bin, if applicable
                     if binName_map.endswith("_in"): 
@@ -641,16 +650,23 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
 
                     
                     sdf = None
-                    if doSystematics: 
-                        # For the systematics, the variable mask is the same, since the systematics do not afffect the kinematic properties on generator level
-                        # Only the fiducial mask needs to be adapted depending on whether we are in the "in" or "out" bin
-                        if binName_map.endswith("_in"): 
+                    if doSystematics:
+                        # The systematics trees hold other events in another order than the nominal
+                        # trees, so the gen-bin mask has to be computed on sdata itself: applying the
+                        # nominal mask aligns by row label and bins syst events by unrelated nominal
+                        # events (or drops them). Without the gen variable in the syst trees, use
+                        # diffSplitByCode with per-bin out codes instead.
+                        if particleVar not in sdata.columns:
+                            raise ValueError(f"{particleVar} is not in the systematics trees (systematicsVars); "
+                                             f"the gen-variable split cannot bin the systematics. Use diffSplitByCode: True.")
+                        s_mask_variable = gen_bin_mask(sdata)
+                        if binName_map.endswith("_in"):
                             s_mask_fiducial = sdata['fiducialGeometricFlag'] == True
                         elif binName_map.endswith("_out"):
                             s_mask_fiducial = sdata['fiducialGeometricFlag'] == False
                         else:
                             raise ValueError(f"Bin name {binName_map} does not end with 'in' or 'out' for fiducial splitting!")
-                        s_final_mask = s_mask_fiducial & mask_variable
+                        s_final_mask = s_mask_fiducial & s_mask_variable
                         sdf = sdata[s_final_mask]
 
                     currentBin = binName_map
@@ -702,7 +718,18 @@ class Trees2WSSingleProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                         return False
 
             else:
-                for diffId in data[diffVar].unique():
+                diffIds = data[diffVar].unique()
+                if diffSplitByCode:
+                    # One workspace per table bin, also for bins without events (as the Gen-variable
+                    # split above, and as output() expects); codes outside the table must not vanish.
+                    tableIds = [entry[0] for entry in differentialProcTable_[self.variable]]
+                    present = set(int(x) for x in diffIds)
+                    if doSystematics: present |= set(int(x) for x in sdata[diffVar].unique())
+                    unknown = sorted(present - set(tableIds) - {0})
+                    if unknown:
+                        raise ValueError(f"{diffVar} codes {unknown} not in differentialProcTable_['{self.variable}']")
+                    diffIds = tableIds
+                for diffId in diffIds:
                     # diffId should be a gen-level pt bin
                     print("DiffId", diffId,flush=True)
                     print("DiffVar", diffVar,flush=True)
