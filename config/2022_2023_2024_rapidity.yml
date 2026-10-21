@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/net/data_cms3a-1/linuserdmann/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_2023_2024_rapidity/'
+outputFolder: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_perbinout/output_2022_2023_2024_rapidity/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/rapidity/2025_08_04_fixedFNUF/data/allData.root'
-  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/rapidity/2025_08_04_fixedFNUF/signal/2223/'
+  Trees2WSData: '/.automount/net_rw/net__data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_smoothed_decorr_smeared_mass100to180_2026_10_01/2024/rapidity/root/data/allData_2024.root'
+  Trees2WS: '/.automount/net_rw/net__data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_smoothed_decorr_smeared_mass100to180_2026_10_01/2024/rapidity/root/mc/'
 
 backgroundScriptCfg:
   # Setup
@@ -46,6 +46,7 @@ trees2wsCfg:
     
   stxsVar: ''
   diffVar: 'diffVariable_GenYH'
+  diffSplitByCode: True # split by the per-bin-out diffVariable codes (systematics trees have no Gen* branches)
   notagVars: [] # Vars to add to NOTAG RooDataset
   
   systematicsVars:
@@ -93,7 +94,7 @@ signalScriptCfg_2223_preEE:
   scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
-  doPlots: True
+  doPlots: False
 
   beamspotWidthData: '3.2'
   beamspotWidthMC: '3.732'
@@ -122,7 +123,7 @@ signalScriptCfg_2223_postEE:
   scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
-  doPlots: True
+  doPlots: False
 
   beamspotWidthData: '3.5'
   beamspotWidthMC: '3.732'
@@ -150,7 +151,7 @@ signalScriptCfg_2223_preBPix:
   scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
-  doPlots: True
+  doPlots: False
 
   beamspotWidthData: '3.703'
   beamspotWidthMC: '3.597'
@@ -179,7 +180,7 @@ signalScriptCfg_2223_postBPix:
   scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
-  doPlots: True
+  doPlots: False
 
   beamspotWidthData: '3.737'
   beamspotWidthMC: '3.597'
@@ -207,7 +208,7 @@ signalScriptCfg_2024:
   scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
-  doPlots: True
+  doPlots: False
 
   beamspotWidthData: '3.583'
   beamspotWidthMC: '3.601'
