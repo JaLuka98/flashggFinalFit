@@ -985,7 +985,9 @@ class Trees2WS(law.Task):
             else:
                 current_output_path = os.path.join(output_dir, f"input_output_{var}_{self.year}{era_suffix}")
 
-            outputFolders.append(law.LocalFileTarget(os.path.join(current_output_path, "ws_signal")))
+            # A marker written after the copy, not the folder itself: the folder exists from the start of
+            # the copy, so an interrupted copy (2022postEE PTJ0, 29 of 216 files) looked complete.
+            outputFolders.append(law.LocalFileTarget(os.path.join(current_output_path, "ws_signal", ".copy_complete")))
 
         return outputFolders
     
@@ -1043,6 +1045,10 @@ class Trees2WS(law.Task):
                         shutil.copy2(currentFile, dst_folder)
                 else:
                     print(f"Skip copying {currentFile} since it is already in ws_signal.")
+
+            if self.batch_flavor != "slurm/psi":
+                with open(os.path.join(dst_folder, ".copy_complete"), "w") as marker:
+                    marker.write(f"{len(src_file_list)} files\n")
 
         print("Copy completed.")
         return True
