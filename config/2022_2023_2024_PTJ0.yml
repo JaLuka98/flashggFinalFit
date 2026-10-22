@@ -337,5 +337,6 @@ spectra:
     y_lim_top: 500000000000
     y_lim: [0, 2]
     generator_dependence_uncertainty:
+      enabled: False  # switched off for now (user, 2026-10-22); True adds rel_uncertainty_acceptance to the measured total XS
       module: "rel_uncertainty_acceptance"
       attribute: "PTJ0"
