@@ -78,3 +78,6 @@ remote
 htcondor
 output*
 output
+# outputs set aside during the per-bin-out production
+superseded_*
+logs/production/

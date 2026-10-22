@@ -39,12 +39,16 @@ bin them with the gen variables (this is what broke the per-bin systematics in t
 ```bash
 cd <checkout of Hzz_Hyy_222324_combination>
 (source /cvmfs/cms.cern.ch/cmsset_default.sh; cd ..; cmsenv; cd -; cd Background; make)   # once per checkout
-source law/htcondor_setup.sh; cd law
-law run FinalFits --years 2022,2023,2024 --variable <obs> --batch-system htcondor --batch-flavor htcondor
+source law/htcondor_setup.sh; ulimit -s unlimited; cd law
+setsid nohup law run FinalFits --years 2022,2023,2024 --variable <obs> --batch-system htcondor \
+    --batch-flavor htcondor --workers 12 > ../logs/production/law_<obs>.log 2>&1 &
+python3 combination/priority_keeper.py &      # keeps this checkout's condor jobs ahead, see the script
 ```
 
-`config/<year>_<obs>.yml` sets the inputs, `diffSplitByCode: True` (split by the per-bin out ids) and the
-output folders; the card is `output_2022_2023_2024_<obs>/Combine/Datacard_<obs>_2022_2023_2024.txt`.
+`config/<year>_<obs>.yml` sets the inputs, `diffSplitByCode: True` (split by the per-bin out ids),
+`execution: 'local'` for the light signal-side tasks (they run in the law process, `--workers N`; start law
+on an interactive node with free cores) and the output folders (`outputFolder` = this checkout).
+The card is `output_2022_2023_2024_<obs>/Combine/Datacard_<obs>_2022_2023_2024.txt`, in this checkout.
 The inclusive Hgg card comes from the HIG-26-007 production (no per-bin out needed):
 `$STAGE/Hyy_datacards_smoothed_decorrelation/raw/inclusive/Datacard_2022_2023_2024.txt`.
 Do not use `Combine/prepare_total_xsec_datacard.py` for the combination (flat BR row, see below).

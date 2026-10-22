@@ -19,9 +19,9 @@
 # Environment (defaults in brackets):
 #   OUT       output folder [<repo>/output_combination_<obs>]
 #   FITS      fits to run ["hgg h4l comb"]
-#   HGG_CARD  raw Hgg card [differential: <perbinout>/output_2022_2023_2024_<obs>/Combine/Datacard_<obs>_2022_2023_2024.txt;
+#   HGG_CARD  raw Hgg card [differential: <repo>/output_2022_2023_2024_<obs>/Combine/Datacard_<obs>_2022_2023_2024.txt
+#             (produced in this checkout by law run FinalFits, see README);
 #             inclusive: $STAGE/Hyy_datacards_smoothed_decorrelation/raw/inclusive/Datacard_2022_2023_2024.txt]
-#   PERBINOUT FinalFits checkout of branch Hzz_Hyy_222324_combination_perbinout [<CMSSW src>/flashggFinalFit_hig19016_perbinout]
 #   STAGE     shared inputs [/net/data_cms3a-2/nobackup/group_JE_CMS/Hyy_Hzz_combination]
 #   KIND      summary of asimov or dataFit [asimov]
 #   FINALFITS_MH  [125.07]
@@ -36,7 +36,6 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "${HERE}/.." && pwd)"
 CMSSW_SRC="$(cd "${REPO}/.." && pwd)"
 STAGE=${STAGE:-/net/data_cms3a-2/nobackup/group_JE_CMS/Hyy_Hzz_combination}
-PERBINOUT=${PERBINOUT:-${CMSSW_SRC}/flashggFinalFit_hig19016_perbinout}
 OUT=${OUT:-${REPO}/output_combination_${OBS}}
 FITS=${FITS:-"hgg h4l comb"}
 KIND=${KIND:-asimov}
@@ -58,7 +57,7 @@ if [ -z "${HGG_CARD}" ]; then
   if [ "${OBS}" = inclusive ]; then
     HGG_CARD=${STAGE}/Hyy_datacards_smoothed_decorrelation/raw/inclusive/Datacard_${YEAR}.txt
   else
-    HGG_CARD=${PERBINOUT}/output_${YEAR}_${OBS}/Combine/Datacard_${OBS}_${YEAR}.txt
+    HGG_CARD=${REPO}/output_${YEAR}_${OBS}/Combine/Datacard_${OBS}_${YEAR}.txt
   fi
 fi
 HGG_TOTAL=${HGG_CARD%.txt}_total.txt
