@@ -99,7 +99,7 @@ signalScriptCfg_2024:
 
 
   # Job submission options
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 34000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use

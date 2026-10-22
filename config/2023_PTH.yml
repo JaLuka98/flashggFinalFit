@@ -100,7 +100,7 @@ signalScriptCfg_2023_preBPix:
 
 
   # Job submission options
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 16000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
@@ -127,7 +127,7 @@ signalScriptCfg_2023_postBPix:
   beamspotWidthMC: '3.597'
 
   # Job submission options
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 16000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
