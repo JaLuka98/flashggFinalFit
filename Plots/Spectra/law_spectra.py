@@ -380,7 +380,14 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         # Dynamically import the required module for ggH MadGraph (w/o NNLOPS reweighting) cross-section
         ggh_no_nnlops_xs = __import__(current_config['ggh_no_nnlops_xs'], globals(), locals(), vars)
         ggh_no_nnlops_xs_norm = np.array(ggh_no_nnlops_xs.fidXS) / bin_w
-        
+
+        # ggH POWHEG MiNLO (reweighted to NNLOPS) cross-section: <ggh_powheg_xs>_MiNLO, if it exists for this variable
+        try:
+            ggh_minlo_xs = __import__(current_config.get('ggh_minlo_xs', current_config['ggh_powheg_xs'] + '_MiNLO'), globals(), locals(), vars)
+            ggh_minlo_xs_norm = np.array(ggh_minlo_xs.fidXS) / bin_w
+        except ImportError:
+            ggh_minlo_xs = None
+
         if current_config['underflow_bin_normalized'] == True:
             ggh_xs_norm[0] = ggh_xs_norm[0] * bin_w[0]
             vbf_xs_norm[0] = vbf_xs_norm[0] * bin_w[0]
@@ -388,6 +395,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             tth_xs_norm[0] = tth_xs_norm[0] * bin_w[0]
             ggh_powheg_xs_norm[0] = ggh_powheg_xs_norm[0] * bin_w[0]
             ggh_no_nnlops_xs_norm[0] = ggh_no_nnlops_xs_norm[0] * bin_w[0]
+            if ggh_minlo_xs: ggh_minlo_xs_norm[0] = ggh_minlo_xs_norm[0] * bin_w[0]
         
         xh_xs_norm = vbf_xs_norm + vh_xs_norm + tth_xs_norm
 
@@ -430,7 +438,13 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
 
         unc_th_no_nnlops_up = np.sqrt((np.sqrt(np.sum(np.square(no_nnlops_up), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
         unc_th_no_nnlops_dn = np.sqrt((np.sqrt(np.sum(np.square(no_nnlops_dn), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
-        
+
+        if ggh_minlo_xs:
+            minlo_up = np.sum([[abs(np.array(getattr(ggh_minlo_xs, s)) - np.array(ggh_minlo_xs.fidXS)) for s in sources_up],vbf_up,vh_up,tth_up], axis=0)
+            minlo_dn = np.sum([[abs(np.array(getattr(ggh_minlo_xs, s)) - np.array(ggh_minlo_xs.fidXS)) for s in sources_dn],vbf_dn,vh_dn,tth_dn], axis=0)
+            unc_th_minlo_up = np.sqrt((np.sqrt(np.sum(np.square(minlo_up), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
+            unc_th_minlo_dn = np.sqrt((np.sqrt(np.sum(np.square(minlo_dn), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
+
         if current_config['underflow_bin_normalized'] == True:
             unc_th_up[0] = unc_th_up[0] * bin_w[0]
             unc_th_dn[0] = unc_th_dn[0] * bin_w[0]
@@ -438,6 +452,9 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             unc_th_powheg_dn[0] = unc_th_powheg_dn[0] * bin_w[0]
             unc_th_no_nnlops_up[0] = unc_th_no_nnlops_up[0] * bin_w[0]
             unc_th_no_nnlops_dn[0] = unc_th_no_nnlops_dn[0] * bin_w[0]
+            if ggh_minlo_xs:
+                unc_th_minlo_up[0] = unc_th_minlo_up[0] * bin_w[0]
+                unc_th_minlo_dn[0] = unc_th_minlo_dn[0] * bin_w[0]
             underflow_width = current_config.get('underflow_bin_width', 15)
             overflow_width = current_config.get('overflow_bin_width', 100)
             bin_w[0] = underflow_width
@@ -520,6 +537,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         plt.stairs((ggh_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + NNLOPS + Pythia) + xH', color='tab:blue')
         plt.stairs((ggh_no_nnlops_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + Pythia) + xH', color='tab:purple')
         plt.stairs((ggh_powheg_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (POWHEG + Pythia) + xH', color='brown')
+        if ggh_minlo_xs:
+            plt.stairs((ggh_minlo_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (POWHEG MiNLO + NNLOPS + Pythia) + xH', color='#d17a00')
         plt.stairs(xh_xs_norm, bins_plot, linewidth=2, color='green')
         plt.stairs(xh_xs_norm, bins_plot, linewidth=2, label='xH = ttH + VH + VBF (MadGraph5_aMC@NLO + Pythia)', alpha=0.2, color='green', fill=True)
         
@@ -547,7 +566,11 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         # Madgraph w/o NNLOPS
         for center, value, err_low, err_high, width in zip(bins_c, ggh_no_nnlops_xs_norm+xh_xs_norm, unc_th_no_nnlops_dn, unc_th_no_nnlops_up, bin_w_visual):
             plt.gca().add_patch(plt.Rectangle((center + width/3.6, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:purple', hatch='////'))
-            
+        # POWHEG MiNLO + NNLOPS
+        if ggh_minlo_xs:
+            for center, value, err_low, err_high, width in zip(bins_c, ggh_minlo_xs_norm+xh_xs_norm, unc_th_minlo_dn, unc_th_minlo_up, bin_w_visual):
+                plt.gca().add_patch(plt.Rectangle((center - width/2.4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='#d17a00', hatch='////'))
+
         # Default font sizes
         fontsize = 14
         title_fontsize = 14
@@ -660,6 +683,12 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         
         plt.stairs(ratio_powheg, bins_plot, linewidth=2, color='brown')
         plt.stairs(ratio_no_nnlops, bins_plot, linewidth=2, color='tab:purple')
+        # POWHEG MiNLO + NNLOPS
+        if ggh_minlo_xs:
+            ratio_minlo = (ggh_minlo_xs_norm+xh_xs_norm) / (ggh_xs_norm+xh_xs_norm)
+            for center, value, err_low, err_high, width in zip(bins_c, ratio_minlo, unc_th_minlo_dn / (ggh_xs_norm+xh_xs_norm), unc_th_minlo_up / (ggh_xs_norm+xh_xs_norm), bin_w_visual):
+                plt.gca().add_patch(plt.Rectangle((center - width/2.4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='#d17a00', hatch='/////'))
+            plt.stairs(ratio_minlo, bins_plot, linewidth=2, color='#d17a00')
 
         frame2_xtick_fontsize = 20
         frame2_ytick_fontsize = 20
