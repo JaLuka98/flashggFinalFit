@@ -6,6 +6,9 @@ import yaml
 import errno
 import time
 import shlex
+import json
+import fcntl
+import contextlib
 
 from commonTools import *
 from commonObjects import *
@@ -31,7 +34,29 @@ def convert_boolean_string(string):
     if (string == "True") or (string == "true") or (string == True):
         return True
     else:
-        return False              
+        return False
+
+# Signal models which the datacard prunes are not fitted (Datacard/makeSignalPruneList.py). The list of an era is
+# made once by SignalPruneList, from the Trees2WS output, and is the completion target of the skipped branches.
+def signal_prune_list_path(output_dir, ext):
+    return os.path.join(output_dir, f"outdir_{ext}/signalFit/pruned_procs.json")
+
+_signal_prune_lists = {}
+_signal_prune_lists_missing = {}
+
+def load_signal_prune_list(output_dir, ext):
+    # (cat, proc) skipped in an era; empty while the list does not exist. One read per process, not one per branch.
+    path = signal_prune_list_path(output_dir, ext)
+    if path not in _signal_prune_lists:
+        if time.time() - _signal_prune_lists_missing.get(path, 0.) < 60.:
+            return frozenset()
+        if not os.path.exists(path):
+            _signal_prune_lists_missing[path] = time.time()
+            return frozenset()
+        with open(path, "r") as jf:
+            skip = json.load(jf)["skip"]
+        _signal_prune_lists[path] = frozenset((cat, proc) for cat, procs in skip.items() for proc in procs)
+    return _signal_prune_lists[path]
 
 class FTestCategory(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_path = law.Parameter(description="Path to the input ROOT files (/ws_signal)")
@@ -599,10 +624,129 @@ class CalcPhotonSyst(law.Task):
                 
     
     def run(self):
-        
+
         return True
-    
-    
+
+
+class SignalPruneList(law.Task):
+    variable = law.Parameter(default="", description="Variable to be used")
+    output_dir = law.Parameter(default="", description="Path to the output directory")
+    year = law.Parameter(default='2022', description="Year")
+
+    batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+
+    def load_config(self):
+        if self.variable == '':
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_inclusive.yml")
+        else:
+            configYamlPath = os.path.join(os.environ["ANALYSIS_PATH"], f"config/{self.year}_{self.variable}.yml")
+
+        #Load central config file
+        with open(configYamlPath, 'r') as file:
+            config = yaml.safe_load(file)
+
+        if self.output_dir == '':
+            output_dir = config['outputFolder']
+        else:
+            output_dir = self.output_dir
+
+        # era (as in lumiMap and the datacard) -> signal fit config
+        eraConfigs = {}
+        for currentEra in allErasMap.get(f"{self.year}", [""]):
+            era_suffix = "" if currentEra in ["", "None"] else currentEra
+            eraConfigs[f"{self.year}{era_suffix}"] = config[f"signalScriptCfg_{self.year}_{era_suffix}"] if era_suffix != "" else config[f"signalScriptCfg_{self.year}"]
+
+        return config, output_dir, eraConfigs
+
+    def requires(self):
+        config, output_dir, eraConfigs = self.load_config()
+        return Trees2WS(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor)
+
+    def output(self):
+        config, output_dir, eraConfigs = self.load_config()
+        return [law.LocalFileTarget(signal_prune_list_path(output_dir, currentConfig['ext'])) for currentConfig in eraConfigs.values()]
+
+    def run(self):
+        config, output_dir, eraConfigs = self.load_config()
+        datacard_config = config['datacard']
+        yields_config = config['datacard_yields']
+
+        inOutSplittingFlag = config['trees2wsCfg']['doInOutSplitting'] or config['trees2wsCfg']['doDiffSplitting']
+        signal_input_path = glob.glob(config['inputFiles']['Trees2WS']+'/*')
+        data_input_path = config['inputFiles']['Trees2WSData']
+
+        firstConfig = list(eraConfigs.values())[0]
+        cats = firstConfig['cats']
+        if cats == "auto":
+            cats = extractListOfCatsFromHiggsDNAAllData(data_input_path)
+        procs = firstConfig['procs']
+        if procs == "auto":
+            procs = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
+
+        outputMap = {era: signal_prune_list_path(output_dir, currentConfig['ext']) for era, currentConfig in eraConfigs.items()}
+
+        # The list follows the pruning of makeDatacard.py with doTrueYield. In any other setup all models are fitted.
+        if not (convert_boolean_string(datacard_config['prune']) and convert_boolean_string(datacard_config['doTrueYield'])):
+            for path in outputMap.values():
+                safe_mkdir(os.path.dirname(path))
+                with open(path + ".tmp", "w") as jf:
+                    json.dump({"skip": {}}, jf)
+            for path in outputMap.values():
+                os.rename(path + ".tmp", path)
+            return
+
+        inputWSDirMap = {}
+        for era in eraConfigs:
+            if self.variable == "":
+                inputWSDirMap[era] = os.path.join(config["outputFolder"], f"input_output_{era}/ws_signal")
+            else:
+                inputWSDirMap[era] = os.path.join(config["outputFolder"], f"input_output_{self.variable}_{era}/ws_signal")
+
+        script_path = os.path.join(os.environ["ANALYSIS_PATH"], "Datacard/makeSignalPruneList.py")
+        arguments = [
+            "python3",
+            script_path,
+            "--inputWSDirMap", ",".join(f"{era}={path}" for era, path in inputWSDirMap.items()),
+            "--outputMap", ",".join(f"{era}={path}" for era, path in outputMap.items()),
+            "--cats", cats,
+            "--procs", procs,
+            "--mass", f"{yields_config['mass']}",
+            "--analysis", f"{datacard_config['analysis']}",
+            "--pruneThreshold", f"{datacard_config['pruneThreshold']}",
+            "--safetyFactor", f"{datacard_config.get('signalFitSafetyFactor', 0.5)}",
+        ]
+        if convert_boolean_string(yields_config['mergeYears']): arguments.append("--mergeYears")
+        if convert_boolean_string(yields_config['skipZeroes']): arguments.append("--skipZeroes")
+        print(arguments)
+
+        # The script reads every nominal mass workspace once (minutes, a few GB of memory) on the submit host:
+        # at most two at a time over all law processes of this host.
+        lock_dir = os.path.join("/tmp", f"flashgg_signal_prune_list_{os.getuid()}")
+        safe_mkdir(lock_dir)
+        lock_file = None
+        while lock_file is None:
+            for slot in range(2):
+                candidate = open(os.path.join(lock_dir, f"slot{slot}.lock"), "w")
+                try:
+                    fcntl.flock(candidate, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    lock_file = candidate
+                    break
+                except OSError:
+                    candidate.close()
+            if lock_file is None:
+                time.sleep(30)
+        try:
+            result = subprocess.run(arguments, check=True, text=True, capture_output=True)
+            print("Script output:", result.stdout[-3000:])
+            print("Script executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print("Script output:", e.stdout)
+            print("Error executing script:", e.stderr)
+            raise
+        finally:
+            lock_file.close()
+
+
 class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):#(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
     input_path = law.Parameter(description="Path to the input ROOT files (/ws_signal)")
     output_dir = law.Parameter(description="Path to the output directory")
@@ -656,9 +800,35 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             
         tasks["FTest"] = FTest(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor)
         tasks["CalcPhotonSyst"] = CalcPhotonSyst(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor)
+        # Models pruned by the datacard are not fitted; FLASHGG_FIT_PRUNED_SIGNAL_MODELS=1 fits everything as before
+        if os.environ.get("FLASHGG_FIT_PRUNED_SIGNAL_MODELS", "0") != "1":
+            tasks["SignalPruneList"] = SignalPruneList(variable=self.variable, output_dir=output_dir, year=year, batch_flavor=self.batch_flavor)
 
         return tasks
-    
+
+    def _forget_branch_status(self):
+        # The prune list is made by a workflow requirement, i.e. after law first looked at the branch outputs when
+        # scheduling: drop what was cached then (law 0.1.20), or the skipped branches would be run.
+        proxy = self.workflow_proxy
+        _signal_prune_lists_missing.clear()
+        proxy._cached_output = None
+        proxy._existing_branches = None
+        if hasattr(proxy, "_skip_jobs"):
+            proxy._skip_jobs = {}
+        if hasattr(proxy, "_initial_process_resources"):
+            proxy._initial_process_resources = None
+
+    @contextlib.contextmanager
+    def htcondor_workflow_run_context(self):
+        self._forget_branch_status()
+        with super().htcondor_workflow_run_context():
+            yield
+
+    def local_workflow_pre_run(self):
+        # local workflows (execution: 'local') yield their branches in run(), right after this hook
+        self._forget_branch_status()
+        return super().local_workflow_pre_run()
+
     def create_branch_map(self):
         # map branch indexes to ascii numbers from 97 to 122 ("a" to "z")
         nCats = len(self.cats.split(","))
@@ -679,8 +849,12 @@ class SignalFitCategoryProcess(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         cat, proc = self.branch_data
         
         signal_output = [os.path.join(self.output_dir, f'outdir_{self.ext}/signalFit/output/CMS-HGG_sigfit_{self.ext}_{proc}_{self.year}_{cat}.root')]
-        signal_output += glob.glob(os.path.join(self.output_dir, f'outdir_{self.ext}/signalFit/Plots/{proc}_{self.year}_{cat}*'))
-                
+        # A model which the datacard prunes is not fitted: its branch is complete with the prune list itself
+        if (cat, proc) in load_signal_prune_list(self.output_dir, self.ext):
+            signal_output = [signal_prune_list_path(self.output_dir, self.ext)]
+        # Diagnostic plots are optional (doPlots) and are not part of completion: globbing the shared Plots directory
+        # (tens of thousands of files) for every branch overloaded the file server (2026-10-05).
+
         outputFileTargets = []
             
         for _, current_output_path in enumerate(signal_output):
@@ -953,10 +1127,12 @@ class SignalFit(law.Task):
                 currentConfig['procs'] = extractListOfProcsFromHiggsDNASignal(signal_input_path, self.variable, inOutSplittingFlag)
             currentConfig['nProcs'] = len(currentConfig['procs'].split(","))
 
+            skippedFits = load_signal_prune_list(output_dir, currentConfig['ext'])
             for processIndex in range(currentConfig['nProcs']):
                 for categoryIndex in range(currentConfig['nCats']):
                     category = currentConfig['cats'].split(",")[categoryIndex]
                     process = currentConfig['procs'].split(",")[processIndex]
+                    if (category, process) in skippedFits: continue
                     output_paths += [law.LocalFileTarget(os.path.join(output_dir, f"outdir_{currentConfig['ext']}/signalFit/output/CMS-HGG_sigfit_{currentConfig['ext']}_{process}_{currentConfig['year']}_{category}.root"))]
             
         return output_paths
