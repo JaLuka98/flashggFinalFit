@@ -1,12 +1,12 @@
 # Hgg+H4l combination, 2022+2023+2024 (HIG-26-007)
 
 Total-XS extrapolation: every gen bin has an `_in` and an `_out` Hgg process (and `smH` + `OutsideAcceptance`
-in H4l), all scaled by the POI of that bin. The chain uses three code bases:
+in H4l), all scaled by the POI of that bin. The chain uses two repositories:
 
 | step | repository / branch |
 |---|---|
 | 1. trees with per-bin out ids | `Hgg-PartialRun3-3A-ETH-Analysis`, branch `Hzz_Hyy_222324_combination` (`postprocessing/`) |
-| 2. raw Hgg cards | `flashggFinalFit`, branch `Hzz_Hyy_222324_combination_perbinout` |
+| 2. raw Hgg cards | `flashggFinalFit`, branch `Hzz_Hyy_222324_combination` (this branch, production chain merged from Linus' hig19016-binning) |
 | 3. acceptance inputs | HiggsDNA `fiducial_xsec_calculator.py`, recipe `Datacard/makeAcceptanceInputs.sh` (this branch) |
 | 4. card treatment, combination, fits | `flashggFinalFit`, branch `Hzz_Hyy_222324_combination` (this folder) |
 
@@ -34,10 +34,10 @@ unattended.
 Why the out ids have to be in the trees: the systematics trees carry no `Gen*` branches, so Trees2WS cannot
 bin them with the gen variables (this is what broke the per-bin systematics in the first combination cards).
 
-## 2. Raw Hgg cards (FinalFits, branch `Hzz_Hyy_222324_combination_perbinout`)
+## 2. Raw Hgg cards (FinalFits, this branch)
 
 ```bash
-cd flashggFinalFit_hig19016_perbinout          # checkout of the perbinout branch
+cd <checkout of Hzz_Hyy_222324_combination>
 (source /cvmfs/cms.cern.ch/cmsset_default.sh; cd ..; cmsenv; cd -; cd Background; make)   # once per checkout
 source law/htcondor_setup.sh; cd law
 law run FinalFits --years 2022,2023,2024 --variable <obs> --batch-system htcondor --batch-flavor htcondor
@@ -47,7 +47,7 @@ law run FinalFits --years 2022,2023,2024 --variable <obs> --batch-system htcondo
 output folders; the card is `output_2022_2023_2024_<obs>/Combine/Datacard_<obs>_2022_2023_2024.txt`.
 The inclusive Hgg card comes from the HIG-26-007 production (no per-bin out needed):
 `$STAGE/Hyy_datacards_smoothed_decorrelation/raw/inclusive/Datacard_2022_2023_2024.txt`.
-Do not use `Combine/prepare_total_xsec_datacard.py` of that branch for the combination (BR rows, see below).
+Do not use `Combine/prepare_total_xsec_datacard.py` for the combination (flat BR row, see below).
 
 ## 3. Acceptance inputs
 
