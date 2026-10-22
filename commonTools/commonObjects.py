@@ -1,6 +1,5 @@
 import os
 import copy
-import json
 
 # Paths and directory
 cmsswbase__ = os.environ['CMSSW_BASE']
@@ -25,22 +24,22 @@ lumiMap = {
     '2018':59.83, 
     'combined':137.65, 
     'merged':137.65,
-    '2022preEE':7.9804,
-    '2223preEE':7.9804,
-    '2022postEE':26.6717,
-    '2223postEE':26.6717,
-    '2022': 34.6521,
-    '2023preBPix': 18.063,
-    '2223preBPix': 18.063,
-    '2023postBPix': 9.693,
-    '2223postBPix': 9.693,
-    '2023': 27.756,
-    '2223': 62.4081,
-    '2024': 109.0,
-    '2024all': 109.0,
-    'Run3': 171.4081,
-    '2022_2023_2024': 171.4081,
-    '222324': 171.4081,
+    '2022preEE': 7.99,
+    '2223preEE': 7.99,
+    '2022postEE': 26.68,
+    '2223postEE': 26.68,
+    '2022': 34.67,
+    '2023preBPix': 17.96,
+    '2223preBPix': 17.96,
+    '2023postBPix': 9.68,
+    '2223postBPix': 9.68,
+    '2023': 27.64,
+    '2223': 62.31,
+    '2024': 109.82,
+    '2024all': 109.82,
+    'Run3': 172.13,
+    '2022_2023_2024': 172.13,
+    '222324': 172.13,
 }
 
 def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW):
@@ -129,8 +128,8 @@ production_XS = {
     "VHto2G": 2.3781,
     "ttHtoGG": 0.5638,
     "ttHto2G": 0.5638,
-    "bbHtoGG": 0.49,
-    "bbHto2G": 0.49,
+    "bbHtoGG": 0.52218,
+    "bbHto2G": 0.52218,
 }
 
 short_production_modes = ["ggh", "vbf", "vh", "tth", "bbh"]
@@ -141,7 +140,6 @@ allErasMap = {
     '2022': ["preEE", "postEE"],
     '2023': ["preBPix", "postBPix"],
     '2223': ["preEE", "postEE", "preBPix", "postBPix"],
-    '2022_2023_2024': ["preEE", "postEE", "preBPix", "postBPix"],
     # 2024 does not have eras
     'Run3': ["preEE", "postEE", "preBPix", "postBPix"],
 }
@@ -164,61 +162,21 @@ jetVariables = [
     "NJ",
     "PTJ0",
     "YJ0",
-    "AbsPhiHJ0",
-    "AbsYHJ0"
-]
-
-PTH_BINS = [
-    "0p0_5p0",
-    "5p0_10p0",
-    "10p0_15p0",
-    "15p0_20p0",
-    "20p0_25p0",
-    "25p0_30p0",
-    "30p0_35p0",
-    "35p0_45p0",
-    "45p0_60p0",
-    "60p0_80p0",
-    "80p0_100p0",
-    "100p0_120p0",
-    "120p0_140p0",
-    "140p0_170p0",
-    "170p0_200p0",
-    "200p0_250p0",
-    "250p0_350p0",
-    "350p0_450p0",
-    "450p0_10000p0",
-]
-
-RAPIDITY_BINS = [
-    "0p0_0p15",
-    "0p15_0p3",
-    "0p3_0p45",
-    "0p45_0p6",
-    "0p6_0p75",
-    "0p75_0p9",
-    "0p9_1p2",
-    "1p2_1p6",
-    "1p6_2p0",
-    "2p0_2p5",
-]
-
-PTJ0_BINS = [
-    "0p0_30p0",
-    "30p0_40p0",
-    "40p0_55p0",
-    "55p0_75p0",
-    "75p0_95p0",
-    "95p0_120p0",
-    "120p0_150p0",
-    "150p0_200p0",
-    "200p0_10000p0",
+    "NBJet",
+    "DYHJ0",
+    "TauJC",
+    "PTJ1",
+    "YJ1",
+    "YJ0",
+    "DPhiHJ0",
+    "DPhiJ0J1",
+    "DPhiHJ0J1",
+    "DEtaJ0J1H",
+    "MassJ0J1",
+    "EtaJ0J1"
 ]
 
 differentialProcTable_ = {
-    # HiggsDNA encodes the out-of-acceptance bin with id 0 even though the
-    # fiducial bins start at _PTH_START_ID. Map that explicit value to the
-    # "_out" label so downstream code can request the proper targets.
     "PTH": [
         (10, "PTH_0p0_5p0_in"),
         (11, "PTH_5p0_10p0_in"),
@@ -230,196 +188,413 @@ differentialProcTable_ = {
         (17, "PTH_35p0_45p0_in"),
         (18, "PTH_45p0_60p0_in"),
         (19, "PTH_60p0_80p0_in"),
-        (20, "PTH_80p0_100p0_in"),
-        (21, "PTH_100p0_120p0_in"),
-        (22, "PTH_120p0_140p0_in"),
-        (23, "PTH_140p0_170p0_in"),
-        (24, "PTH_170p0_200p0_in"),
-        (25, "PTH_200p0_250p0_in"),
-        (26, "PTH_250p0_350p0_in"),
-        (27, "PTH_350p0_450p0_in"),
-        (28, "PTH_450p0_10000p0_in"),
-        (29, "PTH_0p0_10000p0_out")
-    ], 
+        (110, "PTH_80p0_100p0_in"),
+        (111, "PTH_100p0_120p0_in"),
+        (112, "PTH_120p0_140p0_in"),
+        (113, "PTH_140p0_170p0_in"),
+        (114, "PTH_170p0_200p0_in"),
+        (115, "PTH_200p0_250p0_in"),
+        (116, "PTH_250p0_350p0_in"),
+        (117, "PTH_350p0_450p0_in"),
+        (118, "PTH_450p0_10000p0_in"),
+        (910, "PTH_0p0_5p0_out"),  # Add 9 in front for out fiducial
+        (911, "PTH_5p0_10p0_out"),
+        (912, "PTH_10p0_15p0_out"),
+        (913, "PTH_15p0_20p0_out"),
+        (914, "PTH_20p0_25p0_out"),
+        (915, "PTH_25p0_30p0_out"),
+        (916, "PTH_30p0_35p0_out"),
+        (917, "PTH_35p0_45p0_out"),
+        (918, "PTH_45p0_60p0_out"),
+        (919, "PTH_60p0_80p0_out"),
+        (9110, "PTH_80p0_100p0_out"),
+        (9111, "PTH_100p0_120p0_out"),
+        (9112, "PTH_120p0_140p0_out"),
+        (9113, "PTH_140p0_170p0_out"),
+        (9114, "PTH_170p0_200p0_out"),
+        (9115, "PTH_200p0_250p0_out"),
+        (9116, "PTH_250p0_350p0_out"),
+        (9117, "PTH_350p0_450p0_out"),
+        (9118, "PTH_450p0_10000p0_out")
+        # (119, "PTH_0p0_10000p0_out")
+    ],
     "rapidity": [
-        (30, "YH_0p0_0p15_in"),
-        (31, "YH_0p15_0p3_in"),
-        (32, "YH_0p3_0p45_in"),
-        (33, "YH_0p45_0p6_in"),
-        (34, "YH_0p6_0p75_in"),
-        (35, "YH_0p75_0p9_in"),
-        (36, "YH_0p9_1p2_in"),
-        (37, "YH_1p2_1p6_in"),
-        (38, "YH_1p6_2p0_in"),
-        (39, "YH_2p0_2p5_in"),
-        (40, "YH_0p0_2p5_out")
+        (20, "YH_0p0_0p15_in"),
+        (21, "YH_0p15_0p3_in"),
+        (22, "YH_0p3_0p45_in"),
+        (23, "YH_0p45_0p6_in"),
+        (24, "YH_0p6_0p75_in"),
+        (25, "YH_0p75_0p9_in"),
+        (26, "YH_0p9_1p2_in"),
+        (27, "YH_1p2_1p6_in"),
+        (28, "YH_1p6_2p0_in"),
+        (29, "YH_2p0_2p5_in"),
+        (920, "YH_0p0_0p15_out"),
+        (921, "YH_0p15_0p3_out"),
+        (922, "YH_0p3_0p45_out"),
+        (923, "YH_0p45_0p6_out"),
+        (924, "YH_0p6_0p75_out"),
+        (925, "YH_0p75_0p9_out"),
+        (926, "YH_0p9_1p2_out"),
+        (927, "YH_1p2_1p6_out"),
+        (928, "YH_1p6_2p0_out"),
+        (929, "YH_2p0_2p5_out")
+        # (120, "YH_0p0_2p5_out")
     ],
     "NJ": [
-        (60, "NJ_0p0_1p0_in"),
-        (61, "NJ_1p0_2p0_in"),
-        (62, "NJ_2p0_3p0_in"),
-        (63, "NJ_3p0_4p0_in"),
-        (64, "NJ_4p0_100p0_in"),
-        (65, "NJ_0p0_100p0_out")
+        (30, "NJ_0p0_1p0_in"),
+        (31, "NJ_1p0_2p0_in"),
+        (32, "NJ_2p0_3p0_in"),
+        (33, "NJ_3p0_4p0_in"),
+        (34, "NJ_4p0_100p0_in"),
+        (930, "NJ_0p0_1p0_out"),
+        (931, "NJ_1p0_2p0_out"),
+        (932, "NJ_2p0_3p0_out"),
+        (933, "NJ_3p0_4p0_out"),
+        (934, "NJ_4p0_100p0_out")
+        # (35, "NJ_0p0_100p0_out")
     ],
     "PTJ0": [
-        (50, "PTJ0_0p0_30p0_in"),
-        (51, "PTJ0_30p0_40p0_in"),
-        (52, "PTJ0_40p0_55p0_in"),
-        (53, "PTJ0_55p0_75p0_in"),
-        (54, "PTJ0_75p0_95p0_in"),
-        (55, "PTJ0_95p0_120p0_in"),
-        (56, "PTJ0_120p0_150p0_in"),
-        (57, "PTJ0_150p0_200p0_in"),
-        (58, "PTJ0_200p0_10000p0_in"),
-        (59, "PTJ0_0p0_10000p0_out")
+        (40, "PTJ0_m10000p0_30p0_in"),
+        (41, "PTJ0_30p0_40p0_in"),
+        (42, "PTJ0_40p0_55p0_in"),
+        (43, "PTJ0_55p0_75p0_in"),
+        (44, "PTJ0_75p0_95p0_in"),
+        (45, "PTJ0_95p0_120p0_in"),
+        (46, "PTJ0_120p0_150p0_in"),
+        (47, "PTJ0_150p0_200p0_in"),
+        (48, "PTJ0_200p0_10000p0_in"),
+        (940, "PTJ0_m10000p0_30p0_out"),
+        (941, "PTJ0_30p0_40p0_out"),
+        (942, "PTJ0_40p0_55p0_out"),
+        (943, "PTJ0_55p0_75p0_out"),
+        (944, "PTJ0_75p0_95p0_out"),
+        (945, "PTJ0_95p0_120p0_out"),
+        (946, "PTJ0_120p0_150p0_out"),
+        (947, "PTJ0_150p0_200p0_out"),
+        (948, "PTJ0_200p0_10000p0_out")
+        # (49, "PTJ0_0p0_10000p0_out")
+    ],
+    "CosThetaStarCS": [
+        (1000, "CosThetaStarCS_0p0_0p07_in"),
+        (1001, "CosThetaStarCS_0p07_0p15_in"),
+        (1002, "CosThetaStarCS_0p15_0p22_in"),
+        (1003, "CosThetaStarCS_0p22_0p35_in"),
+        (1004, "CosThetaStarCS_0p35_0p45_in"),
+        (1005, "CosThetaStarCS_0p45_0p55_in"),
+        (1006, "CosThetaStarCS_0p55_0p75_in"),
+        (1007, "CosThetaStarCS_0p75_1p0_in"),
+        (91000, "CosThetaStarCS_0p0_0p07_out"),
+        (91001, "CosThetaStarCS_0p07_0p15_out"),
+        (91002, "CosThetaStarCS_0p15_0p22_out"),
+        (91003, "CosThetaStarCS_0p22_0p35_out"),
+        (91004, "CosThetaStarCS_0p35_0p45_out"),
+        (91005, "CosThetaStarCS_0p45_0p55_out"),
+        (91006, "CosThetaStarCS_0p55_0p75_out"),
+        (91007, "CosThetaStarCS_0p75_1p0_out")
+        # (1008, "CosThetaStarCS_0p0_1p0_out")
+    ],
+    "PhiEtaStar": [
+        (1010, "PhiEtaStar_0p0_0p05_in"),
+        (1011, "PhiEtaStar_0p05_0p1_in"),
+        (1012, "PhiEtaStar_0p1_0p2_in"),
+        (1013, "PhiEtaStar_0p2_0p3_in"),
+        (1014, "PhiEtaStar_0p3_0p4_in"),
+        (1015, "PhiEtaStar_0p4_0p5_in"),
+        (1016, "PhiEtaStar_0p5_0p7_in"),
+        (1017, "PhiEtaStar_0p7_1p0_in"),
+        (1018, "PhiEtaStar_1p0_1p5_in"),
+        (1019, "PhiEtaStar_1p5_2p5_in"),
+        (1020, "PhiEtaStar_2p5_4p0_in"),
+        (1021, "PhiEtaStar_4p0_100p0_in"),
+        (91010, "PhiEtaStar_0p0_0p05_out"),
+        (91011, "PhiEtaStar_0p05_0p1_out"),
+        (91012, "PhiEtaStar_0p1_0p2_out"),
+        (91013, "PhiEtaStar_0p2_0p3_out"),
+        (91014, "PhiEtaStar_0p3_0p4_out"),
+        (91015, "PhiEtaStar_0p4_0p5_out"),
+        (91016, "PhiEtaStar_0p5_0p7_out"),
+        (91017, "PhiEtaStar_0p7_1p0_out"),
+        (91018, "PhiEtaStar_1p0_1p5_out"),
+        (91019, "PhiEtaStar_1p5_2p5_out"),
+        (91020, "PhiEtaStar_2p5_4p0_out"),
+        (91021, "PhiEtaStar_4p0_100p0_out")
+        # (1022, "PhiEtaStar_0p0_4p0_out")
+    ],
+    "NBJet": [
+        (1020, "NBJet_0p0_1p0_in"),
+        (1021, "NBJet_1p0_2p0_in"),
+        (1022, "NBJet_2p0_100p0_in"),
+        (91020, "NBJet_0p0_1p0_out"),
+        (91021, "NBJet_1p0_2p0_out"),
+        (91022, "NBJet_2p0_100p0_out")
+        # (1023, "NBJet_0p0_100p0_out")
     ],
     "YJ0": [
-        (50, "YJ0_0p0_0p5_in"),
-        (51, "YJ0_0p5_1p2_in"),
-        (52, "YJ0_1p2_2p0_in"),
-        (53, "YJ0_2p0_2p5_in"),
-        (54, "YJ0_NJ0_in"),
-        (55, "YJ0_0p0_2p5_out")
+        (1100, "YJ0_m10000p0_0p0_in"),
+        (1101, "YJ0_0p0_0p3_in"),
+        (1102, "YJ0_0p3_0p6_in"),
+        (1103, "YJ0_0p6_0p9_in"),
+        (1104, "YJ0_0p9_1p2_in"),
+        (1105, "YJ0_1p2_1p6_in"),
+        (1106, "YJ0_1p6_2p0_in"),
+        (1107, "YJ0_2p0_2p5_in"),
+        (91100, "YJ0_m10000p0_0p0_out"),
+        (91101, "YJ0_0p0_0p3_out"),
+        (91102, "YJ0_0p3_0p6_out"),
+        (91103, "YJ0_0p6_0p9_out"),
+        (91104, "YJ0_0p9_1p2_out"),
+        (91105, "YJ0_1p2_1p6_out"),
+        (91106, "YJ0_1p6_2p0_out"),
+        (91107, "YJ0_2p0_2p5_out")
+        # (1108, "YJ0_0p0_2p5_out")
     ],
-    "AbsPhiHJ0": [
-        (60, "AbsPhiHJ0_0p0_2p6_in"),
-        (61, "AbsPhiHJ0_2p6_2p9_in"),
-        (62, "AbsPhiHJ0_2p9_3p03_in"),
-        (63, "AbsPhiHJ0_3p03_3p1415926_in"),
-        (64, "AbsPhiHJ0_NJ_in"),
-        (65, "AbsPhiHJ0_0p0_Pi_out")
+    "DPhiHJ0": [
+        (1110, "DPhiHJ0_m10000p0_0p0_in"),
+        (1111, "DPhiHJ0_0p0_2p0_in"),
+        (1112, "DPhiHJ0_2p0_2p6_in"),
+        (1113, "DPhiHJ0_2p6_2p85_in"),
+        (1114, "DPhiHJ0_2p85_3p0_in"),
+        (1115, "DPhiHJ0_3p0_3p07_in"),
+        (1116, "DPhiHJ0_3p07_3p1416_in"),
+        (91110, "DPhiHJ0_m10000p0_0p0_out"),
+        (91111, "DPhiHJ0_0p0_2p0_out"),
+        (91112, "DPhiHJ0_2p0_2p6_out"),
+        (91113, "DPhiHJ0_2p6_2p85_out"),
+        (91114, "DPhiHJ0_2p85_3p0_out"),
+        (91115, "DPhiHJ0_3p0_3p07_out"),
+        (91116, "DPhiHJ0_3p07_3p1416_out")
+        # (1117, "DPhiHJ0_0p0_3p1416_out")
     ],
-    "AbsYHJ0": [
-        (70, "AbsYHJ0_0p0_0p6_in"),
-        (71, "AbsYHJ0_0p6_1p2_in"),
-        (72, "AbsYHJ0_1p2_1p9_in"),
-        (73, "AbsYHJ0_1p9_100p0_in"),
-        (74, "AbsYHJ0_NJ0_in"),
-        (75, "AbsYHJ0_0p0_100p0_out")
-    ]
+    "DYHJ0": [
+        (1120, "DYHJ0_m10000p0_0p0_in"),
+        (1121, "DYHJ0_0p0_0p3_in"),
+        (1122, "DYHJ0_0p3_0p6_in"),
+        (1123, "DYHJ0_0p6_1p0_in"),
+        (1124, "DYHJ0_1p0_1p4_in"),
+        (1125, "DYHJ0_1p4_1p9_in"),
+        (1126, "DYHJ0_1p9_2p5_in"),
+        (1127, "DYHJ0_2p5_100p0_in"),
+        (91120, "DYHJ0_m10000p0_0p0_out"),
+        (91121, "DYHJ0_0p0_0p3_out"),
+        (91122, "DYHJ0_0p3_0p6_out"),
+        (91123, "DYHJ0_0p6_1p0_out"),
+        (91124, "DYHJ0_1p0_1p4_out"),
+        (91125, "DYHJ0_1p4_1p9_out"),
+        (91126, "DYHJ0_1p9_2p5_out"),
+        (91127, "DYHJ0_2p5_100p0_out")
+        # (1128, "DYHJ0_0p0_100p0_out")
+    ],
+    "TauJC": [
+        (1130, "TauJC_m10000p0_0p0_in"),
+        (1131, "TauJC_0p0_15p0_in"),
+        (1132, "TauJC_15p0_20p0_in"),
+        (1133, "TauJC_20p0_30p0_in"),
+        (1134, "TauJC_30p0_50p0_in"),
+        (1135, "TauJC_50p0_80p0_in"),
+        (1136, "TauJC_80p0_10000p0_in"),
+        (91130, "TauJC_m10000p0_0p0_out"),
+        (91131, "TauJC_0p0_15p0_out"),
+        (91132, "TauJC_15p0_20p0_out"),
+        (91133, "TauJC_20p0_30p0_out"),
+        (91134, "TauJC_30p0_50p0_out"),
+        (91135, "TauJC_50p0_80p0_out"),
+        (91136, "TauJC_80p0_10000p0_out")
+        # (1137, "TauJC_0p0_10000p0_out")
+    ],
+    "PTJ1": [
+        (50, "PTJ1_m10000p0_30p0_in"),
+        (51, "PTJ1_30p0_45p0_in"),
+        (52, "PTJ1_45p0_65p0_in"),
+        (53, "PTJ1_65p0_90p0_in"),
+        (54, "PTJ1_90p0_150p0_in"),
+        (55, "PTJ1_150p0_10000p0_in"),
+        (950, "PTJ1_m10000p0_30p0_out"),
+        (951, "PTJ1_30p0_45p0_out"),
+        (952, "PTJ1_45p0_65p0_out"),
+        (953, "PTJ1_65p0_90p0_out"),
+        (954, "PTJ1_90p0_150p0_out"),
+        (955, "PTJ1_150p0_10000p0_out")
+        # (56, "PTJ1_m10000p0_10000p0_out")
+    ],
+    "YJ1": [
+        (1210, "YJ1_m10000p0_0p0_in"),
+        (1211, "YJ1_0p0_0p6_in"),
+        (1212, "YJ1_0p6_1p2_in"),
+        (1213, "YJ1_1p2_1p8_in"),
+        (1214, "YJ1_1p8_2p5_in"),
+        (1215, "YJ1_2p5_3p5_in"),
+        (1216, "YJ1_3p5_5p0_in"),
+        (91210, "YJ1_m10000p0_0p0_out"),
+        (91211, "YJ1_0p0_0p6_out"),
+        (91212, "YJ1_0p6_1p2_out"),
+        (91213, "YJ1_1p2_1p8_out"),
+        (91214, "YJ1_1p8_2p5_out"),
+        (91215, "YJ1_2p5_3p5_out"),
+        (91216, "YJ1_3p5_5p0_out")
+        # (1217, "YJ1_0p0_5p0_out")
+    ],
+    "DPhiJ0J1": [
+        (50, "DPhiJ0J1_m10000p0_m3p1416_in"),
+        (51, "DPhiJ0J1_m3p1416_m2p0944_in"),
+        (52, "DPhiJ0J1_m2p0944_m1p0472_in"),
+        (53, "DPhiJ0J1_m1p0472_0p0_in"),
+        (54, "DPhiJ0J1_0p0_1p0472_in"),
+        (55, "DPhiJ0J1_1p0472_2p0944_in"),
+        (56, "DPhiJ0J1_2p0944_3p1416_in"),
+        (950, "DPhiJ0J1_m10000p0_m3p1416_out"),
+        (951, "DPhiJ0J1_m3p1416_m2p0944_out"),
+        (952, "DPhiJ0J1_m2p0944_m1p0472_out"),
+        (953, "DPhiJ0J1_m1p0472_0p0_out"),
+        (954, "DPhiJ0J1_0p0_1p0472_out"),
+        (955, "DPhiJ0J1_1p0472_2p0944_out"),
+        (956, "DPhiJ0J1_2p0944_3p1416_out")
+        # (57, "DPhiJ0J1_m3p1416_3p1416_out")
+    ],
+    "DPhiHJ0J1": [
+        (1230, "DPhiHJ0J1_m10000p0_0p0_in"),
+        (1231, "DPhiHJ0J1_0p0_2p0_in"),
+        (1232, "DPhiHJ0J1_2p0_2p7_in"),
+        (1233, "DPhiHJ0J1_2p7_2p95_in"),
+        (1234, "DPhiHJ0J1_2p95_3p07_in"),
+        (1235, "DPhiHJ0J1_3p07_3p1416_in"),
+        (91230, "DPhiHJ0J1_m10000p0_0p0_out"),
+        (91231, "DPhiHJ0J1_0p0_2p0_out"),
+        (91232, "DPhiHJ0J1_2p0_2p7_out"),
+        (91233, "DPhiHJ0J1_2p7_2p95_out"),
+        (91234, "DPhiHJ0J1_2p95_3p07_out"),
+        (91235, "DPhiHJ0J1_3p07_3p1416_out")
+        # (1236, "DPhiHJ0J1_0p0_3p1416_out")
+    ],
+    "DEtaJ0J1H": [
+        (1240, "DEtaJ0J1H_m10000p0_0p0_in"),
+        (1241, "DEtaJ0J1H_0p0_0p2_in"),
+        (1242, "DEtaJ0J1H_0p2_0p5_in"),
+        (1243, "DEtaJ0J1H_0p5_0p85_in"),
+        (1244, "DEtaJ0J1H_0p85_1p2_in"),
+        (1245, "DEtaJ0J1H_1p2_1p7_in"),
+        (1246, "DEtaJ0J1H_1p7_100p0_in"),
+        (91240, "DEtaJ0J1H_m10000p0_0p0_out"),
+        (91241, "DEtaJ0J1H_0p0_0p2_out"),
+        (91242, "DEtaJ0J1H_0p2_0p5_out"),
+        (91243, "DEtaJ0J1H_0p5_0p85_out"),
+        (91244, "DEtaJ0J1H_0p85_1p2_out"),
+        (91245, "DEtaJ0J1H_1p2_1p7_out"),
+        (91246, "DEtaJ0J1H_1p7_100p0_out")
+        # (1247, "DEtaJ0J1H_0p0_100p0_out")
+    ],
+    "MassJ0J1": [
+        (70, "MassJ0J1_m10000p0_0p0_in"),
+        (71, "MassJ0J1_0p0_75p0_in"),
+        (72, "MassJ0J1_75p0_120p0_in"),
+        (73, "MassJ0J1_120p0_180p0_in"),
+        (74, "MassJ0J1_180p0_300p0_in"),
+        (75, "MassJ0J1_300p0_500p0_in"),
+        (76, "MassJ0J1_500p0_1000p0_in"),
+        (77, "MassJ0J1_1000p0_10000p0_in"),
+        (970, "MassJ0J1_m10000p0_0p0_out"),
+        (971, "MassJ0J1_0p0_75p0_out"),
+        (972, "MassJ0J1_75p0_120p0_out"),
+        (973, "MassJ0J1_120p0_180p0_out"),
+        (974, "MassJ0J1_180p0_300p0_out"),
+        (975, "MassJ0J1_300p0_500p0_out"),
+        (976, "MassJ0J1_500p0_1000p0_out"),
+        (977, "MassJ0J1_1000p0_10000p0_out")
+    ],
+    "EtaJ0J1": [
+        (1260, "EtaJ0J1_m10000p0_0p0_in"),
+        (1261, "EtaJ0J1_0p0_0p7_in"),
+        (1262, "EtaJ0J1_0p7_1p6_in"),
+        (1263, "EtaJ0J1_1p6_3p0_in"),
+        (1264, "EtaJ0J1_3p0_5p0_in"),
+        (1265, "EtaJ0J1_5p0_100p0_in"),
+        (91260, "EtaJ0J1_m10000p0_0p0_out"),
+        (91261, "EtaJ0J1_0p0_0p7_out"),
+        (91262, "EtaJ0J1_0p7_1p6_out"),
+        (91263, "EtaJ0J1_1p6_3p0_out"),
+        (91264, "EtaJ0J1_3p0_5p0_out"),
+        (91265, "EtaJ0J1_5p0_100p0_out")
+        #(1266, "EtaJ0J1_0p0_100p0_out")
+    ],
+    "PTHvDPhiJ0J1": [
+        (4501, "PTHvDPhiJ0J1_0p0_35p0_m3p1416_m1p5708_in"),
+        (4502, "PTHvDPhiJ0J1_0p0_35p0_m1p5708_0p0_in"),
+        (4503, "PTHvDPhiJ0J1_0p0_35p0_0p0_1p5708_in"),
+        (4504, "PTHvDPhiJ0J1_0p0_35p0_1p5708_3p1416_in"),
+        (4505, "PTHvDPhiJ0J1_35p0_80p0_m3p1416_m1p5708_in"),
+        (4506, "PTHvDPhiJ0J1_35p0_80p0_m1p5708_0p0_in"),
+        (4507, "PTHvDPhiJ0J1_35p0_80p0_0p0_1p5708_in"),
+        (4508, "PTHvDPhiJ0J1_35p0_80p0_1p5708_3p1416_in"),
+        (4509, "PTHvDPhiJ0J1_80p0_150p0_m3p1416_m1p5708_in"),
+        (4510, "PTHvDPhiJ0J1_80p0_150p0_m1p5708_0p0_in"),
+        (4511, "PTHvDPhiJ0J1_80p0_150p0_0p0_1p5708_in"),
+        (4512, "PTHvDPhiJ0J1_80p0_150p0_1p5708_3p1416_in"),
+        (4513, "PTHvDPhiJ0J1_150p0_300p0_m3p1416_m1p5708_in"),
+        (4514, "PTHvDPhiJ0J1_150p0_300p0_m1p5708_0p0_in"),
+        (4515, "PTHvDPhiJ0J1_150p0_300p0_0p0_1p5708_in"),
+        (4516, "PTHvDPhiJ0J1_150p0_300p0_1p5708_3p1416_in"),
+        (4517, "PTHvDPhiJ0J1_300p0_10000p0_m3p1416_m1p5708_in"),
+        (4518, "PTHvDPhiJ0J1_300p0_10000p0_m1p5708_0p0_in"),
+        (4519, "PTHvDPhiJ0J1_300p0_10000p0_0p0_1p5708_in"),
+        (4520, "PTHvDPhiJ0J1_300p0_10000p0_1p5708_3p1416_in"),
+        (4533, "PTHvDPhiJ0J1_0p0_10000p0_m4p0_4p0_out"),
+    ],
+    "PTHvYH":[
+        (4601, "PTHvYH_0p0_50p0_0p0_0p2_in"),
+        (4602, "PTHvYH_0p0_50p0_0p2_0p4_in"),
+        (4603, "PTHvYH_0p0_50p0_0p4_0p65_in"),
+        (4604, "PTHvYH_0p0_50p0_0p65_0p9_in"),
+        (4605, "PTHvYH_0p0_50p0_0p9_1p2_in"),
+        (4606, "PTHvYH_0p0_50p0_1p2_2p5_in"),
+        (4607, "PTHvYH_50p0_105p0_0p0_0p5_in"),
+        (4608, "PTHvYH_50p0_105p0_0p5_1p15_in"),
+        (4609, "PTHvYH_50p0_105p0_1p15_2p5_in"),
+        (4610, "PTHvYH_105p0_10000p0_0p0_0p45_in"),
+        (4611, "PTHvYH_105p0_10000p0_0p45_1p0_in"),
+        (4612, "PTHvYH_105p0_10000p0_1p0_2p5_in"),
+        (4631, "PTHvYH_0p0_10000p0_0p0_2p5_out")
+    ],
 }
 
 #BMW == Best Medium Worst
 BMW = ['cat0', 'cat1', 'cat2']
 
-combineVariableDict = {
-    "2022": {
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2022", BMW=BMW),
-        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=RAPIDITY_BINS, year="2022", BMW=BMW),
-        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"], year="2022", BMW=BMW),
-        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=PTJ0_BINS, year="2022", BMW=BMW),
-        #"PTHvsDPhiJ0J1": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=["0p0_30p0", "30p0_75p0", "75p0_120p0", "120p0_200p0", "200p0_10000p0"], year="2022", BMW=BMW)
-    },
-    "2023":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2023", BMW=BMW),
-        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=RAPIDITY_BINS, year="2023", BMW=BMW),
-        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"], year="2023", BMW=BMW),
-        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=PTJ0_BINS, year="2023", BMW=BMW)
-    },
-    "2223":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2223", BMW=BMW),
-        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=RAPIDITY_BINS, year="2223", BMW=BMW),
-        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"], year="2223", BMW=BMW),
-        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=PTJ0_BINS, year="2223", BMW=BMW)
-    },
-    "2024":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2024", BMW=BMW),
-        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=RAPIDITY_BINS, year="2024", BMW=BMW),
-        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"], year="2024", BMW=BMW),
-        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=PTJ0_BINS, year="2024", BMW=BMW)
-    },
-    "2022_2023":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2022_2023", BMW=BMW),
-        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=RAPIDITY_BINS, year="2022_2023", BMW=BMW),
-        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"], year="2022_2023", BMW=BMW),
-        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=PTJ0_BINS, year="2022_2023", BMW=BMW)
-    },
-    "2022_2023_2024":{
-        "PTH": CreateVariableParameters(gen_variable="PTH", reco_variable="PTH", bins=PTH_BINS, year="2022_2023_2024", BMW=BMW),
-        "rapidity": CreateVariableParameters(gen_variable="YH", reco_variable="rapidity", bins=RAPIDITY_BINS, year="2022_2023_2024", BMW=BMW),
-        "NJ": CreateVariableParameters(gen_variable="NJ", reco_variable="NJ", bins=["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"], year="2022_2023_2024", BMW=BMW),
-        "PTJ0": CreateVariableParameters(gen_variable="PTJ0", reco_variable="PTJ0", bins=PTJ0_BINS, year="2022_2023_2024", BMW=BMW)
-    },
+# Variable bins
+variableBins = {
+    "PTH": ["0p0_5p0","5p0_10p0","10p0_15p0","15p0_20p0","20p0_25p0","25p0_30p0","30p0_35p0","35p0_45p0","45p0_60p0","60p0_80p0","80p0_100p0","100p0_120p0","120p0_140p0","140p0_170p0","170p0_200p0","200p0_250p0","250p0_350p0","350p0_450p0","450p0_10000p0"],
+    "NJ": ["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"],
+    "rapidity": ["0p0_0p15", "0p15_0p3", "0p3_0p45", "0p45_0p6", "0p6_0p75", "0p75_0p9", "0p9_1p2", "1p2_1p6", "1p6_2p0", "2p0_2p5"],
+    "PTJ0": ["m10000p0_30p0", "30p0_40p0", "40p0_55p0", "55p0_75p0", "75p0_95p0", "95p0_120p0", "120p0_150p0", "150p0_200p0", "200p0_10000p0"],
+    "DPhiJ0J1": ["m10000p0_m3p1416", "m3p1416_m2p0944", "m2p0944_m1p0472", "m1p0472_0p0", "0p0_1p0472", "1p0472_2p0944", "2p0944_3p1416"],
+    "PTHvsDPhiJ0J1": ["0p0_35p0_m3p1416_m1p5708", "0p0_35p0_m1p5708_0p0", "0p0_35p0_0p0_1p5708", "0p0_35p0_1p5708_3p1416", "35p0_80p0_m3p1416_m1p5708", "35p0_80p0_m1p5708_0p0", "35p0_80p0_0p0_1p5708", "35p0_80p0_1p5708_3p1416", "80p0_150p0_m3p1416_m1p5708", "80p0_150p0_m1p5708_0p0", "80p0_150p0_0p0_1p5708", "80p0_150p0_1p5708_3p1416", "150p0_300p0_m3p1416_m1p5708", "150p0_300p0_m1p5708_0p0", "150p0_300p0_0p0_1p5708", "150p0_300p0_1p5708_3p1416", "300p0_10000p0_m3p1416_m1p5708", "300p0_10000p0_m1p5708_0p0", "300p0_10000p0_0p0_1p5708", "300p0_10000p0_1p5708_3p1416"],
+    "NBJet": ["0p0_1p0", "1p0_2p0", "2p0_100p0"],
+    "DYHJ0": ["m10000p0_0p0", "0p0_0p3", "0p3_0p6", "0p6_1p0", "1p0_1p4", "1p4_1p9", "1p9_2p5", "2p5_100p0"],
+    "TauJC": ["m10000p0_0p0", "0p0_15p0", "15p0_20p0", "20p0_30p0", "30p0_50p0", "50p0_80p0", "80p0_10000p0"],
+    "PTJ1": ["m10000p0_30p0", "30p0_45p0", "45p0_65p0", "65p0_90p0", "90p0_150p0", "150p0_10000p0"],
+    "YJ1": ["m10000p0_0p0", "0p0_0p6", "0p6_1p2", "1p2_1p8", "1p8_2p5", "2p5_3p5", "3p5_5p0"],
+    "CosThetaStarCS": ["0p0_0p07", "0p07_0p15", "0p15_0p22", "0p22_0p35", "0p35_0p45", "0p45_0p55", "0p55_0p75", "0p75_1p0"],
+    "PhiEtaStar": ["0p0_0p05", "0p05_0p1", "0p1_0p2", "0p2_0p3", "0p3_0p4", "0p4_0p5", "0p5_0p7", "0p7_1p0", "1p0_1p5", "1p5_2p5", "2p5_4p0", "4p0_100p0"],
+    "DPhiHJ0": ["m10000p0_0p0", "0p0_2p0", "2p0_2p6", "2p6_2p85", "2p85_3p0", "3p0_3p07", "3p07_3p1416"],
+    "YJ0": ["m10000p0_0p0", "0p0_0p3", "0p3_0p6", "0p6_0p9", "0p9_1p2", "1p2_1p6", "1p6_2p0", "2p0_2p5"],
+    "DPhiHJ0J1": ["m10000p0_0p0", "0p0_2p0", "2p0_2p7", "2p7_2p95", "2p95_3p07", "3p07_3p1416"],
+    "DEtaJ0J1H": ["m10000p0_0p0", "0p0_0p2", "0p2_0p5", "0p5_0p85", "0p85_1p2", "1p2_1p7", "1p7_100p0"],
+    "MassJ0J1": ["m10000p0_0p0", "0p0_75p0", "75p0_120p0", "120p0_180p0", "180p0_300p0", "300p0_500p0", "500p0_1000p0", "1000p0_10000p0"],
+    "EtaJ0J1": ["m10000p0_0p0", "0p0_0p7", "0p7_1p6", "1p6_3p0", "3p0_5p0", "5p0_100p0"],
+    "PTHvYH": ["0p0_50p0_0p0_0p2", "0p0_50p0_0p2_0p4", "0p0_50p0_0p4_0p65", "0p0_50p0_0p65_0p9", "0p0_50p0_0p9_1p2", "0p0_50p0_1p2_2p5", "50p0_105p0_0p0_0p5", "50p0_105p0_0p5_1p15", "50p0_105p0_1p15_2p5", "105p0_10000p0_0p0_0p45", "105p0_10000p0_0p45_1p0", "105p0_10000p0_1p0_2p5"]
 }
 
-
-# Generator bin order used by the copied Mjj combination scans.
-combineVariableDict["2022_2023_2024"]["MassJ0J1"] = CreateVariableParameters(
-    gen_variable="MassJ0J1", reco_variable="MassJ0J1",
-    bins=["m10000p0_0p0", "0p0_75p0", "75p0_120p0", "120p0_180p0",
-          "180p0_300p0", "300p0_500p0", "500p0_1000p0", "1000p0_10000p0"],
-    year="2022_2023_2024", BMW=BMW,
-)
-
-# The first PTJ0 bin (no jet) is m10000p0_30p0 in the Hgg cards (process and RECO category names)
-# and in the combination POI maps; PTJ0_BINS has 0p0_30p0, which matches no POI and no pdfindex.
-combineVariableDict["2022_2023_2024"]["PTJ0"] = CreateVariableParameters(
-    gen_variable="PTJ0", reco_variable="PTJ0",
-    bins=["m10000p0_30p0"] + PTJ0_BINS[1:],
-    year="2022_2023_2024", BMW=BMW,
-)
-
-
-def _apply_pdfindex_overrides():
-    override_path = os.path.join(cwd__, "config", "pdfindex_overrides.json")
-    if not os.path.exists(override_path):
-        return
-
-    try:
-        with open(override_path, "r", encoding="utf-8") as handle:
-            overrides = json.load(handle)
-    except json.JSONDecodeError:
-        return
-
-    for year, variable_map in overrides.items():
-        if year not in combineVariableDict:
-            continue
-        for variable, pdf_indices in variable_map.items():
-            if variable not in combineVariableDict[year]:
-                continue
-            if not isinstance(pdf_indices, list):
-                continue
-            combineVariableDict[year][variable]["pdfIndeces"] = list(pdf_indices)
-
-
-# First apply overrides to the base (single year) entries so combined
-# definitions inherit any per-year customisations (e.g. catMerged bins).
-_apply_pdfindex_overrides()
-
-
-def _register_combined_year(name, year_list):
-    """
-    Build a combined entry in combineVariableDict by reusing the parameter
-    definitions from the first year and concatenating the pdf index lists across
-    all requested years.
-    """
-    if name in combineVariableDict:
-        return
-
-    missing_years = [year for year in year_list if year not in combineVariableDict]
-    if missing_years:
-        raise KeyError(f"Cannot build combined year '{name}' without definitions for: {', '.join(missing_years)}")
-
+def combineVariableDict(variable, year):
+    # Split the years if it's a combined year, otherwise just use the single year
+    year_list = year.split('_') if '_' in year else [year]
     template_year = year_list[0]
-    combined_entry = {}
-    template_variables = combineVariableDict[template_year].keys()
-
-    for variable in template_variables:
-        combined_payload = copy.deepcopy(combineVariableDict[template_year][variable])
-        combined_payload["pdfIndeces"] = []
-        for year in year_list:
-            year_payload = combineVariableDict[year][variable]
-            combined_payload["pdfIndeces"].extend(year_payload["pdfIndeces"])
-        combined_entry[variable] = combined_payload
-
-    combineVariableDict[name] = combined_entry
-
-
-_combined_year_map = {
-    "2022_2023": ["2022", "2023"],
-    "2022_2023_2024": ["2022", "2023", "2024"],
-}
-
-for combined_name, year_sequence in _combined_year_map.items():
-    _register_combined_year(combined_name, year_sequence)
+    if len(year_list) > 1:
+        # Add the pdfIndices from all the years together for the combined year
+        combined_pdf_indices = []
+        combined_payload = CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], year=template_year, BMW=BMW)
+        for y in year_list:
+            year_payload = combineVariableDict(variable, y)
+            combined_pdf_indices.extend(year_payload["pdfIndeces"])
+        combined_payload["pdfIndeces"] = combined_pdf_indices
+        return combined_payload
+    else:
+        return CreateVariableParameters(gen_variable="YH" if variable=="rapidity" else variable, reco_variable=variable, bins=variableBins[variable], year=template_year, BMW=BMW)

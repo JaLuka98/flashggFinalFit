@@ -33,19 +33,24 @@ class Task(law.Task):
 
     def store_parts(self):
         parts = (self.__class__.__name__, self.version)
-        # Tasks with the same version but different --output-dir (e.g. several fits of the same
-        # variable/year) must not share job submission files, otherwise parallel law runs pick up
+        # Tasks with the same version but different output_dir (e.g. the per-year chains of one
+        # FinalFits run) must not share job submission files, otherwise parallel law runs pick up
         # each other's HTCondor job ids. Default output_dir ('') keeps the old path.
         output_dir = getattr(self, "output_dir", "")
         if output_dir:
             tag = os.path.basename(os.path.normpath(output_dir))
-            digest = law.util.create_hash(os.path.normpath(output_dir), l=8)
+            digest = law.util.create_hash(os.path.normpath(output_dir), 8)
             parts += (f"{tag}_{digest}",)
         return parts
 
     def local_path(self, *path):
         # DATA_PATH is defined in setup.sh
-        output_folder = "$ANALYSIS_PATH/law/remote"
+        # Allow concurrent workflows with identical task versions (for example
+        # Hgg-only and H4l-only scans) to keep independent submission metadata.
+        output_folder = os.environ.get(
+            "LAW_REMOTE_PATH",
+            "$ANALYSIS_PATH/law/remote",
+        )
         # os.mkdir(output_folder)
         parts = (output_folder,) + self.store_parts() + path
         return os.path.join(*parts)
@@ -64,9 +69,15 @@ class HTCondorWorkflow(law.htcondor.HTCondorWorkflow):
     """
 
     parallel_jobs = luigi.IntParameter(
-        default=600,
+        default=100,
         significant=False,
-        description="maximum number of parallel htcondor jobs; default: 600",
+        description="maximum number of parallel htcondor jobs; default: 100 (was 600 before the 2026-10-05 file-server overload)",
+    )
+    poll_interval = law.DurationParameter(
+        default=3,
+        unit="m",
+        significant=False,
+        description="time between status polls; default unit is minutes; default: 3 (law default 1)",
     )
     htcondor_partition = luigi.Parameter(
         default="workday",
@@ -116,15 +127,13 @@ class HTCondorWorkflow(law.htcondor.HTCondorWorkflow):
         config.custom_content.append(("MY.WantOS", "el9"))
 
         # memory requirements
-        memory_gb = self.htcondor_memory / 1000
+        # Parameters supplied on the command line are strings, whereas values
+        # forwarded from a yaml config are commonly numeric.  Accept both.
+        memory_gb = float(self.htcondor_memory) / 1000
         config.custom_content.append(("RequestMemory", f"{memory_gb}GB")) 
 
         # maximum runtime
-        max_runtime_seconds = int(math.floor(self.htcondor_max_runtime * 3600)) - 1
-        config.custom_content.append(("+MaxRuntime", max_runtime_seconds))
-        # +MaxRuntime is advisory on the RWTH pool; enforce the configured limit.
-        config.custom_content.append(("periodic_hold", f"(JobStatus == 2) && ((time() - EnteredCurrentStatus) > {max_runtime_seconds})"))
-        config.custom_content.append(("periodic_hold_reason", '"Configured LAW runtime limit exceeded"'))
+        config.custom_content.append(("+MaxRuntime", int(math.floor(self.htcondor_max_runtime * 3600)) - 1))
 
         # job flavor
         config.custom_content.append(("+JobFlavour", f'"{self.htcondor_partition}"'))

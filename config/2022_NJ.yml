@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/.automount/net_rw/net__data_cms3a-1/spaeh/private/PhD/analyses/partial_Run3_differential/Hgg-PartialRun3-3A-ETH-Analysis/fitting/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_NJ/'
+outputFolder: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_perbinout/output_2022_NJ/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_11_13/Njets2p5/2022/data/allData_2022.root'
-  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_11_13/Njets2p5/2022/signal/'
+  Trees2WSData: '/.automount/net_rw/net__data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_smoothed_decorr_smeared_mass100to180_2026_10_01/2022/NJ/root/data/allData_2022.root'
+  Trees2WS: '/.automount/net_rw/net__data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_smoothed_decorr_smeared_mass100to180_2026_10_01_perbinout_2026_10_20/2022/NJ/root/mc/'
 
 backgroundScriptCfg:
   # Setup
@@ -38,6 +38,7 @@ trees2wsCfg:
     - "*Down"
     - "fiducialGeometricFlag"
     - "diffVariable_GenNJ"
+    - "GenNJ"
   
   dataVars:
     - "CMS_hgg_mass"
@@ -45,6 +46,7 @@ trees2wsCfg:
     
   stxsVar: ''
   diffVar: 'diffVariable_GenNJ'
+  diffSplitByCode: True # split by the per-bin-out diffVariable codes (systematics trees have no Gen* branches)
   notagVars: [] # Vars to add to NOTAG RooDataset
   
   systematicsVars:
@@ -59,11 +61,11 @@ trees2wsCfg:
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
-    - "ScaleEB"
-    - "ScaleEE"
+    - "ScaleEBZmmg"
+    - "ScaleEEZmmg"
+    - "ScaleEBZee"
+    - "ScaleEEZee"
     - "Smearing"
-    - "Material"
-    - "FNUF"
     - "energyErrShift"
     - "JerSyst"
     - "JecSystTotal"
@@ -72,7 +74,7 @@ trees2wsCfg:
 
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 18000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2022_preEE:
@@ -84,23 +86,23 @@ signalScriptCfg_2022_preEE:
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2022preEE' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
-  replacementThreshold: '50'
+  replacementThreshold: '10'
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
-  doPlots: True
+  doPlots: False
 
   beamspotWidthData: '3.2'
   beamspotWidthMC: '3.732'
 
 
   # Job submission options
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 18000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use 
 
 signalScriptCfg_2022_postEE:
@@ -112,23 +114,23 @@ signalScriptCfg_2022_postEE:
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2022postEE' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
-  replacementThreshold: '50'
+  replacementThreshold: '10'
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
-  doPlots: True
+  doPlots: False
 
   
   beamspotWidthData: '3.5'
   beamspotWidthMC: '3.732'
 
   # Job submission options
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 18000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 packaged_2022:
@@ -136,9 +138,9 @@ packaged_2022:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 18000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard_yields:
@@ -157,9 +159,9 @@ datacard_yields:
   skipBkg: False # Only add signal processes to datacard
   bkgScaler: 1. # Add overall scale factor for background
   skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 18000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard:
@@ -191,6 +193,9 @@ combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
   setParameterRange: "r=0,3"
+  cminApproxPreFitTolerance: 0.01
+  rMin: 0.0
+  rMax: 3.0
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
@@ -198,10 +203,14 @@ combine_fit:
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
+  cminApproxPreFitTolerance: 0.01
+  setParameters: 1.000
+  stepSize: 0.05
+  setCrossingTolerance: 0.00005
   not_show_POI: True
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 8000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 combine_hesse:
@@ -230,13 +239,13 @@ spectra:
   ggh_powheg_xs: "fidXS_NJ_ggH_powheg"
   ggh_no_nnlops_xs: "fidXS_NJ_ggH_genWeight"
   underflow_bin_normalized: False # Underflow bin normalized with binwidth
-  last_bin_center: 3.5
+  last_bin_center: 4.5
   first_bin_center: 0.5
   plot_log: 0
   variable: "N_{Jets}"
   y_unit: "(fb)"
   x_unit: ""
-  x_lim: [0, 4]
-  y_lim: [-0.5,3.5]
+  x_lim: [0, 5]
+  y_lim: [-0.5,4.5]
   y_lim_top: 135
-  overflow: 4
+  overflow: 5

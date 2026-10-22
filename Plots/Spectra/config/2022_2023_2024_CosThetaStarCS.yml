@@ -1,0 +1,15 @@
+frame1:
+  ylim:
+    bottom: 0
+    top: 140
+  fontsize: 11
+  title_fontsize: 11
+frame2:
+  xticks: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+  xtick_labels: ["0", "0.2", "0.4", "0.6", "0.8", "1.0"]
+  yticks:
+    is_data: [0.5, 1.0, 1.5]
+    not_data: [0.5, 1.0, 1.5]
+  ytick_labels:
+    is_data: ["0.5", "1.0", "1.5"]
+    not_data: ["0.5", "1.0", "1.5"]

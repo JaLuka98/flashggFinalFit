@@ -63,11 +63,60 @@ int mgg_high =180;
 const int blind_low = 115;
 const int blind_high = 135;
 int nBinsForMass = 4*(mgg_high-mgg_low);
+int nBinsSidebands = 4*(mgg_high-mgg_low - (blind_high - blind_low)); // 240 instead of 320
 const char* MASS_FIT_RANGE = "low,high";
 
 RooRealVar *intLumi_ = new RooRealVar("IntLumi","hacked int lumi", 1000.);
 
 TRandom3 *RandomGen = new TRandom3();
+
+struct GoFResult {
+  double chi2Red;
+  double chi2Abs;
+  double prob;
+  int nPoints;
+  int nFitParams;
+  int ndof;
+};
+
+bool isSidebandPoint(double x) {
+  return ((x >= mgg_low) && (x < blind_low)) || ((x >= blind_high) && (x <= mgg_high));
+}
+
+GoFResult computePlotGoF(RooPlot *plot, const char *pdfName, const char *dataName, int nFitParams) {
+  GoFResult result;
+  // RooPlot::chiSquare(...) returns the reduced chi2 = chi2 / ndof.
+  result.chi2Red = plot->chiSquare(pdfName, dataName, nFitParams);
+  // Count only points whose x-values lie in the sideband windows. In practice
+  // the RooHist attached to the plot can still carry graph points across the
+  // full mass range even when the visible fit is restricted to "low,high".
+  // Using the sideband x positions avoids hard-coding 240 while keeping the
+  // ndof tied to the actual sideband points entering the plotted GOF.
+  RooHist *hData = dynamic_cast<RooHist*>(plot->findObject(dataName));
+  result.nPoints = 0;
+  if (hData) {
+    for (int iPoint = 0; iPoint < hData->GetN(); ++iPoint) {
+      double x = 0.;
+      double y = 0.;
+      hData->GetPoint(iPoint, x, y);
+      if (isSidebandPoint(x)) result.nPoints++;
+    }
+  }
+  if (result.nPoints <= 0) result.nPoints = nBinsSidebands;
+  result.nFitParams = nFitParams;
+  result.ndof = result.nPoints - result.nFitParams;
+  if (result.ndof > 0) {
+    result.chi2Abs = result.chi2Red * result.ndof;
+    result.prob = TMath::Prob(result.chi2Abs, result.ndof);
+  } else {
+    result.chi2Abs = 0.;
+    result.prob = 0.;
+    std::cerr << "[WARNING] computePlotGoF: non-positive ndof = "
+              << result.ndof << " (nPoints = " << result.nPoints
+              << ", nFitParams = " << result.nFitParams << ")" << std::endl;
+  }
+  return result;
+}
 
 RooAbsPdf* getPdf(PdfModelBuilder &pdfsModel, string type, int order, const char* ext=""){
   
@@ -261,7 +310,7 @@ double getProbabilityFtest(double chi2, int ndof,RooAbsPdf *pdfNull, RooAbsPdf *
 
 }
 
-double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std::string name){
+double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std::string name, GoFResult *gofOut = nullptr){
 
   double prob;
   int ntoys = 500;
@@ -275,19 +324,19 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
   // get The Chi2 value from the data
   RooPlot *plot_chi2 = mass->frame();
-  data->plotOn(plot_chi2,Binning(nBinsForMass),Name("data"),RooFit::Range(MASS_FIT_RANGE));
+  data->plotOn(plot_chi2, Binning(nBinsForMass), Name("data"), RooFit::Range(MASS_FIT_RANGE));
 
   pdf->plotOn(plot_chi2,Name("pdf"),RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
     RooFit::Normalization(sidebandEntries,RooAbsReal::NumEvent));
   int np = pdf->getParameters(*data)->getSize();
 
-  double chi2 = plot_chi2->chiSquare("pdf","data",np);
+  GoFResult gof = computePlotGoF(plot_chi2, "pdf", "data", np);
   std::cout << "[INFO] Calculating GOF for pdf " << pdf->GetName() << ", using " <<np << " fitted parameters" <<std::endl;
 
   // The first thing is to check if the number of entries in any bin is < 5 
   // if so, we don't rely on asymptotic approximations
  
-  if ((double)data->sumEntries()/nBinsForMass < 5 ){
+  if ((double)data->sumEntries()/nBinsSidebands < 5 ){
 
     std::cout << "[INFO] Running toys for GOF test " << std::endl;
     // store pre-fit params 
@@ -311,14 +360,14 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
       RooPlot *plot_t = mass->frame();
       const double toyEntries = binnedtoy->sumEntries();
-      binnedtoy->plotOn(plot_t,Binning(nBinsForMass),RooFit::Range(MASS_FIT_RANGE));
-      pdf->plotOn(plot_t,RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
+      binnedtoy->plotOn(plot_t,Binning(nBinsForMass),Name("toy_data"),RooFit::Range(MASS_FIT_RANGE));
+      pdf->plotOn(plot_t,Name("toy_pdf"),RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
         RooFit::Normalization(toyEntries,RooAbsReal::NumEvent));
-
-      double chi2_t = plot_t->chiSquare(np);
-      if( chi2_t>=chi2) npass++;
-      toy_chi2.push_back(chi2_t*(nBinsForMass-np));
+      GoFResult toyGof = computePlotGoF(plot_t, "toy_pdf", "toy_data", np);
+      if (toyGof.chi2Abs >= gof.chi2Abs) npass++;
+      toy_chi2.push_back(toyGof.chi2Abs);
       delete plot_t;
+      delete binnedtoy;
     }
     std::cout << "[INFO] complete" << std::endl;
     prob = (double)npass / ntoys;
@@ -333,7 +382,7 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
     }
     toyhist.Draw();
 
-    TArrow lData(chi2*(nBinsForMass-np),toyhist.GetMaximum(),chi2*(nBinsForMass-np),0);
+    TArrow lData(gof.chi2Abs,toyhist.GetMaximum(),gof.chi2Abs,0);
     lData.SetLineWidth(2);
     lData.Draw();
     can->SaveAs(name.c_str());
@@ -341,10 +390,16 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
     // back to best fit 	
     params->assignValueOnly(preParams);
   } else {
-    prob = TMath::Prob(chi2*(nBinsForMass-np),nBinsForMass-np);
+    prob = gof.prob;
   }
-  std::cout << "[INFO] Chi2 in Observed =  " << chi2*(nBinsForMass-np) << std::endl;
-  std::cout << "[INFO] p-value  =  " << prob << std::endl;
+  std::cout << "[INFO] nPoints = " << gof.nPoints << std::endl;
+  std::cout << "[INFO] nFitParams = " << gof.nFitParams << std::endl;
+  std::cout << "[INFO] ndof = " << gof.ndof << std::endl;
+  std::cout << "[INFO] chi2/ndof = " << gof.chi2Red << std::endl;
+  std::cout << "[INFO] Chi2 in Observed = " << gof.chi2Abs << std::endl;
+  std::cout << "[INFO] p-value = " << prob << std::endl;
+  if (gofOut) *gofOut = gof;
+  delete plot_chi2;
   delete pdf;
   return prob;
 
@@ -352,17 +407,9 @@ double getGoodnessOfFit(RooRealVar *mass, RooAbsPdf *mpdf, RooDataSet *data, std
 
 void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector<string> flashggCats_, int status, double *prob){
   
-  // Chi2 taken only from the sidebands 
+  GoFResult gof;
+  *prob = getGoodnessOfFit(mass,pdf,data,name,&gof);
   const double sidebandEntries = data->sumEntries();
-  RooPlot *plot_chi2 = mass->frame();
-  data->plotOn(plot_chi2,Binning(nBinsForMass),RooFit::Range(MASS_FIT_RANGE));
-  pdf->plotOn(plot_chi2,RooFit::Range(MASS_FIT_RANGE),RooFit::NormRange(MASS_FIT_RANGE),
-    RooFit::Normalization(sidebandEntries,RooAbsReal::NumEvent));
-
-  int np = pdf->getParameters(*data)->getSize()+1; //Because this pdf has no extend
-  double chi2 = plot_chi2->chiSquare(np);
- 
-  *prob = getGoodnessOfFit(mass,pdf,data,name);
   RooPlot *plot = mass->frame();
   mass->setRange("unblindReg_1",mgg_low,115);
   mass->setRange("unblindReg_2",135,mgg_high);
@@ -384,7 +431,9 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
   TLatex *lat = new TLatex();
   lat->SetNDC();
   lat->SetTextFont(42);
-  lat->DrawLatex(0.1,0.92,Form("#chi^{2} = %.3f, Prob = %.2f, Fit Status = %d ",chi2*(nBinsForMass-np),*prob,status));
+  lat->SetTextSize(0.03);
+  lat->DrawLatex(0.1,0.92,Form("#chi^{2}/dof = %.3f (%.3f / %d), Prob = %.2f, Fit Status = %d ",
+    gof.chi2Red, gof.chi2Abs, gof.ndof, *prob, status));
   canv->SaveAs(name.c_str());
   if (name.size() > 4 && name.substr(name.size() - 4) == ".pdf") {
     std::string pngName = name.substr(0, name.size() - 4) + ".png";
@@ -396,13 +445,16 @@ void plot(RooRealVar *mass, RooAbsPdf *pdf, RooDataSet *data, string name,vector
 
   delete canv;
   delete lat;
+  delete plot;
 }
 void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet *data, string name, vector<string> flashggCats_, int cat, int bestFitPdf=-1){
   
-  int color[7] = {kBlue,kRed,kMagenta,kGreen+1,kOrange+7,kAzure+10,kBlack};
-  TLegend *leg = new TLegend(0.5,0.55,0.92,0.88);
-  leg->SetFillColor(0);
-  leg->SetLineColor(1);
+  int color[7] = {kBlue+1,kRed+1,kMagenta+1,kGreen+2,kOrange+7,kCyan+2,kGray+2};
+  TLegend *leg = new TLegend(0.52,0.45,0.94,0.84);
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
+  leg->SetTextFont(42);
+  leg->SetTextSize(0.028);
   RooPlot *plot = mass->frame();
 
   mass->setRange("unblindReg_1",mgg_low,115);
@@ -415,11 +467,13 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
   else data->plotOn(plot,Binning(mgg_high-mgg_low),RooFit::Range(MASS_FIT_RANGE)); 
   TCanvas *canv = new TCanvas();
   ///start extra bit for ratio plot///
-  TPad *pad1 = new TPad("pad1","pad1",0,0.25,1,1);
-  TPad *pad2 = new TPad("pad2","pad2",0,0,1,0.35);
-  pad1->SetBottomMargin(0.18); // 0.18 is a good choice to avoid that the xlabel of the upper pad cuts into the lower pad
-  pad2->SetTopMargin(0.00001);
-  pad2->SetBottomMargin(0.3); // Increase to make xlabel more visible
+  TPad *pad1 = new TPad(Form("pad1_%d",cat),"",0,0.25,1,1);
+  TPad *pad2 = new TPad(Form("pad2_%d",cat),"",0,0,1,0.35);
+  pad1->SetBottomMargin(0.18);
+  pad1->SetTicks(1,1);
+  pad2->SetTopMargin(0.04);
+  pad2->SetBottomMargin(0.3);
+  pad2->SetTicks(1,1);
   pad1->Draw();
   pad2->Draw();
   pad1->cd();
@@ -434,7 +488,9 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
 
   int currentIndex = catIndex->getIndex();
   TObject *datLeg = plot->getObject(int(plot->numItems()-1));
-  leg->AddEntry(datLeg,Form("Data - %s",flashggCats_[cat].c_str()),"LEP");
+  std::string categoryLabel = flashggCats_[cat];
+  if (categoryLabel.rfind("cat",0) == 0) categoryLabel = "Category " + categoryLabel.substr(3);
+  leg->AddEntry(datLeg,Form("Data (%s)",categoryLabel.c_str()),"LEP");
   int style=1;
   RooAbsPdf *pdf = nullptr;
   RooCurve *nomBkgCurve = nullptr;
@@ -446,8 +502,9 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
     else {col=kBlack; style++;}
     catIndex->setIndex(icat);
     pdfs->getCurrentPdf()->fitTo(*data,RooFit::Minos(0),RooFit::Minimizer("Minuit2","minimize"),RooFit::SumW2Error(kTRUE),RooFit::Range(MASS_FIT_RANGE));	 
+    const int lineWidth = bestFitPdf==icat ? 4 : 2;
     pdfs->getCurrentPdf()->plotOn(plot,RooFit::Range(mgg_low,mgg_high),RooFit::NormRange(MASS_FIT_RANGE),
-      RooFit::Normalization(sidebandEntries,RooAbsReal::NumEvent),LineColor(col),LineStyle(style));//,RooFit::NormRange("fitdata_1,fitdata_2"));
+      RooFit::Normalization(sidebandEntries,RooAbsReal::NumEvent),LineColor(col),LineStyle(style),LineWidth(lineWidth));//,RooFit::NormRange("fitdata_1,fitdata_2"));
     TObject *pdfLeg = plot->getObject(int(plot->numItems()-1));
     std::string ext = "";
     if (bestFitPdf==icat) {
@@ -456,13 +513,25 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
     nomBkgCurve = (RooCurve*)plot->getObject(plot->numItems()-1);
     bestcol = col;
     }
-    leg->AddEntry(pdfLeg,Form("%s%s",pdfs->getCurrentPdf()->GetName(),ext.c_str()),"L");
+    const std::string pdfName = pdfs->getCurrentPdf()->GetName();
+    std::string family = "Candidate function";
+    if (pdfName.find("bern") != std::string::npos) family = "Bernstein polynomial";
+    else if (pdfName.find("exp") != std::string::npos) family = "Sum of exponentials";
+    else if (pdfName.find("pow") != std::string::npos) family = "Power-law sum";
+    else if (pdfName.find("lau") != std::string::npos) family = "Laurent series";
+    const char order = pdfName.empty() ? '?' : pdfName.back();
+    leg->AddEntry(pdfLeg,Form("%s, order %c%s",family.c_str(),order,
+      bestFitPdf==icat ? " (best fit)" : ""),"L");
   }
-  plot->SetTitle(Form("Category %s",flashggCats_[cat].c_str()));
+  plot->SetTitle("");
   if (BLIND) plot->SetMinimum(0.0001);
+  plot->GetXaxis()->SetLabelSize(0.);
+  plot->GetXaxis()->SetTitleSize(0.);
+  plot->GetYaxis()->SetTitle("Events / (1 GeV)");
+  plot->GetYaxis()->SetTitleOffset(1.55);
   plot->Draw();
   leg->Draw("same");
-  CMS_lumi(canv, 2022, 0);
+  CMS_lumi(pad1, 2022, 0);
   ///start extra bit for ratio plot///
   // Mirror the (best-fit) pdf into a histogram with the same binning as the data histogram.
   std::unique_ptr<TH1> pdfHist;
@@ -499,7 +568,6 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
   if (pdfHist){
     pdfHist->SetLineColor(bestcol);
     pdfHist->SetLineWidth(2);
-    pdfHist->Draw("same");
   }
   // Build the (data - pdf) graph that we draw in the ratio pad.
   TGraphAsymmErrors *hdatasub = new TGraphAsymmErrors();
@@ -531,20 +599,31 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
     diffMin = -1.;
   }
   // Expand the plotting window slightly so residual markers and errors are fully visible.
-  const double margin = 0.15 * std::max(std::abs(diffMax), std::abs(diffMin));
-  hdummy->SetMaximum(diffMax + margin);
-  hdummy->SetMinimum(diffMin - margin);
-  hdummy->GetYaxis()->SetTitle("Data - pdf (events)");
-  hdummy->GetYaxis()->SetTitleSize(0.12);
+  const double residualMax = 1.15 * std::max(std::abs(diffMax), std::abs(diffMin));
+  hdummy->SetMaximum(residualMax);
+  hdummy->SetMinimum(-residualMax);
+  hdummy->GetYaxis()->SetTitle("Data - fit");
+  // pad2 is 0.35/0.75 as high as pad1.  This normalized size therefore
+  // gives its text the same visible size as the default 0.04 in pad1.
+  const double lowerAxisTextSize = 0.04 * 0.75 / 0.35;
+  hdummy->GetYaxis()->SetTitleSize(lowerAxisTextSize);
+  hdummy->GetYaxis()->SetLabelSize(lowerAxisTextSize);
+  hdummy->GetYaxis()->SetTitleOffset(0.70);
+  hdummy->GetYaxis()->CenterTitle(true);
   hdummy->GetXaxis()->SetTitle("m_{#gamma#gamma} (GeV)");
-  hdummy->GetXaxis()->SetTitleSize(0.12);
+  hdummy->GetXaxis()->SetTitleSize(lowerAxisTextSize);
+  hdummy->GetXaxis()->SetLabelSize(lowerAxisTextSize);
+  // ROOT scales x tick lengths with the pad height. Compensate for the
+  // shorter lower pad so that its ticks have the same visible length.
+  hdummy->GetXaxis()->SetTickLength(plot->GetXaxis()->GetTickLength() * 0.75 / 0.35);
+  hdummy->GetYaxis()->SetTickLength(plot->GetYaxis()->GetTickLength());
   hdummy->Draw("HIST");
   hdummy->GetYaxis()->SetNdivisions(808);
 
   TLine *line3 = new TLine(mgg_low,0.,mgg_high,0.);
   line3->SetLineColor(bestcol);
   //line3->SetLineStyle(kDashed);
-  line3->SetLineWidth(5.0);
+  line3->SetLineWidth(2.0);
   line3->Draw();
   hdatasub->Draw("PESAME");
   // enf extra bit for ratio plot///
@@ -552,6 +631,9 @@ void plot(RooRealVar *mass, RooMultiPdf *pdfs, RooCategory *catIndex, RooDataSet
   canv->SaveAs(Form("%s.png",name.c_str())); // keep png twin alongside the pdf
   catIndex->setIndex(currentIndex);
   delete hdatasub;
+  delete hdummy;
+  delete line3;
+  delete leg;
   delete canv;
 }
 
@@ -696,12 +778,12 @@ int main(int argc, char* argv[]){
  
   setTDRStyle();
   writeExtraText = true;       // if extra text
-  extraText  = "Preliminary";  // default extra text is "Preliminary"
-  lumi_13p6TeV = "61.9 fb^{-1}";
   lumi_8TeV  = "19.1 fb^{-1}"; // default is "19.7 fb^{-1}"
   lumi_7TeV  = "4.9 fb^{-1}";  // default is "5.1 fb^{-1}"
   lumi_sqrtS = "13 TeV";       // used with iPeriod = 0, e.g. for simulation-only plots (default is an empty string)
   string year_ = "2016";
+  double plotLumi = 61.9;
+  string cmsLabel = "Preliminary";
   //int year_ = 2017;
 
   string fileName;
@@ -736,12 +818,20 @@ int main(int argc, char* argv[]){
     ("isData",  po::value<bool>(&isData_)->default_value(0),  								    	        "Use Data not MC ")
 		("flashggCats,f", po::value<string>(&flashggCatsStr_)->default_value("UntaggedTag_0,UntaggedTag_1,UntaggedTag_2,UntaggedTag_3,UntaggedTag_4,VBFTag_0,VBFTag_1,VBFTag_2,TTHHadronicTag,TTHLeptonicTag,VHHadronicTag,VHTightTag,VHLooseTag,VHEtTag"),       "Flashgg category names to consider")
     ("year", po::value<string>(&year_)->default_value("2016"),       "Dataset year")
+    ("intLumi", po::value<double>(&plotLumi)->default_value(61.9),   "Integrated luminosity shown on plots in fb^-1")
+    ("cmsLabel", po::value<string>(&cmsLabel)->default_value("Preliminary"), "Left-hand plot label")
     ("catOffset", po::value<int>(&catOffset)->default_value(0),       "Category numbering scheme offset")
     ("verbose,v",                                                                               "Run with more output")
   ;
   po::variables_map vm;
   po::store(po::parse_command_line(argc,argv,desc),vm);
   po::notify(vm);
+  // Draw one compact, italic label instead of separate "CMS" and extra text.
+  cmsText = Form("%s (CMS data/simulation)",cmsLabel.c_str());
+  cmsTextFont = extraTextFont;
+  cmsTextSize *= extraOverCmsTextSize;
+  writeExtraText = false;
+  lumi_13p6TeV = Form("%.0f fb^{-1}",plotLumi);
   if (vm.count("help")) { cout << desc << endl; exit(1); }
   if (vm.count("is2011")) is2011=true;
 	if (vm.count("unblind")) BLIND=false;

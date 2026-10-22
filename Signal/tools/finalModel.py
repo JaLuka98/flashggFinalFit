@@ -38,6 +38,14 @@ def getBR(_SM,_MHVar,_mh,_dm):
   _MHVar.setVal(_mh)
   return _SM.modelBuilder.out.function("SM_BR_%s"%_dm).getVal()
 
+def isZmmgScale2022Or2023Label(year):
+  year = str(year).strip()
+  return year.startswith("2022") or year.startswith("2023") or year.startswith("2223")
+
+def isZmmgScale2024Label(year):
+  year = str(year).strip()
+  return year.startswith("2024")
+
 # Function to initialise XS values from combine
 def initialiseXSBR():
   options=dummy_options()
@@ -71,6 +79,11 @@ def initialiseXSBR():
   # If ggZH and ZH in production modes then make qqZH numpy array
   if('ggZH' in productionModes)&('ZH' in productionModes): xsbr['qqZH'] = xsbr['ZH']-xsbr['ggZH']
   return xsbr
+
+def getSignalShapeNuisanceParamName(nuisanceName):
+  if (nuisanceName == 'deltafracright') or nuisanceName.startswith('Scale') or nuisanceName.startswith('Smearing'):
+    return "CMS_HIG26007_%s"%nuisanceName
+  return "%s_%s"%(outputWSNuisanceTitle__,nuisanceName)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
 class FinalModel:
@@ -172,9 +185,10 @@ class FinalModel:
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Function for making nuisance param w/ info to add to Nuisance dict
   def makeNuisance(self,nuisanceName,nuisanceMeanConst,nuisanceSigmaConst,nuisanceRateConst,nuisanceType,nuisanceOpts=[]):
+    nuisanceParamName = getSignalShapeNuisanceParamName(nuisanceName)
     self.NuisanceMap[nuisanceType][nuisanceName] = {
       'name':nuisanceName,
-      'param':ROOT.RooRealVar("%s_%s"%(outputWSNuisanceTitle__,nuisanceName),"%s_%s"%(outputWSNuisanceTitle__,nuisanceName),0.,-5.,5.),
+      'param':ROOT.RooRealVar(nuisanceParamName,nuisanceParamName,0.,-5.,5.),
       'meanConst':ROOT.RooConstVar("const_%s_mean_%s"%(self.name,nuisanceName),"const_%s_mean_%s"%(self.name,nuisanceName),nuisanceMeanConst),
       'sigmaConst':ROOT.RooConstVar("const_%s_sigma_%s"%(self.name,nuisanceName),"const_%s_sigma_%s"%(self.name,nuisanceName),nuisanceSigmaConst),
       'rateConst':ROOT.RooConstVar("const_%s_rate_%s"%(self.name,nuisanceName),"const_%s_rate_%s"%(self.name,nuisanceName),nuisanceRateConst),
@@ -216,12 +230,21 @@ class FinalModel:
             sName = "%s_%s"%(systOpts[0],outputNuisanceExtMap[sType])
           else:
             sName = systOpts[0]
+          nuisanceName = sName
+
+          # Hard-coded split for Zmmg scale nuisances:
+          # correlate 2022 and 2023 with each other, but keep 2024 separate.
+          if (sType == 'scalesCorr') and (sName in ['ScaleEBZmmg', 'ScaleEEZmmg']):
+            if isZmmgScale2022Or2023Label(self.year):
+              nuisanceName = f"{sName}_2022_2023"
+            elif isZmmgScale2024Label(self.year):
+              nuisanceName = f"{sName}_2024"
 
           # Extract constant values and make nuisance
           if sType == 'scalesGlobal': cMean, cSigma, cRate = 0.,0.,0.
           else: cMean, cSigma, cRate = r["%s_mean"%sName].values[0], r["%s_sigma"%sName].values[0], r["%s_rate"%sName].values[0]
           sOpts = systOpts[1:] if len(systOpts) > 1 else []
-          self.makeNuisance("%s%s"%(sName,sExt),cMean,cSigma,cRate,sType,sOpts)
+          self.makeNuisance("%s%s"%(nuisanceName,sExt),cMean,cSigma,cRate,sType,sOpts)
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Function to get RV fraction func

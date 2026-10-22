@@ -29,6 +29,8 @@ def convert_boolean_string(string):
     else:
         return False
 
+HIGGS_MASS = "125.07"
+
 class FinalFits(law.WrapperTask):
     years = law.Parameter(default="2022,2023,2024")
     variable = law.Parameter(default="")
@@ -217,7 +219,7 @@ class FinalFits(law.WrapperTask):
                     f"--outputDir {output_dir} "
                     f"--outputName Datacard_{combined_label} "
                     "--mode mu_fiducial "
-                    "--common_opts \"-m 125.38 higgsMassRange=122,128\" "
+                    f"--common_opts \"-m {HIGGS_MASS} higgsMassRange=122,128\" "
                     "--batch local"
                 )
             else:
@@ -230,7 +232,7 @@ class FinalFits(law.WrapperTask):
                     f"--outputDir {output_dir} "
                     f"--outputName Datacard_{self.variable}_{combined_label} "
                     f"--mode {self.variable} "
-                    "--common_opts \"-m 125.38 higgsMassRange=122,128\" "
+                    f"--common_opts \"-m {HIGGS_MASS} higgsMassRange=122,128\" "
                     "--batch local "
                     f"--ext {self.variable}"
                 )
@@ -404,14 +406,14 @@ class FinalFitsYear(law.Task):
         #Load central config file
         with open(configYamlPath, 'r') as file:
             config = yaml.safe_load(file)
-        
         if self.output_dir == '':
             output_dir = config['outputFolder']
         else:
             output_dir = self.output_dir
 
+        fitConfig = config["combine_fit"]
+
         if convert_boolean_string(self.datacard_only):
-            fitConfig = config["combine_fit"]
             tasks["RunT2WS"] = RunText2Workspace(
                 output_dir=output_dir,
                 variable=self.variable,
@@ -555,7 +557,7 @@ class FinalFitsYear(law.Task):
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.pdf')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.png')]
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.root')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', 'scans', f'scan_{cat}_observed.pdf')]
@@ -573,7 +575,7 @@ class FinalFitsYear(law.Task):
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', 'impacts_corrected_dropBkgModelParams.json')]
 
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', f'impacts_unblinded_{cat}.pdf')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'unblinded', 'impacts', 'impacts_corrected_dropBkgModelParams.json')]
@@ -585,34 +587,55 @@ class FinalFitsYear(law.Task):
         
         if convert_boolean_string(self.unblinded_stage_two) or convert_boolean_string(self.unblinded_stage_three):
             if self.variable == '':
-                reco_cats_with_bmw = ['best_resolution', 'medium_resolution', 'worst_resolution']
+                reco_cats_with_bmw = ['cat0', 'cat1', 'cat2']
+                if "_" in self.year:
+                    cats = []
+                    for y in self.year.split("_"):
+                        y2 = y[-2:]
+                        for c in reco_cats_with_bmw:
+                            cats.append(f"Y{y2}_{c}")
+                    reco_cats_with_bmw = cats
+
                 cat_list = ["r"]
             else:
-                reco_cats_with_bmw = [element for element in combineVariableDict[f'{self.year}'][self.variable]['catsStrWithBMW'] if "_".join(cat.split("_")[2:]) in element]
-                cat_list = combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']
+                cat_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             
             output = []
             for cat in cat_list:
+                if self.variable != '':
+                    reco_cats_with_bmw = [
+                        element
+                        for element in combineVariableDict(self.variable, self.year)['catsStrWithBMW']
+                        if "_".join(cat.split("_")[2:]) in element
+                    ]
+                    if "_" in self.year:
+                        cats = []
+                        for y in self.year.split("_"):
+                            y2 = y[-2:]
+                            for c in reco_cats_with_bmw:
+                                cats.append(f"Y{y2}_{c}")
+                        reco_cats_with_bmw = cats
+
                 if convert_boolean_string(self.unblinded_stage_two):
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
                     
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.pdf')]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.png')]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.pdf')]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.png')]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'preFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.png')]
                 else:
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', 'jsons', f'catsWeights_sospb_{cat}_CMS_hgg_mass.json')]
                     
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.pdf')]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_all_CMS_hgg_mass.png')]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.pdf')]
-                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'_{cat}_wall_CMS_hgg_mass.png')]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.pdf') for catWithBMW in reco_cats_with_bmw]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_{catWithBMW}_CMS_hgg_mass.png') for catWithBMW in reco_cats_with_bmw]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.pdf')]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_all_CMS_hgg_mass.png')]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.pdf')]
+                    output += [os.path.join(output_dir, 'Combine', fitFolderName, 'postFit', f'SplusBModels_{cat}', f'{cat}_wall_CMS_hgg_mass.png')]
             
             for _, current_output_path in enumerate(output):
                 output_paths.append(law.LocalFileTarget(current_output_path))
@@ -622,7 +645,7 @@ class FinalFitsYear(law.Task):
                 print("P-value calculation is not supported for inclusive fits.")
                 exit(1)
             else:
-                output = [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombine.pvalue.MultiDimFit.mH125.38.root')]
+                output = [os.path.join(output_dir, 'Combine', fitFolderName, 'dataFit', f'higgsCombine.pvalue.MultiDimFit.mH{HIGGS_MASS}.root')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, f'pvalue.txt')]
 
             for _, current_output_path in enumerate(output):
@@ -651,7 +674,7 @@ class FinalFitsYear(law.Task):
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', 'scans', f'scan_{cat}.pdf')]
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', 'scans', f'scan_{cat}.png')]
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')]
@@ -681,7 +704,7 @@ class FinalFitsYear(law.Task):
                 output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'impacts', 'impacts_corrected_dropBkgModelParams.json')]
                 
             else:
-                for cat in combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne']:
+                for cat in combineVariableDict(self.variable, self.year)['paramStrNoOne']:
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'impacts')]
                     output += [os.path.join(output_dir, 'Combine', fitFolderName, 'impact', 'impacts', f'impacts_{cat}.pdf')]
                     

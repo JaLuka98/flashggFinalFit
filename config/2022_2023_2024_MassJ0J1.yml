@@ -1,97 +1,347 @@
-# All channels shown using Hgg fiducial sigma times branching ratio [fb].
-# Overflow displayed and normalized over 500 GeV; <2 jets shown as a cross section [fb].
-outputFolder: /.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_MassJ0J1_HggH4l/comb
+# Config file: options for signal fitting
+
+outputFolder: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_perbinout/output_2022_2023_2024_MassJ0J1/'
+
+inputFiles:
+  # Trees2WS
+  Trees2WSData: '/.automount/net_rw/net__data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_smoothed_decorr_smeared_mass100to180_2026_10_01/2024/MassJ0J1/root/data/allData_2024.root'
+  Trees2WS: '/.automount/net_rw/net__data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_smoothed_decorr_smeared_mass100to180_2026_10_01_perbinout_2026_10_20/2024/MassJ0J1/root/mc/'
+
 backgroundScriptCfg:
-  cats: auto
-  catOffset: 0
-  ext: Run3FidXSAnalysis_PTJ0
-  execution: htcondor
-  batchPartition: short
-  batchMemory: 4000
-  batchMaxRuntime: 01:00:00
+  # Setup
+  cats: 'auto' # auto: automatically inferred from input ws
+  catOffset: 0 # add offset to category numbers (useful for categories from different allData.root files)
+  ext: 'Run3FidXSAnalysis_MassJ0J1' # extension to add to output directory
+  # year: '2223' # Use combined when merging all years in category (for plots)
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+trees2wsCfg:
+  inputTreeDir: 'DiphotonTree' # Name of RooDirectory storing input tree
+
+  apply_mass_cut: False # Apply cut on CMS_hgg_mass
+  mass_cut_range: '100,180' # CMS_hgg_mass cut range
+  doSTXSSplitting: False # Split output WS per STXS bin
+  doDiffSplitting: True # Split output WS per differential bin
+  doInOutSplitting: False # Split output WS into in/out fiducial based on some variable in the input trees (to be improved).
+  doSystematics: True # Add systematics datasets to output WS
+
+  # Variables to be added to dataframe: use wildcard * for common strings
+  mainVars:
+    - "CMS_hgg_mass"
+    - "weight"
+    - "weight_central"
+    - "dZ"
+    - "*Up"
+    - "*Down"
+    - "fiducialGeometricFlag"
+    - "diffVariable_GenMassJ0J1"
+    - "GenMassJ0J1"
+
+  dataVars:
+    - "CMS_hgg_mass"
+    - "weight" # Vars to be added for data
+
+  stxsVar: ''
+  diffVar: 'diffVariable_GenMassJ0J1'
+  diffSplitByCode: True # split by the per-bin-out diffVariable codes (systematics trees have no Gen* branches)
+  notagVars: [] # Vars to add to NOTAG RooDataset
+
+  systematicsVars:
+    - "CMS_hgg_mass"
+    - "weight"
+    - "fiducialGeometricFlag"
+    - "diffVariable_GenMassJ0J1"
+
+  theoryWeightContainers:
+    weight_LHEPdf: 101
+    weight_LHEScale: 9
+
+  # List of systematics: use string YEAR for year-dependent systematics
+  systematics:
+    - "ScaleEBZmmg"
+    - "ScaleEEZmmg"
+    - "ScaleEBZee"
+    - "ScaleEEZee"
+    - "Smearing"
+    - "energyErrShift"
+    - "JerSyst"
+    - "JecSystTotal"
+
+  cats: 'auto'
+
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+signalScriptCfg_2223_preEE:
+  # Setup
+  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2223preEE' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
+  year: '2223preEE' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '50'
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+
+  # Photon shape systematics
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
+  smears: 'Smearing' # separate nuisance per year
+
+  doPlots: False
+
+  beamspotWidthData: '3.2'
+  beamspotWidthMC: '3.732'
+
+
+  # Job submission options
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+signalScriptCfg_2223_postEE:
+  # Setup
+  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2223postEE' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
+  year: '2223postEE' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '50'
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+
+  # Photon shape systematics
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
+  smears: 'Smearing' # separate nuisance per year
+
+  doPlots: False
+
+  beamspotWidthData: '3.5'
+  beamspotWidthMC: '3.732'
+
+  # Job submission options
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+signalScriptCfg_2223_preBPix:
+  # Setup
+  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2223preBPix' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
+  year: '2223preBPix' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '50'
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+
+  # Photon shape systematics
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
+  smears: 'Smearing' # separate nuisance per year
+
+  doPlots: False
+
+  beamspotWidthData: '3.703'
+  beamspotWidthMC: '3.597'
+
+
+  # Job submission options
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+signalScriptCfg_2223_postBPix:
+  # Setup
+  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2223postBPix' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
+  year: '2223postBPix' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '50'
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+
+  # Photon shape systematics
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
+  smears: 'Smearing' # separate nuisance per year
+
+  doPlots: False
+
+  beamspotWidthData: '3.737'
+  beamspotWidthMC: '3.597'
+
+  # Job submission options
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+signalScriptCfg_2024:
+  # Setup
+  procs: 'auto' # if auto: inferred automatically from filenames (requires names to be of form *pythia8_{PROC}.root)
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  ext: 'Run3FidXSAnalysis_MassJ0J1_2024' # output directory extension
+  analysisRM: 'Run3FidXSAnalysisMassJ0J1' # To specify replacement dataset (defined in ./commonTools/replacementMap.py)
+  analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
+  year: '2024' # Use 'combined' if merging all years: not recommended
+  replacementThreshold: '25'
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+
+  # Photon shape systematics
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
+  smears: 'Smearing' # separate nuisance per year
+
+  doPlots: False
+
+  beamspotWidthData: '3.583'
+  beamspotWidthMC: '3.601'
+
+  # Job submission options
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+packaged_2022_2023_2024:
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  massPoints: '120,125,130' # You can now run with a single mass point if necessary
+  mergeYears: True # Merges the eras
+  ext: ''
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
+datacard_yields:
+  cats: 'auto' # if auto: inferred automatically from (0) workspace
+  procs: 'auto' # if auto: inferred automatically from (0) workspace
+  ext: 'Run3FidXSAnalysis' # Extension for saving
+  # inputWSDirMap: '2223preBPix,2223postBPix'
+  sigModelWSDir: './Models_MassJ0J1/signal' # Input signal model WS directory
+  bkgModelWSDir: './Models_MassJ0J1/background' # Input background model WS directory
+  bkgModelExt: 'multipdf' # Extension used when saving background model
+  doSystematics: True # Include systematics calculations and add to datacard
+  mergeYears: True # Merge category across years
+  skipZeroes: True # Skip signal processes with 0 sum of weights
+  ignore_warnings: True # Skip errors for missing systematics. Instead output warning message
+  mass: '125' # Input workspace mass
+  skipBkg: False # Only add signal processes to datacard
+  bkgScaler: 1. # Add overall scale factor for background
+  skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
 datacard:
-  prune: true
-  pruneThreshold: 0.001
-  doTrueYield: true
-  analysis: Run3FidXSAnalysis
-  skipCOWCorr: true
-  doSystematics: true
-  doMCStatUncertainty: true
-  doSTXSMerging: false
-  doSTXSScaleCorrelationScheme: false
-  saveDataFrame: false
-  output: Datacard_MassJ0J1_2022_2023_2024
+  # For pruning processes
+  prune: True # Prune proc x cat which make up less than pruneThreshold (default 0.1%) of given total category
+  pruneThreshold: 0.001 # Threshold with which to prune proc x cat as fraction of total category yield (default=0.1%)
+  doTrueYield: True # For pruning: use true number of expected events for proc x cat i.e. Product(XS,BR,eff*acc,lumi). If false then will use nominal_yield (i.e. sumEntries)
+  analysis: 'Run3FidXSAnalysis' # Analysis extension: required for doTrueYield (see ./tools/XSBR.py for example)
+
+  # For yield/systematics:
+  skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance
+  doSystematics: True # Include systematics calculations and add to datacard
+  doMCStatUncertainty: True # Add uncertainty for MC stats
+  doSTXSMerging: False # Calculate additional migrations uncertainties for merged STXS bins (for 'mnorm' tier in systematics)
+  doSTXSScaleCorrelationScheme: False # Partially de-correlate scale uncertainties for different phase space regions
+
+  # For output:
+  saveDataFrame: False # Save final dataframe as pkl file
+  output: 'Datacard_MassJ0J1_2022_2023_2024' # Datacard name
+
+datacard_clean:
+  factor: 10000 # Factor beyond which uncertainty is considered incorrect and is removed
+  removeDoubleSided: False # Remove any nuisances which are listed as antisymmetric but both values point the same way
+  removeNonDiagonal: False # Remove any nuisances which are affect processes unimportant in that category
+  symmetrizeNuisance: 'CMS_hgg_SigmaEOverEShift,CMS_hgg_scale_0_shape,CMS_hgg_scale_1_shape,CMS_hgg_scale_3_shape' # Symmetrizes asymmetric nuisance. Enter in the format nuisance1,nuisance2,nuisance3,etc.
+  verbose: False # Spit out all the cleaning being done
+
 combine_fit:
-  asimov_numPoints: 40
+  asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100
-  setParameterRange: r=0,3
-  execution: htcondor
-  batchPartition: short
-  batchMemory: 6000
-  batchMaxRuntime: 04:00:00
+  setParameterRange: "r=-1,3"
+  rMin: 0
+  rMax: 2
+  cminApproxPreFitTolerance: 0.01
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 20000 # Memory in MB requested for batch jobs
+  batchMaxRuntime: "08:00:00" # Generous runtime for the combined Hgg+H4l scans
+
 combine_impacts:
-  exclude: ''
-  not_show_POI: true
-  execution: htcondor
-  batchPartition: short
-  batchMemory: 6000
-  batchMaxRuntime: 04:00:00
+  exclude: "" # Nuisances that should be excluded from the impact computation
+  cminApproxPreFitTolerance: 0.01
+  setParameters: 1.000
+  stepSize: 0.05
+  setCrossingTolerance: 0.00005
+  not_show_POI: True
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 20000 # Also used by the Asimov first-step fits
+  batchMaxRuntime: "08:00:00" # Generous runtime for the combined workspace
+
 combine_hesse:
-  execution: htcondor
-  batchPartition: short
-  batchMemory: 6000
-  batchMaxRuntime: 04:00:00
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
 combine_mggToys:
-  nToys: 1000
-  loadSnapshot: MultiDimFit
-  doBands: true
-  execution: htcondor
-  batchPartition: short
-  batchMemory: 4000
-  batchMaxRuntime: 01:00:00
+  nToys: 1000 # Number of toys = nToys * 10
+  loadSnapshot: 'MultiDimFit'
+  doBands: True
+  execution: 'htcondor'
+  batchPartition: "short" # Slurm partition to use for job submission
+  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMaxRuntime: "01:00:00" # Slurm max runtime to use
+
 spectra:
-  no_preliminary: true
-  private_work: false
-  ggh_xs: fidXS_GenMassJ0J1_ggH
-  vbf_xs: fidXS_GenMassJ0J1_VBFH
-  vh_xs: fidXS_GenMassJ0J1_VH
-  tth_xs: fidXS_GenMassJ0J1_ttH
-  xh_xs: fidXS_GenMassJ0J1_xH
-  ggh_powheg_xs: fidXS_GenMassJ0J1_ggH_powheg
-  ggh_no_nnlops_xs: fidXS_GenMassJ0J1_ggH_genWeight
-  underflow_bin_normalized: true
+  no_preliminary: True # Flag that determines, if Preliminary label should be printed.
+  private_work : False
+  ggh_xs: "fidXS_MassJ0J1_ggH"
+  vbf_xs: "fidXS_MassJ0J1_VBFH"
+  vh_xs: "fidXS_MassJ0J1_VH"
+  tth_xs: "fidXS_MassJ0J1_ttH"
+  xh_xs: "fidXS_MassJ0J1_xH"
+  ggh_powheg_xs: "fidXS_MassJ0J1_ggH_powheg"
+  ggh_no_nnlops_xs: "fidXS_MassJ0J1_ggH_genWeight"
+  underflow_bin_normalized: True # Underflow bin normalized with binwidth
+  underflow_bin_width: 130
+  overflow_bin_width: 500
+  show_underflow_bin: True
   last_bin_center: 1250
-  first_bin_center: 0
+  first_bin_center: -65
   plot_log: 1
-  variable: m_{jj}
-  y_unit: (fb/GeV)
-  x_unit: (GeV)
-  x_lim:
-  - -130
-  - 1500
-  y_lim:
-  - 0
-  - 2.5
-  underflow: -130
+  variable: "m_{jj}"
+  y_unit: "(fb/GeV)"
+  x_unit: "(GeV)"
+  x_lim: [-130, 1500]
+  y_lim: [0.0001, 2.5]
+  y_lim_top: 1000
   overflow: 1500
-  y_lim_top: 150
-combined_spectra:
-  hgg_output_dir: /.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_MassJ0J1_HggH4l/hgg
-  hzz_output_dir: /.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_MassJ0J1_HggH4l/h4l
-  comb_output_dir: /.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_combination/output_asimov_MassJ0J1_HggH4l/comb
-  prediction_scale: 1.0
-  prediction_label: aMC@NLO NNLOPS + xH
-  hgg_label: H$\rightarrow\gamma\gamma$
-  hzz_label: H$\rightarrow$ZZ$\rightarrow$4$\ell$
-  comb_label: H$\rightarrow\gamma\gamma$ + H$\rightarrow$ZZ
-  expected_title: Expected (Asimov)
-  overflow_width_as_previous: false
-  poi_names:
-  - r_MassJ0J1_m10000p0_0p0
-  - r_MassJ0J1_0p0_75p0
-  - r_MassJ0J1_75p0_120p0
-  - r_MassJ0J1_120p0_180p0
-  - r_MassJ0J1_180p0_300p0
-  - r_MassJ0J1_300p0_500p0
-  - r_MassJ0J1_500p0_1000p0
-  - r_MassJ0J1_1000p0_10000p0
+  total:
+    y_unit: "(pb/GeV)"
+    y_lim_top: 10000
+    y_lim: [-0.5, 2.5]
+    generator_dependence_uncertainty:
+      module: "rel_uncertainty_acceptance"
+      attribute: "MassJ0J1"

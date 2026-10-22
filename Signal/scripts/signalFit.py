@@ -43,6 +43,10 @@ def get_options():
   parser.add_option('--massPoints', dest='massPoints', default='120,125,130', help="Mass points to fit")
   parser.add_option('--skipBeamspotReweigh', dest='skipBeamspotReweigh', default=False, action="store_true", help="Skip beamspot reweigh to match beamspot distribution in data")
   parser.add_option('--doPlots', dest='doPlots', default=False, action="store_true", help="Produce Signal Fitting plots")
+  parser.add_option('--plotRVComponentsOnly', dest='plotRVComponentsOnly', default=False, action="store_true", help="Only produce the RV PDF-components plot")
+  parser.add_option('--plotModelAndSplinesOnly', dest='plotModelAndSplinesOnly', default=False, action="store_true", help="Only produce the interpolation and spline plots")
+  parser.add_option('--plotLabel', dest='plotLabel', default='', help="Custom top-right label for signal-fit plots")
+  parser.add_option('--skipWorkspaceOutput', dest='skipWorkspaceOutput', default=False, action="store_true", help="Do not overwrite the fitted signal workspace")
   parser.add_option("--doVoigtian", dest='doVoigtian', default=False, action="store_true", help="Use Voigtians instead of Gaussians for signal models with Higgs width as parameter")
   parser.add_option("--useDCB", dest='useDCB', default=False, action="store_true", help="Use DCB in signal fitting")
   parser.add_option("--useDiagonalProcForShape", dest='useDiagonalProcForShape', default=False, action="store_true", help="Use shape of diagonal process, keeping normalisation (requires diagonal mapping produced by getDiagProc script)")
@@ -57,6 +61,7 @@ def get_options():
   parser.add_option("--smears", dest='smears', default='', help='Photon shape systematics: smears')
   # Parameter values
   parser.add_option('--replacementThreshold', dest='replacementThreshold', default=0.0, type='int', help="Nevent threshold to trigger replacement dataset")
+  parser.add_option('--replacementReportFile', dest='replacementReportFile', default='', help="Output txt file containing replacement decisions")
   parser.add_option('--beamspotWidthData', dest='beamspotWidthData', default=3.5, type='float', help="Width of beamspot in data [cm]")
   parser.add_option('--beamspotWidthMC', dest='beamspotWidthMC', default=3.7, type='float', help="Width of beamspot in MC [cm]")
   parser.add_option('--MHPolyOrder', dest='MHPolyOrder', default=1, type='int', help="Order of polynomial for MH dependence")
@@ -90,6 +95,25 @@ if opt.analysisRM not in globalReplacementMap:
   print(" --> [ERROR] replacement map does not exist for analysis (%s). Please add to tools/replacementMap.py"%opt.analysisRM)
   leave()
 else: rMap = globalReplacementMap[opt.analysisRM]
+
+def getFiducialLabelFromProc(proc_name):
+  if proc_name.endswith("_in"):
+    return "in"
+  if proc_name.endswith("_out"):
+    return "out"
+  return None
+
+def resolveRVReplacementSource(replacement_map, reco_cat, proc_name):
+  proc_entry = replacement_map['procRVMap'][reco_cat]
+  cat_entry = replacement_map['catRVMap'][reco_cat]
+  fid_label = getFiducialLabelFromProc(proc_name)
+
+  if fid_label is None:
+    raise ValueError(f"Process name '{proc_name}' does not have a valid fiducial label ('in' or 'out').")
+
+  proc_replacement = proc_entry[fid_label]
+  cat_replacement = cat_entry[fid_label]
+  return proc_replacement, cat_replacement
 
 # Load XSBR map
 if opt.analysisXSBR not in globalXSBRMap:
@@ -144,6 +168,20 @@ if opt.useDiagonalProcForShape:
     print(" --> Using diagonal proc (%s,%s) for shape"%(procRVFit,opt.cat))
     if not opt.skipVertexScenarioSplit: procWVFit = dproc[opt.cat]
 
+rv_initial_proc, rv_initial_cat = procRVFit, catRVFit
+rv_replaced = False
+rv_replacement_proc, rv_replacement_cat = "", ""
+rv_nominal_num_entries = 0.
+rv_nominal_sum_entries = 0.
+
+wv_initial_proc, wv_initial_cat = "", ""
+wv_replaced = False
+wv_replacement_proc, wv_replacement_cat = "", ""
+wv_nominal_num_entries = 0.
+wv_nominal_sum_entries = 0.
+if not opt.skipVertexScenarioSplit:
+  wv_initial_proc, wv_initial_cat = procWVFit, catWVFit
+
 # Process for syst
 procSyst = opt.proc
 if opt.useDiagonalProcForSyst:
@@ -177,9 +215,12 @@ for mp in opt.massPoints.split(","):
   f.Close()
 
 # Check if nominal yield > threshold (or if +ve sum of weights). If not then use replacement proc x cat
-if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( datasetRVForFit[MHNominal].sumEntries() < 0. ):
+rv_nominal_num_entries = datasetRVForFit[MHNominal].numEntries()
+rv_nominal_sum_entries = datasetRVForFit[MHNominal].sumEntries()
+if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( datasetRVForFit[MHNominal].sumEntries() <= 0. ):
   nominal_numEntries = datasetRVForFit[MHNominal].numEntries()
-  procReplacementFit, catReplacementFit = rMap['procRVMap'][opt.cat], rMap['catRVMap'][opt.cat]
+  procReplacementFit, catReplacementFit = resolveRVReplacementSource(rMap,opt.cat,opt.proc)
+  #procReplacementFit, catReplacementFit = rMap['procRVMap'][opt.cat], rMap['catRVMap'][opt.cat]
   for mp in opt.massPoints.split(","):
     WSFileName = glob.glob("%s/output*M%s*%s.root"%(opt.inputWSDir,mp,procReplacementFit))[0]
     f = ROOT.TFile(WSFileName,"read")
@@ -194,12 +235,14 @@ if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( data
     f.Close() 
 
   # Check if replacement dataset has too few entries: if so throw error
-  if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold )|( datasetRVForFit[MHNominal].sumEntries() < 0. ):
+  if( datasetRVForFit[MHNominal].numEntries() < opt.replacementThreshold )|( datasetRVForFit[MHNominal].sumEntries() <= 0. ):
     print(" --> [ERROR] replacement dataset (%s,%s) has too few entries (%g < %g)"%(procReplacementFit,catReplacementFit,datasetRVForFit[MHNominal].numEntries(),opt.replacementThreshold))
     sys.exit(1)
 
   else:
     procRVFit, catRVFit = procReplacementFit, catReplacementFit
+    rv_replaced = True
+    rv_replacement_proc, rv_replacement_cat = procReplacementFit, catReplacementFit
     if opt.skipVertexScenarioSplit: 
       print(" --> Too few entries in nominal dataset (%g < %g). Using replacement (proc,cat) = (%s,%s) for extracting shape"%(nominal_numEntries,opt.replacementThreshold,procRVFit,catRVFit))
       for mp in opt.massPoints.split(","):
@@ -235,7 +278,9 @@ if not opt.skipVertexScenarioSplit:
     f.Close()
 
   # Check nominal mass dataset
-  if( datasetWVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( datasetWVForFit[MHNominal].sumEntries() < 0. ):
+  wv_nominal_num_entries = datasetWVForFit[MHNominal].numEntries()
+  wv_nominal_sum_entries = datasetWVForFit[MHNominal].sumEntries()
+  if( datasetWVForFit[MHNominal].numEntries() < opt.replacementThreshold  )|( datasetWVForFit[MHNominal].sumEntries() <= 0. ):
     nominal_numEntries = datasetWVForFit[MHNominal].numEntries()
     procReplacementFit, catReplacementFit = rMap['procWV'], rMap['catWV']
     for mp in opt.massPoints.split(","):
@@ -251,11 +296,13 @@ if not opt.skipVertexScenarioSplit:
       inputWS.Delete()
       f.Close()
     # Check if replacement dataset has too few entries: if so throw error
-    if( datasetWVForFit[MHNominal].numEntries() < opt.replacementThreshold )|( datasetWVForFit[MHNominal].sumEntries() < 0. ):
+    if( datasetWVForFit[MHNominal].numEntries() < opt.replacementThreshold )|( datasetWVForFit[MHNominal].sumEntries() <= 0. ):
       print(" --> [ERROR] replacement dataset (%s,%s) has too few entries (%g < %g)"%(procReplacementFit,catReplacementFit,datasetWVForFit[MHNominal].numEntries(),opt.replacementThreshold))
       sys.exit(1)
     else:
       procWVFit, catWVFit = procReplacementFit, catReplacementFit
+      wv_replaced = True
+      wv_replacement_proc, wv_replacement_cat = procReplacementFit, catReplacementFit
       print(" --> WV: Too few entries in nominal dataset (%g < %g). Using replacement (proc,cat) = (%s,%s) for extracting shape"%(nominal_numEntries,opt.replacementThreshold,procWVFit,catWVFit))
       for mp in opt.massPoints.split(","):
         print("     * MH = %s: numEntries = %g, sumEntries = %.6f"%(mp,datasetWVForFit[mp].numEntries(),datasetWVForFit[mp].sumEntries()))
@@ -327,15 +374,16 @@ fm = FinalModel(ssfMap,opt.proc,opt.cat,opt.ext,opt.year,sqrts__,nominalDatasets
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # SAVE: to output workspace
-foutDir = "%s/outdir_%s/signalFit/output"%(opt.outputDir,opt.ext)
-foutName = "%s/outdir_%s/signalFit/output/CMS-HGG_sigfit_%s_%s_%s_%s.root"%(opt.outputDir,opt.ext,opt.ext,opt.proc,opt.year,opt.cat)
-print("\n --> Saving output workspace to file: %s"%foutName)
-if not os.path.isdir(foutDir): os.system("mkdir %s"%foutDir)
-fout = ROOT.TFile(foutName,"RECREATE")
-outWS = ROOT.RooWorkspace("%s_%s"%(outputWSName__,sqrts__),"%s_%s"%(outputWSName__,sqrts__))
-fm.save(outWS)
-outWS.Write()
-fout.Close()
+if not opt.skipWorkspaceOutput:
+  foutDir = "%s/outdir_%s/signalFit/output"%(opt.outputDir,opt.ext)
+  foutName = "%s/outdir_%s/signalFit/output/CMS-HGG_sigfit_%s_%s_%s_%s.root"%(opt.outputDir,opt.ext,opt.ext,opt.proc,opt.year,opt.cat)
+  print("\n --> Saving output workspace to file: %s"%foutName)
+  if not os.path.isdir(foutDir): os.system("mkdir %s"%foutDir)
+  fout = ROOT.TFile(foutName,"RECREATE")
+  outWS = ROOT.RooWorkspace("%s_%s"%(outputWSName__,sqrts__),"%s_%s"%(outputWSName__,sqrts__))
+  fm.save(outWS)
+  outWS.Write()
+  fout.Close()
   
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # PLOTTING
@@ -343,13 +391,65 @@ if opt.doPlots:
   try:
     print("\n --> Making plots...")
     if not os.path.isdir("%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext)): os.system("mkdir %s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext))
-    if opt.skipVertexScenarioSplit:
-      plotPdfComponents(ssfRV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="total_",_proc=procRVFit,_cat=catRVFit) 
-    if not opt.skipVertexScenarioSplit:
-      plotPdfComponents(ssfRV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="RV_",_proc=procRVFit,_cat=catRVFit) 
-      plotPdfComponents(ssfWV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="WV_",_proc=procWVFit,_cat=catRVFit) 
-    # Plot interpolation
-    plotInterpolation(fm,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext)) 
-    plotSplines(fm,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_nominalMass=MHNominal) 
+    if opt.skipVertexScenarioSplit and not opt.plotModelAndSplinesOnly:
+      plotPdfComponents(ssfRV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="total_",_proc=procRVFit,_cat=catRVFit,_label=opt.plotLabel)
+    if not opt.skipVertexScenarioSplit and not opt.plotModelAndSplinesOnly:
+      plotPdfComponents(ssfRV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="RV_",_proc=procRVFit,_cat=catRVFit,_label=opt.plotLabel)
+      if not opt.plotRVComponentsOnly:
+        plotPdfComponents(ssfWV,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_extension="WV_",_proc=procWVFit,_cat=catRVFit)
+    if not opt.plotRVComponentsOnly:
+      # Plot interpolation
+      plotInterpolation(fm,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_label=opt.plotLabel)
+      plotSplines(fm,_outdir="%s/outdir_%s/signalFit/Plots"%(opt.outputDir,opt.ext),_nominalMass=MHNominal,_label=opt.plotLabel)
   except:
     print("\n --> Creating plots unsuccessful. (Probably due to a empty bin.)")
+
+replacement_report_file = opt.replacementReportFile
+if replacement_report_file == "":
+  replacement_report_file = "%s/outdir_%s/signalFit/logs/replacements_%s_%s_%s.txt"%(opt.outputDir,opt.ext,opt.proc,opt.year,opt.cat)
+
+replacement_report_dir = os.path.dirname(replacement_report_file)
+if replacement_report_dir and not os.path.isdir(replacement_report_dir):
+  os.makedirs(replacement_report_dir, exist_ok=True)
+
+replacement_lines = []
+replacement_lines.append("SignalFit replacement report")
+replacement_lines.append("proc=%s"%opt.proc)
+replacement_lines.append("cat=%s"%opt.cat)
+replacement_lines.append("year=%s"%opt.year)
+replacement_lines.append("ext=%s"%opt.ext)
+replacement_lines.append("replacementThreshold=%s"%opt.replacementThreshold)
+replacement_lines.append("analysisRM=%s"%opt.analysisRM)
+replacement_lines.append("")
+
+replacement_lines.append("[RV_or_Total]")
+replacement_lines.append("initial_shape_source_proc=%s"%rv_initial_proc)
+replacement_lines.append("initial_shape_source_cat=%s"%rv_initial_cat)
+replacement_lines.append("nominal_MH125_numEntries=%g"%rv_nominal_num_entries)
+replacement_lines.append("nominal_MH125_sumEntries=%.6f"%rv_nominal_sum_entries)
+replacement_lines.append("replaced=%s"%("yes" if rv_replaced else "no"))
+replacement_lines.append("final_shape_source_proc=%s"%procRVFit)
+replacement_lines.append("final_shape_source_cat=%s"%catRVFit)
+if rv_replaced:
+  replacement_lines.append("replacement_proc=%s"%rv_replacement_proc)
+  replacement_lines.append("replacement_cat=%s"%rv_replacement_cat)
+replacement_lines.append("")
+
+replacement_lines.append("[WV]")
+if opt.skipVertexScenarioSplit:
+  replacement_lines.append("status=skipped (skipVertexScenarioSplit=True)")
+else:
+  replacement_lines.append("initial_shape_source_proc=%s"%wv_initial_proc)
+  replacement_lines.append("initial_shape_source_cat=%s"%wv_initial_cat)
+  replacement_lines.append("nominal_MH125_numEntries=%g"%wv_nominal_num_entries)
+  replacement_lines.append("nominal_MH125_sumEntries=%.6f"%wv_nominal_sum_entries)
+  replacement_lines.append("replaced=%s"%("yes" if wv_replaced else "no"))
+  replacement_lines.append("final_shape_source_proc=%s"%procWVFit)
+  replacement_lines.append("final_shape_source_cat=%s"%catWVFit)
+  if wv_replaced:
+    replacement_lines.append("replacement_proc=%s"%wv_replacement_proc)
+    replacement_lines.append("replacement_cat=%s"%wv_replacement_cat)
+
+with open(replacement_report_file, "w") as replacement_report:
+  replacement_report.write("\n".join(replacement_lines) + "\n")
+print(" --> Wrote replacement report to %s"%replacement_report_file)

@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/.automount/net_rw/net__data_cms3a-1/spaeh/private/PhD/analyses/partial_Run3_differential/Hgg-PartialRun3-3A-ETH-Analysis/fitting/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2024_PTH/'
+outputFolder: '/.automount/net_rw/net__data_cms3a-1/daumann/PhD/Final_fits_repo/CMSSW_14_1_0_pre4/src/flashggFinalFit_hig19016_perbinout/output_2024_PTH/'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_11_13/PTH/2024/data/allData_2024_PTH.root'
-  Trees2WS: '/net/data_cms3a-2/nobackup/group_JE_CMS/Hgg_PartialRun3/stat_analysis/differential/2025_11_13/PTH/2024/signal/signal/'
+  Trees2WSData: '/.automount/net_rw/net__data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_smoothed_decorr_smeared_mass100to180_2026_10_01/2024/PTH/root/data/allData_2024.root'
+  Trees2WS:     '/.automount/net_rw/net__data_cms3a-1/daumann/ETH-Aachen-repo/Hgg-PartialRun3-3A-ETH-Analysis/postprocessing/outputs_postprocessing_smoothed_decorr_smeared_mass100to180_2026_10_01_perbinout_2026_10_20/2024/PTH/root/mc/'
 
 backgroundScriptCfg:
   # Setup
@@ -14,14 +14,14 @@ backgroundScriptCfg:
   ext: 'Run3FidXSAnalysis_PTH' # extension to add to output directory
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 12000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 trees2wsCfg:
   inputTreeDir: 'DiphotonTree' # Name of RooDirectory storing input tree
 
   apply_mass_cut: False # Apply cut on CMS_hgg_mass
-  mass_cut_range: '100,180' # CMS_hgg_mass cut range
+  mass_cut_range: '100,180' # CMS_hgg_mass cut range,
   doSTXSSplitting: False # Split output WS per STXS bin
   doDiffSplitting: True # Split output WS per differential bin
   doInOutSplitting: False # Split output WS into in/out fiducial based on some variable in the input trees (to be improved).
@@ -37,6 +37,7 @@ trees2wsCfg:
     - "*Down"
     - "fiducialGeometricFlag"
     - "diffVariable_GenPTH"
+    - "GenPTH"
   
   dataVars:
     - "CMS_hgg_mass"
@@ -44,6 +45,7 @@ trees2wsCfg:
     
   stxsVar: ''
   diffVar: 'diffVariable_GenPTH'
+  diffSplitByCode: True # split by the per-bin-out diffVariable codes (systematics trees have no Gen* branches)
   notagVars: [] # Vars to add to NOTAG RooDataset
   
   systematicsVars:
@@ -58,11 +60,11 @@ trees2wsCfg:
 
   # List of systematics: use string YEAR for year-dependent systematics
   systematics:
-    - "ScaleEB"
-    - "ScaleEE"
+    - "ScaleEBZmmg"
+    - "ScaleEEZmmg"
+    - "ScaleEBZee"
+    - "ScaleEEZee"
     - "Smearing"
-    - "Material"
-    - "FNUF"
     - "energyErrShift"
     - "JerSyst"
     - "JecSystTotal"
@@ -71,7 +73,7 @@ trees2wsCfg:
 
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 10000 # Slurm memory to use for job submission
+  batchMemory: 34000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2024:
@@ -83,23 +85,23 @@ signalScriptCfg_2024:
   analysisXSBR: 'Run3FidXSAnalysis' # To specify XSBR dataset (defined in ./commonTools/XSBRMap.py)
   year: '2024' # Use 'combined' if merging all years: not recommended
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
-  replacementThreshold: '25'
+  replacementThreshold: '10'
   # Photon shape systematics  
-  scales: 'ScaleEE,ScaleEB' # separate nuisance per year
-  scalesCorr: 'FNUF,Material' # correlated across years
-  scalesGlobal: 'NonLinearity,Geant4' # affect all processes equally, correlated across years
+  scales: 'ScaleEEZee,ScaleEBZee' # separate nuisance per year
+  scalesCorr: 'ScaleEEZmmg,ScaleEBZmmg' # correlated across years
+  scalesGlobal: '' # affect all processes equally, correlated across years
   smears: 'Smearing' # separate nuisance per year
 
-  doPlots: True
+  doPlots: False
 
   beamspotWidthData: '3.583'
   beamspotWidthMC: '3.601'
 
 
   # Job submission options
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 34000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 packaged_2024:
@@ -107,9 +109,9 @@ packaged_2024:
   massPoints: '120,125,130' # You can now run with a single mass point if necessary
   mergeYears: True # Merges the eras
   ext: ''
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 34000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard_yields:
@@ -127,9 +129,9 @@ datacard_yields:
   skipBkg: False # Only add signal processes to datacard
   bkgScaler: 1. # Add overall scale factor for background
   skipCOWCorr: True # Skip centralObjectWeight correction for events in acceptance. Use if no centralObjectWeight in workspace
-  execution: 'htcondor'
+  execution: 'local'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 12000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 datacard:
@@ -160,7 +162,10 @@ datacard_clean:
 combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 100 
-  setParameterRange: "r=0,3"
+  setParameterRange: "r=0.5,1.5" #"r=0,3"
+  cminApproxPreFitTolerance: 0.01
+  rMin: 0.0
+  rMax: 2.0
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
@@ -168,6 +173,10 @@ combine_fit:
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
+  cminApproxPreFitTolerance: 0.01
+  setParameters: 1.000
+  stepSize: 0.05
+  setCrossingTolerance: 0.00005
   not_show_POI: True
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission

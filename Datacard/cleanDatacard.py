@@ -25,14 +25,25 @@ procs = []
 cats  = []
 
 def isDiag( proc, cat):
-  if 'ggh_' in proc:
-    return "_".join(proc.split("_")[2:4]) in cat
-  elif 'vbf_' in proc:
-    return "_".join(proc.split("_")[2:4]) in cat
-  elif 'vh_' in proc:
-    return "_".join(proc.split("_")[2:4]) in cat
-  elif 'tth_' in proc:
-    return "_".join(proc.split("_")[2:4]) in cat
+  if proc.startswith(('ggh_', 'vbf_', 'vh_', 'tth_')):
+    parts = proc.split("_")
+    # Datacard process names are typically:
+    #   <prod>_<obs>_<bin>_<in/out>_<year>_hgg
+    # Strip suffixes from the right and match the full observable+bin payload.
+    if len(parts) > 0 and parts[-1] == "hgg":
+      parts = parts[:-1]
+    if len(parts) > 0 and (parts[-1].startswith("20") or parts[-1].startswith("22")):
+      parts = parts[:-1]
+    if len(parts) > 0 and parts[-1] in ["in", "out"]:
+      parts = parts[:-1]
+    if len(parts) > 0 and (parts[-1].startswith("20") or parts[-1].startswith("22")):
+      parts = parts[:-1]
+
+    if len(parts) < 2:
+      return False
+
+    proc_payload = "_".join(parts[1:])
+    return "RECO_%s" % proc_payload in cat
   elif 'qqH_hgg' in proc:
     return 'RECO_VBFTOPO' in cat
   elif 'ttH_hgg' in proc:

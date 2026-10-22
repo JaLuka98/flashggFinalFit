@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 #bash variables
 FILE="";
 EXT="auto"; #extensiom for all folders and files created by this script

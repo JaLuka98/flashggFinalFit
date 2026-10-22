@@ -9,6 +9,8 @@ from commonTools import *
 from commonObjects import *
 from plottingTools import *
 
+swd__ = os.environ.get("RUNPLOTTER_SIGNAL_DIR", swd__)
+
 def get_options():
   parser = OptionParser()
   parser.add_option('--procs', dest='procs', default='all', help="Comma separated list of processes to include. all = sum all signal procs")  
