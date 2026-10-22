@@ -47,7 +47,8 @@ python3 combination/priority_keeper.py &      # keeps this checkout's condor job
 
 `config/<year>_<obs>.yml` sets the inputs, `diffSplitByCode: True` (split by the per-bin out ids),
 `execution: 'local'` for the light signal-side tasks (they run in the law process, `--workers N`; start law
-on an interactive node with free cores) and the output folders (`outputFolder` = this checkout).
+on an interactive node with free cores) and the output folders: per-year outputs in `smoothed_hyy/output_<year>_<obs>/` (`outputFolder`),
+the combined 2022+2023+2024 outputs in `output_2022_2023_2024_<obs>/` of this checkout.
 The card is `output_2022_2023_2024_<obs>/Combine/Datacard_<obs>_2022_2023_2024.txt`, in this checkout.
 The inclusive Hgg card comes from the HIG-26-007 production (no per-bin out needed):
 `$STAGE/Hyy_datacards_smoothed_decorrelation/raw/inclusive/Datacard_2022_2023_2024.txt`.
