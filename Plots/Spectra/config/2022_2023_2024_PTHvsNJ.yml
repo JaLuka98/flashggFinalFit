@@ -19,7 +19,7 @@ frame1:
     fontsize: 20
   ylim:
     bottom: 0.0002
-    top: 16000
+    top: 200000
   additional_labels:
     - text: '$n_{\mathrm{jets}}=0$'
       position: [5, 3]

@@ -5,7 +5,7 @@ cms_label_fontsize: 22
 frame1:
   ylim:
     bottom: 0
-    top: 210
+    top: 260
   fontsize: 14
   title_fontsize: 14
 

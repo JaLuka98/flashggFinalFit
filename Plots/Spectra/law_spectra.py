@@ -377,7 +377,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         ggh_powheg_xs = __import__(current_config['ggh_powheg_xs'], globals(), locals(), vars)
         ggh_powheg_xs_norm = np.array(ggh_powheg_xs.fidXS) / bin_w
 
-        ggh_powheg_minlo_xs = __import__(current_config['ggh_powheg_minlo_xs'], globals(), locals(), vars)
+        # ggH POWHEG MiNLO (reweighted to NNLOPS): <ggh_powheg_xs>_MiNLO unless the config names another module
+        ggh_powheg_minlo_xs = __import__(current_config.get('ggh_powheg_minlo_xs', current_config['ggh_powheg_xs'] + '_MiNLO'), globals(), locals(), vars)
         ggh_powheg_minlo_xs_norm = np.array(ggh_powheg_minlo_xs.fidXS) / bin_w
 
         # Dynamically import the required module for ggH MadGraph (w/o NNLOPS reweighting) cross-section
@@ -540,7 +541,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         plt.stairs((ggh_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + NNLOPS + Pythia) + xH', color='tab:blue')
         plt.stairs((ggh_no_nnlops_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + Pythia) + xH', color='tab:purple')
         plt.stairs((ggh_powheg_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (POWHEG + Pythia) + xH', color='brown')
-        plt.stairs((ggh_powheg_minlo_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (POWHEG + MiNLO + Pythia) + xH', color='darkorange')
+        plt.stairs((ggh_powheg_minlo_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (POWHEG MiNLO + NNLOPS + Pythia) + xH', color='#d17a00')
         plt.stairs(xh_xs_norm, bins_plot, linewidth=2, color='green')
         plt.stairs(xh_xs_norm, bins_plot, linewidth=2, label='xH = ttH + VH + VBF (MadGraph5_aMC@NLO + Pythia)', alpha=0.2, color='green', fill=True)
         
@@ -586,7 +587,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
                        box_offsets['nnlops'], 'tab:blue', '///')
         draw_unc_boxes(bins_c, ggh_powheg_xs_norm + xh_xs_norm, unc_th_powheg_dn, unc_th_powheg_up, bin_w_visual,
                        box_offsets['powheg'], 'brown', '////')
-        draw_unc_boxes(bins_c, ggh_powheg_minlo_xs_norm + xh_xs_norm, unc_th_powheg_minlo_dn, unc_th_powheg_minlo_up,           bin_w_visual,box_offsets['powheg_minlo'], 'darkorange', '////')
+        draw_unc_boxes(bins_c, ggh_powheg_minlo_xs_norm + xh_xs_norm, unc_th_powheg_minlo_dn, unc_th_powheg_minlo_up,           bin_w_visual,box_offsets['powheg_minlo'], '#d17a00', '////')
         draw_unc_boxes(bins_c, ggh_no_nnlops_xs_norm + xh_xs_norm, unc_th_no_nnlops_dn, unc_th_no_nnlops_up, bin_w_visual,
                        box_offsets['no_nnlops'], 'tab:purple', '////')
             
@@ -708,12 +709,12 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         draw_unc_boxes(bins_c, ratio_powheg, ratio_unc_powheg_dn, ratio_unc_powheg_up, bin_w_visual,
                        box_offsets['powheg'], 'brown', '/////')
         draw_unc_boxes(bins_c, ratio_powheg_minlo, ratio_unc_powheg_minlo_dn, ratio_unc_powheg_minlo_up, bin_w_visual,
-                       box_offsets['powheg_minlo'], 'brown', '/////')
+                       box_offsets['powheg_minlo'], '#d17a00', '/////')
         draw_unc_boxes(bins_c, ratio_no_nnlops, ratio_unc_no_nnlops_dn, ratio_unc_no_nnlops_up, bin_w_visual,
                        box_offsets['no_nnlops'], 'tab:purple', '////')
         
         plt.stairs(ratio_powheg, bins_plot, linewidth=2, color='brown')
-        plt.stairs(ratio_powheg_minlo, bins_plot, linewidth=2, color='darkorange')
+        plt.stairs(ratio_powheg_minlo, bins_plot, linewidth=2, color='#d17a00')
         plt.stairs(ratio_no_nnlops, bins_plot, linewidth=2, color='tab:purple')
 
         frame2_xtick_fontsize = 20
