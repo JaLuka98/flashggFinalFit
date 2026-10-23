@@ -40,6 +40,7 @@ NFS_SLOW, NFS_OK = 5.0, 2.0                 # s for create + fsync + remove
 MAX_PASSES = 3
 LOG = os.path.join(REPO, "logs", "local_farm.log")
 STATE = os.path.join(REPO, "logs", "local_farm_state.json")
+LOCK = os.path.join(REPO, "logs", "local_farm.lock")  # "<host> <pid>", touched every cycle
 
 # per node: cores, load, MemAvailable, the law processes of the combination fits, the fits (combine) of the farm
 PROBE = r"""
@@ -147,8 +148,18 @@ def signal(host, pids, sig):
         sh(host, f"kill -{sig} {' '.join(map(str, pids))}")
 
 
+def take_lock():
+    """One farm at a time: a second one would not see the runs of the first as its own and start them again."""
+    if os.path.exists(LOCK) and time.time() - os.path.getmtime(LOCK) < 300:
+        sys.exit(f"another farm is running ({open(LOCK).read().strip()}, {LOCK} touched "
+                 f"{time.time() - os.path.getmtime(LOCK):.0f} s ago); stop it first")
+    with open(LOCK, "w") as f:
+        f.write(f"{os.uname().nodename} {os.getpid()}\n")
+
+
 def main():
     runs = sys.argv[1:]
+    take_lock()
     state = json.load(open(STATE)) if os.path.exists(STATE) else {}
     for r in runs:
         state.setdefault(r, {"pass": 1, "done": False, "host": None, "workers": 0})
@@ -208,6 +219,8 @@ def main():
             st = state[r]
             if st["done"]:
                 continue
+            if st["host"] and nodes.get(st["host"]) is None:
+                continue  # its node did not answer: unknown, never "ended"
             if r in alive:
                 st["host"] = alive[r]
                 st["workers"] = st.get("workers") or NODE_WORKERS  # adopted run: assume the maximum
@@ -231,8 +244,13 @@ def main():
             n["load"] += workers  # until the next probe sees the fits
             n_fits += workers
         json.dump(state, open(STATE, "w"), indent=1)
+        down = [h for h, n in nodes.items() if n is None]
+        if down:
+            log(f"no answer from {down}: their runs are left alone this cycle")
+        os.utime(LOCK)
         time.sleep(60)
     log("all runs done")
+    os.remove(LOCK)
 
 
 if __name__ == "__main__":
