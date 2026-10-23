@@ -277,7 +277,7 @@ datacard_clean:
 
 combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
-  unblindedFit_numPoints: 100 
+  unblindedFit_numPoints: 30 
   setParameterRange: "r=0,2"
   # Opt-in lower-68%-CL refinement profile for the H4l-only tail bins.
   # Keep the global best fit inside the allowed range. Fine resolution is

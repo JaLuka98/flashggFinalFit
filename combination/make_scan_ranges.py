@@ -74,10 +74,10 @@ def is_cut(points):
     return points[0][1] - ymin < LEVEL_CUT or points[-1][1] - ymin < LEVEL_CUT
 
 
-def supersede(run_dir, kind_dir, poi, stamp):
+def supersede(run_dir, kind_dir, poi, stamp, best_fits=True):
     dest = os.path.join(run_dir, f"superseded_{stamp}", kind_dir)
     patterns = [f"higgsCombine*PostFitScan*_{poi}.*", f"scans/scan_{poi}.*", f"scans/scan_{poi}_observed.*"]
-    if kind_dir == "dataFit":
+    if kind_dir == "dataFit" and best_fits:
         patterns += [f"higgsCombineDataPostFitBestFit*_{poi}.*", f"multidimfitDataPostFitBestFit*_{poi}.root"]
     moved = 0
     for pattern in patterns:
@@ -87,6 +87,78 @@ def supersede(run_dir, kind_dir, poi, stamp):
             shutil.move(f, target)
             moved += 1
     return moved
+
+
+def fit_sigmas(run_dir, kind_dir, poi, mass):
+    """(best fit, sigma down, sigma up) of poi from the fits made before the scans, or None.
+
+    observed: the --algo singles best fit (68% interval), with the fit_mdf error where an edge sits at the
+    range boundary; Asimov: the first-step fit (best fit 1, fit_mdf error)."""
+    import ROOT
+    if kind_dir == "dataFit":
+        mdf_path = os.path.join(run_dir, kind_dir, f"multidimfitDataPostFitBestFit_{poi}.root")
+        singles = os.path.join(run_dir, kind_dir, f"higgsCombineDataPostFitBestFit_{poi}.MultiDimFit.mH{mass}.root")
+    else:
+        mdf_path = os.path.join(run_dir, kind_dir, f"multidimfitfirstStep_{poi}.root")
+        singles = None
+    if not os.path.exists(mdf_path):
+        return None
+    f = ROOT.TFile.Open(mdf_path)
+    res = f.Get("fit_mdf") if f else None
+    var = res.floatParsFinal().find(poi) if res else None
+    if not var:
+        return None
+    best, err, vmin, vmax = var.getVal(), var.getError(), var.getMin(), var.getMax()
+    at_edge = min(best - vmin, vmax - best) < 1e-3  # clipped by the model range: the fit is redone in the window
+    down = up = err
+    if singles and os.path.exists(singles):
+        g = ROOT.TFile.Open(singles)
+        rows = {round(e.quantileExpected, 2): getattr(e, poi) for e in g.Get("limit")} if g.Get("limit") else {}
+        if -1.0 in rows and -0.32 in rows and 0.32 in rows:
+            best = rows[-1.0]
+            if rows[-0.32] > vmin + 1e-4:
+                down = best - rows[-0.32]
+            if rows[0.32] < vmax - 1e-4:
+                up = rows[0.32] - best
+    return best, down, up, at_edge
+
+
+def windows_from_fits(opt, pois, run_name, key):
+    """--from-fits: windows before the first scan pass (all observed POIs; the Asimov POIs whose [lo, hi] scan of
+    the model range would not reach 2 sigma on both sides). Their scan points of an earlier pass are moved aside."""
+    stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H%M")
+    for fit in opt.fits.split():
+        run_dir = os.path.join(opt.base, fit, "Combine", run_name)
+        json_path = os.path.join(opt.base, fit, "Combine", "scan_ranges.json")
+        ranges = json.load(open(json_path)) if os.path.exists(json_path) else {}
+        windows = ranges.get(key, {})
+        print(f"== {fit} ({key}, from the fits)")
+        for poi in pois:
+            r = fit_sigmas(run_dir, opt.kind, poi, opt.mass)
+            if r is None:
+                print(f"  {poi:28s} no fit result, window unchanged {windows.get(poi)}")
+                continue
+            best, down, up, at_edge = r
+            lo = round(math.floor((best - opt.nsigma * down) * 20) / 20, 2)
+            hi = round(math.ceil((best + opt.nsigma * up) * 20) / 20, 2)
+            model = ss.load_maps().OBS[opt.obs][4]
+            if opt.kind == "asimov" and best - 2 * down >= model[0] and best + 2 * up <= model[1]:
+                new, note = list(model), "model range reaches 2 sigma, kept"
+            else:
+                new, note = [lo, hi], ""
+                redo_fit = at_edge and opt.kind == "dataFit"
+                note = "best fit at the model range edge, redone in the window; " if redo_fit else ""
+                if opt.supersede and not opt.dry_run:
+                    note += f"{supersede(run_dir, opt.kind, poi, stamp, best_fits=redo_fit)} files moved aside"
+            windows[poi] = new
+            print(f"  {poi:28s} best fit {best:7.3f} -{down:.3f} +{up:.3f} -> window {new}  {note}")
+        ranges[key] = windows
+        ranges["nsigma"] = opt.nsigma
+        ranges["source"] = "combination/make_scan_ranges.py --from-fits"
+        if not opt.dry_run:
+            with open(json_path, "w") as f:
+                json.dump(ranges, f, indent=1)
+            print(f"  wrote {json_path}")
 
 
 def main():
@@ -99,9 +171,15 @@ def main():
     p.add_argument("--mass", default="125.07")
     p.add_argument("--supersede", action="store_true", help="move the outputs of the cut scans aside")
     p.add_argument("--dry-run", action="store_true", help="only print (do not write the json while law still runs)")
+    p.add_argument("--from-fits", action="store_true", help="windows from the best fits made before the scans "
+                   "(singles / first step), to scan in the right range from the first pass")
     opt = p.parse_args()
 
     pois = list(ss.load_maps().patterns(opt.obs)[1])
+    if opt.from_fits:
+        windows_from_fits(opt, pois, "runFits_mu_fiducial" if opt.obs == "inclusive" else f"runFits_{opt.obs}",
+                          "asimov" if opt.kind == "asimov" else "unblinded")
+        return
     run_name = "runFits_mu_fiducial" if opt.obs == "inclusive" else f"runFits_{opt.obs}"
     key = "asimov" if opt.kind == "asimov" else "unblinded"
     stamp = datetime.datetime.now().strftime("%Y_%m_%d_%H%M")

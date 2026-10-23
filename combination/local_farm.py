@@ -34,7 +34,7 @@ import time
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NODES = ["lxbatch01", "lxbatch02", "lxbatch03", "lxbatch04", "lxbatch05"]
 MAX_WORKERS = int(os.environ.get("FARM_MAX_WORKERS", 48))  # fits of the farm on all nodes together (file server)
-NODE_WORKERS = 8        # per law process
+NODE_WORKERS = int(os.environ.get("FARM_NODE_WORKERS", 8))  # per law process
 HEADROOM = 4            # cores left free on every node
 MEM_START, MEM_STOP, MEM_KILL = 20, 10, 5   # GB MemAvailable
 NFS_SLOW, NFS_OK = 5.0, 2.0                 # s for create + fsync + remove
