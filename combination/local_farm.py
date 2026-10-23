@@ -23,6 +23,7 @@ Usage (from the checkout, on any login node; log in logs/local_farm.log, state i
   python3 combination/local_farm.py PTH:h4l:asimov PTH:h4l:dataFit NJ:hgg:asimov ...
 Running law processes of a listed run (e.g. after a restart of the farm) are adopted, not restarted.
 """
+import glob
 import json
 import os
 import re
@@ -59,6 +60,30 @@ done
 def log(msg):
     with open(LOG, "a") as f:
         f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + msg + "\n")
+
+
+def agent_ok(sock):
+    try:
+        return subprocess.run(["ssh-add", "-l"], env=dict(os.environ, SSH_AUTH_SOCK=sock), capture_output=True,
+                              timeout=5).returncode == 0
+    except subprocess.TimeoutExpired:
+        return False
+
+
+def find_agent():
+    """A working ssh-agent: the key has a passphrase, and the agent forwarded by VS Code dies with each
+    reconnect. Keep the current one while it works, else take the newest live VS Code socket."""
+    sock = os.environ.get("SSH_AUTH_SOCK", "")
+    if sock and agent_ok(sock):
+        return
+    uid = os.getuid()
+    for cand in sorted(glob.glob(f"/run/user/{uid}/vscode-ssh-auth-sock-*") + glob.glob(f"/run/user/{uid}/claude-agent.sock"),
+                       key=lambda f: os.lstat(f).st_mtime, reverse=True):
+        if agent_ok(cand):
+            os.environ["SSH_AUTH_SOCK"] = cand
+            log(f"ssh agent: {cand}")
+            return
+    log("no working ssh agent: nodes cannot be reached, their runs are left alone")
 
 
 def sh(host, cmd, timeout=60):
@@ -167,6 +192,7 @@ def main():
     paused_nfs = False
     log(f"farm started for {runs}")
     while not all(state[r]["done"] for r in runs):
+        find_agent()
         nodes = {h: probe(h) for h in NODES}
         lat = nfs_latency()
         nfs_slow = nfs_slow + 1 if lat > NFS_SLOW else 0
