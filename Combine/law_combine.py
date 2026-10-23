@@ -101,6 +101,42 @@ def scan_window_ranges(output_dir, poi, kind, range_expression=None, range_overr
     return None
 
 
+def workspace_pdf_indices(names, workspace_path):
+    """The pdfindex categories of ``names`` which exist in the workspace.
+
+    combine stops at the first unknown one ("not a RooCategory"), and an H4l-only workspace has none
+    of the Hgg ones.  Listed once in <workspace>.pdfindex.json, so that the scan points do not all
+    read the workspace again.
+    """
+    listing = workspace_path + ".pdfindex.json"
+    if os.path.exists(listing) and os.path.getmtime(listing) >= os.path.getmtime(workspace_path):
+        with open(listing) as listing_file:
+            present = set(json.load(listing_file))
+    else:
+        present = set(extract_pdf_indices(workspace_path))
+        tmp = f"{listing}.{os.getpid()}"
+        with open(tmp, "w") as listing_file:
+            json.dump(sorted(present), listing_file)
+        os.replace(tmp, listing)
+    return [name for name in names if name in present]
+
+
+def require_fit_result(path):
+    """Fail the task (and drop the file) when combine wrote no fit result to ``path``.
+
+    combineTool.py exits with 0 when combine fails, so without this law takes the empty output as done.
+    """
+    result_file = ROOT.TFile.Open(path) if os.path.exists(path) else None
+    tree = result_file.Get("limit") if result_file and not result_file.IsZombie() else None
+    ok = bool(tree) and tree.GetEntries() > 0
+    if result_file:
+        result_file.Close()
+    if not ok:
+        if os.path.exists(path):
+            os.remove(path)
+        raise RuntimeError(f"combine wrote no fit result: {path}")
+
+
 def scan_grid_configuration(n_points, grid_points, first_point, last_point):
     """Return the full grid size and the subset of grid indices to evaluate.
 
@@ -3274,8 +3310,10 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
                 "--saveWorkspace",
-                "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
             ]
+            indices = workspace_pdf_indices(combineVariableDict(self.variable, self.year)['pdfIndeces'], datacard_path)
+            if indices:
+                arguments.extend(["--saveSpecifiedIndex", ",".join(indices)])
             ranges = scan_window_ranges(output_dir, current_cat, "unblinded")
             if ranges:
                 arguments.extend(["--setParameterRanges", ranges])
@@ -3287,6 +3325,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+            require_fit_result(os.path.join(os.getcwd(), f"higgsCombineDataPostFitBestFit_{current_cat}.MultiDimFit.mH125.07.root"))
 
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -3497,6 +3536,7 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
+            require_fit_result(os.path.join(os.getcwd(), f"higgsCombineDataPostFitBestFitStat_{cat}.MultiDimFit.mH125.07.root"))
             
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -3676,7 +3716,10 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "-w", "w",
             ]
         else:
-            saveSpecifiedIndex = ",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])
+            saveSpecifiedIndex = ",".join(workspace_pdf_indices(
+                combineVariableDict(self.variable, self.year)['pdfIndeces'],
+                os.path.join(output_dir, 'Combine', f'Datacard_{self.variable}_{self.year}.root'),
+            ))
             paramStr = ",".join(combineVariableDict(self.variable, self.year)['paramStr'])
             arguments = [
                 "combineTool.py",
@@ -3701,10 +3744,11 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--alignEdges", "1",
                 "--firstPoint", f"{current_point}",
                 "--lastPoint", f"{current_point}",
-                "--saveSpecifiedIndex", saveSpecifiedIndex,
                 "--setParameters", paramStr,
                 "-w", "w",
             ]
+            if saveSpecifiedIndex:
+                arguments.extend(["--saveSpecifiedIndex", saveSpecifiedIndex])
             ranges = scan_window_ranges(output_dir, current_cat, "unblinded")
             if ranges:
                 arguments.extend(["--setParameterRanges", ranges])
@@ -3715,6 +3759,8 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
+        if self.variable != '':
+            require_fit_result(os.path.join(os.getcwd(), f"higgsCombineDataPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.07.root"))
         
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -3929,6 +3975,8 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
             print("Error executing script:", e.stderr)
+        if self.variable != '':
+            require_fit_result(os.path.join(os.getcwd(), f"higgsCombineDataPostFitScanStat_{cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.07.root"))
             
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
