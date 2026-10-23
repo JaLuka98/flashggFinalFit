@@ -5,6 +5,7 @@ import subprocess
 import ROOT
 import uproot
 import glob
+import json
 import yaml
 import errno
 import shutil
@@ -75,6 +76,29 @@ def parameter_range_for_poi(range_expression, poi, range_overrides=None):
     if not mapped_ranges:
         raise ValueError("Parameter range expression must not be empty")
     return ":".join(mapped_ranges)
+
+
+def scan_window_ranges(output_dir, poi, kind, range_expression=None, range_overrides=None):
+    """Parameter ranges for a fit of ``poi`` with the per-bin scan windows (as in HIG-26-007).
+
+    <output_dir>/Combine/scan_ranges.json, {"asimov"|"unblinded": {POI: [lo, hi]}}, holds one window per
+    POI (best fit +- N sigma, written by combination/make_scan_ranges.py).  When it has a window for
+    ``poi``, the fitted POI gets its window and every other POI floats in its own one (the workspace
+    range of the combination model, [0, 3] for every POI, cuts the scans).  Otherwise, or for a POI
+    with a per-POI override, ``range_expression`` as in parameter_range_for_poi; None when neither
+    applies (workspace ranges).
+    """
+    windows = {}
+    ranges_path = os.path.join(output_dir, "Combine", "scan_ranges.json")
+    if os.path.exists(ranges_path) and not (range_overrides and poi in range_overrides):
+        with open(ranges_path) as ranges_file:
+            windows = json.load(ranges_file).get(kind, {})
+    if poi in windows:
+        ordered = [poi] + sorted(p for p in windows if p != poi)
+        return ":".join(f"{p}={windows[p][0]},{windows[p][1]}" for p in ordered)
+    if range_expression:
+        return parameter_range_for_poi(range_expression, poi, range_overrides)
+    return None
 
 
 def scan_grid_configuration(n_points, grid_points, first_point, last_point):
@@ -1218,9 +1242,11 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
                 "--setParameters", set_param_string,
-                "--setParameterRanges", parameter_range_for_poi(
-                    config["combine_fit"]["setParameterRange"],
+                "--setParameterRanges", scan_window_ranges(
+                    output_dir,
                     current_cat,
+                    "asimov",
+                    config["combine_fit"]["setParameterRange"],
                     config["combine_fit"].get("asimov_parameterRangeProfiles", {}).get(
                         str(self.range_profile), {}
                     ),
@@ -1536,9 +1562,11 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--alignEdges", "1",
                 "--snapshotName", "MultiDimFit",
                 "--setParameters", set_param_string,
-                "--setParameterRanges", parameter_range_for_poi(
-                    config["combine_fit"]["setParameterRange"],
+                "--setParameterRanges", scan_window_ranges(
+                    output_dir,
                     current_cat,
+                    "asimov",
+                    config["combine_fit"]["setParameterRange"],
                     config["combine_fit"].get("asimov_parameterRangeProfiles", {}).get(
                         str(self.range_profile), {}
                     ),
@@ -3248,6 +3276,9 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--saveWorkspace",
                 "--saveSpecifiedIndex", f"""{",".join(combineVariableDict(self.variable, self.year)['pdfIndeces'])}""",
             ]
+            ranges = scan_window_ranges(output_dir, current_cat, "unblinded")
+            if ranges:
+                arguments.extend(["--setParameterRanges", ranges])
             command = arguments
             # print(command)
             try:
@@ -3455,6 +3486,9 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                 "--snapshotName", "MultiDimFit",
                 "-w", "w",
             ]
+            ranges = scan_window_ranges(output_dir, cat, "unblinded")
+            if ranges:
+                arguments.extend(["--setParameterRanges", ranges])
             command = arguments
             # print(command)
             try:
@@ -3671,6 +3705,9 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--setParameters", paramStr,
                 "-w", "w",
             ]
+            ranges = scan_window_ranges(output_dir, current_cat, "unblinded")
+            if ranges:
+                arguments.extend(["--setParameterRanges", ranges])
         command = arguments
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)
@@ -3882,6 +3919,9 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--lastPoint", f"{current_point}",
                 "-w", "w",
             ]
+            ranges = scan_window_ranges(output_dir, cat, "unblinded")
+            if ranges:
+                arguments.extend(["--setParameterRanges", ranges])
         command = arguments
         try:
             result = subprocess.run(command, check=True, text=True, capture_output=True)

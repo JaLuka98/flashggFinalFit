@@ -15,6 +15,9 @@
 #     prepare    put cards and workspaces where law expects them
 #     law        expected (Asimov) fits: law run FinalFitsYear --asimov-fits, for every fit in $FITS
 #     unblind    observed fits: law run FinalFitsYear --unblinded-fits
+#     ranges     per-POI scan windows (best fit +- 3 sigma) from the finished scans of KIND -> <fit>/Combine/
+#                scan_ranges.json; the cut scans are moved aside: run law / unblind again to redo them in
+#                their windows, repeat until none is cut (combination/make_scan_ranges.py)
 #     summary    results tables (summarize_scans.py) and Hgg/H4l/comb comparison plots per POI
 #
 # Environment (defaults in brackets):
@@ -26,14 +29,14 @@
 #             (produced in this checkout by law run FinalFits, see README);
 #             inclusive: $STAGE/Hyy_datacards_smoothed_decorrelation/raw/inclusive/Datacard_2022_2023_2024.txt]
 #   STAGE     shared inputs [/net/data_cms3a-2/nobackup/group_JE_CMS/Hyy_Hzz_combination]
-#   KIND      summary of asimov or dataFit [asimov]
+#   KIND      ranges / summary of asimov or dataFit [asimov]
 #   FINALFITS_MH  [125.07]
 
 set -eo pipefail
 
 OBS=${1:?usage: $0 <obs> <step> [<step> ...]}
 shift
-[ $# -gt 0 ] || { sed -n 2,28p "${BASH_SOURCE[0]}"; exit 1; }
+[ $# -gt 0 ] || { sed -n 2,31p "${BASH_SOURCE[0]}"; exit 1; }
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "${HERE}/.." && pwd)"
@@ -202,6 +205,12 @@ run_law() {  # $1 = law flag (--asimov-fits / --unblinded-fits), $2 = log tag
   done
 }
 
+do_ranges() {
+  setup_cmssw
+  python3 "${HERE}/make_scan_ranges.py" --base "${OUT}" --obs "${OBS}" --kind "${KIND}" --fits "${FITS}" \
+    --mass "${FINALFITS_MH}" --supersede
+}
+
 do_summary() {
   setup_cmssw
   python3 "${HERE}/summarize_scans.py" --base "${OUT}" --obs "${OBS}" --kind "${KIND}" --fits "${FITS}" --mass "${FINALFITS_MH}"
@@ -233,6 +242,7 @@ for step in "$@"; do
     prepare) do_prepare ;;
     law) run_law --asimov-fits asimov ;;
     unblind) run_law --unblinded-fits unblind ;;
+    ranges) do_ranges ;;
     summary) do_summary ;;
     *) echo "unknown step ${step}"; exit 1 ;;
   esac

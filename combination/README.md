@@ -66,6 +66,8 @@ recipe (2022+2023, card binning, GenNJ, 8-bin MassJ0J1); details and validation 
 combination/run_combination.sh <obs> hgg-card h4l-card cards t2w prepare   # cards and workspaces
 combination/run_combination.sh <obs> law                                   # expected (Asimov) fits
 combination/run_combination.sh <obs> unblind                               # observed fits
+combination/run_combination.sh <obs> ranges                                # per-POI windows, cut scans aside (KIND=dataFit for observed)
+combination/run_combination.sh <obs> law                                   # redo the cut scans in their windows
 combination/run_combination.sh <obs> summary                               # tables + plots (KIND=dataFit for observed)
 ```
 
@@ -76,6 +78,7 @@ combination/run_combination.sh <obs> summary                               # tab
 | `cards` | `combineCards.py hgg= h4l=`; Hgg-only / H4l-only cards cut out with `--ic` and `clean_card.py`, so all three fits share the inputs. `CHANNELS=h4l` builds the H4l card alone (no Hgg card needed; same card and POI map as the cut-out one, checked for NJ) and runs only the H4l fit |
 | `t2w` | `Combine/makeCombinationMaps.py` builds the multiSignalModel map on the combined card and checks that every signal is mapped exactly once and no background; no `higgsMassRange` (MH stays fixed) |
 | `law`, `unblind` | `law run FinalFitsYear --year 2022_2023_2024 [--variable <obs>] --{asimov,unblinded}-fits` per fit |
+| `ranges` | `make_scan_ranges.py`: per-POI windows, best fit +- 3 sigma from the finished scans (as `scan_ranges.json` of HIG-26-007), in `<fit>/Combine/scan_ranges.json`; the fitted POI is scanned in its window and the other POIs float in theirs (`scan_window_ranges` in `Combine/law_combine.py`). The cut scans (2dNLL < 4 at an end) are moved to `superseded_<date>/`; `law` / `unblind` again redoes them. Repeat until none is cut |
 | `summary` | `summarize_scans.py` (spline crossings, syst = sqrt(total^2 - stat^2)) and `plot1DScan.py` comparisons |
 
 An existing `_total` / `_comb` card is never overwritten: the step regenerates it and stops if it differs.
@@ -98,3 +101,6 @@ BR rows w.r.t. the first combination cards (and `prepare_total_xsec_datacard.py`
 - a new FinalFits checkout needs `make` in `Background/` (fTest), otherwise every background job fails (exit 127)
 - PTJ0 first bin is `m10000p0_30p0` (cards, maps and `combineVariableDict` override in `commonObjects.py`)
 - law runs started with `setsid`; stop them with `kill -- -<pgid>`, otherwise the luigi workers keep submitting
+- the model range of every POI is [0, 3] ([0, 2] for PTH): without `scan_ranges.json` the weak bins (and the
+  observed ones near 0) are cut. Run `ranges` only once law has finished for that fit, the windows apply to the
+  next jobs it submits
