@@ -10,6 +10,7 @@
 #     h4l-card   raw H4l floating-ZZ card -> <raw>_comb.txt next to it (BR_hzz* removed, per-era pileup
 #                merged, BR rows); an existing _comb card must be reproduced exactly
 #     cards      combineCards.py hgg= h4l=, then the hgg-only / h4l-only cards cut out with --ic
+#                (CHANNELS=h4l: the H4l card alone)
 #     t2w        POI map (Combine/makeCombinationMaps.py, verified on the combined card) + text2workspace
 #     prepare    put cards and workspaces where law expects them
 #     law        expected (Asimov) fits: law run FinalFitsYear --asimov-fits, for every fit in $FITS
@@ -18,7 +19,9 @@
 #
 # Environment (defaults in brackets):
 #   OUT       output folder [<repo>/output_combination_<obs>]
-#   FITS      fits to run ["hgg h4l comb"]
+#   CHANNELS  "hgg h4l" (full combination) or "h4l" (H4l only, no Hgg card needed: the cards step builds
+#             the H4l card alone, same content as the one cut out of the combined card) ["hgg h4l"]
+#   FITS      fits to run ["hgg h4l comb", or "h4l" with CHANNELS=h4l]
 #   HGG_CARD  raw Hgg card [differential: <repo>/output_2022_2023_2024_<obs>/Combine/Datacard_<obs>_2022_2023_2024.txt
 #             (produced in this checkout by law run FinalFits, see README);
 #             inclusive: $STAGE/Hyy_datacards_smoothed_decorrelation/raw/inclusive/Datacard_2022_2023_2024.txt]
@@ -37,7 +40,12 @@ REPO="$(cd "${HERE}/.." && pwd)"
 CMSSW_SRC="$(cd "${REPO}/.." && pwd)"
 STAGE=${STAGE:-/net/data_cms3a-2/nobackup/group_JE_CMS/Hyy_Hzz_combination}
 OUT=${OUT:-${REPO}/output_combination_${OBS}}
-FITS=${FITS:-"hgg h4l comb"}
+CHANNELS=${CHANNELS:-"hgg h4l"}
+case "${CHANNELS}" in
+  "hgg h4l") FITS=${FITS:-"hgg h4l comb"} ;;
+  h4l)       FITS=${FITS:-h4l} ;;
+  *) echo "CHANNELS must be \"hgg h4l\" or h4l"; exit 1 ;;
+esac
 KIND=${KIND:-asimov}
 export FINALFITS_MH=${FINALFITS_MH:-125.07}
 YEAR=2022_2023_2024
@@ -122,6 +130,7 @@ do_h4l_card() {
 
 do_cards() {
   setup_cmssw
+  [ "${CHANNELS}" = h4l ] && { do_cards_h4l; return; }
   [ -s "${HGG_TOTAL}" ] || { echo "run the hgg-card step first (${HGG_TOTAL} missing)"; exit 1; }
   [ -s "${H4L_COMB}" ] || { echo "run the h4l-card step first (${H4L_COMB} missing)"; exit 1; }
   mkdir -p "${OUT}/cards"
@@ -136,13 +145,24 @@ do_cards() {
   rm raw_hgg.txt raw_h4l.txt
 }
 
+do_cards_h4l() {
+  [ -s "${H4L_COMB}" ] || { echo "run the h4l-card step first (${H4L_COMB} missing)"; exit 1; }
+  mkdir -p "${OUT}/cards"
+  cd "${OUT}/cards"
+  combineCards.py h4l="${H4L_COMB}" > raw_h4l.txt
+  python3 "${HERE}/clean_card.py" raw_h4l.txt "$(card_of h4l)" --drop '^(pdfindex_|CMS_HIG26007_)'
+  rm raw_h4l.txt
+}
+
 do_t2w() {
   setup_cmssw
   mkdir -p "${OUT}/workspaces" "${OUT}/logs"
   # map generated and verified on the combined card (every signal mapped once, no background);
   # the same model is used for the single-channel cards
-  python3 "${REPO}/Combine/makeCombinationMaps.py" --card "$(card_of comb)" --obs "${OBS}" \
-    --mass "${FINALFITS_MH}" --output "${OUT}/logs/t2w_map.sh" | tee "${OUT}/logs/map_check.log"
+  local map_card=comb
+  [ "${CHANNELS}" = h4l ] && map_card=h4l
+  python3 "${REPO}/Combine/makeCombinationMaps.py" --card "$(card_of ${map_card})" --obs "${OBS}" \
+    --channels "${CHANNELS// /,}" --mass "${FINALFITS_MH}" --output "${OUT}/logs/t2w_map.sh" | tee "${OUT}/logs/map_check.log"
   local model
   model="$(sed -n '/-P HiggsAnalysis/,$p' "${OUT}/logs/t2w_map.sh" | tr -d '\\\n')"
   for fit in ${FITS}; do
@@ -195,9 +215,10 @@ do_summary() {
       else echo "${OUT}/$1/Combine/${RUN_DIR}/dataFit/higgsCombineDataPostFitScanFit_${poi}.MultiDimFit.mH${FINALFITS_MH}.root"; fi
     }
     # plot1DScan.py writes to "./<-o>", so run it inside the plot folder with a relative name
+    local main=(comb "H#gamma#gamma+H4l") others=()
+    [ "${CHANNELS}" = h4l ] && main=(h4l H4l) || others=(--others "$(scan hgg):H#gamma#gamma:4" "$(scan h4l):H4l:2")
     (cd "${OUT}/plots" && python3 "${CMSSW_SRC}/CombineHarvester/CombineTools/scripts/plot1DScan.py" \
-      "$(scan comb)" --POI "${poi}" --main-label "H#gamma#gamma+H4l" \
-      --others "$(scan hgg):H#gamma#gamma:4" "$(scan h4l):H4l:2" \
+      "$(scan ${main[0]})" --POI "${poi}" --main-label "${main[1]}" "${others[@]}" \
       -o "compare_${tag}_${poi}" > "${OUT}/logs/plot_compare_${tag}_${poi}.log" 2>&1) || \
       echo "comparison plot failed for ${poi}, see ${OUT}/logs/plot_compare_${tag}_${poi}.log"
   done

@@ -45,11 +45,12 @@ BACKGROUND = re.compile(r"^(bkg_.*|nonResH)$")
 
 def get_options():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--card", required=True, help="combined card (channels named hgg and h4l)")
+    p.add_argument("--card", required=True, help="combined card (channels named hgg and h4l), or a single-channel card with --channels")
     p.add_argument("--obs", required=True, choices=OBS)
     p.add_argument("--output", default=None, help="write the text2workspace command here")
     p.add_argument("--workspace", default=None, help="output workspace name in the command")
     p.add_argument("--mass", default="125.07")
+    p.add_argument("--channels", default="hgg,h4l", help="channels the card must contain (e.g. h4l for an H4l-only card)")
     return p.parse_args()
 
 
@@ -108,8 +109,10 @@ def main():
                 counts[key] = counts.get(key, 0) + 1
         elif hits:
             problems.append(f"background {b}/{p} matched by {hits}")
+    channels = opt.channels.split(",")
+    kinds = (["hgg"] if "hgg" in channels else []) + (["h4l smH", "h4l OA"] if "h4l" in channels else [])
     for poi in ranges:
-        for kind in ("hgg", "h4l smH", "h4l OA"):
+        for kind in kinds:
             if (poi, kind) not in counts:
                 problems.append(f"POI {poi}: no {kind} entries mapped")
     print(f"{opt.card}: {len(unique)} (bin, process) pairs, {len(ranges)} POIs")

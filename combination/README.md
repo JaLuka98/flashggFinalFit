@@ -73,7 +73,7 @@ combination/run_combination.sh <obs> summary                               # tab
 |---|---|
 | `hgg-card` | `Datacard/addAcceptanceUncertainties.py` (`CMS_HIG25015_{QCDscale,pdf,alphaS}_accMatrix`) and `Datacard/addBranchingRatioUncertainties.py --channel hgg` (`HiggsDecayWidthTHU_*`, `param_alphaS`, `param_mq`) -> `<raw card>_total.txt` |
 | `h4l-card` | `Datacard/prepareH4lCombinationCard.py`: remove `BR_hzz*`, merge per-era `CMS_pileup`, BR rows -> `..._zzfloating_bin_v3_comb.txt` |
-| `cards` | `combineCards.py hgg= h4l=`; Hgg-only / H4l-only cards cut out with `--ic` and `clean_card.py`, so all three fits share the inputs |
+| `cards` | `combineCards.py hgg= h4l=`; Hgg-only / H4l-only cards cut out with `--ic` and `clean_card.py`, so all three fits share the inputs. `CHANNELS=h4l` builds the H4l card alone (no Hgg card needed; same card and POI map as the cut-out one, checked for NJ) and runs only the H4l fit |
 | `t2w` | `Combine/makeCombinationMaps.py` builds the multiSignalModel map on the combined card and checks that every signal is mapped exactly once and no background; no `higgsMassRange` (MH stays fixed) |
 | `law`, `unblind` | `law run FinalFitsYear --year 2022_2023_2024 [--variable <obs>] --{asimov,unblinded}-fits` per fit |
 | `summary` | `summarize_scans.py` (spline crossings, syst = sqrt(total^2 - stat^2)) and `plot1DScan.py` comparisons |
