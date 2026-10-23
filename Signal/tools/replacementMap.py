@@ -347,9 +347,13 @@ for _bin in _RAPIDITY_BINS:
 
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"]["in"] = "RECO_rapidity_1p2_1p6_cat2"
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"]["in"] = "RECO_rapidity_1p6_2p0_cat2"
+# As in the HIG-26-007 map: with the smoothed sigma_m/m categories RECO_rapidity_2p0_2p5_cat0 has too few ggH
+# events (8 < replacementThreshold) to serve as its own replacement category
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_2p0_2p5_cat0"]["in"] = "RECO_rapidity_2p0_2p5_cat2"
 
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p2_1p6_cat0"]["out"] = "RECO_rapidity_1p2_1p6_cat2"
 globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_1p6_2p0_cat0"]["out"] = "RECO_rapidity_1p6_2p0_cat2"
+globalReplacementMap["Run3FidXSAnalysisYH"]["catRVMap"]["RECO_rapidity_2p0_2p5_cat0"]["out"] = "RECO_rapidity_2p0_2p5_cat2"
 
 
 # Differential NJ (Number of Jets)
