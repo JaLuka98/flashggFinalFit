@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+"""Run the combination fits on the free cores of the lxbatch login nodes instead of HTCondor, and watch them.
+
+Each run "obs:fit:kind" (kind asimov or dataFit) is one law FinalFitsYear process with local workflows
+(run_combination.sh with EXECUTION=local: the fits run in WORKERS law workers, nice 10, idle I/O class),
+started over ssh on the login node with the most free cores. Never on the condor worker nodes.
+
+Every minute the farm checks every node and protects the other users and the file server:
+  - load above the core count (someone else needs the cores): the youngest fits of the farm are stopped
+    (SIGSTOP) and continued (SIGCONT) once the load is back below cores - 4;
+  - MemAvailable below MEM_STOP GB: the youngest fit is stopped, below MEM_KILL GB it is killed (law
+    redoes it in the next pass);
+  - NFS: create + fsync + remove of a file in the output folder slower than NFS_SLOW s twice in a row: all
+    fits of the farm are stopped until it is fast again; no new run starts meanwhile.
+New runs start only on nodes with >= 3 free cores and > MEM_START GB available, with at most MAX_WORKERS
+fits in total.
+
+When a run's law process has ended, the ranges step of run_combination.sh is applied (per-POI windows,
+cut scans moved aside). The run is restarted while scans were cut or law reported failed tasks, at most
+MAX_PASSES times.
+
+Usage (from the checkout, on any login node; log in logs/local_farm.log, state in logs/local_farm_state.json):
+  python3 combination/local_farm.py PTH:h4l:asimov PTH:h4l:dataFit NJ:hgg:asimov ...
+Running law processes of a listed run (e.g. after a restart of the farm) are adopted, not restarted.
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+NODES = ["lxbatch01", "lxbatch02", "lxbatch03", "lxbatch04", "lxbatch05"]
+MAX_WORKERS = 48        # fits of the farm on all nodes together (file server)
+NODE_WORKERS = 8        # per law process
+HEADROOM = 4            # cores left free on every node
+MEM_START, MEM_STOP, MEM_KILL = 20, 10, 5   # GB MemAvailable
+NFS_SLOW, NFS_OK = 5.0, 2.0                 # s for create + fsync + remove
+MAX_PASSES = 3
+LOG = os.path.join(REPO, "logs", "local_farm.log")
+STATE = os.path.join(REPO, "logs", "local_farm_state.json")
+
+# per node: cores, load, MemAvailable, the law processes of the combination fits, the fits (combine) of the farm
+PROBE = r"""
+echo "cores $(nproc) load $(cut -d' ' -f1 /proc/loadavg) mem $(awk '/MemAvailable/{print int($2/1048576)}' /proc/meminfo)"
+for p in $(pgrep -u $USER -x python3; pgrep -u $USER -f '^/cvmfs/.*/python3 .*law run FinalFitsYear'); do
+  a=$(tr '\0' ' ' < /proc/$p/cmdline 2>/dev/null)
+  case "$a" in *"law run FinalFitsYear"*output_combination_*) echo "law $p $a";; esac
+done | sort -u
+for p in $(pgrep -u $USER -x combine); do
+  case "$(readlink /proc/$p/cwd 2>/dev/null)" in */output_combination_*)
+    echo "fit $p $(awk '{print $3, $22}' /proc/$p/stat)";; esac
+done
+"""
+
+
+def log(msg):
+    with open(LOG, "a") as f:
+        f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + msg + "\n")
+
+
+def sh(host, cmd, timeout=60):
+    try:
+        return subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", host, cmd],
+                              capture_output=True, text=True, timeout=timeout).stdout
+    except subprocess.TimeoutExpired:
+        return None
+
+
+def probe(host):
+    out = sh(host, PROBE)
+    if out is None:
+        return None
+    node = {"law": [], "fits": []}
+    for line in out.splitlines():
+        p = line.split()
+        if p and p[0] == "cores":
+            node.update(cores=int(p[1]), load=float(p[3]), mem=int(p[5]))
+        elif p and p[0] == "law":
+            m = re.search(r"--output-dir (\S+)", line)
+            kind = "asimov" if "--asimov-fits" in line else "dataFit"
+            if m:
+                node["law"].append((int(p[1]), m.group(1), kind))
+        elif p and p[0] == "fit" and len(p) == 4:
+            node["fits"].append({"pid": int(p[1]), "state": p[2], "start": int(p[3])})
+    return node if "cores" in node else None
+
+
+def nfs_latency():
+    path = os.path.join(REPO, "logs", f".nfs_probe_{os.getpid()}")
+    t0 = time.time()
+    try:
+        with open(path, "w") as f:
+            f.write("x")
+            f.flush()
+            os.fsync(f.fileno())
+        os.remove(path)
+    except OSError:
+        return 99.0
+    return time.time() - t0
+
+
+def run_dir(run):
+    obs, fit, _ = run.split(":")
+    return os.path.join(REPO, f"output_combination_{obs}", fit)
+
+
+def law_log(run):
+    obs, fit, kind = run.split(":")
+    return os.path.join(REPO, f"output_combination_{obs}", "logs", f"law_{'asimov' if kind == 'asimov' else 'unblind'}_{fit}.log")
+
+
+def launch(run, host, workers):
+    obs, fit, kind = run.split(":")
+    step = "law" if kind == "asimov" else "unblind"
+    out = sh(host, f"cd {REPO} && EXECUTION=local WORKERS={workers} FITS={fit} combination/run_combination.sh {obs} {step}", 300)
+    log(f"{run}: started on {host} with {workers} workers: {(out or '').strip().splitlines()[-1:]}")
+
+
+def finish(run, st):
+    """ranges step after the law process ended; True when the run has to be redone."""
+    obs, fit, kind = run.split(":")
+    if not os.path.exists(law_log(run)):
+        log(f"{run}: no law log, the start failed; starting again")
+        return True
+    text = open(law_log(run)).read()
+    failed = re.search(r"^\* \d+ failed", text.split("===== Luigi Execution Summary =====")[-1], re.M) is not None
+    out = subprocess.run(f"cd {REPO} && FITS={fit} KIND={kind} combination/run_combination.sh {obs} ranges",
+                         shell=True, capture_output=True, text=True).stdout
+    m = re.search(r"^(\d+) cut scan", out, re.M)
+    ncut = int(m.group(1)) if m else -1
+    for line in out.splitlines():
+        if "CUT" in line:
+            log(f"{run}:   {line.strip()}")
+    log(f"{run}: pass {st['pass']} done, law {'with failed tasks' if failed else 'ok'}, {ncut} cut scan(s)")
+    if (ncut > 0 or failed) and st["pass"] < MAX_PASSES:
+        os.rename(law_log(run), law_log(run).replace(".log", f"_pass{st['pass']}.log"))
+        st["pass"] += 1
+        return True
+    st["done"] = True
+    return False
+
+
+def signal(host, pids, sig):
+    if pids:
+        sh(host, f"kill -{sig} {' '.join(map(str, pids))}")
+
+
+def main():
+    runs = sys.argv[1:]
+    state = json.load(open(STATE)) if os.path.exists(STATE) else {}
+    for r in runs:
+        state.setdefault(r, {"pass": 1, "done": False, "host": None, "workers": 0})
+    nfs_slow = 0
+    paused_nfs = False
+    log(f"farm started for {runs}")
+    while not all(state[r]["done"] for r in runs):
+        nodes = {h: probe(h) for h in NODES}
+        lat = nfs_latency()
+        nfs_slow = nfs_slow + 1 if lat > NFS_SLOW else 0
+        if nfs_slow >= 2 and not paused_nfs:
+            paused_nfs = True
+            log(f"NFS slow ({lat:.1f} s): stopping all farm fits")
+            for h, n in nodes.items():
+                if n:
+                    signal(h, [f["pid"] for f in n["fits"] if f["state"] != "T"], "STOP")
+        elif paused_nfs and lat < NFS_OK:
+            paused_nfs = False
+            log(f"NFS ok again ({lat:.1f} s): continuing")
+            for h, n in nodes.items():
+                if n:
+                    signal(h, [f["pid"] for f in n["fits"] if f["state"] == "T"], "CONT")
+
+        # which runs have a law process, where
+        alive = {}
+        for h, n in nodes.items():
+            for pid, outdir, kind in (n or {}).get("law", []):
+                for r in runs:
+                    if os.path.normpath(run_dir(r)) == os.path.normpath(outdir) and r.split(":")[2] == kind:
+                        alive[r] = h
+        n_fits = sum(state[r]["workers"] for r in runs if state[r]["host"] and not state[r]["done"])
+
+        # protect the nodes
+        for h, n in nodes.items():
+            if not n or paused_nfs:
+                continue
+            running = sorted((f for f in n["fits"] if f["state"] != "T"), key=lambda f: -f["start"])
+            stopped = sorted((f for f in n["fits"] if f["state"] == "T"), key=lambda f: f["start"])
+            if n["mem"] < MEM_KILL and running:
+                log(f"{h}: MemAvailable {n['mem']} GB, killing fit {running[0]['pid']}")
+                signal(h, [running[0]["pid"]], "TERM")
+            elif n["mem"] < MEM_STOP and running:
+                log(f"{h}: MemAvailable {n['mem']} GB, stopping fit {running[0]['pid']}")
+                signal(h, [running[0]["pid"]], "STOP")
+            elif n["load"] > n["cores"] and running:
+                k = min(len(running), int(n["load"] - n["cores"]) + 1)
+                log(f"{h}: load {n['load']} on {n['cores']} cores, stopping {k} fit(s)")
+                signal(h, [f["pid"] for f in running[:k]], "STOP")
+            elif stopped and n["load"] < n["cores"] - HEADROOM and n["mem"] > MEM_STOP + 4:
+                k = min(len(stopped), int(n["cores"] - HEADROOM - n["load"]))
+                if k > 0:
+                    log(f"{h}: load {n['load']}, MemAvailable {n['mem']} GB, continuing {k} fit(s)")
+                    signal(h, [f["pid"] for f in stopped[:k]], "CONT")
+
+        # ended runs, new runs
+        for r in runs:
+            st = state[r]
+            if st["done"]:
+                continue
+            if r in alive:
+                st["host"] = alive[r]
+                st["workers"] = st.get("workers") or NODE_WORKERS  # adopted run: assume the maximum
+                continue
+            if st["host"] is not None:  # it was running and its law process has ended
+                st["host"], st["workers"] = None, 0
+                if not finish(r, st):
+                    log(f"{r}: finished after {st['pass']} pass(es)")
+                    continue
+            if paused_nfs or n_fits >= MAX_WORKERS:
+                continue
+            free = {h: n["cores"] - n["load"] - HEADROOM for h, n in nodes.items()
+                    if n and n["mem"] > MEM_START and n["cores"] - n["load"] - HEADROOM >= 3}
+            if not free:
+                continue
+            h = max(free, key=free.get)
+            n = nodes[h]
+            workers = int(max(2, min(free[h], NODE_WORKERS, (n["mem"] - 12) / 3, MAX_WORKERS - n_fits)))
+            launch(r, h, workers)
+            st["host"], st["workers"] = h, workers
+            n["load"] += workers  # until the next probe sees the fits
+            n_fits += workers
+        json.dump(state, open(STATE, "w"), indent=1)
+        time.sleep(60)
+    log("all runs done")
+
+
+if __name__ == "__main__":
+    main()

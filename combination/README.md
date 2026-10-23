@@ -79,6 +79,7 @@ combination/run_combination.sh <obs> summary                               # tab
 | `t2w` | `Combine/makeCombinationMaps.py` builds the multiSignalModel map on the combined card and checks that every signal is mapped exactly once and no background; no `higgsMassRange` (MH stays fixed) |
 | `law`, `unblind` | `law run FinalFitsYear --year 2022_2023_2024 [--variable <obs>] --{asimov,unblinded}-fits` per fit |
 | `ranges` | `make_scan_ranges.py`: per-POI windows, best fit +- 3 sigma from the finished scans (as `scan_ranges.json` of HIG-26-007), in `<fit>/Combine/scan_ranges.json`; the fitted POI is scanned in its window and the other POIs float in theirs (`scan_window_ranges` in `Combine/law_combine.py`). The cut scans (2dNLL < 4 at an end) are moved to `superseded_<date>/`; `law` / `unblind` again redoes them. Repeat until none is cut |
+| `law` / `unblind` with `EXECUTION=local WORKERS=N` | the fits in N law workers on this node instead of HTCondor (`FINALFITS_WORKFLOW=local`, `commonTools/framework.py`), nice 10 and idle I/O class. `combination/local_farm.py obs:fit:kind ...` spreads such runs over the free cores of lxbatch01-05 (never the condor worker nodes), stops / continues its fits when a node is loaded, short of memory or NFS is slow, and does the `ranges` iteration; log in `logs/local_farm.log` |
 | `summary` | `summarize_scans.py` (spline crossings, syst = sqrt(total^2 - stat^2)) and `plot1DScan.py` comparisons |
 
 An existing `_total` / `_comb` card is never overwritten: the step regenerates it and stops if it differs.

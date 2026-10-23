@@ -30,13 +30,15 @@
 #             inclusive: $STAGE/Hyy_datacards_smoothed_decorrelation/raw/inclusive/Datacard_2022_2023_2024.txt]
 #   STAGE     shared inputs [/net/data_cms3a-2/nobackup/group_JE_CMS/Hyy_Hzz_combination]
 #   KIND      ranges / summary of asimov or dataFit [asimov]
+#   EXECUTION law / unblind: htcondor, or local (fits in WORKERS law workers on this node, nice/ionice) [htcondor]
+#   WORKERS   parallel local fits [4]
 #   FINALFITS_MH  [125.07]
 
 set -eo pipefail
 
 OBS=${1:?usage: $0 <obs> <step> [<step> ...]}
 shift
-[ $# -gt 0 ] || { sed -n 2,31p "${BASH_SOURCE[0]}"; exit 1; }
+[ $# -gt 0 ] || { sed -n 2,33p "${BASH_SOURCE[0]}"; exit 1; }
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "${HERE}/.." && pwd)"
@@ -196,10 +198,16 @@ run_law() {  # $1 = law flag (--asimov-fits / --unblinded-fits), $2 = log tag
   local var_opt=""
   [ -n "${LAW_VAR}" ] && var_opt="--variable ${LAW_VAR}"
   mkdir -p "${OUT}/logs"
+  local run=() workers=4
+  if [ "${EXECUTION}" = local ]; then
+    # fits in the law workers of this node, low CPU and I/O priority (other users of the login nodes)
+    run=(env FINALFITS_WORKFLOW=local nice -n 10 ionice -c3)
+    workers=${WORKERS:-4}
+  fi
   for fit in ${FITS}; do
     # shellcheck disable=SC2086
-    setsid nohup law run FinalFitsYear --year ${YEAR} ${var_opt} $1 True \
-      --output-dir "${OUT}/${fit}" --batch-system htcondor --batch-flavor htcondor --workers 4 \
+    setsid nohup "${run[@]}" law run FinalFitsYear --year ${YEAR} ${var_opt} $1 True \
+      --output-dir "${OUT}/${fit}" --batch-system htcondor --batch-flavor htcondor --workers ${workers} \
       > "${OUT}/logs/law_$2_${fit}.log" 2>&1 < /dev/null &
     echo "${fit}: law running (pid $!), log: ${OUT}/logs/law_$2_${fit}.log"
   done

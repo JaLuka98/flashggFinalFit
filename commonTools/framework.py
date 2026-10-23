@@ -31,6 +31,14 @@ class Task(law.Task):
 
     version = luigi.Parameter()
 
+    def __init__(self, *args, **kwargs):
+        # FINALFITS_WORKFLOW=local runs the htcondor workflows of this law process as local workflows
+        # (branches in the law workers, see combination/local_farm.sh); the configs keep 'htcondor'.
+        override = os.environ.get("FINALFITS_WORKFLOW")
+        if override and kwargs.get("workflow") == "htcondor":
+            kwargs["workflow"] = override
+        super().__init__(*args, **kwargs)
+
     def store_parts(self):
         parts = (self.__class__.__name__, self.version)
         # Tasks with the same version but different output_dir (e.g. the per-year chains of one
