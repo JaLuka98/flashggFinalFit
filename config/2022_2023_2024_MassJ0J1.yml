@@ -346,3 +346,25 @@ spectra:
       enabled: False  # switched off for now (user, 2026-10-22); True adds rel_uncertainty_acceptance to the measured total XS
       module: "rel_uncertainty_acceptance"
       attribute: "MassJ0J1"
+
+# Spectra of the Hgg / H4l / Hgg+H4l combination fits (law run CreateCombinedDiffSpectra, --channels hzz for H4l
+# alone): measured r per bin x the SM total cross section of the bin (full phase space, all production modes,
+# no BR), from the HiggsDNA calculator with the full phase space fractions (totXS, fb).
+combined_spectra:
+  hgg_output_dir: "output_combination_MassJ0J1/hgg"
+  hzz_output_dir: "output_combination_MassJ0J1/h4l"
+  comb_output_dir: "output_combination_MassJ0J1/comb"
+  poi_names: ['r_MassJ0J1_m10000p0_0p0', 'r_MassJ0J1_0p0_75p0', 'r_MassJ0J1_75p0_120p0', 'r_MassJ0J1_120p0_180p0', 'r_MassJ0J1_180p0_300p0', 'r_MassJ0J1_300p0_500p0', 'r_MassJ0J1_500p0_1000p0', 'r_MassJ0J1_1000p0_10000p0']
+  ggh_xs: "fidXS_MassJ0J1_ggH"
+  vbf_xs: "fidXS_MassJ0J1_VBFH"
+  vh_xs: "fidXS_MassJ0J1_VH"
+  tth_xs: "fidXS_MassJ0J1_ttH"
+  xs_attribute: "totXS"
+  prediction_scale: 0.001  # fb -> pb
+  prediction_label: "SM (ggH + xH), $m_H$ = 125.07 GeV"
+  br_uncertainty: 0.  # total cross sections, no BR
+  hzz_label: "H$\\rightarrow$ZZ$\\rightarrow 4\\ell$"
+  ylabel: '$\Delta\sigma_{\text{tot}} / \Delta m_{jj}$ (pb/GeV)'
+  frame1_ylim: [0.00001, 50]
+  ratio_ylim: [-1, 4]
+  legend_location: "upper right"

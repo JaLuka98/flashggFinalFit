@@ -1117,11 +1117,11 @@ class CreateCombinedDiffSpectra(law.Task):
     is_unblinded = law.Parameter(default=False, description="Use the data fits instead of the Asimov fits")
     use_existing_scans = luigi.BoolParameter(default=False, description="Only read the merged scans already present in the "
                                            "output directories (e.g. copied from elsewhere) instead of requiring the fit tasks")
+    channels = law.CSVParameter(default=("hgg", "hzz", "comb"), description="Fits to show, e.g. hzz for the H4l-only "
+                                "spectrum; the first of comb / the only one gets the systematic band")
 
     batch_flavor = law.Parameter(default="htcondor", description="Special treatment for PSI Slurm batch system")
     batch_system = law.Parameter(default="htcondor", description="Batch system to use for the required fits")
-
-    channels = ("hgg", "hzz", "comb")
 
     def _config(self):
         config_path = os.path.join(os.environ["ANALYSIS_PATH"], "config", f"{self.year}_{self.variable}.yml")
@@ -1136,10 +1136,15 @@ class CreateCombinedDiffSpectra(law.Task):
             "hzz": self.hzz_output_dir or block.get("hzz_output_dir", ""),
             "comb": self.comb_output_dir or block.get("comb_output_dir", config["outputFolder"]),
         }
+        dirs = {ch: dirs[ch] for ch in self.channels}
         missing = [ch for ch, d in dirs.items() if not d]
         if missing:
             raise ValueError(f"No output directory given for {missing}: set --{missing[0]}-output-dir or combined_spectra in the config")
-        return {ch: os.path.normpath(d) for ch, d in dirs.items()}
+        # relative directories (config) are taken from the analysis folder
+        return {ch: os.path.normpath(os.path.join(os.environ["ANALYSIS_PATH"], d)) for ch, d in dirs.items()}
+
+    def _main_channel(self):
+        return "comb" if "comb" in self.channels else self.channels[0]
 
     def requires(self):
         tasks = {}
@@ -1154,8 +1159,12 @@ class CreateCombinedDiffSpectra(law.Task):
         return tasks
 
     def output(self):
-        fit_folder = os.path.join(self._output_dirs()["comb"], 'Combine', f'runFits_{self.variable}')
-        name = "combined_spectra" if convert_boolean_string(self.is_unblinded) else "combined_spectra_blinded"
+        fit_folder = os.path.join(self._output_dirs()[self._main_channel()], 'Combine', f'runFits_{self.variable}')
+        name = "combined_spectra"
+        if tuple(self.channels) != ("hgg", "hzz", "comb"):
+            name += "_" + "_".join(self.channels)
+        if not convert_boolean_string(self.is_unblinded):
+            name += "_blinded"
         return {
             "pdf": law.LocalFileTarget(os.path.join(fit_folder, f"{name}.pdf")),
             "png": law.LocalFileTarget(os.path.join(fit_folder, f"{name}.png")),
@@ -1176,7 +1185,7 @@ class CreateCombinedDiffSpectra(law.Task):
         output_dirs = self._output_dirs()
         # combined_spectra.poi_names overrides the POI names (same bin order), e.g. when the scans use
         # r_PTJ0_m10000p0_30p0 instead of r_PTJ0_0p0_30p0
-        pois = block.get("poi_names", combineVariableDict[f'{self.year}'][f'{self.variable}']['paramStrNoOne'])
+        pois = block.get("poi_names") or combineVariableDict(self.variable, self.year)['paramStrNoOne']
 
         # ---- measured signal strengths per channel ----
         results = {}
@@ -1203,8 +1212,14 @@ class CreateCombinedDiffSpectra(law.Task):
 
         # ---- prediction: ggH (NNLOPS) + xH, theory band as in CreateDiffSpectra ----
         # combined_spectra.<mode>_xs overrides spectra.<mode>_xs, e.g. to use total (not fiducial) cross sections
-        modules = {key: _load_prediction_module(block.get(f'{key}_xs', spectra_cfg[f'{key}_xs'])) for key in ("ggh", "vbf", "vh", "tth")}
-        bins = np.array(modules["ggh"].Boundaries, dtype=float)
+        # combined_spectra.xs_module: one module with the sum of the production modes (e.g. fidXS_NJ_all);
+        # combined_spectra.xs_attribute: fidXS (fiducial) or totXS (total phase space, with _scale/_pdf/_alpha variations)
+        if "xs_module" in block:
+            modules = {"all": _load_prediction_module(block["xs_module"])}
+        else:
+            modules = {key: _load_prediction_module(block.get(f'{key}_xs', spectra_cfg[f'{key}_xs'])) for key in ("ggh", "vbf", "vh", "tth")}
+        attr = block.get("xs_attribute", "fidXS")
+        bins = np.array(next(iter(modules.values())).Boundaries, dtype=float)
         bins_plot = bins.copy()
         if 'underflow' in spectra_cfg:
             bins_plot[0] = spectra_cfg['underflow']
@@ -1218,13 +1233,13 @@ class CreateCombinedDiffSpectra(law.Task):
         if spectra_cfg.get('underflow_bin_normalized', False):
             norm_w[0] = 1.
 
-        total = sum(np.array(m.fidXS) for m in modules.values())
+        total = sum(np.array(getattr(m, attr), dtype=float) for m in modules.values())
         th_up = np.zeros_like(total)
         th_dn = np.zeros_like(total)
-        for up_name, dn_name in (("fidXS_scale_up", "fidXS_scale_dn"), ("fidXS_pdf_up", "fidXS_pdf_dn"), ("fidXS_alpha_up", "fidXS_alpha_dn")):
+        for source in ("scale", "pdf", "alpha"):
             # each source is fully correlated across production modes: linear sum, then quadrature
-            th_up += sum(abs(np.array(getattr(m, up_name)) - np.array(m.fidXS)) for m in modules.values())**2
-            th_dn += sum(abs(np.array(getattr(m, dn_name)) - np.array(m.fidXS)) for m in modules.values())**2
+            th_up += sum(abs(np.array(getattr(m, f"{attr}_{source}_up"), dtype=float) - np.array(getattr(m, attr), dtype=float)) for m in modules.values())**2
+            th_dn += sum(abs(np.array(getattr(m, f"{attr}_{source}_dn"), dtype=float) - np.array(getattr(m, attr), dtype=float)) for m in modules.values())**2
         br_unc = block.get("br_uncertainty", 0.02)
         th_up = np.sqrt(th_up + (br_unc * total)**2)
         th_dn = np.sqrt(th_dn + (br_unc * total)**2)
@@ -1296,44 +1311,51 @@ class CreateCombinedDiffSpectra(law.Task):
             for edge in edges_x:
                 ax.axvline(edge, color="lightgray", lw=0.8, zorder=0)
 
-        for channel in ("hzz", "hgg", "comb"):
+        main = self._main_channel()
+        main_syst_label = block.get(f"{main}_syst_label", f"{style[main]['label']}, Syst. unc.")
+        for channel in [ch for ch in ("hzz", "hgg", "comb") if ch in self.channels]:
             res, st = results[channel], style[channel]
-            x = centers_x + st["offset"] * widths_x * 0.5
+            x = centers_x + (st["offset"] if len(self.channels) > 1 and channel != main else 0.) * widths_x * 0.5
             for ax, factor in ((top, prediction), (ratio, np.ones_like(prediction))):
                 ax.errorbar(x, res["r"] * factor, yerr=[res["tot_dn"] * factor, res["tot_up"] * factor],
                             marker=st["marker"], color=st["color"], linestyle="None", ms=7, capsize=3, linewidth=1.8,
                             label=st["label"] if ax is top else None, zorder=3)
-                if channel == "comb":
+                if channel == main:
                     for i, (xi, ri, s_up, s_dn, width, f) in enumerate(zip(x, res["r"], res["syst_up"], res["syst_dn"], widths_x, factor)):
                         ax.add_patch(plt.Rectangle((xi - 0.06 * width, (ri - s_dn) * f), 0.12 * width, (s_dn + s_up) * f,
                                                    color="gray", alpha=0.6, lw=0, zorder=2,
-                                                   label=block.get("comb_syst_label", "Combination, Syst. unc.") if (ax is top and i == 0) else None))
+                                                   label=main_syst_label if (ax is top and i == 0) else None))
 
         # ---- upper panel ----
         variable_tex = spectra_cfg["variable"]
-        if "ylabel" in frame1_cfg:
+        if "ylabel" in block:
+            top.set_ylabel(block["ylabel"], fontsize=20)
+        elif "ylabel" in frame1_cfg:
             top.set_ylabel(frame1_cfg["ylabel"]["text"], fontsize=frame1_cfg["ylabel"].get("fontsize", 20))
         else:
-            top.set_ylabel(r'$\Delta\sigma_{\text{fid}} / \Delta ' + variable_tex + r'$ ' + spectra_cfg["y_unit"], fontsize=20)
+            phase_space = r"\text{tot}" if attr == "totXS" else r"\text{fid}"
+            top.set_ylabel(r'$\Delta\sigma_{' + phase_space + r'} / \Delta ' + variable_tex + r'$ ' + spectra_cfg["y_unit"], fontsize=20)
         if spectra_cfg.get("plot_log", 0):
             top.set_yscale("log")
-        if "ylim" in frame1_cfg:
-            top.set_ylim(**frame1_cfg["ylim"])
-        if "y_lim_top" in spectra_cfg:
-            top.set_ylim(top=spectra_cfg["y_lim_top"])
+        if "frame1_ylim" in block:  # this plot's own range (e.g. total cross sections in pb)
+            top.set_ylim(*block["frame1_ylim"])
+        else:
+            if "ylim" in frame1_cfg:
+                top.set_ylim(**frame1_cfg["ylim"])
+            if "y_lim_top" in spectra_cfg:
+                top.set_ylim(top=spectra_cfg["y_lim_top"])
         if "axvline" in frame1_cfg:
             params = dict(frame1_cfg["axvline"])
             params["x"] = float(to_x(params["x"]))
             top.axvline(**params)
-        if "figtext" in frame1_cfg:
+        if "figtext" in frame1_cfg and "frame1_ylim" not in block:
             ft = frame1_cfg["figtext"]
             fig.text(ft["x"], ft["y"], ft["text"], horizontalalignment=ft["horizontalalignment"], rotation=ft["rotation"], fontsize=ft["fontsize"])
         top.tick_params(axis="y", labelsize=20)
 
         handles, labels = top.get_legend_handles_labels()
-        order = [block.get(k, d) for k, d in (("prediction_label", "aMC@NLO NNLOPS + xH"), ("comb_label", "Combination"),
-                                               ("comb_syst_label", "Combination, Syst. unc."), ("hgg_label", r"H$\rightarrow\gamma\gamma$"),
-                                               ("hzz_label", r"H$\rightarrow$ZZ"))]
+        order = [block.get("prediction_label", "aMC@NLO NNLOPS + xH")] + [style[ch]["label"] for ch in ("comb", "hgg", "hzz") if ch == main]
+        order += [main_syst_label] + [style[ch]["label"] for ch in ("hgg", "hzz") if ch in self.channels and ch != main]
         ordered = [(handles[labels.index(l)], l) for l in order if l in labels]
         legend_title = None if is_data else block.get("expected_title", "Expected (Asimov)")
         top.legend(*zip(*ordered), fontsize=frame1_cfg.get("fontsize", 14), title=legend_title, title_fontsize=frame1_cfg.get("title_fontsize", 14),
@@ -1343,7 +1365,7 @@ class CreateCombinedDiffSpectra(law.Task):
         # ---- ratio panel ----
         ratio.set_ylabel("Ratio to prediction", fontsize=16)
         ratio.set_xlim(*to_x(spectra_cfg["x_lim"]))
-        ratio.set_ylim(*frame2_cfg.get("ylim", spectra_cfg["y_lim"]))
+        ratio.set_ylim(*block.get("ratio_ylim", frame2_cfg.get("ylim", spectra_cfg["y_lim"])))
         ratio.set_xlabel(r'$' + variable_tex + r'$ ' + spectra_cfg["x_unit"], fontsize=20)
         if "xticks" in frame2_cfg:
             ratio.set_xticks(to_x(frame2_cfg["xticks"]))
@@ -1354,11 +1376,11 @@ class CreateCombinedDiffSpectra(law.Task):
             ratio.set_xticklabels(frame2_cfg["xtick_labels"])
         if "xtick_rotation" in frame2_cfg:
             plt.setp(ratio.get_xticklabels(), rotation=frame2_cfg["xtick_rotation"], ha="right" if frame2_cfg["xtick_rotation"] else "center")
-        if "yticks" in frame2_cfg and "ytick_labels" in frame2_cfg:
+        if "yticks" in frame2_cfg and "ytick_labels" in frame2_cfg and "ratio_ylim" not in block:
             key = "is_data" if is_data else "not_data"
             ratio.set_yticks(frame2_cfg["yticks"].get(key, []))
             ratio.set_yticklabels(frame2_cfg["ytick_labels"].get(key, []))
-        for label in frame2_cfg.get("additional_labels", {}).get("is_data" if is_data else "not_data", []):
+        for label in ([] if "ratio_ylim" in block else frame2_cfg.get("additional_labels", {}).get("is_data" if is_data else "not_data", [])):
             ratio.text(label["position"][0], label["position"][1], label["text"], rotation=label["rotation"], fontsize=label["fontsize"])
         if "axvline" in frame2_cfg:
             params = dict(frame2_cfg["axvline"])
@@ -1385,7 +1407,7 @@ class CreateCombinedDiffSpectra(law.Task):
         }
         outputs["json"].dump(summary, indent=1, formatter="json")
 
-        print(f"{'POI':22s}" + "".join(f"{ch:>22s}" for ch in ("hgg", "hzz", "comb")))
+        print(f"{'POI':22s}" + "".join(f"{ch:>22s}" for ch in self.channels))
         for i, poi in enumerate(pois):
-            row = "".join(f"   {results[ch]['r'][i]:.2f} +{results[ch]['tot_up'][i]:.3f}/-{results[ch]['tot_dn'][i]:.3f}" for ch in ("hgg", "hzz", "comb"))
+            row = "".join(f"   {results[ch]['r'][i]:.2f} +{results[ch]['tot_up'][i]:.3f}/-{results[ch]['tot_dn'][i]:.3f}" for ch in self.channels)
             print(f"{poi:22s}{row}")

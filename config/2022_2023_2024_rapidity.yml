@@ -334,3 +334,22 @@ spectra:
       enabled: False  # switched off for now (user, 2026-10-22); True adds rel_uncertainty_acceptance to the measured total XS
       module: "rel_uncertainty_acceptance"
       attribute: "Rapidity"
+
+# Spectra of the Hgg / H4l / Hgg+H4l combination fits (law run CreateCombinedDiffSpectra, --channels hzz for H4l
+# alone): measured r per bin x the SM total cross section of the bin (full phase space, all production modes,
+# no BR), from the HiggsDNA calculator with the full phase space fractions (totXS, fb).
+combined_spectra:
+  hgg_output_dir: "output_combination_rapidity/hgg"
+  hzz_output_dir: "output_combination_rapidity/h4l"
+  comb_output_dir: "output_combination_rapidity/comb"
+  poi_names: ['r_YH_0p0_0p15', 'r_YH_0p15_0p3', 'r_YH_0p3_0p45', 'r_YH_0p45_0p6', 'r_YH_0p6_0p75', 'r_YH_0p75_0p9', 'r_YH_0p9_1p2', 'r_YH_1p2_1p6', 'r_YH_1p6_2p0', 'r_YH_2p0_2p5']
+  xs_module: "fidXS_YH_all"
+  xs_attribute: "totXS"
+  prediction_scale: 0.001  # fb -> pb
+  prediction_label: "SM (ggH + xH), $m_H$ = 125.07 GeV"
+  br_uncertainty: 0.  # total cross sections, no BR
+  hzz_label: "H$\\rightarrow$ZZ$\\rightarrow 4\\ell$"
+  ylabel: '$\Delta\sigma_{\text{tot}} / \Delta |y^H|$ (pb)'
+  frame1_ylim: [0, 60]
+  ratio_ylim: [-1, 4]
+  legend_location: "upper right"
