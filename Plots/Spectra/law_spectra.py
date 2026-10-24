@@ -1174,7 +1174,7 @@ class CreateCombinedDiffSpectra(law.Task):
     def _scan_path(self, output_dir, kind, poi):
         fit_folder = os.path.join(output_dir, 'Combine', f'runFits_{self.variable}')
         if convert_boolean_string(self.is_unblinded):
-            return os.path.join(fit_folder, 'dataFit', f'higgsCombineDataPostFitScan{kind}_{poi}.MultiDimFit.mH{COMBINE_MH}.root')
+            return os.path.join(fit_folder, 'dataFit', f'higgsCombineDataPostFitScan{kind}_{poi}.MultiDimFit.mH{HIGGS_MASS}.root')
         return os.path.join(fit_folder, 'asimov', f'higgsCombineAsimovPostFitScan{kind}_{poi}.root')
 
     def run(self):
