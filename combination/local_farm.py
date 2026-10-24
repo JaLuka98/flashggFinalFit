@@ -37,6 +37,8 @@ MAX_WORKERS = int(os.environ.get("FARM_MAX_WORKERS", 48))  # fits of the farm on
 NODE_WORKERS = int(os.environ.get("FARM_NODE_WORKERS", 8))  # per law process
 HEADROOM = 4            # cores left free on every node
 MEM_START, MEM_STOP, MEM_KILL = 20, 10, 5   # GB MemAvailable
+GB_PER_WORKER = float(os.environ.get("FARM_GB_PER_WORKER", 3.5))  # fit + its law worker; the H4l PTH fits take ~2 GB
+CAP_FRAC = 0.35  # memory budget of the checkout per node, the same as the cap of node_guard.py
 NFS_SLOW, NFS_OK = 5.0, 2.0                 # s for create + fsync + remove
 MAX_PASSES = 3
 LOG = os.path.join(REPO, "logs", "local_farm.log")
@@ -46,6 +48,9 @@ LOCK = os.path.join(REPO, "logs", "local_farm.lock")  # "<host> <pid>", touched 
 # per node: cores, load, MemAvailable, the law processes of the combination fits, the fits (combine) of the farm
 PROBE = r"""
 echo "cores $(nproc) load $(cut -d' ' -f1 /proc/loadavg) mem $(awk '/MemAvailable/{print int($2/1048576)}' /proc/meminfo)"
+cd @REPO@ && python3 -c "import sys; sys.path.insert(0, 'combination'); import node_guard as g; print('usage', sum(p[2] for p in g.checkout_processes()) // 1048576, g.meminfo()[0] // 1048576)"
+# the memory guard of this node (it exits at once when one is running already)
+cd @REPO@ && setsid -f python3 combination/node_guard.py < /dev/null > /dev/null 2>&1
 for p in $(pgrep -u $USER -x python3; pgrep -u $USER -f '^/cvmfs/.*/python3 .*law run FinalFitsYear'); do
   a=$(tr '\0' ' ' < /proc/$p/cmdline 2>/dev/null)
   case "$a" in *"law run FinalFitsYear"*output_combination_*) echo "law $p $a";; esac
@@ -55,6 +60,9 @@ for p in $(pgrep -u $USER -x combine); do
     echo "fit $p $(awk '{print $3, $22}' /proc/$p/stat)";; esac
 done
 """
+
+
+PROBE = PROBE.replace("@REPO@", REPO)
 
 
 def log(msg):
@@ -103,6 +111,8 @@ def probe(host):
         p = line.split()
         if p and p[0] == "cores":
             node.update(cores=int(p[1]), load=float(p[3]), mem=int(p[5]))
+        elif p and p[0] == "usage" and len(p) == 3:
+            node.update(usage=int(p[1]), total=int(p[2]))
         elif p and p[0] == "law":
             m = re.search(r"--output-dir (\S+)", line)
             kind = "asimov" if "--asimov-fits" in line else "dataFit"
@@ -258,16 +268,24 @@ def main():
                     continue
             if paused_nfs or n_fits >= MAX_WORKERS:
                 continue
-            free = {h: n["cores"] - n["load"] - HEADROOM for h, n in nodes.items()
-                    if n and n["mem"] > MEM_START and n["cores"] - n["load"] - HEADROOM >= 3}
-            if not free:
+            # workers that fit the free cores and the memory budget of the checkout on the node (node_guard.py
+            # kills fits above CAP_FRAC of the RAM, so a run must never be sized beyond it)
+            slots = {}
+            for h, n in nodes.items():
+                if not n or "total" not in n or n["mem"] <= MEM_START:
+                    continue
+                budget = CAP_FRAC * n["total"] - n["usage"] - 2
+                slots[h] = int(min(n["cores"] - n["load"] - HEADROOM, budget / GB_PER_WORKER))
+            slots = {h: k for h, k in slots.items() if k >= 2}
+            if not slots:
                 continue
-            h = max(free, key=free.get)
+            h = max(slots, key=slots.get)
             n = nodes[h]
-            workers = int(max(2, min(free[h], NODE_WORKERS, (n["mem"] - 12) / 3, MAX_WORKERS - n_fits)))
+            workers = int(max(2, min(slots[h], NODE_WORKERS, MAX_WORKERS - n_fits)))
             launch(r, h, workers)
             st["host"], st["workers"] = h, workers
             n["load"] += workers  # until the next probe sees the fits
+            n["usage"] += int(workers * GB_PER_WORKER)
             n_fits += workers
         json.dump(state, open(STATE, "w"), indent=1)
         down = [h for h, n in nodes.items() if n is None]
