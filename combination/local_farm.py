@@ -85,8 +85,10 @@ def find_agent():
     if sock and agent_ok(sock):
         return
     uid = os.getuid()
-    for cand in sorted(glob.glob(f"/run/user/{uid}/vscode-ssh-auth-sock-*") + glob.glob(f"/run/user/{uid}/claude-agent.sock"),
-                       key=lambda f: os.lstat(f).st_mtime, reverse=True):
+    # a long-lived agent of the user on the farm node first (survives the VS Code disconnects), see README
+    stable = glob.glob(f"/tmp/farm-agent-{os.environ.get('USER', uid)}/agent.sock")
+    for cand in stable + sorted(glob.glob(f"/run/user/{uid}/vscode-ssh-auth-sock-*") + glob.glob(f"/run/user/{uid}/claude-agent.sock"),
+                                key=lambda f: os.lstat(f).st_mtime, reverse=True):
         if agent_ok(cand):
             os.environ["SSH_AUTH_SOCK"] = cand
             log(f"ssh agent: {cand}")
