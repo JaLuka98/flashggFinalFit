@@ -4,6 +4,7 @@ import re
 import subprocess
 import ROOT
 import uproot
+import collections
 import glob
 import json
 import yaml
@@ -119,6 +120,35 @@ def workspace_pdf_indices(names, workspace_path):
             json.dump(sorted(present), listing_file)
         os.replace(tmp, listing)
     return [name for name in names if name in present]
+
+
+
+def run_capped(command, keep=200):
+    """subprocess.run(command, check=True) for combine, keeping only the last ``keep`` lines of its output.
+
+    With scan windows that reach negative signal strengths, combine prints an "underflow (expected
+    events <=0)" warning at every bad minimiser step, millions of lines per fit.  capture_output kept them
+    all in the law worker (9 GB per worker, lxbatch03 out of memory on 2026-10-24) and they went into the
+    law log (13 GB on NFS).  The output is read line by line, the underflow warnings are only counted.
+    """
+    tail = collections.deque(maxlen=keep)
+    n_lines = n_underflow = 0
+    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace") as proc:
+        for line in proc.stdout:
+            n_lines += 1
+            if "underflow" in line and ("expected events <=0" in line or "underflow to" in line):
+                n_underflow += 1
+                continue
+            tail.append(line[:2000])
+        returncode = proc.wait()
+    text = "".join(tail)
+    if len(tail) == keep:
+        text = f"[last {keep} of {n_lines} lines]\n" + text
+    if n_underflow:
+        text += f"[{n_underflow} negative-yield (underflow) warnings of combine not shown]\n"
+    if returncode != 0:
+        raise subprocess.CalledProcessError(returncode, command, output=text, stderr=text)
+    return subprocess.CompletedProcess(command, returncode, stdout=text, stderr=text)
 
 
 def require_fit_result(path):
@@ -673,7 +703,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
         command = arguments
         # print(command)
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -854,7 +884,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
             ]
             command = arguments
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -898,7 +928,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -1232,7 +1262,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             command = arguments
             print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -1293,7 +1323,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -1551,7 +1581,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
 
             print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -1613,7 +1643,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -1821,7 +1851,7 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -1845,7 +1875,7 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             command = arguments
             print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -1881,7 +1911,7 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             command = arguments
             print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -2074,7 +2104,7 @@ class AsimovImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -2104,7 +2134,7 @@ class AsimovImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -2377,7 +2407,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -2411,7 +2441,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -2627,7 +2657,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -2644,7 +2674,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -2660,7 +2690,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -2696,7 +2726,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -2712,7 +2742,7 @@ class AsimovImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 command = arguments
                 # print(command)
                 try:
-                    result = subprocess.run(command, check=True, text=True, capture_output=True)
+                    result = run_capped(command)
                     print("Script output:", result.stdout)
                     print("Script executed successfully.")
                 except subprocess.CalledProcessError as e:
@@ -2904,7 +2934,7 @@ class AsimovCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
         command = arguments
         # print(command)
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -3087,7 +3117,7 @@ class AsimovCovCorr(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
         command = arguments
         print(command)
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -3108,7 +3138,7 @@ class AsimovCovCorr(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
         command = arguments
         print(command)
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -3282,7 +3312,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -3320,7 +3350,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -3497,7 +3527,7 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -3531,7 +3561,7 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -3754,7 +3784,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 arguments.extend(["--setParameterRanges", ranges])
         command = arguments
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -3970,7 +4000,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 arguments.extend(["--setParameterRanges", ranges])
         command = arguments
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -4157,7 +4187,7 @@ class CreateUnblindedFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             ]
             command = ["hadd", "-f", target] + sources
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -4190,7 +4220,7 @@ class CreateUnblindedFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -4356,7 +4386,7 @@ class UnblindedCovCorrHesse(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         command = arguments
         print(command)
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -4535,7 +4565,7 @@ class UnblindedCovCorr(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
         command = arguments
         # print(command)
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -4557,7 +4587,7 @@ class UnblindedCovCorr(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
         command = arguments
         # print(command)
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -4723,7 +4753,7 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -4749,7 +4779,7 @@ class UnblindedImpactFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -4991,7 +5021,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5046,7 +5076,7 @@ class UnblindedImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Local
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5229,7 +5259,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5245,7 +5275,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5261,7 +5291,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5281,7 +5311,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5300,7 +5330,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5319,7 +5349,7 @@ class UnblindedImpactThirdStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 command = arguments
                 # print(command)
                 try:
-                    result = subprocess.run(command, check=True, text=True, capture_output=True)
+                    result = run_capped(command)
                     print("Script output:", result.stdout)
                     print("Script executed successfully.")
                 except subprocess.CalledProcessError as e:
@@ -5492,7 +5522,7 @@ class MggBestFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(la
         command = arguments
         # print(command)
         try:
-            result = subprocess.run(command, check=True, text=True, capture_output=True)
+            result = run_capped(command)
             print("Script output:", result.stdout)
             print("Script executed successfully.")
         except subprocess.CalledProcessError as e:
@@ -5703,7 +5733,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5762,7 +5792,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5811,7 +5841,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5900,7 +5930,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -5963,7 +5993,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -6011,7 +6041,7 @@ class MggToyGeneration(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow)
             command = arguments
             # print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -6312,7 +6342,7 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             command = arguments
             print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -6422,7 +6452,7 @@ class MggDistribution(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
             command = arguments
             print(command)
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
@@ -6590,7 +6620,7 @@ class PValueCalculation(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
                 "--saveWorkspace"
             ]
             try:
-                result = subprocess.run(command, check=True, text=True, capture_output=True)
+                result = run_capped(command)
                 print("Script output:", result.stdout)
                 print("Script executed successfully.")
             except subprocess.CalledProcessError as e:
