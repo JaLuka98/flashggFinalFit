@@ -1895,7 +1895,8 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 "--POI", f"{cat}",
                 "--others", os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')+":stat-only:2",
                 "--main-label", "Expected",
-                "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
+                "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json'),
+                "--y-cut", "10", "--y-max", "10"
             ]
             if self.batch_flavor == "slurm/psi":
                 arguments = [
@@ -1906,7 +1907,8 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                     "--POI", f"{cat}",
                     "--others", os.path.join(os.environ['TARGET_PATH'], 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')+":stat-only:2",
                     "--main-label", "Expected",
-                    "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
+                    "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json'),
+                "--y-cut", "10", "--y-max", "10"
                 ]
             command = arguments
             print(command)
@@ -4215,7 +4217,8 @@ class CreateUnblindedFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
                 "--POI", f"{cat}",
                 "--others", os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScanStat_{cat}.MultiDimFit.mH125.07.root')+":stat-only:2",
                 "--main-label", "Observed",
-                "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json')
+                "--translate", os.path.join(os.environ["ANALYSIS_PATH"], 'Combine', 'pois.json'),
+                "--y-cut", "10", "--y-max", "10"
             ]
             command = arguments
             # print(command)

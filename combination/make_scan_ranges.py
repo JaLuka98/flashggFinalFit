@@ -30,6 +30,7 @@ import shutil
 import summarize_scans as ss
 
 LEVEL_CUT = 4.0
+MIN_INSIDE = 15
 
 
 def parabola_sigma(points):
@@ -72,6 +73,13 @@ def window(points, nsigma):
 def is_cut(points):
     ymin = min(y for _, y in points)
     return points[0][1] - ymin < LEVEL_CUT or points[-1][1] - ymin < LEVEL_CUT
+
+
+def is_coarse(points):
+    """fewer than MIN_INSIDE points inside 2 sigma (e.g. a scan of the whole model range of a precise bin):
+    the curve cannot be drawn up to its 2 sigma crossings, the scan is redone in its +- N sigma window"""
+    ymin = min(y for _, y in points)
+    return sum(1 for _, y in points if y - ymin < LEVEL_CUT) < MIN_INSIDE
 
 
 def supersede(run_dir, kind_dir, poi, stamp, best_fits=True):
@@ -215,6 +223,11 @@ def main():
                        max(new[1], old[1]) if points[-1][1] - min(y for _, y in points) < LEVEL_CUT else new[1]]
                 n_cut += 1
                 note = "CUT"
+                if opt.supersede and not opt.dry_run:
+                    note += f", {supersede(run_dir, opt.kind, poi, stamp)} files moved aside"
+            elif is_coarse(points):
+                n_cut += 1
+                note = "COARSE"
                 if opt.supersede and not opt.dry_run:
                     note += f", {supersede(run_dir, opt.kind, poi, stamp)} files moved aside"
             elif poi in windows:

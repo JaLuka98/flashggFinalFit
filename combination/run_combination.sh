@@ -235,7 +235,7 @@ do_summary() {
     local main=(comb "H#gamma#gamma+H4l") others=()
     [ "${CHANNELS}" = h4l ] && main=(h4l H4l) || others=(--others "$(scan hgg):H#gamma#gamma:4" "$(scan h4l):H4l:2")
     (cd "${OUT}/plots" && python3 "${CMSSW_SRC}/CombineHarvester/CombineTools/scripts/plot1DScan.py" \
-      "$(scan ${main[0]})" --POI "${poi}" --main-label "${main[1]}" "${others[@]}" \
+      "$(scan ${main[0]})" --POI "${poi}" --main-label "${main[1]}" "${others[@]}" --y-cut 10 --y-max 10 \
       -o "compare_${tag}_${poi}" > "${OUT}/logs/plot_compare_${tag}_${poi}.log" 2>&1) || \
       echo "comparison plot failed for ${poi}, see ${OUT}/logs/plot_compare_${tag}_${poi}.log"
   done
