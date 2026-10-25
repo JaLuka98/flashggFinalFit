@@ -988,6 +988,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
                 raise
+            require_fit_result(os.path.join(os.getcwd(), f"higgsCombinefirstStep_{current_branch}.MultiDimFit.mH125.07.root"))
         
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -1078,6 +1079,10 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
         output = []
             
         output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov')]
+        # complete only with the first-step fit of every POI (the folder exists as soon as a fit starts)
+        cats = ["r"] if self.variable == '' else combineVariableDict(self.variable, self.year)['paramStrNoOne']
+        output += [os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombinefirstStep_{cat}.MultiDimFit.mH125.07.root')
+                   for cat in cats]
                 
         outputFileTargets = []
         
@@ -1385,6 +1390,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
                 raise
+            require_fit_result(os.path.join(os.getcwd(), f"higgsCombineAsimovPostFitScanFit_{current_cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.07.root"))
             
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
@@ -1707,6 +1713,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             except subprocess.CalledProcessError as e:
                 print("Error executing script:", e.stderr)
                 raise
+            require_fit_result(os.path.join(os.getcwd(), f"higgsCombineAsimovPostFitScanStat_{current_cat}.POINTS.{current_point}.{current_point}.MultiDimFit.mH125.07.root"))
         
         # Copy the files back to pnfs if we are on slurm/psi
         if self.batch_flavor == "slurm/psi":
