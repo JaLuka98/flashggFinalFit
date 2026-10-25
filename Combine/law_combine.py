@@ -3811,7 +3811,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", "r",
                 "--floatOtherPOIs", "1",
-                "--saveWorkspace",
+                # no --saveWorkspace for the scan points: only the limit tree is used (a workspace copy per point was 20-70 MB)
                 "--saveFitResult",
                 "--snapshotName", "MultiDimFit",
                 "--alignEdges", "1",
@@ -3843,7 +3843,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", f"{current_cat}",
-                "--saveWorkspace",
+                # no --saveWorkspace for the scan points: only the limit tree is used (a workspace copy per point was 20-70 MB)
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
                 "--snapshotName", "MultiDimFit",
@@ -4038,7 +4038,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", f"{cat}",
                 "--floatOtherPOIs", "1",
-                "--saveWorkspace",
+                # no --saveWorkspace for the scan points: only the limit tree is used (a workspace copy per point was 20-70 MB)
                 "--saveFitResult",
                 "--snapshotName", "MultiDimFit",
                 "--alignEdges", "1",
@@ -4064,7 +4064,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
                 "--X-rtd", "MINIMIZER_multiMin_maskConstraints",
                 "--X-rtd", "MINIMIZER_multiMin_maskChannels=2",
                 "-P", f"{cat}",
-                "--saveWorkspace",
+                # no --saveWorkspace for the scan points: only the limit tree is used (a workspace copy per point was 20-70 MB)
                 "--saveFitResult",
                 "--floatOtherPOIs", "1",
                 "--snapshotName", "MultiDimFit",
