@@ -163,7 +163,10 @@ def finish(run, st):
         log(f"{run}: no law log, the start failed; starting again")
         return True
     text = open(law_log(run)).read()
-    failed = re.search(r"^\* \d+ failed", text.split("===== Luigi Execution Summary =====")[-1], re.M) is not None
+    # luigi prints the summary between two marker lines: take the last summary, not the (empty) text after it
+    summaries = text.split("===== Luigi Execution Summary =====")
+    last = summaries[-2] if len(summaries) >= 3 else summaries[-1]
+    failed = re.search(r"^\* \d+ failed", last, re.M) is not None
     out = subprocess.run(f"cd {REPO} && FITS={fit} KIND={kind} combination/run_combination.sh {obs} ranges",
                          shell=True, capture_output=True, text=True).stdout
     m = re.search(r"^(\d+) cut scan", out, re.M)

@@ -165,6 +165,7 @@ def _shared_fit(run):
             return
         result = [t.path for t in law.util.flatten(self.output()) if t.path.endswith(".root")][-1]
         lock = result + ".lock"
+        os.makedirs(os.path.dirname(lock), exist_ok=True)  # the first branch of a run creates the fit folder
         while True:
             try:
                 os.mkdir(lock)
