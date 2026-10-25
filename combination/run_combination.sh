@@ -197,6 +197,9 @@ run_law() {  # $1 = law flag (--asimov-fits / --unblinded-fits), $2 = log tag
   # shellcheck disable=SC1091
   source law/htcondor_setup.sh
   cd "${REPO}/law"
+  # as in the production recipe: large workspaces (PTH combination) overflow the default 8 MB stack and
+  # the law workers die with SIGSEGV when they read them
+  ulimit -s unlimited
   local var_opt=""
   [ -n "${LAW_VAR}" ] && var_opt="--variable ${LAW_VAR}"
   mkdir -p "${OUT}/logs"
