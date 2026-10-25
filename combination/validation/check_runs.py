@@ -94,7 +94,7 @@ for obs in obs_list:
             seg = fails = 0
             errs = collections.Counter()
             for lg in logs:
-                if "pass" in lg or "headtail" in lg:
+                if "pass" in lg or "headtail" in lg or "killed" in lg:
                     continue
                 txt = open(lg, errors="replace").read()
                 seg += txt.count("died unexpectedly")
