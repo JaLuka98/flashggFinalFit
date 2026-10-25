@@ -40,7 +40,7 @@ MEM_START, MEM_STOP, MEM_KILL = 20, 10, 5   # GB MemAvailable
 GB_PER_WORKER = float(os.environ.get("FARM_GB_PER_WORKER", 3.5))  # fit + its law worker; the H4l PTH fits take ~2 GB
 CAP_FRAC = 0.60  # memory budget of the checkout per node, the same as the cap of node_guard.py
 NFS_SLOW, NFS_OK = 5.0, 2.0                 # s for create + fsync + remove
-MAX_PASSES = 3
+MAX_PASSES = 5
 LOG = os.path.join(REPO, "logs", "local_farm.log")
 STATE = os.path.join(REPO, "logs", "local_farm_state.json")
 LOCK = os.path.join(REPO, "logs", "local_farm.lock")  # "<host> <pid>", touched every cycle
@@ -163,10 +163,12 @@ def finish(run, st):
         log(f"{run}: no law log, the start failed; starting again")
         return True
     text = open(law_log(run)).read()
-    # luigi prints the summary between two marker lines: take the last summary, not the (empty) text after it
+    # luigi prints the summary between two marker lines: take the last summary, not the (empty) text after it;
+    # no summary at all = the law process was killed
     summaries = text.split("===== Luigi Execution Summary =====")
-    last = summaries[-2] if len(summaries) >= 3 else summaries[-1]
-    failed = re.search(r"^\* \d+ failed", last, re.M) is not None
+    last = summaries[-2] if len(summaries) >= 3 else ""
+    failed = not last or re.search(r"^\* \d+ failed", last, re.M) is not None
+    missing = missing_scans(run)
     out = subprocess.run(f"cd {REPO} && FITS={fit} KIND={kind} combination/run_combination.sh {obs} ranges",
                          shell=True, capture_output=True, text=True).stdout
     m = re.search(r"^(\d+) cut scan", out, re.M)
@@ -174,13 +176,33 @@ def finish(run, st):
     for line in out.splitlines():
         if "CUT" in line:
             log(f"{run}:   {line.strip()}")
-    log(f"{run}: pass {st['pass']} done, law {'with failed tasks' if failed else 'ok'}, {ncut} cut scan(s)")
-    if (ncut > 0 or failed) and st["pass"] < MAX_PASSES:
+    log(f"{run}: pass {st['pass']} done, law {'with failed tasks / no summary' if failed else 'ok'}, "
+        f"{missing} merged scan(s) missing, {ncut} cut scan(s)")
+    if (ncut > 0 or failed or missing) and st["pass"] < MAX_PASSES:
         os.rename(law_log(run), law_log(run).replace(".log", f"_pass{st['pass']}.log"))
         st["pass"] += 1
         return True
+    if missing:
+        log(f"{run}: INCOMPLETE after {st['pass']} passes ({missing} merged scans missing), needs a look")
     st["done"] = True
     return False
+
+
+def missing_scans(run):
+    """merged Fit + Stat scans of every POI that do not exist yet: a run is finished only with all of them"""
+    import importlib.util
+    obs, fit, kind = run.split(":")
+    spec = importlib.util.spec_from_file_location("maps", os.path.join(REPO, "Combine", "makeCombinationMaps.py"))
+    maps = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(maps)
+    d = os.path.join(REPO, f"output_combination_{obs}", fit, "Combine", f"runFits_{obs}", kind)
+    n = 0
+    for poi in maps.patterns(obs)[1]:
+        for k in ("Fit", "Stat"):
+            name = (f"higgsCombineAsimovPostFitScan{k}_{poi}.root" if kind == "asimov"
+                    else f"higgsCombineDataPostFitScan{k}_{poi}.MultiDimFit.mH125.07.root")
+            n += not os.path.exists(os.path.join(d, name))
+    return n
 
 
 def signal(host, pids, sig):
