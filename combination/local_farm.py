@@ -53,7 +53,7 @@ cd @REPO@ && python3 -c "import sys; sys.path.insert(0, 'combination'); import n
 cd @REPO@ && setsid -f python3 combination/node_guard.py < /dev/null > /dev/null 2>&1
 for p in $(pgrep -u $USER -x python3; pgrep -u $USER -f '^/cvmfs/.*/python3 .*law run FinalFitsYear'); do
   a=$(tr '\0' ' ' < /proc/$p/cmdline 2>/dev/null)
-  case "$a" in *"law run FinalFitsYear"*output_combination_*) echo "law $p $a";; esac
+  case "$a" in *"law run FinalFitsYear"*output_combination_*) echo "law $p $(ps -o pgid= -p $p | tr -d ' ') $a";; esac
 done | sort -u
 for p in $(pgrep -u $USER -x combine); do
   case "$(readlink /proc/$p/cwd 2>/dev/null)" in */output_combination_*)
@@ -115,11 +115,14 @@ def probe(host):
             node.update(cores=int(p[1]), load=float(p[3]), mem=int(p[5]))
         elif p and p[0] == "usage" and len(p) == 3:
             node.update(usage=int(p[1]), total=int(p[2]))
-        elif p and p[0] == "law":
+        elif p and p[0] == "law" and len(p) > 2 and p[2].isdigit():
             m = re.search(r"--output-dir (\S+)", line)
             kind = "asimov" if "--asimov-fits" in line else "dataFit"
             if m:
                 node["law"].append((int(p[1]), m.group(1), kind))
+                w = re.search(r"--workers (\d+)", line)
+                if p[1] == p[2] and w:  # the law main process (its workers share the command line)
+                    node["booked"] = node.get("booked", 0) + int(w.group(1))
         elif p and p[0] == "fit" and len(p) == 4:
             node["fits"].append({"pid": int(p[1]), "state": p[2], "start": int(p[3])})
     return node if "cores" in node else None
@@ -302,7 +305,10 @@ def main():
                 if not n or "total" not in n or n["mem"] <= MEM_START:
                     continue
                 # fits just started are still small: count every run of the farm on this node at its full size
-                booked = sum(state[q]["workers"] for q in runs if state[q]["host"] == h and not state[q]["done"])
+                # every law run on the node at its declared workers (also the ones started by hand), and the farm's
+                # runs started in this cycle (not visible to the probe yet)
+                booked = max(n.get("booked", 0),
+                             sum(state[q]["workers"] for q in runs if state[q]["host"] == h and not state[q]["done"]))
                 budget = CAP_FRAC * n["total"] - max(n["usage"], booked * GB_PER_WORKER) - 2
                 slots[h] = int(min(n["cores"] - n["load"] - HEADROOM, budget / GB_PER_WORKER))
             slots = {h: k for h, k in slots.items() if k >= 2}
@@ -315,6 +321,7 @@ def main():
             st["host"], st["workers"] = h, workers
             n["load"] += workers  # until the next probe sees the fits
             n["usage"] += int(workers * GB_PER_WORKER)
+            n["booked"] = n.get("booked", 0) + workers
             n_fits += workers
         json.dump(state, open(STATE, "w"), indent=1)
         down = [h for h, n in nodes.items() if n is None]
