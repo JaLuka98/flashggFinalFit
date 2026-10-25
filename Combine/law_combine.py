@@ -155,7 +155,8 @@ def run_capped(command, keep=200):
 def _shared_fit(run):
     """Several law processes (machines) work through the branches of one run (ported from HIG-26-007, 2026-10-05):
     a branch whose result exists is skipped, a branch another process is fitting (lock directory next to the
-    result) is waited for instead of being fitted twice; a lock older than 3 h is from a dead process."""
+    result) is left to it (the task fails here and is complete once that result exists); a lock older than 3 h
+    is from a dead process."""
     import functools, random, time
 
     @functools.wraps(run)
@@ -184,7 +185,9 @@ def _shared_fit(run):
                     except OSError:
                         pass
                     continue
-                time.sleep(60 + 30 * random.random())
+                # another process is fitting this branch: do not block the worker for the length of a fit, leave
+                # the branch (law takes the result over once it exists) and go on with a free one
+                raise RuntimeError(f"branch is being fitted by another process ({lock}); left to it")
         try:
             if self.complete():
                 return
