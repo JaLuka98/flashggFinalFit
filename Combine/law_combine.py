@@ -151,6 +151,57 @@ def run_capped(command, keep=200):
     return subprocess.CompletedProcess(command, returncode, stdout=text, stderr=text)
 
 
+
+def _shared_fit(run):
+    """Several law processes (machines) work through the branches of one run (ported from HIG-26-007, 2026-10-05):
+    a branch whose result exists is skipped, a branch another process is fitting (lock directory next to the
+    result) is waited for instead of being fitted twice; a lock older than 3 h is from a dead process."""
+    import functools, random, time
+
+    @functools.wraps(run)
+    def wrapper(self):
+        if self.complete():
+            print("Result already there (fitted by another process): nothing to do")
+            return
+        result = [t.path for t in law.util.flatten(self.output()) if t.path.endswith(".root")][-1]
+        lock = result + ".lock"
+        while True:
+            try:
+                os.mkdir(lock)
+                break
+            except FileExistsError:
+                if self.complete():
+                    print("Result arrived while waiting for the other process: nothing to do")
+                    return
+                try:
+                    stale = time.time() - os.path.getmtime(lock) > 3 * 3600
+                except OSError:
+                    continue
+                if stale:
+                    try:
+                        os.rmdir(lock)
+                    except OSError:
+                        pass
+                    continue
+                time.sleep(60 + 30 * random.random())
+        try:
+            if self.complete():
+                return
+            return run(self)
+        finally:
+            try:
+                os.rmdir(lock)
+            except OSError:
+                pass
+    return wrapper
+
+
+def _branch_priority(task):
+    """Random branch order per law process, so that processes sharing a run (_shared_fit) pick different branches."""
+    import random
+    return random.Random(hash((os.getpid(), getattr(task, "branch", -1), task.__class__.__name__))).random()
+
+
 def require_fit_result(path):
     """Fail the task (and drop the file) when combine wrote no fit result to ``path``.
 
@@ -729,6 +780,7 @@ class RunText2Workspace(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow
             update_override_file(override_path, self.year, variable_key, pdf_indices)
         
 class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    priority = property(_branch_priority)  # random branch order per process (_shared_fit)
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
@@ -814,6 +866,7 @@ class AsimovFitCategoryFirstStep(Task, HTCondorWorkflow, SlurmWorkflow, law.Loca
 
         return outputFileTargets
 
+    @_shared_fit
     def run(self):
         current_branch = self.branch_data
         
@@ -1043,6 +1096,7 @@ class CreateAsimovFitFirstStep(law.Task): #(law.Task): #(Task, HTCondorWorkflow,
 # `cats` is set all bins are executed inside one HTCondor job to avoid
 # spawning one submission per differential bin.
 class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    priority = property(_branch_priority)  # random branch order per process (_shared_fit)
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
@@ -1152,6 +1206,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
             
         return outputFileTargets
 
+    @_shared_fit
     def run(self):
         current_cat, current_point = self._current_branch_info()
         total_grid_points, _ = scan_grid_configuration(
@@ -1357,6 +1412,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
 # cat-merged execution through the optional csv list to keep the HTCondor
 # submission count low for differential measurements.
 class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    priority = property(_branch_priority)  # random branch order per process (_shared_fit)
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
@@ -1468,6 +1524,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
         
         return outputFileTargets
 
+    @_shared_fit
     def run(self):
         current_cat, current_point = self._current_branch_info()
         total_grid_points, _ = scan_grid_configuration(
@@ -3170,6 +3227,7 @@ class AsimovCovCorr(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
         os.chdir(cwd)
 
 class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    priority = property(_branch_priority)  # random branch order per process (_shared_fit)
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
@@ -3247,6 +3305,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
 
         return outputFileTargets
 
+    @_shared_fit
     def run(self):
         current_cat = self.branch_data
         
@@ -3376,6 +3435,7 @@ class UnblindedFitSystSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         os.chdir(cwd)
 
 class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    priority = property(_branch_priority)  # random branch order per process (_shared_fit)
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
@@ -3453,6 +3513,7 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
                     
         return outputFileTargets
 
+    @_shared_fit
     def run(self):
         cat = self.branch_data
 
@@ -3595,6 +3656,7 @@ class UnblindedFitStatSingle(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
         os.chdir(cwd)
         
 class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    priority = property(_branch_priority)  # random branch order per process (_shared_fit)
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
@@ -3674,6 +3736,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
 
         return outputFileTargets
 
+    @_shared_fit
     def run(self):
         current_cat, current_point = self.branch_data
         
@@ -3818,6 +3881,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
         os.chdir(cwd)
         
 class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #(law.Task): #(Task, HTCondorWorkflow, law.LocalWorkflow):
+    priority = property(_branch_priority)  # random branch order per process (_shared_fit)
     output_dir = law.Parameter(default = '', description="Path to the output directory")
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
@@ -3893,6 +3957,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
 
         return outputFileTargets
 
+    @_shared_fit
     def run(self):
         cat, current_point = self.branch_data
 

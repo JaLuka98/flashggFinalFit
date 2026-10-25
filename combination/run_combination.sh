@@ -32,6 +32,8 @@
 #   KIND      ranges / summary of asimov or dataFit [asimov]
 #   EXECUTION law / unblind: htcondor, or local (fits in WORKERS law workers on this node, nice/ionice) [htcondor]
 #   WORKERS   parallel local fits [4]
+#   LOG_SUFFIX  suffix of the law log, for a second law process sharing a run (e.g. _lxbatch02); the fit branches
+#             take a lock per result, so several processes / machines can work through one run
 #   FINALFITS_MH  [125.07]
 
 set -eo pipefail
@@ -208,8 +210,8 @@ run_law() {  # $1 = law flag (--asimov-fits / --unblinded-fits), $2 = log tag
     # shellcheck disable=SC2086
     setsid nohup "${run[@]}" law run FinalFitsYear --year ${YEAR} ${var_opt} $1 True \
       --output-dir "${OUT}/${fit}" --batch-system htcondor --batch-flavor htcondor --workers ${workers} \
-      > "${OUT}/logs/law_$2_${fit}.log" 2>&1 < /dev/null &
-    echo "${fit}: law running (pid $!), log: ${OUT}/logs/law_$2_${fit}.log"
+      > "${OUT}/logs/law_$2_${fit}${LOG_SUFFIX}.log" 2>&1 < /dev/null &
+    echo "${fit}: law running (pid $!), log: ${OUT}/logs/law_$2_${fit}${LOG_SUFFIX}.log"
   done
 }
 
