@@ -25,7 +25,7 @@ import time
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FLOOR_FRAC = float(os.environ.get("GUARD_FLOOR_FRAC", 0.15))  # keep at least this fraction of RAM available
-CAP_FRAC = float(os.environ.get("GUARD_CAP_FRAC", 0.35))      # this checkout may use at most this fraction
+CAP_FRAC = float(os.environ.get("GUARD_CAP_FRAC", 0.60))      # this checkout may use at most this fraction
 INTERVAL = 5
 IDLE_EXIT = 3600
 HOST = socket.gethostname().split(".")[0]
