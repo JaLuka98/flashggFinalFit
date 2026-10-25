@@ -279,7 +279,9 @@ def main():
             for h, n in nodes.items():
                 if not n or "total" not in n or n["mem"] <= MEM_START:
                     continue
-                budget = CAP_FRAC * n["total"] - n["usage"] - 2
+                # fits just started are still small: count every run of the farm on this node at its full size
+                booked = sum(state[q]["workers"] for q in runs if state[q]["host"] == h and not state[q]["done"])
+                budget = CAP_FRAC * n["total"] - max(n["usage"], booked * GB_PER_WORKER) - 2
                 slots[h] = int(min(n["cores"] - n["load"] - HEADROOM, budget / GB_PER_WORKER))
             slots = {h: k for h, k in slots.items() if k >= 2}
             if not slots:
