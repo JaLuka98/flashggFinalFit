@@ -321,6 +321,7 @@ spectra:
   underflow_fill_bin: 0
   underflow_bin_normalized: True # Underflow bin normalized with binwidth
   underflow_bin_width: 30
+  underflow: 0  # left edge of the 0-jet bin on the plots (Boundaries start at -10000)
   overflow_bin_width: 200
   last_bin_center: 300
   first_bin_center: 15
