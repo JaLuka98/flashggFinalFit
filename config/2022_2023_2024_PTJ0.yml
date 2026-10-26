@@ -340,3 +340,19 @@ spectra:
       enabled: False  # switched off for now (user, 2026-10-22); True adds rel_uncertainty_acceptance to the measured total XS
       module: "rel_uncertainty_acceptance"
       attribute: "PTJ0"
+
+combined_spectra:
+  hgg_output_dir: "output_combination_PTJ0/hgg"
+  hzz_output_dir: "output_combination_PTJ0/h4l"
+  comb_output_dir: "output_combination_PTJ0/comb"
+  poi_names: ['r_PTJ0_m10000p0_30p0', 'r_PTJ0_30p0_40p0', 'r_PTJ0_40p0_55p0', 'r_PTJ0_55p0_75p0', 'r_PTJ0_75p0_95p0', 'r_PTJ0_95p0_120p0', 'r_PTJ0_120p0_150p0', 'r_PTJ0_150p0_200p0', 'r_PTJ0_200p0_10000p0']
+  xs_module: "fidXS_PTJ0_all"
+  xs_attribute: "totXS"
+  prediction_scale: 0.001  # fb -> pb
+  prediction_label: "SM (ggH + xH), $m_H$ = 125.07 GeV"
+  br_uncertainty: 0.  # total cross sections, no BR
+  hzz_label: "H$\\rightarrow$ZZ$\\rightarrow 4\\ell$"
+  ylabel: '$\Delta\sigma_{\text{tot}} / \Delta p_{T}^{j_{0}}$ (pb/GeV)'
+  frame1_ylim: [0.001, 50]
+  ratio_ylim: [-1, 4]
+  legend_location: "upper right"
