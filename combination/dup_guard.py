@@ -4,7 +4,11 @@
   - lock keeper: touches the lock of every running fit of this checkout, so that a fit longer than the stale age of
     _shared_fit (3 h) is never taken for a dead one (law processes started before the lock heartbeat existed);
   - duplicates: when the same fit (folder + combine -n name) runs more than once, the copies whose open output file is
-    no longer the file at that path (another copy recreated it, so their result is lost) are killed.
+    no longer the file at that path (another copy recreated it, so their result is lost) are killed;
+  - missing locks: the lock of a running fit is created again when it is gone. The wrapper of a killed copy removes the
+    lock on its way out although the other copy still fits, and the law run of the killed copy then started the
+    branch again on its next retry, which in turn made the running copy the lost one (2026-10-26, PTH hgg first
+    steps restarted every 20 min from 21:30 to 23:20).
 
 usage: dup_guard.py "<YYYY-mm-dd HH:MM>" host [host ...]   (run detached on a node with the farm agent)
 """
@@ -22,6 +26,13 @@ PROBE = r'''for p in $(pgrep -u $USER -x combine); do c=$(readlink /proc/$p/cwd 
 n=$(tr "\0" " " < /proc/$p/cmdline | grep -oE "\-n [^ ]+" | cut -c4-); o=none
 for fd in /proc/$p/fd/*; do t=$(readlink $fd); case "$t" in *higgsCombine*) a=$(stat -L -c %i $fd); b=$(stat -c %i "${t% (deleted)}" 2>/dev/null || echo x); [ "$a" = "$b" ] && o=owns || o=lost; break;; esac; done
 echo "$c $n $p $o"; done'''
+
+
+def lock_path(folder, name):
+    """the lock of _shared_fit: next to the last .root output of the task (multidimfit file of a first step)"""
+    if name.startswith("firstStep"):
+        return f"{folder}/multidimfit{name}.root.lock"
+    return f"{folder}/higgsCombine{name}.MultiDimFit.mH125.07.root.lock"
 
 
 def log(msg):
@@ -50,13 +61,6 @@ def main():
                 t = line.split()
                 if len(t) == 4:
                     fits[(t[0], t[1])].append((h, t[2], t[3]))
-        touched = 0
-        for (folder, name) in fits:
-            for lock in (f"{folder}/higgsCombine{name}.MultiDimFit.mH125.07.root.lock",
-                         f"{folder}/multidimfit{name}.root.lock"):
-                if os.path.isdir(lock):
-                    os.utime(lock)
-                    touched += 1
         killed = 0
         for (folder, name), copies in fits.items():
             if len(copies) < 2:
@@ -67,7 +71,25 @@ def main():
                     log(f"duplicate {folder.split('output_combination_')[-1]} {name}: killed the copy on {h} "
                         f"(pid {pid}), whose output was recreated by another copy")
                     killed += 1
-        log(f"{sum(len(c) for c in fits.values())} fits, {touched} locks refreshed, {killed} lost duplicates killed")
+        if killed:
+            time.sleep(20)  # the wrapper of a killed copy removes the lock once its combine has exited
+        touched = created = 0
+        for (folder, name), copies in fits.items():
+            if all(state == "lost" for _, _, state in copies):
+                continue
+            lock = lock_path(folder, name)
+            if os.path.isdir(lock):
+                os.utime(lock)
+                touched += 1
+            else:
+                try:
+                    os.mkdir(lock)
+                    created += 1
+                    log(f"lock of the running fit {folder.split('output_combination_')[-1]} {name} was missing: created")
+                except OSError:
+                    pass
+        log(f"{sum(len(c) for c in fits.values())} fits, {touched} locks refreshed, {created} created, "
+            f"{killed} lost duplicates killed")
         time.sleep(INTERVAL)
     log("stopped")
 
