@@ -46,6 +46,20 @@ MAX_PASSES = 5
 LOG = os.path.join(REPO, "logs", "local_farm.log")
 STATE = os.path.join(REPO, "logs", "local_farm_state.json")
 LOCK = os.path.join(REPO, "logs", "local_farm.lock")  # "<host> <pid>", touched every cycle
+# optional time windows per node, read every cycle: {"lxbatch16": [["2026-10-26 17:00", "2026-10-26 20:00", 12], ...]}
+# (start, end, max workers of the farm on the node); a node listed there gets no new runs outside its windows
+NODE_CAPS = os.path.join(REPO, "logs", "farm_node_caps.json")
+
+
+def node_cap(host):
+    try:
+        windows = json.load(open(NODE_CAPS)).get(host)
+    except (OSError, ValueError):
+        return None
+    if windows is None:
+        return None
+    now = time.strftime("%Y-%m-%d %H:%M")
+    return next((n for start, end, n in windows if start <= now < end), 0)
 
 # per node: cores, load, MemAvailable, the law processes of the combination fits, the fits (combine) of the farm
 PROBE = r"""
@@ -313,6 +327,9 @@ def main():
                              sum(state[q]["workers"] for q in runs if state[q]["host"] == h and not state[q]["done"]))
                 budget = CAP_FRAC * n["total"] - max(n["usage"], booked * GB_PER_WORKER) - 2
                 slots[h] = int(min(n["cores"] - n["load"] - HEADROOM, budget / GB_PER_WORKER))
+                cap = node_cap(h)
+                if cap is not None:
+                    slots[h] = min(slots[h], cap - booked)
             slots = {h: k for h, k in slots.items() if k >= 2}
             if not slots:
                 continue
