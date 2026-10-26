@@ -188,11 +188,24 @@ def _shared_fit(run):
                 # another process is fitting this branch: do not block the worker for the length of a fit, leave
                 # the branch (law takes the result over once it exists) and go on with a free one
                 raise RuntimeError(f"branch is being fitted by another process ({lock}); left to it")
+        # heartbeat: the lock is touched every 10 min while this process fits, so that a fit longer than the stale
+        # age (PTH first steps take ~14 h) is never taken over by another process (2026-10-26)
+        import threading
+        done = threading.Event()
+
+        def keep_fresh():
+            while not done.wait(600):
+                try:
+                    os.utime(lock)
+                except OSError:
+                    pass
+        threading.Thread(target=keep_fresh, daemon=True).start()
         try:
             if self.complete():
                 return
             return run(self)
         finally:
+            done.set()
             try:
                 os.rmdir(lock)
             except OSError:
