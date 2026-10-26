@@ -32,7 +32,9 @@ import sys
 import time
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NODES = ["lxbatch01", "lxbatch02", "lxbatch03", "lxbatch04", "lxbatch05"]
+# FARM_NODES=lxbatch01,lxbatch03 restricts the farm to these nodes (e.g. one full of other jobs of this user,
+# which node_guard.py does not count but answers by killing the fits of this checkout)
+NODES = os.environ.get("FARM_NODES", "lxbatch01,lxbatch02,lxbatch03,lxbatch04,lxbatch05").split(",")
 MAX_WORKERS = int(os.environ.get("FARM_MAX_WORKERS", 48))  # fits of the farm on all nodes together (file server)
 NODE_WORKERS = int(os.environ.get("FARM_NODE_WORKERS", 8))  # per law process
 HEADROOM = 4            # cores left free on every node
