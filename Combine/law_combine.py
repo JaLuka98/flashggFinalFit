@@ -235,7 +235,28 @@ def require_fit_result(path):
         raise RuntimeError(f"combine wrote no fit result: {path}")
 
 
-def scan_grid_configuration(n_points, grid_points, first_point, last_point):
+def scan_point_indices(n_points, keep_points=0):
+    """Indices of the ``n_points`` scan grid to fit: all of them, or ``keep_points`` of them spread evenly over the
+    grid (both ends included). The grid itself stays the same, so points already fitted keep their meaning."""
+    n_points, keep_points = int(n_points), int(keep_points)
+    if keep_points <= 0 or keep_points >= n_points:
+        return list(range(n_points))
+    return sorted({round(j * (n_points - 1) / (keep_points - 1)) for j in range(keep_points)})
+
+
+def scan_point_files(path_of, n_points, keep_points=0):
+    """Point files of one merged scan: the kept grid points, plus the other grid points that are already fitted
+    (a result file without a lock next to it, so no fit is still writing it)."""
+    kept = set(scan_point_indices(n_points, keep_points))
+    files = []
+    for i in range(int(n_points)):
+        path = path_of(i)
+        if i in kept or (os.path.exists(path) and os.path.getsize(path) >= 2000 and not os.path.exists(path + ".lock")):
+            files.append(path)
+    return files
+
+
+def scan_grid_configuration(n_points, grid_points, first_point, last_point, keep_points=0):
     """Return the full grid size and the subset of grid indices to evaluate.
 
     By default, preserve the legacy behaviour and evaluate all ``n_points``.
@@ -250,7 +271,7 @@ def scan_grid_configuration(n_points, grid_points, first_point, last_point):
 
     total_points = grid_points if grid_points > 0 else n_points
     if first_point < 0 and last_point < 0:
-        return total_points, list(range(n_points))
+        return total_points, scan_point_indices(n_points, keep_points)
     if first_point < 0 or last_point < first_point or last_point >= total_points:
         raise ValueError(
             "invalid scan grid subset: require 0 <= first_point <= last_point "
@@ -1128,6 +1149,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     grid_points = law.Parameter(
         default=0, description="Total number of points defining the full scan grid"
     )
+    keep_points = law.Parameter(default=0, description="Fit only this many points of the grid, spread evenly (0: all)")
     first_point = law.Parameter(default=-1, description="First full-grid point index to run")
     last_point = law.Parameter(default=-1, description="Last full-grid point index to run")
     range_profile = law.Parameter(
@@ -1166,7 +1188,7 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     
     def create_branch_map(self):
         _, points = scan_grid_configuration(
-            self.nPoints, self.grid_points, self.first_point, self.last_point
+            self.nPoints, self.grid_points, self.first_point, self.last_point, self.keep_points
         )
         if not self.cats:
             return {i: point for i, point in enumerate(points)}
@@ -1445,6 +1467,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     grid_points = law.Parameter(
         default=0, description="Total number of points defining the full scan grid"
     )
+    keep_points = law.Parameter(default=0, description="Fit only this many points of the grid, spread evenly (0: all)")
     first_point = law.Parameter(default=-1, description="First full-grid point index to run")
     last_point = law.Parameter(default=-1, description="Last full-grid point index to run")
     range_profile = law.Parameter(
@@ -1483,7 +1506,7 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
     
     def create_branch_map(self):
         _, points = scan_grid_configuration(
-            self.nPoints, self.grid_points, self.first_point, self.last_point
+            self.nPoints, self.grid_points, self.first_point, self.last_point, self.keep_points
         )
         if not self.cats:
             return {i: point for i, point in enumerate(points)}
@@ -1787,16 +1810,16 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                         
         if self.variable == '':
             cat = "r"
-            tasks["AsimovFitCategorySyst"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
-            tasks["AsimovFitCategoryStat"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
+            tasks["AsimovFitCategorySyst"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], keep_points=config["combine_fit"].get("scan_keepPoints", 0), version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
+            tasks["AsimovFitCategoryStat"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cat=cat, nPoints=config["combine_fit"]["asimov_numPoints"], keep_points=config["combine_fit"].get("scan_keepPoints", 0), version=f"inclusive_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
         else:
             # Cat-merged differential fits run all categories within a single task
             # (single HTCondor submission) by passing the comma-separated list
             # down to the Syst/Stat tasks.
             cat_list = combineVariableDict(self.variable, self.year)['paramStrNoOne']
             cats_csv = ",".join(cat_list)
-            tasks["AsimovFitCategorySyst_all"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats_csv, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
-            tasks["AsimovFitCategoryStat_all"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats_csv, nPoints=config["combine_fit"]["asimov_numPoints"], version=f"{self.variable}_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
+            tasks["AsimovFitCategorySyst_all"] = AsimovFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats_csv, nPoints=config["combine_fit"]["asimov_numPoints"], keep_points=config["combine_fit"].get("scan_keepPoints", 0), version=f"{self.variable}_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
+            tasks["AsimovFitCategoryStat_all"] = AsimovFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, cats=cats_csv, nPoints=config["combine_fit"]["asimov_numPoints"], keep_points=config["combine_fit"].get("scan_keepPoints", 0), version=f"{self.variable}_v1", workflow=config["combine_fit"]["execution"], batch_flavor=self.batch_flavor, slurm_partition=config["combine_fit"]['batchPartition'], slurm_memory=config["combine_fit"]['batchMemory'], slurm_max_runtime=config["combine_fit"]['batchMaxRuntime'], htcondor_partition=config["combine_fit"]['batchPartition'], htcondor_memory=config["combine_fit"]['batchMemory'], htcondor_max_runtime=config["combine_fit"]['batchMaxRuntime'], set_pdfidx_inclusives=self.set_pdfidx_inclusives)
         
         return tasks
     
@@ -1920,8 +1943,9 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 "hadd", "-f",
                 f"{os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.root')}"
             ]
-            for i in range(config["combine_fit"]["asimov_numPoints"]):
-                arguments.append(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.07.root'))
+            arguments += scan_point_files(
+                lambda i: os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanFit_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.07.root'),
+                config["combine_fit"]["asimov_numPoints"], config["combine_fit"].get("scan_keepPoints", 0))
             if self.batch_flavor == "slurm/psi":
                 arguments = [
                     "hadd", "-f",
@@ -1944,8 +1968,9 @@ class CreateAsimovFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow):
                 "hadd", "-f",
                 f"{os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.root')}"
             ]
-            for i in range(config["combine_fit"]["asimov_numPoints"]):
-                arguments.append(os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.07.root'))
+            arguments += scan_point_files(
+                lambda i: os.path.join(output_dir, 'Combine', fitFolderName, 'asimov', f'higgsCombineAsimovPostFitScanStat_{cat}.POINTS.{i}.{i}.MultiDimFit.mH125.07.root'),
+                config["combine_fit"]["asimov_numPoints"], config["combine_fit"].get("scan_keepPoints", 0))
             if self.batch_flavor == "slurm/psi":
                 arguments = [
                     "hadd", "-f",
@@ -3685,6 +3710,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
+    keep_points = law.Parameter(default=0, description="Fit only this many points of the grid, spread evenly (0: all)")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -3722,7 +3748,7 @@ class UnblindedFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             cats = ["r"]
         else:
             cats = combineVariableDict(self.variable, self.year)['paramStrNoOne']
-        branch_data = [(cat, point) for cat in cats for point in range(int(self.nPoints))]
+        branch_data = [(cat, point) for cat in cats for point in scan_point_indices(self.nPoints, self.keep_points)]
         branch_map = {i: current_branch for i, current_branch in enumerate(branch_data)}
         return branch_map
 
@@ -3910,6 +3936,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
     variable = law.Parameter(default="", description="Variable to be used")
     year = law.Parameter(default='2022', description="Year")
     nPoints = law.Parameter(default=30, description="Number of points for the LL scan")
+    keep_points = law.Parameter(default=0, description="Fit only this many points of the grid, spread evenly (0: all)")
     
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
 
@@ -3947,7 +3974,7 @@ class UnblindedFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalW
             cats = ["r"]
         else:
             cats = combineVariableDict(self.variable, self.year)['paramStrNoOne']
-        branch_data = [(cat, point) for cat in cats for point in range(int(self.nPoints))]
+        branch_data = [(cat, point) for cat in cats for point in scan_point_indices(self.nPoints, self.keep_points)]
         branch_map = {i: current_branch for i, current_branch in enumerate(branch_data)}
         return branch_map
 
@@ -4154,8 +4181,8 @@ class CreateUnblindedFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
 
         fitConfig = config["combine_fit"]
             
-        tasks["UnblindedFitCategorySyst"] = UnblindedFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, nPoints=fitConfig["unblindedFit_numPoints"], version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
-        tasks["UnblindedFitCategoryStat"] = UnblindedFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, nPoints=fitConfig["unblindedFit_numPoints"], version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+        tasks["UnblindedFitCategorySyst"] = UnblindedFitCategorySyst(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, nPoints=fitConfig["unblindedFit_numPoints"], keep_points=fitConfig.get("scan_keepPoints", 0), version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
+        tasks["UnblindedFitCategoryStat"] = UnblindedFitCategoryStat(output_dir=output_dir, variable=self.variable, year=self.year, batch_flavor=self.batch_flavor, nPoints=fitConfig["unblindedFit_numPoints"], keep_points=fitConfig.get("scan_keepPoints", 0), version=self.variable if self.variable != "" else "inclusive", workflow=fitConfig["execution"], slurm_partition=fitConfig['batchPartition'], slurm_memory=fitConfig['batchMemory'], slurm_max_runtime=fitConfig['batchMaxRuntime'], htcondor_partition=fitConfig['batchPartition'], htcondor_memory=fitConfig['batchMemory'], htcondor_max_runtime=fitConfig['batchMaxRuntime'])
         
         return tasks
     
@@ -4272,10 +4299,9 @@ class CreateUnblindedFit(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflo
 
         def hadd_scan_outputs(kind, current_cat):
             target = os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScan{kind}_{current_cat}.MultiDimFit.mH125.07.root')
-            sources = [
-                os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScan{kind}_{current_cat}.POINTS.{idx}.{idx}.MultiDimFit.mH125.07.root')
-                for idx in range(n_points)
-            ]
+            sources = scan_point_files(
+                lambda idx: os.path.join(job_datafit_dir, f'higgsCombineDataPostFitScan{kind}_{current_cat}.POINTS.{idx}.{idx}.MultiDimFit.mH125.07.root'),
+                n_points, config["combine_fit"].get("scan_keepPoints", 0))
             command = ["hadd", "-f", target] + sources
             try:
                 result = run_capped(command)

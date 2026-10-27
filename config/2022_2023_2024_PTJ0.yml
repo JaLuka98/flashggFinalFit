@@ -273,6 +273,7 @@ datacard_clean:
 combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 30 
+  scan_keepPoints: 20 # fit only 20 of the 30 grid points (spread evenly, ends included); points of the full grid already fitted are merged too
   setParameterRange: "r=0,3"
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission

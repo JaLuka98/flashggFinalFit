@@ -278,6 +278,7 @@ datacard_clean:
 combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 30 
+  scan_keepPoints: 20 # fit only 20 of the 30 grid points (spread evenly, ends included); points of the full grid already fitted are merged too
   setParameterRange: "r=0,2"
   # Opt-in lower-68%-CL refinement profile for the H4l-only tail bins.
   # Keep the global best fit inside the allowed range. Fine resolution is
