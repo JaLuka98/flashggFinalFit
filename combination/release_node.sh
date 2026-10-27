@@ -15,8 +15,10 @@ log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "${LOG}"; }
 log "waiting until ${WHEN} to release ${HOST}"
 while [ "$(date '+%Y-%m-%d %H:%M')" \< "${WHEN}" ]; do sleep 60; done
 
-# law parents of this checkout (process group leaders), paused
+# law parents of this checkout (process group leaders), paused; never this remote shell, whose command line matches
+# the pattern too (it paused itself first on lxbatch19/20 on 2026-10-27 and their law runs went on)
 groups=$(timeout 60 ssh -o BatchMode=yes "${HOST}" "for p in \$(pgrep -u \$USER -f 'law run FinalFitsYear'); do
+  [ \$p = \$\$ ] && continue
   [ \"\$(ps -o pgid= -p \$p | tr -d ' ')\" = \"\$p\" ] || continue
   case \"\$(tr '\\0' ' ' < /proc/\$p/cmdline)\" in *${REPO}*) kill -STOP \$p && echo \$p;; esac; done")
 log "paused law runs (process groups): ${groups:-none}"
