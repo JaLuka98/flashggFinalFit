@@ -34,6 +34,7 @@ AutoDict_*
 *.tmp
 *.pcm
 *.o
+*.err
 
 # Files and folders from compiling the background area
 Background/RootDict.cxx
