@@ -1348,7 +1348,9 @@ class AsimovFitCategorySyst(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--lastPoint", f"{current_point}",
                 "--floatOtherPOIs", "1",
                 "--alignEdges", "1",
-                "--setParameterRanges", f"{config['combine_fit']['setParameterRange']}",
+                # the per-POI scan window of scan_ranges.json when there is one (2026-10-29: the inclusive scan of
+                # [0, 2] with 30 points had 2 points inside +- 1 sigma), else the range of the config
+                "--setParameterRanges", scan_window_ranges(output_dir, "r", "asimov", config['combine_fit']['setParameterRange']),
                 "--saveSpecifiedNuis", "all"
             ]
 
@@ -1670,7 +1672,9 @@ class AsimovFitCategoryStat(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWork
                 "--lastPoint", f"{current_point}",
                 "--floatOtherPOIs", "1",
                 "--alignEdges", "1",
-                "--setParameterRanges", f"{config['combine_fit']['setParameterRange']}",
+                # the per-POI scan window of scan_ranges.json when there is one (2026-10-29: the inclusive scan of
+                # [0, 2] with 30 points had 2 points inside +- 1 sigma), else the range of the config
+                "--setParameterRanges", scan_window_ranges(output_dir, "r", "asimov", config['combine_fit']['setParameterRange']),
                 "--saveSpecifiedNuis", "all"
             ]
 
@@ -2278,6 +2282,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
     year = law.Parameter(default='2022', description="Year")
 
     batch_flavor = law.Parameter(default="htcondor", description="Batch system to use")
+    priority = property(_branch_priority)  # random branch order per process (_shared_fit)
 
     # def requires(self):
     def workflow_requires(self):
@@ -2420,6 +2425,7 @@ class AsimovImpactSecondStep(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWor
 
         return outputFileTargets
 
+    @_shared_fit  # several law processes (machines) share the nuisance fits of one run
     def run(self):
         current_param = self.branch_data
        
@@ -3211,6 +3217,8 @@ class AsimovCovCorr(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
         cwd = os.getcwd()
         os.chdir(os.path.join(os.environ["ANALYSIS_PATH"], 'Plots'))
 
+        # Hgg+H4l combination (output folder <...>/comb): label both channels instead of the H->gammagamma default
+        channel_label = ["--channelLabel", "H #rightarrow #gamma#gamma + H #rightarrow ZZ"] if os.path.basename(os.path.normpath(output_dir)) == "comb" else []
         arguments = [
             "python3",
             f"{os.path.join(os.environ['ANALYSIS_PATH'], 'Plots', 'makeCorrMatrix.py')}",
@@ -3222,6 +3230,7 @@ class AsimovCovCorr(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
         ]
         if convert_boolean_string(self.noPreliminary):
             arguments.append("--noPreliminary")
+        arguments += channel_label
         command = arguments
         print(command)
         try:
@@ -3243,6 +3252,7 @@ class AsimovCovCorr(Task, HTCondorWorkflow, SlurmWorkflow, law.LocalWorkflow): #
         ]
         if convert_boolean_string(self.noPreliminary):
             arguments.append("--noPreliminary")
+        arguments += channel_label
         command = arguments
         print(command)
         try:

@@ -77,9 +77,12 @@ def is_cut(points):
 
 def is_coarse(points):
     """fewer than MIN_INSIDE points inside 2 sigma (e.g. a scan of the whole model range of a precise bin):
-    the curve cannot be drawn up to its 2 sigma crossings, the scan is redone in its +- N sigma window"""
+    the curve cannot be drawn up to its 2 sigma crossings, the scan is redone in its +- N sigma window.
+    With scan_keepPoints (15 of the grid kept, spread over the +- 3 sigma window) only ~2/3 of the points can be
+    inside 2 sigma, so at most half of the points are required (2026-10-29: every 15-point scan was taken as
+    coarse and moved aside after each pass)"""
     ymin = min(y for _, y in points)
-    return sum(1 for _, y in points if y - ymin < LEVEL_CUT) < MIN_INSIDE
+    return sum(1 for _, y in points if y - ymin < LEVEL_CUT) < min(MIN_INSIDE, len(points) // 2)
 
 
 def supersede(run_dir, kind_dir, poi, stamp, best_fits=True):
