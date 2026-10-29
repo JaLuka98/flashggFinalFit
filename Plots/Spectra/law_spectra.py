@@ -1233,21 +1233,37 @@ class CreateCombinedDiffSpectra(law.Task):
         if spectra_cfg.get('underflow_bin_normalized', False):
             norm_w[0] = 1.
 
-        total = sum(np.array(getattr(m, attr), dtype=float) for m in modules.values())
-        th_up = np.zeros_like(total)
-        th_dn = np.zeros_like(total)
-        for source in ("scale", "pdf", "alpha"):
-            # each source is fully correlated across production modes: linear sum, then quadrature
-            th_up += sum(abs(np.array(getattr(m, f"{attr}_{source}_up"), dtype=float) - np.array(getattr(m, attr), dtype=float)) for m in modules.values())**2
-            th_dn += sum(abs(np.array(getattr(m, f"{attr}_{source}_dn"), dtype=float) - np.array(getattr(m, attr), dtype=float)) for m in modules.values())**2
         br_unc = block.get("br_uncertainty", 0.02)
-        th_up = np.sqrt(th_up + (br_unc * total)**2)
-        th_dn = np.sqrt(th_dn + (br_unc * total)**2)
-
         scale = float(block.get("prediction_scale", 1.))
-        prediction = scale * total / norm_w
-        pred_up = scale * th_up / norm_w
-        pred_dn = scale * th_dn / norm_w
+
+        def predict(modules):
+            total = sum(np.array(getattr(m, attr), dtype=float) for m in modules.values())
+            th_up = np.zeros_like(total)
+            th_dn = np.zeros_like(total)
+            for source in ("scale", "pdf", "alpha"):
+                # each source is fully correlated across production modes: linear sum, then quadrature
+                th_up += sum(abs(np.array(getattr(m, f"{attr}_{source}_up"), dtype=float) - np.array(getattr(m, attr), dtype=float)) for m in modules.values())**2
+                th_dn += sum(abs(np.array(getattr(m, f"{attr}_{source}_dn"), dtype=float) - np.array(getattr(m, attr), dtype=float)) for m in modules.values())**2
+            th_up = np.sqrt(th_up + (br_unc * total)**2)
+            th_dn = np.sqrt(th_dn + (br_unc * total)**2)
+            return scale * total / norm_w, scale * th_up / norm_w, scale * th_dn / norm_w
+
+        prediction, pred_up, pred_dn = predict(modules)
+
+        # other ggH generators + the same xH, as in CreateDiffSpectra: combined_spectra.alternative_predictions
+        # lists {ggh_xs, label, color}; by default spectra.ggh_no_nnlops_xs (aMC@NLO) and spectra.ggh_powheg_xs (Powheg)
+        default_alternatives = [
+            {"ggh_xs": spectra_cfg.get("ggh_no_nnlops_xs"), "label": "ggH (MG5_aMC@NLO + Pythia) + xH", "color": "tab:purple", "band_offset": 1 / 3.6},
+            {"ggh_xs": spectra_cfg.get("ggh_powheg_xs"), "label": "ggH (POWHEG + Pythia) + xH", "color": "brown", "band_offset": 1 / 10},
+        ]
+        default_alternatives = [alt for alt in default_alternatives if alt["ggh_xs"]]
+        alternatives = []
+        for alt in block.get("alternative_predictions", default_alternatives):
+            alt_modules = {"ggh": _load_prediction_module(alt["ggh_xs"])}
+            alt_modules.update({key: _load_prediction_module(block.get(f'{key}_xs', spectra_cfg[f'{key}_xs'])) for key in ("vbf", "vh", "tth")})
+            values, up, dn = predict(alt_modules)
+            alternatives.append({**alt, "values": values, "up": up, "dn": dn})
+        xh = predict({key: _load_prediction_module(block.get(f'{key}_xs', spectra_cfg[f'{key}_xs'])) for key in ("vbf", "vh", "tth")})[0]
 
         # ---- plotting ----
         # Same plotting config as CreateDiffSpectra: Plots/Spectra/config/<year>_<variable>.yml
@@ -1303,11 +1319,27 @@ class CreateCombinedDiffSpectra(law.Task):
         # data=True avoids the "Simulation" tag for Asimov results; expected fits are marked in the legend title
         hep.cms.label(cms_label, data=True, lumi=lumi, com=13.6, fontsize=20, ax=top)
 
+        # predictions drawn as in CreateDiffSpectra: solid lines, each theory band a narrow hatched box at its own
+        # position in the bin (band_offset: left edge in units of the bin width, from the bin centre), xH filled.
+        # With several channels the points sit at -1/8, 0, +1/8 of the bin, so the bands move to the right part.
         plt.rcParams['hatch.linewidth'] = 2
-        for ax, pred_vals, band_up, band_dn in ((top, prediction, pred_up, pred_dn), (ratio, np.ones_like(prediction), pred_up / prediction, pred_dn / prediction)):
-            ax.stairs(pred_vals, edges_x, color="darkgray", linewidth=1.5, label=block.get("prediction_label", "aMC@NLO NNLOPS + xH") if ax is top else None)
-            for x0, width, value, band_hi, band_lo in zip(edges_x[:-1], widths_x, pred_vals, band_up, band_dn):
-                ax.add_patch(plt.Rectangle((x0, value - band_lo), width, band_lo + band_hi, fill=False, lw=0, color="gray", hatch="///"))
+        nominal_label = block.get("prediction_label", "ggH (MG5_aMC@NLO + NNLOPS + Pythia) + xH")
+        predictions = [{"label": nominal_label, "color": "tab:blue", "band_offset": -1 / 4, "hatch": "///",
+                        "values": prediction, "up": pred_up, "dn": pred_dn}] + alternatives
+        multi_channel = len(self.channels) > 1
+        band_width = 1 / 12 if multi_channel else 1 / 8
+        for i, pred in enumerate(predictions):
+            offset = 0.19 + 0.11 * i if multi_channel else pred.get("band_offset", -1 / 4)
+            for ax, factor in ((top, 1.), (ratio, 1. / prediction)):
+                vals, hi, lo = pred["values"] * factor, pred["up"] * factor, pred["dn"] * factor
+                ax.stairs(vals, edges_x, color=pred["color"], linewidth=2, label=pred["label"] if ax is top else None)
+                for center, width, value, band_hi, band_lo in zip(centers_x, widths_x, vals, hi, lo):
+                    ax.add_patch(plt.Rectangle((center + offset * width, value - band_lo), band_width * width, band_lo + band_hi,
+                                               fill=False, lw=0, color=pred["color"], hatch=pred.get("hatch", "////")))
+        xh_label = block.get("xh_label", "xH = ttH + VH + VBF\n(MG5_aMC@NLO + Pythia)")
+        top.stairs(xh, edges_x, linewidth=2, color="green")
+        top.stairs(xh, edges_x, linewidth=2, label=xh_label, alpha=0.2, color="green", fill=True)
+        for ax in (top, ratio):
             for edge in edges_x:
                 ax.axvline(edge, color="lightgray", lw=0.8, zorder=0)
 
@@ -1338,7 +1370,17 @@ class CreateCombinedDiffSpectra(law.Task):
         if spectra_cfg.get("plot_log", 0):
             top.set_yscale("log")
         if "frame1_ylim" in block:  # this plot's own range (e.g. total cross sections in pb)
-            top.set_ylim(*block["frame1_ylim"])
+            y_lo, y_hi = block["frame1_ylim"]
+            if "legend_headroom" in block:
+                # upper limit such that the highest point / prediction stays below the top `legend_headroom` of the panel
+                # only the bins inside the drawn x range (not e.g. the N_jets < 2 underflow bin of m_jj)
+                x_lo, x_hi = to_x(spectra_cfg["x_lim"])
+                shown = (edges_x[:-1] >= x_lo - 1e-9) & (edges_x[1:] <= x_hi + 1e-9)
+                y_max = max([np.max((pred["values"] + pred["up"])[shown]) for pred in predictions] +
+                            [np.max(((res["r"] + res["tot_up"]) * prediction)[shown]) for res in results.values()])
+                free = float(block["legend_headroom"])
+                y_hi = y_lo * (y_max / y_lo) ** (1 / (1 - free)) if spectra_cfg.get("plot_log", 0) else y_lo + (y_max - y_lo) / (1 - free)
+            top.set_ylim(y_lo, y_hi)
         else:
             if "ylim" in frame1_cfg:
                 top.set_ylim(**frame1_cfg["ylim"])
@@ -1354,16 +1396,20 @@ class CreateCombinedDiffSpectra(law.Task):
         top.tick_params(axis="y", labelsize=20)
 
         handles, labels = top.get_legend_handles_labels()
-        order = [block.get("prediction_label", "aMC@NLO NNLOPS + xH")] + [style[ch]["label"] for ch in ("comb", "hgg", "hzz") if ch == main]
-        order += [main_syst_label] + [style[ch]["label"] for ch in ("hgg", "hzz") if ch in self.channels and ch != main]
+        order = [style[ch]["label"] for ch in ("comb", "hgg", "hzz") if ch == main] + [main_syst_label]
+        order += [style[ch]["label"] for ch in ("hgg", "hzz") if ch in self.channels and ch != main]
+        order += [pred["label"] for pred in predictions] + [xh_label]
         ordered = [(handles[labels.index(l)], l) for l in order if l in labels]
-        legend_title = None if is_data else block.get("expected_title", "Expected (Asimov)")
-        top.legend(*zip(*ordered), fontsize=frame1_cfg.get("fontsize", 14), title=legend_title, title_fontsize=frame1_cfg.get("title_fontsize", 14),
-                   loc=frame1_cfg.get("legend_location", block.get("legend_location", "lower left")), frameon=True)
+        legend_title = block.get("mass_title", "$m_H$ = 125.07 GeV")
+        if not is_data:
+            legend_title = block.get("expected_title", "Expected (Asimov)") + ", " + legend_title
+        top.legend(*zip(*ordered), fontsize=block.get("legend_fontsize", frame1_cfg.get("fontsize", 14)), title=legend_title,
+                   title_fontsize=block.get("legend_fontsize", frame1_cfg.get("title_fontsize", 14)),
+                   loc=block.get("legend_location", frame1_cfg.get("legend_location", "lower left")), frameon=True)
         plt.setp(top.get_xticklabels(), visible=False)
 
         # ---- ratio panel ----
-        ratio.set_ylabel("Ratio to prediction", fontsize=16)
+        ratio.set_ylabel(block.get("ratio_ylabel", "Ratio to MG5+NNLOPS"), fontsize=16)
         ratio.set_xlim(*to_x(spectra_cfg["x_lim"]))
         ratio.set_ylim(*block.get("ratio_ylim", frame2_cfg.get("ylim", spectra_cfg["y_lim"])))
         ratio.set_xlabel(r'$' + variable_tex + r'$ ' + spectra_cfg["x_unit"], fontsize=20)
@@ -1402,6 +1448,7 @@ class CreateCombinedDiffSpectra(law.Task):
             "bins": bins.tolist(),
             "prediction": prediction.tolist(),
             "prediction_scale": scale,
+            "alternative_predictions": {alt["label"]: alt["values"].tolist() for alt in alternatives},
             "output_dirs": output_dirs,
             "fits": {ch: {k: v.tolist() for k, v in res.items()} for ch, res in results.items()},
         }
