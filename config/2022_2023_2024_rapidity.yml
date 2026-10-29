@@ -278,7 +278,7 @@ datacard_clean:
 combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 30 
-  scan_keepPoints: 20 # fit only 20 of the 30 grid points (spread evenly, ends included); points of the full grid already fitted are merged too
+  scan_keepPoints: 15 # fit only 15 of the 30 grid points (spread evenly, ends included); points of the full grid already fitted are merged too
   setParameterRange: "r=0,3"
   execution: 'htcondor'
   batchPartition: "short" # Slurm partition to use for job submission
@@ -340,17 +340,19 @@ spectra:
 # alone): measured r per bin x the SM total cross section of the bin (full phase space, all production modes,
 # no BR), from the HiggsDNA calculator with the full phase space fractions (totXS, fb).
 combined_spectra:
-  hgg_output_dir: "output_combination_rapidity/hgg"
-  hzz_output_dir: "output_combination_rapidity/h4l"
-  comb_output_dir: "output_combination_rapidity/comb"
+  hgg_output_dir: "output_combination_accbin_rapidity/hgg"
+  hzz_output_dir: "output_combination_rapidity/h4l"  # H4l cards unchanged by the AccBin update: existing results
+  comb_output_dir: "output_combination_accbin_rapidity/comb"
   poi_names: ['r_YH_0p0_0p15', 'r_YH_0p15_0p3', 'r_YH_0p3_0p45', 'r_YH_0p45_0p6', 'r_YH_0p6_0p75', 'r_YH_0p75_0p9', 'r_YH_0p9_1p2', 'r_YH_1p2_1p6', 'r_YH_1p6_2p0', 'r_YH_2p0_2p5']
   xs_module: "fidXS_YH_all"
   xs_attribute: "totXS"
   prediction_scale: 0.001  # fb -> pb
-  prediction_label: "SM (ggH + xH), $m_H$ = 125.07 GeV"
+  prediction_label: "ggH (MG5_aMC@NLO + NNLOPS + Pythia) + xH"
   br_uncertainty: 0.  # total cross sections, no BR
   hzz_label: "H$\\rightarrow$ZZ$\\rightarrow 4\\ell$"
   ylabel: '$\Delta\sigma_{\text{tot}} / \Delta |y^H|$ (pb)'
   frame1_ylim: [0, 60]
   ratio_ylim: [-1, 4]
   legend_location: "upper right"
+  legend_headroom: 0.5  # top half of the panel kept free for the legend
+  legend_fontsize: 12

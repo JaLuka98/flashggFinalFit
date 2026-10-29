@@ -1,5 +1,28 @@
 # Hgg acceptance (extrapolation) uncertainties
 
+## Current prescription (2026-10-28)
+
+The card writer now defaults to **AccBin**, not the historical **Acc** arrays
+described below. `AccBin[b]` is the weighted fiducial yield in bin b divided by
+the weighted generated yield in the same bin, with identical variations in both
+sums. In/out factors are `AccBin_var / AccBin` and
+`(1 - AccBin_var) / (1 - AccBin)`. Missing or nonphysical arrays fail explicitly.
+Use `--acceptance-prefix Acc` only to reproduce historical cards.
+
+Current inputs:
+`/net/data_cms3a-2/nobackup/daumann/HIG-26-007/acceptance_inputs/2026_10_28_accbin/<variable>`.
+These retain the legacy arrays for predictions and add seven `AccBin*` arrays.
+They also swap the alphaS member labels relative to the older production.
+The acceptance denominator correction does not require changing the prediction
+arrays, and this update does not copy them into the plotting prediction modules.
+
+See `combination/ACCBIN_VALIDATION.md` for checks, comparisons and unresolved
+physics assumptions. Updated cards/workspaces are isolated in
+`output_combination_accbin_<observable>`; historical fits are not updated results.
+
+The rest of this document records the **historical** recipe and investigations;
+its claim that the whole-sample denominator isolates acceptance is superseded.
+
 The Hgg cards used in the Hgg+H4l combination (HIG-26-007) carry three lnN rows
 
     CMS_HIG25015_QCDscale_accMatrix

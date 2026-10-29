@@ -32,6 +32,8 @@ import sys
 import time
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# run folders <REPO>/<OUT_PREFIX><obs>, the default OUT of run_combination.sh (AccBin cards since 2026-10-28)
+OUT_PREFIX = os.environ.get("COMB_OUT_PREFIX", "output_combination_accbin_")
 # FARM_NODES=lxbatch01,lxbatch03 restricts the farm to these nodes (e.g. one full of other jobs of this user,
 # which node_guard.py does not count but answers by killing the fits of this checkout)
 NODES = os.environ.get("FARM_NODES", "lxbatch01,lxbatch02,lxbatch03,lxbatch04,lxbatch05").split(",")
@@ -160,12 +162,12 @@ def nfs_latency():
 
 def run_dir(run):
     obs, fit, _ = run.split(":")
-    return os.path.join(REPO, f"output_combination_{obs}", fit)
+    return os.path.join(REPO, f"{OUT_PREFIX}{obs}", fit)
 
 
 def law_log(run):
     obs, fit, kind = run.split(":")
-    return os.path.join(REPO, f"output_combination_{obs}", "logs", f"law_{'asimov' if kind == 'asimov' else 'unblind'}_{fit}.log")
+    return os.path.join(REPO, f"{OUT_PREFIX}{obs}", "logs", f"law_{'asimov' if kind == 'asimov' else 'unblind'}_{fit}.log")
 
 
 def launch(run, host, workers):
@@ -214,7 +216,8 @@ def missing_scans(run):
     spec = importlib.util.spec_from_file_location("maps", os.path.join(REPO, "Combine", "makeCombinationMaps.py"))
     maps = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(maps)
-    d = os.path.join(REPO, f"output_combination_{obs}", fit, "Combine", f"runFits_{obs}", kind)
+    runfits = "runFits_mu_fiducial" if obs == "inclusive" else f"runFits_{obs}"  # the inclusive fits (variable '')
+    d = os.path.join(REPO, f"{OUT_PREFIX}{obs}", fit, "Combine", runfits, kind)
     n = 0
     for poi in maps.patterns(obs)[1]:
         for k in ("Fit", "Stat"):

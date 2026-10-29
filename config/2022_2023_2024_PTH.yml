@@ -278,7 +278,7 @@ datacard_clean:
 combine_fit:
   asimov_numPoints: 30 # Number of points the Asimov generator should generate for the NLL scan
   unblindedFit_numPoints: 30 
-  scan_keepPoints: 20 # fit only 20 of the 30 grid points (spread evenly, ends included); points of the full grid already fitted are merged too
+  scan_keepPoints: 15 # fit only 15 of the 30 grid points (spread evenly, ends included); points of the full grid already fitted are merged too
   setParameterRange: "r=0,2"
   # Opt-in lower-68%-CL refinement profile for the H4l-only tail bins.
   # Keep the global best fit inside the allowed range. Fine resolution is
@@ -358,17 +358,19 @@ spectra:
 # alone): measured r per bin x the SM total cross section of the bin (full phase space, all production modes,
 # no BR), from the HiggsDNA calculator with the full phase space fractions (totXS, fb).
 combined_spectra:
-  hgg_output_dir: "output_combination_PTH/hgg"
-  hzz_output_dir: "output_combination_PTH/h4l"
-  comb_output_dir: "output_combination_PTH/comb"
+  hgg_output_dir: "output_combination_accbin_PTH/hgg"
+  hzz_output_dir: "output_combination_PTH/h4l"  # H4l cards unchanged by the AccBin update: existing results
+  comb_output_dir: "output_combination_accbin_PTH/comb"
   poi_names: ['r_PTH_0p0_5p0', 'r_PTH_5p0_10p0', 'r_PTH_10p0_15p0', 'r_PTH_15p0_20p0', 'r_PTH_20p0_25p0', 'r_PTH_25p0_30p0', 'r_PTH_30p0_35p0', 'r_PTH_35p0_45p0', 'r_PTH_45p0_60p0', 'r_PTH_60p0_80p0', 'r_PTH_80p0_100p0', 'r_PTH_100p0_120p0', 'r_PTH_120p0_140p0', 'r_PTH_140p0_170p0', 'r_PTH_170p0_200p0', 'r_PTH_200p0_250p0', 'r_PTH_250p0_350p0', 'r_PTH_350p0_450p0', 'r_PTH_450p0_10000p0']
   xs_module: "fidXS_PTH_all"
   xs_attribute: "totXS"
   prediction_scale: 0.001  # fb -> pb
-  prediction_label: "SM (ggH + xH), $m_H$ = 125.07 GeV"
+  prediction_label: "ggH (MG5_aMC@NLO + NNLOPS + Pythia) + xH"
   br_uncertainty: 0.  # total cross sections, no BR
   hzz_label: "H$\\rightarrow$ZZ$\\rightarrow 4\\ell$"
   ylabel: '$\Delta\sigma_{\text{tot}} / \Delta p_T^H$ (pb/GeV)'
   frame1_ylim: [0.00005, 50]
   ratio_ylim: [-1, 4]
   legend_location: "upper right"
+  legend_headroom: 0.5  # top half of the panel kept free for the legend
+  legend_fontsize: 12

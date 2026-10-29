@@ -7,13 +7,15 @@ Higgs processes, with a value per (production mode, gen bin, in/out).
 Inputs are the HiggsDNA fiducial calculator outputs
 (higgs_dna/scripts/fiducial/fiducial_xsec_calculator.py), one file per
 production mode, e.g. fidXS_YH_ggH.py, containing per gen bin b
-    Acc[b]         = sum w(fiducial and bin b) / sum w(all)
-    Acc_<src>_up/dn  the same with the varied weights (normalisation divided out)
+    AccBin[b] = sum w(fiducial and bin b) / sum w(bin b)
+    AccBin_<src>_up/dn use the same variation in numerator and denominator.
+Legacy Acc arrays describe fractions of the whole sample, not within-bin
+acceptances. They are only available via --acceptance-prefix Acc for auditing.
 
-Convention (reproduces the rows in the HIG-26-007 cards):
-    <prod>_<var>_<bin>_in  :  Acc_var[b] / Acc[b]
-    <prod>_<var>_<bin>_out :  (1 - Acc_var[b]) / (1 - Acc[b])
-written as "down/up". The value is the same for every era and category.
+Convention:
+    <prod>_<var>_<bin>_in  :  AccBin_var[b] / AccBin[b]
+    <prod>_<var>_<bin>_out :  (1 - AccBin_var[b]) / (1 - AccBin[b])
+written as "down/up" (QCDscale as "up/down", see FLIPPED_SOURCES). The value is the same for every era and category.
 Gen bins are matched by position: bin i of the card <-> bin i of the file.
 
 Examples:
@@ -40,6 +42,9 @@ CARD_VARIABLE = {"YH": "YH", "PTH": "PTH", "NJ": "NJ", "PTJ0": "PTJ0", "MassJ0J1
 DEFAULT_PROC_MAP = "ggh:ggH,vbf:VBFH,vh:VH,tth:ttH"
 # Card source name -> key used in the HiggsDNA output (Acc_<key>_up/dn)
 SOURCES = {"QCDscale": "scale", "pdf": "pdf", "alphaS": "alpha"}
+# Sources written as "up/down" instead of "down/up", to follow the H4l orientation of the shared nuisance:
+# the H4l QCDscale_accMatrix has its scales-up (envelope maximum) variation first (decided 2026-10-28)
+FLIPPED_SOURCES = {"scale"}
 
 
 def get_options():
@@ -47,6 +52,8 @@ def get_options():
     p.add_argument("--datacard", required=True, help="Input Hgg datacard")
     p.add_argument("--fidxs-dir", required=True, help="Directory with fidXS_<obs>_<proc>.py files")
     p.add_argument("--obs", required=True, help="HiggsDNA observable label, e.g. YH, PTH, NJ, PTJ0")
+    p.add_argument("--acceptance-prefix", choices=["AccBin", "Acc"], default="AccBin",
+                   help="Acceptance arrays to read; Acc is for legacy reproduction only")
     p.add_argument("--card-var", default=None, help="Variable label in the card process names (default: from --obs)")
     p.add_argument("--proc-map", default=DEFAULT_PROC_MAP, help="cardPrefix:higgsdnaProc,... (default: %(default)s)")
     p.add_argument("--name-template", default="CMS_HIG25015_{source}_accMatrix",
@@ -119,17 +126,31 @@ def check_edges(prod, bins, boundaries):
                   f"assumed to be the same under/overflow bin")
 
 
-def load_acceptances(fidxs_dir, obs, hdna_proc):
+def load_acceptances(fidxs_dir, obs, hdna_proc, prefix="AccBin"):
     path = f"{fidxs_dir}/fidXS_{obs}_{hdna_proc}.py"
     try:
         ns = runpy.run_path(path, init_globals={"np": np})
     except FileNotFoundError:
         sys.exit(f"[ERROR] missing input {path}")
-    acc = {"nom": np.asarray(ns["Acc"], float)}
+    required = [prefix] + [f"{prefix}_{k}_{d}" for k in SOURCES.values() for d in ("up", "dn")]
+    missing = [k for k in required if k not in ns]
+    if missing:
+        raise ValueError(f"{path}: missing {missing}; refusing to substitute whole-sample Acc arrays")
+    acc = {"nom": np.asarray(ns[prefix], float)}
     for key in SOURCES.values():
-        acc[f"{key}_up"] = np.asarray(ns[f"Acc_{key}_up"], float)
-        acc[f"{key}_dn"] = np.asarray(ns[f"Acc_{key}_dn"], float)
+        acc[f"{key}_up"] = np.asarray(ns[f"{prefix}_{key}_up"], float)
+        acc[f"{key}_dn"] = np.asarray(ns[f"{prefix}_{key}_dn"], float)
     acc["boundaries"] = list(ns["Boundaries"])
+    edges = np.asarray(acc["boundaries"], float)
+    if not np.isfinite(edges).all() or not np.all(np.diff(edges) > 0):
+        raise ValueError(f"{path}: non-finite or unordered bin boundaries")
+    for key, values in acc.items():
+        if key == "boundaries":
+            continue
+        if values.shape != (len(edges) - 1,) or not np.isfinite(values).all():
+            raise ValueError(f"{path}: malformed {prefix} array {key}")
+        if np.any(values <= 0) or np.any(values >= 1):
+            raise ValueError(f"{path}: {key} outside (0, 1); cannot form positive in/out lnN factors")
     return acc
 
 
@@ -142,6 +163,8 @@ def fmt(x):
 
 def kappa(acc, key, i, io):
     nom, dn, up = acc["nom"][i], acc[f"{key}_dn"][i], acc[f"{key}_up"][i]
+    if key in FLIPPED_SOURCES:
+        dn, up = up, dn
     if io == "in":
         if nom <= 0:
             return "-"
@@ -178,6 +201,10 @@ def validate(lines, rows, procs, cols, tolerance):
     for name, new in rows.items():
         if name not in existing:
             print(f"  {name}: not in the card")
+            ok = False
+            continue
+        if len(existing[name]) != len(new):
+            print(f"  {name}: column-count mismatch")
             ok = False
             continue
         worst = defaultdict(float)
@@ -235,7 +262,7 @@ def main():
     present = sorted({c[0] for c in cols if c})
     if not present:
         sys.exit(f"[ERROR] no <prod>_{card_var}_<bin>_(in|out) or <prod>_(in|out) processes in {opt.datacard}")
-    accs = {p: load_acceptances(opt.fidxs_dir, opt.obs, proc_map[p]) for p in present}
+    accs = {p: load_acceptances(opt.fidxs_dir, opt.obs, proc_map[p], opt.acceptance_prefix) for p in present}
     rows, bins = build_rows(procs, cols, accs, opt.name_template)
     print(f"{opt.datacard}: {len(procs)} columns, {len(bins)} gen bins, production modes {present}")
 

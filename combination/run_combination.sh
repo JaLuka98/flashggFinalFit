@@ -15,6 +15,8 @@
 #     prepare    put cards and workspaces where law expects them
 #     law        expected (Asimov) fits: law run FinalFitsYear --asimov-fits, for every fit in $FITS
 #     unblind    observed fits: law run FinalFitsYear --unblinded-fits
+#     impacts    expected (Asimov) impacts: law run FinalFitsYear --asimov-impacts (one fit per nuisance;
+#                start further processes with LOG_SUFFIX only once the initial fit of the first one exists)
 #     ranges     per-POI scan windows (best fit +- 3 sigma) from the finished scans of KIND -> <fit>/Combine/
 #                scan_ranges.json; the cut scans are moved aside: run law / unblind again to redo them in
 #                their windows, repeat until none is cut (combination/make_scan_ranges.py)
@@ -46,7 +48,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "${HERE}/.." && pwd)"
 CMSSW_SRC="$(cd "${REPO}/.." && pwd)"
 STAGE=${STAGE:-/net/data_cms3a-2/nobackup/group_JE_CMS/Hyy_Hzz_combination}
-OUT=${OUT:-${REPO}/output_combination_${OBS}}
+OUT=${OUT:-${REPO}/output_combination_accbin_${OBS}}
 CHANNELS=${CHANNELS:-"hgg h4l"}
 case "${CHANNELS}" in
   "hgg h4l") FITS=${FITS:-"hgg h4l comb"} ;;
@@ -75,10 +77,10 @@ if [ -z "${HGG_CARD}" ]; then
     HGG_CARD=${REPO}/output_${YEAR}_${OBS}/Combine/Datacard_${OBS}_${YEAR}.txt
   fi
 fi
-HGG_TOTAL=${HGG_CARD%.txt}_total.txt
+HGG_TOTAL=${HGG_TOTAL:-${HGG_CARD%.txt}_total_accbin.txt}
 H4L_RAW=${STAGE}/Hzz_datacards_floating_bkg/hzz4l_all_13TeV_xs_${H4L_VAR}_zzfloating_bin_v3.txt
 H4L_COMB=${H4L_RAW%.txt}_comb.txt
-ACC_INPUTS=${STAGE}/fiducial_samples/acceptance_2022_2023/${ACC_DIR}
+ACC_INPUTS=${ACC_INPUTS:-/net/data_cms3a-2/nobackup/daumann/HIG-26-007/acceptance_inputs/2026_10_28_accbin/${ACC_DIR}}
 if [ "${OBS}" = inclusive ]; then
   CARD_NAME=Datacard_${YEAR}; RUN_DIR=runFits_mu_fiducial
 else
@@ -100,7 +102,7 @@ do_hgg_card() {
   mkdir -p "${OUT}/logs"
   local acc="${OUT}/logs/hgg_card_with_acceptance.txt"
   python3 "${REPO}/Datacard/addAcceptanceUncertainties.py" --datacard "${HGG_CARD}" \
-    --fidxs-dir "${ACC_INPUTS}" --obs "${ACC_OBS}" --output "${acc}"
+    --fidxs-dir "${ACC_INPUTS}" --obs "${ACC_OBS}" --acceptance-prefix AccBin --output "${acc}"
   local fresh="${OUT}/logs/$(basename "${HGG_TOTAL}")"
   python3 "${REPO}/Datacard/addBranchingRatioUncertainties.py" --datacard "${acc}" --channel hgg \
     --mass "${FINALFITS_MH}" --output "${fresh}"
@@ -172,12 +174,17 @@ do_t2w() {
     --channels "${CHANNELS// /,}" --mass "${FINALFITS_MH}" --output "${OUT}/logs/t2w_map.sh" | tee "${OUT}/logs/map_check.log"
   local model
   model="$(sed -n '/-P HiggsAnalysis/,$p' "${OUT}/logs/t2w_map.sh" | tr -d '\\\n')"
+  local pids=() failed=0
   for fit in ${FITS}; do
     echo "text2workspace.py $(card_of ${fit}) -o $(ws_of ${fit}) -m ${FINALFITS_MH} ${model}" > "${OUT}/logs/t2w_${fit}.cmd"
     eval "text2workspace.py $(card_of ${fit}) -o $(ws_of ${fit}) -m ${FINALFITS_MH} ${model}" \
       > "${OUT}/logs/t2w_${fit}.log" 2>&1 &
+    pids+=("$!")
   done
-  wait
+  for pid in "${pids[@]}"; do
+    wait "${pid}" || failed=1
+  done
+  [ "${failed}" = 0 ] || { echo "text2workspace failed; inspect ${OUT}/logs/t2w_*.log"; exit 1; }
   for fit in ${FITS}; do
     [ -s "$(ws_of ${fit})" ] || { echo "text2workspace failed for ${fit}, see ${OUT}/logs/t2w_${fit}.log"; exit 1; }
   done
@@ -255,6 +262,7 @@ for step in "$@"; do
     prepare) do_prepare ;;
     law) run_law --asimov-fits asimov ;;
     unblind) run_law --unblinded-fits unblind ;;
+    impacts) run_law --asimov-impacts asimov_impacts ;;
     ranges) do_ranges ;;
     summary) do_summary ;;
     *) echo "unknown step ${step}"; exit 1 ;;

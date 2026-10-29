@@ -12,6 +12,39 @@ in H4l), all scaled by the POI of that bin. The chain uses two repositories:
 
 Shared inputs and outputs: `/net/data_cms3a-2/nobackup/group_JE_CMS/Hyy_Hzz_combination` (`$STAGE`).
 
+## Acceptance update, 2026-10-28
+
+The workflow now uses `AccBin` (fiducial / all generated events **in the same
+generator bin**) from
+`/net/data_cms3a-2/nobackup/daumann/HIG-26-007/acceptance_inputs/2026_10_28_accbin/<obs>`.
+`Acc` remains a whole-sample fraction used by the prediction calculator and is
+not substituted if `AccBin` is missing. The alphaS member labels in these inputs
+also differ from the older inputs (up=102, down=101).
+
+New runs default to `output_combination_accbin_<obs>` and prepared Hgg cards to
+`*_total_accbin.txt`. Existing outputs are historical and must not be interpreted
+as fits of the corrected cards. Spectra configuration points to the new folders.
+
+To reproduce the isolated corrected cards from the existing fitted card sets:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 combination/prepare_accbin_cards.py \
+  --inputs /net/data_cms3a-2/nobackup/daumann/HIG-26-007/acceptance_inputs/2026_10_28_accbin
+combination/run_combination.sh PTH t2w prepare
+```
+
+The preparation checks input ranges, generated in/out conservation, preservation
+of non-acceptance rows and H4l entries, and consistency of combined/single-channel
+cards. SHA256 provenance and numerical old/new comparisons are recorded in
+`combination/accbin_validation.json` and each output's `acceptance_validation.json`.
+It does not launch fits. `--acceptance-prefix Acc` in the card writer is reserved
+for reproduction of legacy inputs.
+
+Remaining physics limitations: the supplied PTJ0 input ends at 900 GeV while the
+card's last bin extends to 10000 GeV; H4l correlation orientation and PDF member
+prescriptions are not established by these card checks. Overall selected-yield
+efficiency variations removed by the Hgg shape tier are a separate question.
+
 ## 1. Post-processing (MC with per-bin out ids)
 
 Data and the inclusive measurement use the October smoothed sigma_m/m production
