@@ -173,6 +173,10 @@ conversionTable_ = {
     "uuH": "uuH",
     "ddH": "ddH",
     "ssH": "ssH",
+    "WHtoGG": "wh",
+    "WHto2G": "wh",
+    "ZHtoGG": "zh",
+    "ZHto2G": "zh",
     }
 
 # List of all jet-related variables. Variables listed here will get the CMS_scale_j and CMS_res_j uncertainty in the datacard step.
