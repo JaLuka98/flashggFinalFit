@@ -130,18 +130,19 @@ production_modes = [
     ("ssH", "ssHToGG")
 ]
 
-# Getting production XS from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWG136TeVxsec_extrap, for 125.38 @ 13.6 TeV
+# Production XS from the LHCHWG Report 5 (R5 v1.1.3, https://gitlab.cern.ch/LHCHIGGSXS/LHCHXSWG1/crosssections), for 125.38 @ 13.6 TeV
+# VH = WH + ZH (ZH includes gg->ZH)
 production_XS = {
-    "GluGluHtoGG": 51.96,
-    "GluGluHto2G": 51.96,
-    "VBFHtoGG": 4.067,
-    "VBFHto2G": 4.067,
-    "VHtoGG": 2.3781,
-    "VHto2G": 2.3781,
-    "ttHtoGG": 0.5638,
-    "ttHto2G": 0.5638,
-    "bbHtoGG": 0.52218,
-    "bbHto2G": 0.52218,
+    "GluGluHtoGG": 51.45,
+    "GluGluHto2G": 51.45,
+    "VBFHtoGG": 4.099837482,
+    "VBFHto2G": 4.099837482,
+    "VHtoGG": 2.39399,
+    "VHto2G": 2.39399,
+    "ttHtoGG": 0.5888,
+    "ttHto2G": 0.5888,
+    "bbHtoGG": 0.563,
+    "bbHto2G": 0.563,
     "uuHToGG": 1.0,
     "ddHToGG": 1.0,
     "ssHToGG": 1.0,

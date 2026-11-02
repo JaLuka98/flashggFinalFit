@@ -210,34 +210,45 @@ available_directory_names = get_available_directory_names(path_folder)
 obs_bins = [float(num) for num in args.bin.strip("|").split("|")]
 
 # Reference cross sections, in picobarn.
-# 13p6 values correspond to 125.07 GeV and are used for the final fiducial
-# cross section normalisation after the acceptance extraction.
+# 13p6 values: LHCHWG Report 5 (R5 v1.1.3, https://gitlab.cern.ch/LHCHIGGSXS/LHCHXSWG1/crosssections, R5/),
+# mH = 125.38 GeV, used for the final fiducial cross section normalisation after the acceptance extraction.
+# VH = WH + ZH (ZH includes gg->ZH). The 13 and 14 TeV values are the old YR4 numbers (not used).
 XS_map = {'13':   {'ggH': 48.58, 'VBFH': 3.782, 'VH': 2.2569, 'ttH': 0.5071},
-         '13p6': {'ggH': 51.96, 'VBFH': 4.067, 'VH': 2.3781, 'ttH': 0.5638},
+         '13p6': {'ggH': 51.45, 'VBFH': 4.099837482, 'VH': 2.39399, 'ttH': 0.5888},
          '14':   {'ggH': 54.67, 'VBFH': 4.278, 'VH': 2.4991, 'ttH': 0.6137},}
 
+# R5 relative uncertainties at 13.6 TeV, mH = 125.38 GeV, in %: theory (up, down) and PDF+alphaS.
+# ggH: Gaussian theory uncertainty (scale, quark masses, EW, PDF-TH), as the YR4 TH Gaussian used before.
+# VH: WH and ZH uncertainties added linearly, weighted by their cross sections.
+XS_unc_13p6 = {'ggH':  {'scale': (4.04, -4.04), 'pdf_alphas': 2.46},
+               'VBFH': {'scale': (1.09011564073212, -1.05111564073212), 'pdf_alphas': 2.196},
+               'VH':   {'scale': (1.4426767405043461, -1.5203449722012206), 'pdf_alphas': 1.7751195598143685},
+               'ttH':  {'scale': (1.74928556845359, -2.37697286480094), 'pdf_alphas': 2.78028775489157},}
+
 XS_map_scale_up = {'13':   {},
-                   '13p6': {'ggH': 53.98644, 'VBFH': 4.087335, 'VH': 2.3376723, 'ttH': 0.597628},
+                   '13p6': {p: XS_map['13p6'][p] * (1 + u['scale'][0] / 100) for p, u in XS_unc_13p6.items()},
                    '14':   {},}
 
 XS_map_scale_dn = {'13':   {},
-                   '13p6': {'ggH': 49.93356, 'VBFH': 4.054799, 'VH': 2.4185277, 'ttH': 0.5113666},
+                   '13p6': {p: XS_map['13p6'][p] * (1 + u['scale'][1] / 100) for p, u in XS_unc_13p6.items()},
                    '14':   {},}
 
+# R5 quotes PDF+alphaS combined (PDF4LHC): all of it goes into the pdf variation. The alphaS variation keeps the
+# nominal cross section, so it only carries the alphaS dependence of the acceptance.
 XS_map_pdf_up = {'13':   {},
-                   '13p6': {'ggH': 52.94724, 'VBFH': 4.152407, 'VH': 2.4137715, 'ttH': 0.580714},
+                   '13p6': {p: XS_map['13p6'][p] * (1 + u['pdf_alphas'] / 100) for p, u in XS_unc_13p6.items()},
                    '14':   {},}
 
 XS_map_pdf_dn = {'13':   {},
-                   '13p6': {'ggH': 50.97276, 'VBFH': 3.981593, 'VH': 2.3424285, 'ttH': 0.546886},
+                   '13p6': {p: XS_map['13p6'][p] * (1 - u['pdf_alphas'] / 100) for p, u in XS_unc_13p6.items()},
                    '14':   {},}
 
 XS_map_alphaS_up = {'13':   {},
-                   '13p6': {'ggH': 53.31096, 'VBFH': 4.087335, 'VH': 2.3995029, 'ttH': 0.575076},
+                   '13p6': dict(XS_map['13p6']),
                    '14':   {},}
 
 XS_map_alphaS_dn = {'13':   {},
-                    '13p6': {'ggH': 50.60904, 'VBFH': 4.046665, 'VH': 2.3566971, 'ttH': 0.552524},
+                    '13p6': dict(XS_map['13p6']),
                     '14':   {},}
 
 
@@ -278,7 +289,7 @@ processMap = {'2022':
             }
 
 # Physics constants and systematic weight bookkeeping.
-BR = 0.2270/100 # SM value for mH close to 125: https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR
+BR = 0.2270/100 # SM value for mH close to 125 (YR4, not updated in Report 5): https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR
 mass_points = args.mass_points # The fiducial acceptance is interpolated to 125.07 GeV unless only mH=125 is requested.
 # For POWHEG only the 125 GeV sample is available, so all requested mass points
 # are redirected to the same input directory.
