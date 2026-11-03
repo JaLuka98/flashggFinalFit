@@ -136,10 +136,11 @@ def makeSplusBPlot(workspace,hD,hSB,hB,hS,hDr,hBr,hSr,cat,options,dB=None,reduce
       xerr = 0.5*(h_axes.GetXaxis().GetBinWidth(ibin))
       bkgval = hB['nBins'].GetBinContent(ibin)
       properties = extractBandProperties(dB,cat,ibin)
-      gr_1sig.SetPoint(gr_i,xval,properties['median'])
-      gr_2sig.SetPoint(gr_i,xval,properties['median'])
-      gr_1sig_r.SetPoint(gr_i,xval,properties['median']-bkgval)
-      gr_2sig_r.SetPoint(gr_i,xval,properties['median']-bkgval)
+      # toys' +-1/2 sigma widths (around their median), drawn on the background curve
+      gr_1sig.SetPoint(gr_i,xval,bkgval)
+      gr_2sig.SetPoint(gr_i,xval,bkgval)
+      gr_1sig_r.SetPoint(gr_i,xval,0.)
+      gr_2sig_r.SetPoint(gr_i,xval,0.)
       gr_1sig.SetPointError(gr_i,xerr,xerr,properties['median']-properties['down1sigma'],properties['up1sigma']-properties['median'])
       gr_2sig.SetPointError(gr_i,xerr,xerr,properties['median']-properties['down2sigma'],properties['up2sigma']-properties['median'])
       gr_1sig_r.SetPointError(gr_i,xerr,xerr,properties['median']-properties['down1sigma'],properties['up1sigma']-properties['median'])
@@ -220,7 +221,7 @@ def makeSplusBPlot(workspace,hD,hSB,hB,hS,hDr,hBr,hSr,cat,options,dB=None,reduce
     leg.AddEntry(hSB['pdfNBins'],"S+B fit","l")
     leg.AddEntry(hB['pdfNBins'],"B component","l")
   else:
-    leg.AddEntry(hB['pdfNBins'],"B fit","l")
+    leg.AddEntry(hB['pdfNBins'],"B fit (post-fit)" if getattr(options,"bkgFromFit",None) else "B fit","l")
     leg.AddEntry(hS['pdfNBins'],"S model","fl")
   if options.doBands:
     leg.AddEntry(gr_1sig,"#pm1 #sigma","F")

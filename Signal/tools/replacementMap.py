@@ -470,7 +470,7 @@ _DPhiJ0J1_BINS = variableBins["DPhiJ0J1"]
 
 globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"] = od()
 _DPhiJ0J1_RECO_CATS = ['cat0', 'cat1', 'cat2', 'catMerged']
-_DPhiJ0J1_WV_BIN = "m3p1416_m1p5708"
+_DPhiJ0J1_WV_BIN = "m3p1416_m1p5708" #2022: m3p1416_m1p5708, 2023: m1p5708_0p0
 # Wrong vertex stuff, which process should be considered?
 globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['procWV'] = f"ggh_DPhiJ0J1_{_DPhiJ0J1_WV_BIN}_in"
 globalReplacementMap["Run3FidXSAnalysisDPhiJ0J1"]['catWV'] = f"RECO_DPhiJ0J1_{_DPhiJ0J1_WV_BIN}_cat2"

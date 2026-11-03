@@ -1,6 +1,7 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_27_with_Zmmg_SaS/final_fits_outputs/PhiEtaStar'
+# outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_27_with_Zmmg_SaS/final_fits_outputs/PhiEtaStar'
+outputFolder: '/t3home/niharrin/devel/work/t35/CMSSW_14_1_0_pre4/src/flashggFinalFit/output_2022_2023_2024_PhiEtaStar'
 
 #outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/ext-khuang/Differentials_10_31/222324analysis/PhiEtaStar_updated'
 inputFiles:
@@ -248,8 +249,8 @@ datacard_clean:
 
 combine_fit:
   asimov_numPoints: 100 # Number of points the Asimov generator should generate for the NLL scan
-  unblindedFit_numPoints: 100 
-  setParameterRange: "r=0,2"
+  unblindedFit_numPoints: 50 
+  setParameterRange: "r=-3,3"
   execution: 'slurm'
   batchPartition: "standard" # Slurm partition to use for job submission
   batchMemory: 4000 # Slurm memory to use for job submission
@@ -257,11 +258,11 @@ combine_fit:
 
 combine_impacts:
   exclude: "" # Nuisances that should be excluded from the impact computation
-  not_show_POI: True
+  not_show_POI: False
   execution: 'slurm'
-  batchPartition: "long" # Slurm partition to use for job submission
+  batchPartition: "standard" # Slurm partition to use for job submission long
   batchMemory: 30000 # Slurm memory to use for job submission
-  batchMaxRuntime: "96:00:00" # Slurm max runtime to use
+  batchMaxRuntime: "12:00:00" # Slurm max runtime to use 96:00:00
 
 combine_hesse:
   execution: 'slurm'
@@ -286,15 +287,18 @@ spectra:
   tth_xs: "fidXS_PhiEtaStar_ttH"
   xh_xs: "fidXS_PhiEtaStar_xH"
   ggh_powheg_xs: "fidXS_PhiEtaStar_ggH_powheg"
+  ggh_powheg_minlo_xs: "fidXS_PhiEtaStar_ggH_powheg_minlo"
   ggh_no_nnlops_xs: "fidXS_PhiEtaStar_ggH_genWeight"
   underflow_bin_normalized: False # Underflow bin normalized with binwidth
   # keep natural bin centers from fidXS boundaries for angular variable
-  last_bin_center: 2.618
-  first_bin_center: -3.663
+  last_bin_center: 5
+  first_bin_center: 0.025
   plot_log: 1
-  variable: '\Delta\varphi_{j0j1}'
+  show_underflow_bin: False
+  overflow: 6
+  variable: '|\Phi_\eta^*|'
   y_unit: "(fb)"
-  x_unit: "(rad)"
-  x_lim: [-4.4506, 3.1416]
-  y_lim: [-1,3]
-  y_lim_top: 100
+  x_unit: ""
+  x_lim: [0, 6]
+  y_lim: [0,2]
+  y_lim_top: 700

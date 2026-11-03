@@ -1,6 +1,6 @@
 frame1:
   ylim:
-    top: 90   # pick a value that leaves headroom
+    top: 110   # pick a value that leaves headroom
   fontsize: 14
   title_fontsize: 14
 frame2:

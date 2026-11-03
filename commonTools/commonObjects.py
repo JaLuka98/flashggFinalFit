@@ -1,6 +1,12 @@
 import os
 import copy
 
+def rename_underflow_dphij0j1(variable, reco_cat):
+    """Renames the underflow bin of DPhiJ0J1"""
+    if variable == "DPhiJ0J1":
+        return reco_cat.replace("m10000p0_m3p1416", "m3p1416_3p1416_underflow")
+    return reco_cat
+
 # Paths and directory
 cmsswbase__ = os.environ['CMSSW_BASE']
 if 'ANALYSIS_PATH' in os.environ:
@@ -28,7 +34,7 @@ lumiMap = {
     '2223preEE': 7.99,
     '2022postEE': 26.68,
     '2223postEE': 26.68,
-    '2022': 172,#34.67,
+    '2022': 34.67,
     '2023preBPix': 17.96,
     '2223preBPix': 17.96,
     '2023postBPix': 9.68,
@@ -38,10 +44,8 @@ lumiMap = {
     '2024': 109.82,
     '2024all': 109.82,
     'Run3': 172.13,
-    # '2022_2023_2024': 172.13,
-    # '222324': 172.13,
-    '2022_2023_2024': 172,
-    '222324': 172,
+    '2022_2023_2024': 172.13,
+    '222324': 172.13,
 }
 
 def CreateVariableParameters(gen_variable, reco_variable, bins, year, BMW, reco_bins=None):
@@ -461,7 +465,6 @@ variableBins = {
     "NJ": ["0p0_1p0", "1p0_2p0", "2p0_3p0", "3p0_4p0", "4p0_100p0"],
     "rapidity": ["0p0_0p15", "0p15_0p3", "0p3_0p45", "0p45_0p6", "0p6_0p75", "0p75_0p9", "0p9_1p2", "1p2_1p6", "1p6_2p0", "2p0_2p5"],
     "PTJ0": ["m10000p0_30p0", "30p0_40p0", "40p0_55p0", "55p0_75p0", "75p0_95p0", "95p0_120p0", "120p0_150p0", "150p0_200p0", "200p0_10000p0"],
-    # "DPhiJ0J1": ["m10000p0_m3p1416", "m3p1416_m2p0944", "m2p0944_m1p0472", "m1p0472_0p0", "0p0_1p0472", "1p0472_2p0944", "2p0944_3p1416"],
     "DPhiJ0J1": ["m10000p0_m3p1416", "m3p1416_m1p5708", "m1p5708_0p0", "0p0_1p5708", "1p5708_3p1416"],
     "PTHvsDPhiJ0J1": ["0p0_35p0_m3p1416_m1p5708", "0p0_35p0_m1p5708_0p0", "0p0_35p0_0p0_1p5708", "0p0_35p0_1p5708_3p1416", "35p0_80p0_m3p1416_m1p5708", "35p0_80p0_m1p5708_0p0", "35p0_80p0_0p0_1p5708", "35p0_80p0_1p5708_3p1416", "80p0_150p0_m3p1416_m1p5708", "80p0_150p0_m1p5708_0p0", "80p0_150p0_0p0_1p5708", "80p0_150p0_1p5708_3p1416", "150p0_300p0_m3p1416_m1p5708", "150p0_300p0_m1p5708_0p0", "150p0_300p0_0p0_1p5708", "150p0_300p0_1p5708_3p1416", "300p0_10000p0_m3p1416_m1p5708", "300p0_10000p0_m1p5708_0p0", "300p0_10000p0_0p0_1p5708", "300p0_10000p0_1p5708_3p1416"],
     "NBJet": ["0p0_1p0", "1p0_2p0", "2p0_100p0"],
@@ -565,21 +568,28 @@ def combineVariableDict(variable, year):
             "pdfIndeces": [],
         }
 
+    gen_variable = "YH" if variable in ["rapidity", "rapidity_lightquarks"] else variable
+    reco_variable = "rapidity" if variable == "rapidity_lightquarks" else variable
+
     # Split the years if it's a combined year, otherwise just use the single year
-    year_list = year.split('_') if '_' in year else [year]
+    year_list = year.split('_')
     template_year = year_list[0]
+
+    payload = CreateVariableParameters(
+        gen_variable=gen_variable, reco_variable=reco_variable,
+        bins=variableBins[variable], reco_bins=recoVariableBins[variable],
+        year=template_year, BMW=BMW,
+    )
+
     if len(year_list) > 1:
         # Add the pdfIndices from all the years together for the combined year
         combined_pdf_indices = []
-        gen_variable = "YH" if variable in ["rapidity", "rapidity_lightquarks"] else variable
-        reco_variable = "rapidity" if variable == "rapidity_lightquarks" else variable
-        combined_payload = CreateVariableParameters(gen_variable=gen_variable, reco_variable=reco_variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)
         for y in year_list:
-            year_payload = combineVariableDict(variable, y)
-            combined_pdf_indices.extend(year_payload["pdfIndeces"])
-        combined_payload["pdfIndeces"] = combined_pdf_indices
-        return combined_payload
-    else:
-        gen_variable = "YH" if variable in ["rapidity", "rapidity_lightquarks"] else variable
-        reco_variable = "rapidity" if variable == "rapidity_lightquarks" else variable
-        return CreateVariableParameters(gen_variable=gen_variable, reco_variable=reco_variable, bins=variableBins[variable], reco_bins=recoVariableBins[variable], year=template_year, BMW=BMW)
+            combined_pdf_indices.extend(combineVariableDict(variable, y)["pdfIndeces"])
+        payload["pdfIndeces"] = combined_pdf_indices
+
+    payload["pdfIndeces"] = [
+        rename_underflow_dphij0j1(variable, p) for p in payload["pdfIndeces"]
+    ]
+
+    return payload

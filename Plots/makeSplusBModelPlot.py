@@ -55,6 +55,7 @@ def get_options():
   parser.add_option("--doHHMjjFix", dest="doHHMjjFix", default=False, action="store_true", help="Do fix for HH analysis where some cats have different Mjj var")
   parser.add_option("--POI", dest="POI", default='', help="POI to be considered.")
   parser.add_option("--lumiLabel", dest="lumiLabel", default="61.9 fb^{-1} (13.6 TeV)", help="Luminosity label")
+  parser.add_option("--bkgFromFit", dest="bkgFromFit", default=None, help="File with an S+B fit (MultiDimFit snapshot): take only the background model (shape parameters, normalisations, pdf indices) from it")
   return parser.parse_args()
 (opt,args) = get_options()
 
@@ -74,6 +75,15 @@ if opt.inputWSFile is not None:
     for kv in opt.parameterMap.split(","):
       k, v = kv.split(":")[0], kv.split(":")[1]
       w.var(k).setVal(float(v))
+  # Background model from the S+B fit: signal, mu and nuisances stay as loaded above
+  if opt.bkgFromFit is not None:
+    print("    * Background model from the S+B fit in: %s"%opt.bkgFromFit)
+    fFit = ROOT.TFile(opt.bkgFromFit)
+    for p in fFit.Get("w").getSnapshot("MultiDimFit"):
+      n = p.GetName()
+      if not re.match(r"^(env_pdf|shapeBkg|pdfindex)", n): continue
+      if p.InheritsFrom("RooCategory"): w.cat(n).setIndex(p.getIndex())
+      elif w.var(n): w.var(n).setVal(p.getVal())
 
 # Define blinding region
 blindingRegion = [float(opt.blindingRegion.split(",")[0]),float(opt.blindingRegion.split(",")[1])]
@@ -109,6 +119,27 @@ if opt.doHHMjjFix:
 
 # Extract the total SB/B models
 sb_model, b_model = w.pdf("model_s"), w.pdf("model_b")
+
+# Exceptional cat naming: some bins are stored in the workspace under a different label
+# than the one passed via --cats. Map requested name -> workspace name where needed
+catNameReplacements = OrderedDict([
+  ("_DPhiJ0J1_m10000p0_m3p1416_", "_DPhiJ0J1_m3p1416_3p1416_underflow_"),
+])
+if opt.cats != 'all':
+  wsCats = []
+  for cidx in range(chan.numTypes()):
+    chan.setIndex(cidx)
+    wsCats.append(chan.getLabel())
+  _cats = []
+  for c in opt.cats.split(","):
+    if c not in wsCats:
+      for _old, _new in catNameReplacements.items():
+        if( _old in c )&( c.replace(_old,_new) in wsCats ):
+          print(" --> Renaming cat %s -> %s (workspace naming)"%(c,c.replace(_old,_new)))
+          c = c.replace(_old,_new)
+          break
+    _cats.append(c)
+  opt.cats = ",".join(_cats)
 
 # Extract dataset for opt.cats
 d_obs = w.data("data_obs")
@@ -273,7 +304,6 @@ if opt.doBands:
         with open("SplusBModels%s/toyYields_%s.pkl" % (opt.ext, opt.xvar.split(",")[0]), "wb") as fD:
           pickle.dump(df_bands, fD)
 
-
 # Process each category separately
 for cidx in range(len(cats)):
   c = cats[cidx]
@@ -386,6 +416,7 @@ for cidx in range(len(cats)):
       wbkgval = h_wbpdf['nBins'].GetBinContent(ibin)
       h_wdata_ratio.SetBinContent(ibin,wbval-wbkgval)
       h_wdata_ratio.SetBinError(ibin,wberr)
+  
 
   # Sum histograms if processing multiple categories
   if( len(opt.cats.split(",")) > 1 )|( opt.cats == 'all' ):

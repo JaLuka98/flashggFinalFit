@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_27_with_Zmmg_SaS/final_fits_outputs/2023/PhiEtaStar'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/final_fits_outputs/2023/PhiEtaStar'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_27_with_Zmmg_SaS/variables/2023/PhiEtaStar/root/data/allData_2023.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_27_with_Zmmg_SaS/variables/2023/PhiEtaStar/root/mc'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/variables/2023/PhiEtaStar/allData_2023.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/variables/2023/PhiEtaStar/root'
 
 backgroundScriptCfg:
   # Setup

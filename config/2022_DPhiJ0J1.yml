@@ -1,11 +1,11 @@
 # Config file: options for signal fitting
 
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix/final_fits_outputs/2022/DPhiJ0J1'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/final_fits_outputs/2022/DPhiJ0J1'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix/variables/2022/DPhiJ0J1/data/root/Data/allData_2022.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix/variables/2022/DPhiJ0J1/mc/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/variables/2022/DPhiJ0J1/allData_2022.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/variables/2022/DPhiJ0J1/root'
 
 backgroundScriptCfg:
   # Setup
@@ -72,7 +72,7 @@ trees2wsCfg:
 
   execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 10000 # Slurm memory to use for job submission
+  batchMemory: 15000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 signalScriptCfg_2022_preEE:

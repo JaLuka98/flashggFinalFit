@@ -1,10 +1,10 @@
 # Config file: options for signal fitting
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_27_with_Zmmg_SaS/final_fits_outputs/2024/PhiEtaStar'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/final_fits_outputs/2024/PhiEtaStar'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_27_with_Zmmg_SaS/variables/2024/PhiEtaStar/allData_2024.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_04_27_with_Zmmg_SaS/variables/2024/PhiEtaStar/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/variables/2024/PhiEtaStar/allData_2024.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/variables/2024/PhiEtaStar/root'
 backgroundScriptCfg:
   # Setup
   cats: 'auto' # auto: automatically inferred from input ws

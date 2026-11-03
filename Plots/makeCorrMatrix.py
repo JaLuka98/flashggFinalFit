@@ -61,7 +61,7 @@ def get_matrix_style(mode, do_cov=False):
       "top_text_size": 0.045,
       "info_text_size": 0.040,
     })
-  elif mode in ["PTJ0", "PTJ1", "YJ0", "CosThetaStarCS", "MassJ0J1"]:
+  elif mode in ["PTJ0", "PTJ1", "YJ0", "CosThetaStarCS", "MassJ0J1", "EtaJ0J1", "PhiEtaStar"]:
     style.update({
       "canvas": (1200, 1150),
       "axis_label_size": 0.046,

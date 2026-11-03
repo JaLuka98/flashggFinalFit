@@ -377,6 +377,10 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         ggh_powheg_xs = __import__(current_config['ggh_powheg_xs'], globals(), locals(), vars)
         ggh_powheg_xs_norm = np.array(ggh_powheg_xs.fidXS) / bin_w
 
+        # ggH POWHEG MiNLO (reweighted to NNLOPS): <ggh_powheg_xs>_MiNLO unless the config names another module
+        ggh_powheg_minlo_xs = __import__(current_config.get('ggh_powheg_minlo_xs', current_config['ggh_powheg_xs'] + '_MiNLO'), globals(), locals(), vars)
+        ggh_powheg_minlo_xs_norm = np.array(ggh_powheg_minlo_xs.fidXS) / bin_w
+
         # Dynamically import the required module for ggH MadGraph (w/o NNLOPS reweighting) cross-section
         ggh_no_nnlops_xs = __import__(current_config['ggh_no_nnlops_xs'], globals(), locals(), vars)
         ggh_no_nnlops_xs_norm = np.array(ggh_no_nnlops_xs.fidXS) / bin_w
@@ -387,6 +391,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             vh_xs_norm[0] = vh_xs_norm[0] * bin_w[0]
             tth_xs_norm[0] = tth_xs_norm[0] * bin_w[0]
             ggh_powheg_xs_norm[0] = ggh_powheg_xs_norm[0] * bin_w[0]
+            ggh_powheg_minlo_xs_norm[0] = ggh_powheg_minlo_xs_norm[0] * bin_w[0]
             ggh_no_nnlops_xs_norm[0] = ggh_no_nnlops_xs_norm[0] * bin_w[0]
         
         xh_xs_norm = vbf_xs_norm + vh_xs_norm + tth_xs_norm
@@ -397,6 +402,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         ## [[fidXS_scale_up unc per bin], [fidXS_pdf_up unc per bin], [fidXS_alpha_up unc per bin]]
         ggh_up = [abs(np.array(getattr(ggh_xs, source)) - np.array(ggh_xs.fidXS)) for source in sources_up]
         ggh_powheg_up = [abs(np.array(getattr(ggh_powheg_xs, source)) - np.array(ggh_powheg_xs.fidXS)) for source in sources_up]
+        ggh_powheg_minlo_up = [abs(np.array(getattr(ggh_powheg_minlo_xs, source)) - np.array(ggh_powheg_minlo_xs.fidXS)) for source in sources_up]
         ggh_no_nnlops_up = [abs(np.array(getattr(ggh_no_nnlops_xs, source)) - np.array(ggh_no_nnlops_xs.fidXS)) for source in sources_up]
         vbf_up = [abs(np.array(getattr(vbf_xs, source)) - np.array(vbf_xs.fidXS)) for source in sources_up]
         vh_up = [abs(np.array(getattr(vh_xs, source)) - np.array(vh_xs.fidXS)) for source in sources_up]
@@ -406,6 +412,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         
         ggh_dn = [abs(np.array(getattr(ggh_xs, source)) - np.array(ggh_xs.fidXS)) for source in sources_dn]
         ggh_powheg_dn = [abs(np.array(getattr(ggh_powheg_xs, source)) - np.array(ggh_powheg_xs.fidXS)) for source in sources_dn]
+        ggh_powheg_minlo_dn = [abs(np.array(getattr(ggh_powheg_minlo_xs, source)) - np.array(ggh_powheg_minlo_xs.fidXS)) for source in sources_dn]
         ggh_no_nnlops_dn = [abs(np.array(getattr(ggh_no_nnlops_xs, source)) - np.array(ggh_no_nnlops_xs.fidXS)) for source in sources_dn]
         vbf_dn = [abs(np.array(getattr(vbf_xs, source)) - np.array(vbf_xs.fidXS)) for source in sources_dn]
         vh_dn = [abs(np.array(getattr(vh_xs, source)) - np.array(vh_xs.fidXS)) for source in sources_dn]
@@ -415,10 +422,12 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         ## Linear sum as each source of uncertainty is fully correlated across the production modes
         madgraph_up = np.sum([ggh_up,vbf_up,vh_up,tth_up], axis=0)
         powheg_up = np.sum([ggh_powheg_up,vbf_up,vh_up,tth_up], axis=0)
+        powheg_minlo_up = np.sum([ggh_powheg_minlo_up,vbf_up,vh_up,tth_up], axis=0)
         no_nnlops_up = np.sum([ggh_no_nnlops_up,vbf_up,vh_up,tth_up], axis=0)
 
         madgraph_dn = np.sum([ggh_dn,vbf_dn,vh_dn,tth_dn], axis=0)
         powheg_dn = np.sum([ggh_powheg_dn,vbf_dn,vh_dn,tth_dn], axis=0)
+        powheg_minlo_dn = np.sum([ggh_powheg_minlo_dn,vbf_dn,vh_dn,tth_dn], axis=0)
         no_nnlops_dn = np.sum([ggh_no_nnlops_dn,vbf_dn,vh_dn,tth_dn], axis=0)
 
         ## Sum in quadrature of the different sources of uncertainties + uncertainty on the BR
@@ -428,6 +437,9 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         unc_th_powheg_up = np.sqrt((np.sqrt(np.sum(np.square(powheg_up), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
         unc_th_powheg_dn = np.sqrt((np.sqrt(np.sum(np.square(powheg_dn), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
 
+        unc_th_powheg_minlo_up = np.sqrt((np.sqrt(np.sum(np.square(powheg_minlo_up), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
+        unc_th_powheg_minlo_dn = np.sqrt((np.sqrt(np.sum(np.square(powheg_minlo_dn), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
+
         unc_th_no_nnlops_up = np.sqrt((np.sqrt(np.sum(np.square(no_nnlops_up), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
         unc_th_no_nnlops_dn = np.sqrt((np.sqrt(np.sum(np.square(no_nnlops_dn), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
         
@@ -436,15 +448,24 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             unc_th_dn[0] = unc_th_dn[0] * bin_w[0]
             unc_th_powheg_up[0] = unc_th_powheg_up[0] * bin_w[0]
             unc_th_powheg_dn[0] = unc_th_powheg_dn[0] * bin_w[0]
+            unc_th_powheg_minlo_up[0] = unc_th_powheg_minlo_up[0] * bin_w[0]
+            unc_th_powheg_minlo_dn[0] = unc_th_powheg_minlo_dn[0] * bin_w[0]
             unc_th_no_nnlops_up[0] = unc_th_no_nnlops_up[0] * bin_w[0]
             unc_th_no_nnlops_dn[0] = unc_th_no_nnlops_dn[0] * bin_w[0]
             underflow_width = current_config.get('underflow_bin_width', 15)
             overflow_width = current_config.get('overflow_bin_width', 100)
-            bin_w[0] = underflow_width
-            bin_w[-1] = overflow_width
-            bin_w_plot[0] = underflow_width
-            bin_w_plot[-1] = overflow_width
-            bin_w_visual[0] = underflow_width  # bins_plot[0] is -1000; use display width for patch positioning
+            # bin_w[0] = underflow_width
+            # bin_w[-1] = overflow_width
+            # bin_w_plot[0] = underflow_width
+            # bin_w_plot[-1] = overflow_width
+            # bin_w_visual[0] = underflow_width  # bins_plot[0] is -1000; use display width for patch positioning
+            if underflow_width is not None:
+                bin_w[0] = underflow_width
+                bin_w_plot[0] = underflow_width
+                bin_w_visual[0] = underflow_width
+            if overflow_width is not None:
+                bin_w[-1] = overflow_width
+                bin_w_plot[-1] = overflow_width
 
         # Compute expected cross-section and uncertainties
         exp_xs = np.array(exp_xs_list) * (ggh_xs_norm + xh_xs_norm)
@@ -520,6 +541,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         plt.stairs((ggh_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + NNLOPS + Pythia) + xH', color='tab:blue')
         plt.stairs((ggh_no_nnlops_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (MadGraph5_aMC@NLO + Pythia) + xH', color='tab:purple')
         plt.stairs((ggh_powheg_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (POWHEG + Pythia) + xH', color='brown')
+        plt.stairs((ggh_powheg_minlo_xs_norm+xh_xs_norm), bins_plot, linewidth=2, label='ggH (POWHEG MiNLO + NNLOPS + Pythia) + xH', color='#d17a00')
         plt.stairs(xh_xs_norm, bins_plot, linewidth=2, color='green')
         plt.stairs(xh_xs_norm, bins_plot, linewidth=2, label='xH = ttH + VH + VBF (MadGraph5_aMC@NLO + Pythia)', alpha=0.2, color='green', fill=True)
         
@@ -536,17 +558,38 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
             bins_c[0] = current_config['first_bin_center']
         else:
             # Push the underflow data point far off-screen (not plotted)
-            bins_c[0] = current_config.get('x_lim', [0, 1])[0] - 1e6
+            bins_c[0] = current_config.get('x_lim', [0, 1])[0] - (current_config.get('x_lim', [0, 1])[1] - current_config.get('x_lim', [0, 1])[0])
+            # bins_c[0] = current_config.get('x_lim', [0, 1])[0] - 1e6
         
+        # plt.rcParams['hatch.linewidth'] = 2
+        # for center, value, err_low, err_high, width in zip(bins_c, ggh_xs_norm+xh_xs_norm, unc_th_dn, unc_th_up, bin_w_visual):
+        #     plt.gca().add_patch(plt.Rectangle((center - width/4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:blue', hatch='///'))
+        # # POWHEG
+        # for center, value, err_low, err_high, width in zip(bins_c, ggh_powheg_xs_norm+xh_xs_norm, unc_th_powheg_dn, unc_th_powheg_up, bin_w_visual):
+        #     plt.gca().add_patch(plt.Rectangle((center + width/10, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='brown', hatch='////'))
+        # # Madgraph w/o NNLOPS
+        # for center, value, err_low, err_high, width in zip(bins_c, ggh_no_nnlops_xs_norm+xh_xs_norm, unc_th_no_nnlops_dn, unc_th_no_nnlops_up, bin_w_visual):
+        #     plt.gca().add_patch(plt.Rectangle((center + width/3.6, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:purple', hatch='////'))
         plt.rcParams['hatch.linewidth'] = 2
-        for center, value, err_low, err_high, width in zip(bins_c, ggh_xs_norm+xh_xs_norm, unc_th_dn, unc_th_up, bin_w_visual):
-            plt.gca().add_patch(plt.Rectangle((center - width/4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:blue', hatch='///'))
-        # POWHEG
-        for center, value, err_low, err_high, width in zip(bins_c, ggh_powheg_xs_norm+xh_xs_norm, unc_th_powheg_dn, unc_th_powheg_up, bin_w_visual):
-            plt.gca().add_patch(plt.Rectangle((center + width/10, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='brown', hatch='////'))
-        # Madgraph w/o NNLOPS
-        for center, value, err_low, err_high, width in zip(bins_c, ggh_no_nnlops_xs_norm+xh_xs_norm, unc_th_no_nnlops_dn, unc_th_no_nnlops_up, bin_w_visual):
-            plt.gca().add_patch(plt.Rectangle((center + width/3.6, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:purple', hatch='////'))
+
+        # Relative offsets (in units of bin width) of the theory-uncertainty boxes
+        # w.r.t. the data point. Configurable via spectra: theory_box_offsets / theory_box_width
+        box_offsets = current_config.get('theory_box_offsets', {'nnlops': -0.35, 'powheg': -0.2, 'powheg_minlo': 0.0, 'no_nnlops': 0.15})
+        box_width = current_config.get('theory_box_width', 1/8)
+
+        def draw_unc_boxes(centers, values, err_lo, err_hi, widths, offset, color, hatch):
+            ax = plt.gca()
+            for c, v, lo, hi, w in zip(centers, values, err_lo, err_hi, widths):
+                ax.add_patch(plt.Rectangle((c + offset * w, v - lo), box_width * w, lo + hi,
+                                           fill=False, lw=0, color=color, hatch=hatch))
+
+        draw_unc_boxes(bins_c, ggh_xs_norm + xh_xs_norm, unc_th_dn, unc_th_up, bin_w_visual,
+                       box_offsets['nnlops'], 'tab:blue', '///')
+        draw_unc_boxes(bins_c, ggh_powheg_xs_norm + xh_xs_norm, unc_th_powheg_dn, unc_th_powheg_up, bin_w_visual,
+                       box_offsets['powheg'], 'brown', '////')
+        draw_unc_boxes(bins_c, ggh_powheg_minlo_xs_norm + xh_xs_norm, unc_th_powheg_minlo_dn, unc_th_powheg_minlo_up,           bin_w_visual,box_offsets['powheg_minlo'], '#d17a00', '////')
+        draw_unc_boxes(bins_c, ggh_no_nnlops_xs_norm + xh_xs_norm, unc_th_no_nnlops_dn, unc_th_no_nnlops_up, bin_w_visual,
+                       box_offsets['no_nnlops'], 'tab:purple', '////')
             
         # Default font sizes
         fontsize = 14
@@ -631,6 +674,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         # Plot ratio (Data/Prediction) in a separate frame
         ratio_xs = exp_xs / (ggh_xs_norm+xh_xs_norm)
         ratio_powheg = (ggh_powheg_xs_norm+xh_xs_norm) / (ggh_xs_norm+xh_xs_norm)
+        ratio_powheg_minlo = (ggh_powheg_minlo_xs_norm+xh_xs_norm) / (ggh_xs_norm+xh_xs_norm)
         ratio_no_nnlops = (ggh_no_nnlops_xs_norm+xh_xs_norm) / (ggh_xs_norm+xh_xs_norm)
         ratio_madgraph = (ggh_xs_norm+xh_xs_norm) / (ggh_xs_norm+xh_xs_norm) # Dummy, it is always 1
         ratio_err_up = err_up / (ggh_xs_norm+xh_xs_norm)
@@ -641,6 +685,8 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         ratio_unc_dn = unc_th_dn / (ggh_xs_norm+xh_xs_norm)
         ratio_unc_powheg_up = unc_th_powheg_up / (ggh_xs_norm+xh_xs_norm)
         ratio_unc_powheg_dn = unc_th_powheg_dn / (ggh_xs_norm+xh_xs_norm)
+        ratio_unc_powheg_minlo_up = unc_th_powheg_minlo_up / (ggh_xs_norm+xh_xs_norm)
+        ratio_unc_powheg_minlo_dn = unc_th_powheg_minlo_dn / (ggh_xs_norm+xh_xs_norm)
         ratio_unc_no_nnlops_up = unc_th_no_nnlops_up / (ggh_xs_norm+xh_xs_norm)
         ratio_unc_no_nnlops_dn = unc_th_no_nnlops_dn / (ggh_xs_norm+xh_xs_norm)
 
@@ -649,16 +695,26 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
 
         plt.stairs(ratio_madgraph, bins_plot, linewidth=2, color='tab:blue')
 
-        for center, value, err_low, err_high, width in zip(bins_c, ratio_madgraph, ratio_unc_up, ratio_unc_dn, bin_w_visual):
-            plt.gca().add_patch(plt.Rectangle((center - width/4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:blue', hatch='/////')) #/2
-        # POWHEG
-        for center, value, err_low, err_high, width in zip(bins_c, ratio_powheg, ratio_unc_powheg_dn, ratio_unc_powheg_up, bin_w_visual):
-            plt.gca().add_patch(plt.Rectangle((center + width/10, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='brown', hatch='/////'))
-        # Madgraph w/o NNLOPS
-        for center, value, err_low, err_high, width in zip(bins_c, ratio_no_nnlops, ratio_unc_no_nnlops_dn, ratio_unc_no_nnlops_up, bin_w_visual):
-            plt.gca().add_patch(plt.Rectangle((center + width/3.6, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:purple', hatch='////'))
+        # for center, value, err_low, err_high, width in zip(bins_c, ratio_madgraph, ratio_unc_up, ratio_unc_dn, bin_w_visual):
+        #     plt.gca().add_patch(plt.Rectangle((center - width/4, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:blue', hatch='/////')) #/2
+        # # POWHEG
+        # for center, value, err_low, err_high, width in zip(bins_c, ratio_powheg, ratio_unc_powheg_dn, ratio_unc_powheg_up, bin_w_visual):
+        #     plt.gca().add_patch(plt.Rectangle((center + width/10, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='brown', hatch='/////'))
+        # # Madgraph w/o NNLOPS
+        # for center, value, err_low, err_high, width in zip(bins_c, ratio_no_nnlops, ratio_unc_no_nnlops_dn, ratio_unc_no_nnlops_up, bin_w_visual):
+        #     plt.gca().add_patch(plt.Rectangle((center + width/3.6, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:purple', hatch='////'))
+        
+        draw_unc_boxes(bins_c, ratio_madgraph, ratio_unc_dn, ratio_unc_up, bin_w_visual,
+                       box_offsets['nnlops'], 'tab:blue', '/////')   # dn/up order fixed
+        draw_unc_boxes(bins_c, ratio_powheg, ratio_unc_powheg_dn, ratio_unc_powheg_up, bin_w_visual,
+                       box_offsets['powheg'], 'brown', '/////')
+        draw_unc_boxes(bins_c, ratio_powheg_minlo, ratio_unc_powheg_minlo_dn, ratio_unc_powheg_minlo_up, bin_w_visual,
+                       box_offsets['powheg_minlo'], '#d17a00', '/////')
+        draw_unc_boxes(bins_c, ratio_no_nnlops, ratio_unc_no_nnlops_dn, ratio_unc_no_nnlops_up, bin_w_visual,
+                       box_offsets['no_nnlops'], 'tab:purple', '////')
         
         plt.stairs(ratio_powheg, bins_plot, linewidth=2, color='brown')
+        plt.stairs(ratio_powheg_minlo, bins_plot, linewidth=2, color='#d17a00')
         plt.stairs(ratio_no_nnlops, bins_plot, linewidth=2, color='tab:purple')
 
         frame2_xtick_fontsize = 20
@@ -726,11 +782,7 @@ class CreateDiffSpectra(law.Task):#(law.Task): #(Task, HTCondorWorkflow, law.Loc
         plt.yticks(fontsize=frame2_ytick_fontsize)
 
         plt.xlim(current_config['x_lim'])
-        frame2_ylim = plotting_config.get('frame2', {}).get('ylim', None)
-        if frame2_ylim is not None:
-            plt.ylim(**frame2_ylim)
-        else:
-            plt.ylim(current_config['y_lim'])
+        plt.ylim(current_config['y_lim'])
         
         if convert_boolean_string(self.is_unblinded):
             plt.savefig(os.path.join(output_dir, 'Combine', fitFolderName, 'spectra.pdf'), bbox_inches='tight', dpi=120)

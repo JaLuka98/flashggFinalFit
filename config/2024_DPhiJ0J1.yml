@@ -1,10 +1,10 @@
 # Config file: options for signal fitting
-outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix/final_fits_outputs/2024/DPhiJ0J1'
+outputFolder: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/final_fits_outputs/2024/DPhiJ0J1'
 
 inputFiles:
   # Trees2WS
-  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix/variables/2024/DPhiJ0J1/data/root/Data/allData_2024.root'
-  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix/variables/2024/DPhiJ0J1/mc/root'
+  Trees2WSData: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/variables/2024/DPhiJ0J1/allData_2024.root'
+  Trees2WS: '/pnfs/psi.ch/cms/trivcat/store/user/niharrin/ntuples/midRun3/samples/2026_07_22_with_Zmmg_SaS_DPhiJ0J1Fix_smoothed_decorrelation/variables/2024/DPhiJ0J1/root'
 backgroundScriptCfg:
   # Setup
   cats: 'auto' # auto: automatically inferred from input ws
@@ -12,7 +12,7 @@ backgroundScriptCfg:
   ext: 'Run3FidXSAnalysis_DPhiJ0J1' # extension to add to output directory
   execution: 'slurm'
   batchPartition: "short" # Slurm partition to use for job submission
-  batchMemory: 4000 # Slurm memory to use for job submission
+  batchMemory: 8000 # Slurm memory to use for job submission
   batchMaxRuntime: "01:00:00" # Slurm max runtime to use
 
 trees2wsCfg:
