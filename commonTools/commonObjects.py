@@ -130,19 +130,20 @@ production_modes = [
     ("ssH", "ssHToGG")
 ]
 
-# Production XS from the LHCHWG Report 5 (R5 v1.1.3, https://gitlab.cern.ch/LHCHIGGSXS/LHCHXSWG1/crosssections), for 125.38 @ 13.6 TeV
+# Production XS from the LHCHWG Report 5 (R5 v1.1.3, https://gitlab.cern.ch/LHCHIGGSXS/LHCHXSWG1/crosssections) at 13.6 TeV,
+# mH = 125.07 GeV (the analysis mass; linear interpolation between the R5 points at 125.0 and 125.09 GeV)
 # VH = WH + ZH (ZH includes gg->ZH)
 production_XS = {
-    "GluGluHtoGG": 51.45,
-    "GluGluHto2G": 51.45,
-    "VBFHtoGG": 4.099837482,
-    "VBFHto2G": 4.099837482,
-    "VHtoGG": 2.39399,
-    "VHto2G": 2.39399,
-    "ttHtoGG": 0.5888,
-    "ttHto2G": 0.5888,
-    "bbHtoGG": 0.563,
-    "bbHto2G": 0.563,
+    "GluGluHtoGG": 51.6733,
+    "GluGluHto2G": 51.6733,
+    "VBFHtoGG": 4.10977,
+    "VBFHto2G": 4.10977,
+    "VHtoGG": 2.41231,
+    "VHto2G": 2.41231,
+    "ttHtoGG": 0.592189,
+    "ttHto2G": 0.592189,
+    "bbHtoGG": 0.568222,
+    "bbHto2G": 0.568222,
     "uuHToGG": 1.0,
     "ddHToGG": 1.0,
     "ssHToGG": 1.0,

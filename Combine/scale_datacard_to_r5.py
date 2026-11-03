@@ -22,16 +22,17 @@ import os
 import re
 import sys
 
-# Cross sections in pb at 13.6 TeV, mH = 125.38 GeV.
-# YR4: the values the old datacards were made with (ad-interim 13.6 TeV extrapolation of YR4, arXiv:2402.09955,
-#      as in the previous commonTools/XSBRMap.py).
-# R5:  LHCHWG Report 5, R5 v1.1.3 (https://gitlab.cern.ch/LHCHIGGSXS/LHCHXSWG1/crosssections, R5/), as in the current
-#      commonTools/XSBRMap.py. VH = WH + ZH (ZH includes gg->ZH).
+# Cross sections in pb at 13.6 TeV.
+# YR4: the values the old datacards were made with: ad-interim 13.6 TeV extrapolation of YR4 (arXiv:2402.09955) at
+#      mH = 125.38 GeV, as in the previous commonTools/XSBRMap.py.
+# R5:  LHCHWG Report 5, R5 v1.1.3 (https://gitlab.cern.ch/LHCHIGGSXS/LHCHXSWG1/crosssections, R5/) at
+#      mH = 125.07 GeV (the analysis mass; linear interpolation between the R5 points at 125.0 and 125.09 GeV),
+#      as in the current commonTools/XSBRMap.py. VH = WH + ZH (ZH includes gg->ZH).
 XS_YR4 = {"ggh": 51.96, "vbf": 4.067, "vh": 2.3781, "wh": 1.442, "zh": 0.9361, "tth": 0.5638, "bbh": 0.52218}
-XS_R5 = {"ggh": 51.45, "vbf": 4.099837482, "vh": 2.39399, "wh": 1.45344, "zh": 0.94055, "tth": 0.5888, "bbh": 0.563}
+XS_R5 = {"ggh": 51.6733, "vbf": 4.10977, "vh": 2.41231, "wh": 1.4651, "zh": 0.947206, "tth": 0.592189, "bbh": 0.568222}
 RATIO = {mode: XS_R5[mode] / XS_YR4[mode] for mode in XS_YR4}
 
-MARKER = "# Signal rates scaled from YR4 to LHCHWG Report 5 (R5 v1.1.3) cross sections by scale_datacard_to_r5.py"
+MARKER = "# Signal rates scaled from YR4 (mH 125.38) to LHCHWG Report 5 (R5 v1.1.3, mH 125.07) cross sections by scale_datacard_to_r5.py"
 
 
 def parse_args() -> argparse.Namespace:

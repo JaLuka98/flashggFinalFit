@@ -211,19 +211,20 @@ obs_bins = [float(num) for num in args.bin.strip("|").split("|")]
 
 # Reference cross sections, in picobarn.
 # 13p6 values: LHCHWG Report 5 (R5 v1.1.3, https://gitlab.cern.ch/LHCHIGGSXS/LHCHXSWG1/crosssections, R5/),
-# mH = 125.38 GeV, used for the final fiducial cross section normalisation after the acceptance extraction.
+# mH = 125.07 GeV (the analysis mass; linear interpolation between the R5 points at 125.0 and 125.09 GeV),
+# used for the final fiducial cross section normalisation after the acceptance extraction (also evaluated at 125.07 GeV).
 # VH = WH + ZH (ZH includes gg->ZH). The 13 and 14 TeV values are the old YR4 numbers (not used).
 XS_map = {'13':   {'ggH': 48.58, 'VBFH': 3.782, 'VH': 2.2569, 'ttH': 0.5071},
-         '13p6': {'ggH': 51.45, 'VBFH': 4.099837482, 'VH': 2.39399, 'ttH': 0.5888},
+         '13p6': {'ggH': 51.6733, 'VBFH': 4.10977, 'VH': 2.41231, 'ttH': 0.592189},
          '14':   {'ggH': 54.67, 'VBFH': 4.278, 'VH': 2.4991, 'ttH': 0.6137},}
 
-# R5 relative uncertainties at 13.6 TeV, mH = 125.38 GeV, in %: theory (up, down) and PDF+alphaS.
+# R5 relative uncertainties at 13.6 TeV, mH = 125.07 GeV (interpolated as the cross sections), in %: theory (up, down) and PDF+alphaS.
 # ggH: Gaussian theory uncertainty (scale, quark masses, EW, PDF-TH), as the YR4 TH Gaussian used before.
 # VH: WH and ZH uncertainties added linearly, weighted by their cross sections.
-XS_unc_13p6 = {'ggH':  {'scale': (4.04, -4.04), 'pdf_alphas': 2.46},
-               'VBFH': {'scale': (1.09011564073212, -1.05111564073212), 'pdf_alphas': 2.196},
-               'VH':   {'scale': (1.4426767405043461, -1.5203449722012206), 'pdf_alphas': 1.7751195598143685},
-               'ttH':  {'scale': (1.74928556845359, -2.37697286480094), 'pdf_alphas': 2.78028775489157},}
+XS_unc_13p6 = {'ggH':  {'scale': (4.05, -4.05), 'pdf_alphas': 2.46},
+               'VBFH': {'scale': (1.0965, -1.0573), 'pdf_alphas': 2.196},
+               'VH':   {'scale': (1.4405, -1.5034), 'pdf_alphas': 1.7765},
+               'ttH':  {'scale': (1.7304, -2.3565), 'pdf_alphas': 2.7803},}
 
 XS_map_scale_up = {'13':   {},
                    '13p6': {p: XS_map['13p6'][p] * (1 + u['scale'][0] / 100) for p, u in XS_unc_13p6.items()},
